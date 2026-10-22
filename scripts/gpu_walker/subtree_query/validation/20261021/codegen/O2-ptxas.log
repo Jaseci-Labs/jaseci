@@ -1,0 +1,6 @@
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'
+ptxas info    : Function properties for jac_SubtreeQuery_csr_batch
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, used 0 barriers, 528 bytes cmem[0]
+ptxas info    : Compile time = 6.245 ms

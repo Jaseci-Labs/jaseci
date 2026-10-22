@@ -1,0 +1,22 @@
+
+Setting up Jac for first use (compiling and caching compiler)...
+  Compiling jaclang/compiler/backends/native/ptx_csr.jac...
+Codegen: {'original': (0, 0, 0), 'sroa': (0, 0, 0), 'O2': (0, 0, 0), 'O2_no_overflow': (0, 0, 0), 'O2_no_validation': (0, 0, 0), 'O2_unchecked': (0, 0, 0)}
+ragged37-mixed33 visits 186 queue 19 queries 33 serial_ms 5.38
+binary511-root32 visits 16352 queue 256 queries 32 serial_ms 246.89
+binary511-mixed256 visits 2222 queue 256 queries 256 serial_ms 39.12
+binary4095-root16 visits 65520 queue 2048 queries 16 serial_ms 989.06
+binary4095-mixed256 visits 6290 queue 2048 queries 256 serial_ms 103.25
+binary4095-leaf1024 visits 1024 queue 1 queries 1024 serial_ms 32.82
+binary4095-small1024 visits 1744 queue 2 queries 1024 serial_ms 45.63
+ternary3280-root16 visits 52480 queue 2187 queries 16 serial_ms 776.25
+quaternary4093-mixed128 visits 4516 queue 3070 queries 128 serial_ms 68.34
+chain2048-mixed32 visits 32015 queue 1 queries 32 serial_ms 508.44
+irregular4095-mixed128 visits 5286 queue 475 queries 128 serial_ms 85.42
+irregular16383-mixed256 visits 18603 queue 2028 queries 256 serial_ms 305.02
+binary1023-root1 visits 1023 queue 512 queries 1 serial_ms 15.8
+binary1023-root32 visits 32736 queue 512 queries 32 serial_ms 493.52
+binary1023-root128 visits 130944 queue 512 queries 128 serial_ms 1965.49
+binary1023-root128-all visits 130944 queue 512 queries 128 serial_ms 2016.0
+binary1023-root128-none visits 130944 queue 512 queries 128 serial_ms 1937.53
+Jac setup complete (1 modules compiled and cached)

@@ -1,0 +1,39 @@
+{
+  "unit": "microseconds",
+  "primary_source_run": "profile",
+  "generator_sha256": "786d21936d37c9423f40366e6ef12d3ffc1c84a601afbd10bd767880b4ffe87f",
+  "sources": [
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/primary/comparison.json",
+      "sha256": "dd77cf04135669d5feb5d8dd6ec011f1b8f7869b9e5d9024c10355e3b21e7874"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/profile/verified.json",
+      "sha256": "6ff5677b168d79ff01196393132a09c4ecffdd63c6205ec75a0a786265a61931"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/profile/results.json",
+      "sha256": "ecb6ac7974fc68198be2682821b6f81e9ba1f9b0218434820ea1173556dca3d4"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/verified.json",
+      "sha256": "bab92390aa061bfa6d611d3fb92d7d1afe75415d9715a68ff30ddf52e8c44149"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/codegen/codegen.json",
+      "sha256": "edc7d03efed7a3f0af7114a555e0261b80d42b2edff42f754b507bc7e76c5cdd"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/correctness.json",
+      "sha256": "067f4d69a5e14bd6d9304215e7e1d7385204b285f09f68ace95542ced60b9b07"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/REPORT.md",
+      "sha256": "eda5885251dd04002da4279df66065816afb0f7edbe95b01066904c97c712a2d"
+    },
+    {
+      "path": "scripts/gpu_walker/subtree_query/validation/20261021/inputs.json",
+      "sha256": "dae13174f513aa73e145a61e04626e065d531ffa79f8380999a6c410afcf517b"
+    }
+  ]
+}

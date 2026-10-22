@@ -1,0 +1,17 @@
+ragged37-mixed33 {'Jac original': 17.792, 'Jac O2': 18.532, 'CUDA checked': 17.92}
+binary511-root32 {'Jac original': 208.512, 'Jac O2': 227.456, 'CUDA checked': 211.328}
+binary511-mixed256 {'Jac original': 173.92, 'Jac O2': 184.96, 'CUDA checked': 175.744}
+binary4095-root16 {'Jac original': 2022.144, 'Jac O2': 2176.0, 'CUDA checked': 2048.128}
+binary4095-mixed256 {'Jac original': 2054.912, 'Jac O2': 2245.092, 'CUDA checked': 2076.416}
+binary4095-leaf1024 {'Jac original': 2.304, 'Jac O2': 2.384, 'CUDA checked': 2.304}
+binary4095-small1024 {'Jac original': 3.84, 'Jac O2': 3.84, 'CUDA checked': 3.796}
+ternary3280-root16 {'Jac original': 1651.328, 'Jac O2': 1766.388, 'CUDA checked': 1672.192}
+quaternary4093-mixed128 {'Jac original': 2044.792, 'Jac O2': 2202.956, 'CUDA checked': 2070.784}
+chain2048-mixed32 {'Jac original': 749.048, 'Jac O2': 789.5, 'CUDA checked': 755.84}
+irregular4095-mixed128 {'Jac original': 1655.296, 'Jac O2': 1864.832, 'CUDA checked': 1673.344}
+irregular16383-mixed256 {'Jac original': 8274.048, 'Jac O2': 8941.184, 'CUDA checked': 8366.208}
+binary1023-root1 {'Jac original': 403.584, 'Jac O2': 441.472, 'CUDA checked': 409.216}
+binary1023-root32 {'Jac original': 491.392, 'Jac O2': 528.64, 'CUDA checked': 496.64}
+binary1023-root128 {'Jac original': 518.008, 'Jac O2': 558.336, 'CUDA checked': 523.748}
+binary1023-root128-all {'Jac original': 507.64, 'Jac O2': 548.064, 'CUDA checked': 513.492}
+binary1023-root128-none {'Jac original': 469.76, 'Jac O2': 458.752, 'CUDA checked': 448.756}

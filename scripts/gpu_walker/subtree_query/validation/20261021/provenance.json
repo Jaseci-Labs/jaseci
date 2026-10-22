@@ -1,0 +1,42 @@
+{
+  "base_commit": "c325dfbcdc6d2272935d4bdc28a8f59e696e12b2",
+  "branch": "paper/jac-on-gpu",
+  "origin": "git@github.com:Gorgeous-Patrick/jaseci.git",
+  "python": "3.12.11",
+  "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Apr__9_19:24:57_PDT_2025\nCuda compilation tools, release 12.9, V12.9.41\nBuild cuda_12.9.r12.9/compiler.35813241_0\n",
+  "nsys": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0\n",
+  "primary_run": "profile",
+  "supplementary_run": "ablation-profile",
+  "input_manifest_sha256": "dae13174f513aa73e145a61e04626e065d531ffa79f8380999a6c410afcf517b",
+  "source_sha256": {
+    "jac/examples/gpu/subtree_query.jac": "38d7a81d3085f7127f39d3c3d941b29189d4b94dda062230303b44dd312bd713",
+    "jac/jaclang/compiler/backends/native/llvm/libjacllvm.so": "0fe41757f78f00a17db7d1644af3503c5375677cb70a31a8253108c43fe791d0",
+    "jac/jaclang/compiler/backends/native/ptx.jac": "acb439948aac8889d5f904f62f5d1af6cab3f285faeb5cd32da8fe06ed87df36",
+    "jac/jaclang/compiler/backends/native/ptx_csr.jac": "2433ff1a7e8456fe2aaf3a658d0096ad9c9baca53d47ca46e8a174bae101feab",
+    "jac/jaclang/compiler/backends/native/ptx_walker.jac": "ce05e47948be86eb17153a0d0bfc34350a5759e1f21f14a97a00d524504b3f6f",
+    "jac/jaclang/runtime/gpu.jac": "db601ee2ced7507b3faac98ce499e191dbb05fd1409fb898f42b21effe75b6da",
+    "jac/jaclang/runtime/gpu_memory.jac": "5f86b9bf57f72f4c085b0f8e717f54a0eb22da89b241d3ae1e67bcec6f36929f",
+    "scripts/gpu_walker/compare_layouts.py": "09e30d1e0a136ea3d85ca472c2c2f4fb34944cdef7427b63fb0096bc27ad81d5",
+    "scripts/gpu_walker/handwritten_matmul/benchmark.py": "a3fdc20e6917432844699b5c7586c20fcc1b17aa98c8fdb3c5095df7fb7953ad",
+    "scripts/gpu_walker/subtree_query/analyze.py": "baf5d3c78a367353b58f5ec52e81f73a8977ce5264b2e103eff004f972426f0d",
+    "scripts/gpu_walker/subtree_query/build_report.py": "cfadfedc28a3b9f68b76c5aaee9b0259467ef882042ff3aa8b532b579387812b",
+    "scripts/gpu_walker/subtree_query/common.py": "7fd77e084fff48da3ec704894550b6674d16fa520ffef0c67e22a4604360826a",
+    "scripts/gpu_walker/subtree_query/prepare.py": "571e9dcd4263ef0b1a8d4537751af0843be3cc4b531b103ee1084fbe5fde53d9",
+    "scripts/gpu_walker/subtree_query/record_provenance.py": "4536ba883e559a42fe32810f8f8dd6161ddbd1462f773808468d94dd02dfb4f4",
+    "scripts/gpu_walker/subtree_query/reproduce.sh": "10319191c0ae0682dfd30df879607df00ef32c5b7037ca42bb16b54c713115bc",
+    "scripts/gpu_walker/subtree_query/run.py": "08a75b6b81b9a73bcbd0eb0353d3cc1b65e2b94adb16d6ed9c6190040eab4389",
+    "scripts/gpu_walker/subtree_query/subtree.cu": "d34ca977b159e4b345872412729634c1ac513602f6593aa13ffed43b5ecb599e",
+    "scripts/gpu_walker/subtree_query/validate.py": "1491ac053766a5c719d15a44c40c0593aeaaa82e7ae1d51641863e4480aef6f5"
+  },
+  "raw_evidence_sha256": {
+    "profile/results.json": "ecb6ac7974fc68198be2682821b6f81e9ba1f9b0218434820ea1173556dca3d4",
+    "profile/verified.json": "6ff5677b168d79ff01196393132a09c4ecffdd63c6205ec75a0a786265a61931",
+    "profile/trace.nsys-rep": "81cd7e8a89abf9a9f811ce0434aee22475622d6da01c225fbcd83f0254dfa497",
+    "profile/trace.sqlite": "7f5746cf6e26f5bfe9d8de5e899ba0647ba4ee011866cce1711e8469e54f91ca",
+    "ablation-profile/results.json": "bb9d906de4d36838018ad742f93d13b4e46bae20052da819f83fc01c854d73fe",
+    "ablation-profile/verified.json": "bab92390aa061bfa6d611d3fb92d7d1afe75415d9715a68ff30ddf52e8c44149",
+    "ablation-profile/trace.nsys-rep": "c064bfe4891b74f95eb90d4d2de36f028a298cda1a9686e1717e686d982531c6",
+    "ablation-profile/trace.sqlite": "286fe2064ede7717134cb5db75d0e050b9e5ac45f1db73ac4ec8d01cc504a69b",
+    "correctness.json": "067f4d69a5e14bd6d9304215e7e1d7385204b285f09f68ace95542ced60b9b07"
+  }
+}

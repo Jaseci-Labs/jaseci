@@ -1,0 +1,13 @@
+test_invalid_demo_data_and_queue_failure_preserve_state (test_subtree.SubtreeTests.test_invalid_demo_data_and_queue_failure_preserve_state) ... 
+Setting up Jac for first use (compiling and caching compiler)...
+  Compiling jaclang/compiler/backends/native/ptx_csr.jac...
+ok
+test_known_tree_and_query_specific_flags (test_subtree.SubtreeTests.test_known_tree_and_query_specific_flags) ... ok
+test_leaf_equality_and_exact_integer_precision (test_subtree.SubtreeTests.test_leaf_equality_and_exact_integer_precision) ... ok
+test_shared_tree_matches_serial_and_independent_oracle (test_subtree.SubtreeTests.test_shared_tree_matches_serial_and_independent_oracle) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.120s
+
+OK
+Jac setup complete (1 modules compiled and cached)

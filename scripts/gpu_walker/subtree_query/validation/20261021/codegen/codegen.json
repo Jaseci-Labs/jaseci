@@ -1,0 +1,289 @@
+{
+  "generator_sha256": "571e9dcd4263ef0b1a8d4537751af0843be3cc4b531b103ee1084fbe5fde53d9",
+  "input_ir_sha256": "d83fd8f2a3193fb34e7e9d2fda077380af409552ef7213be9e076744eb0294c6",
+  "kernel": "jac_SubtreeQuery_csr_batch",
+  "fields": [
+    "amount",
+    "alert"
+  ],
+  "state": [
+    "count",
+    "total",
+    "has_alert",
+    "visited",
+    "threshold"
+  ],
+  "parameters": [
+    {
+      "name": "values",
+      "dtype": "int64",
+      "length": "node_count",
+      "access": "read",
+      "field_path": "amount"
+    },
+    {
+      "name": "values_1",
+      "dtype": "bool64",
+      "length": "node_count",
+      "access": "read",
+      "field_path": "alert"
+    },
+    {
+      "name": "offsets",
+      "dtype": "int64",
+      "length": "node_count + 1",
+      "access": "read"
+    },
+    {
+      "name": "targets",
+      "dtype": "int64",
+      "length": "edge_count",
+      "access": "read"
+    },
+    {
+      "name": "heads",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "read"
+    },
+    {
+      "name": "initial_total",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "read",
+      "field_path": "count"
+    },
+    {
+      "name": "initial_1",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "read",
+      "field_path": "total"
+    },
+    {
+      "name": "initial_2",
+      "dtype": "bool64",
+      "length": "walker_count",
+      "access": "read",
+      "field_path": "has_alert"
+    },
+    {
+      "name": "initial_3",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "read",
+      "field_path": "visited"
+    },
+    {
+      "name": "initial_4",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "read",
+      "field_path": "threshold"
+    },
+    {
+      "name": "results",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "write",
+      "field_path": "count"
+    },
+    {
+      "name": "results_1",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "write",
+      "field_path": "total"
+    },
+    {
+      "name": "results_2",
+      "dtype": "bool64",
+      "length": "walker_count",
+      "access": "write",
+      "field_path": "has_alert"
+    },
+    {
+      "name": "results_3",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "write",
+      "field_path": "visited"
+    },
+    {
+      "name": "results_4",
+      "dtype": "int64",
+      "length": "walker_count",
+      "access": "write",
+      "field_path": "threshold"
+    },
+    {
+      "name": "status",
+      "dtype": "uint32",
+      "length": "walker_count",
+      "access": "write"
+    },
+    {
+      "name": "queue",
+      "dtype": "int64",
+      "length": "queue_capacity * walker_count",
+      "access": "scratch"
+    },
+    {
+      "name": "node_count",
+      "dtype": "uint64"
+    },
+    {
+      "name": "edge_count",
+      "dtype": "uint64"
+    },
+    {
+      "name": "walker_count",
+      "dtype": "uint64"
+    },
+    {
+      "name": "queue_capacity",
+      "dtype": "uint64"
+    },
+    {
+      "name": "max_visits",
+      "dtype": "uint64"
+    }
+  ],
+  "variants": {
+    "original": {
+      "ptx_sha256": "45b959185e5c08239a3aac2b5397d67b94dfa5a9e3131e55e0708e2f5d95bb88",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 12,
+      "global_store_sites": 13,
+      "bypassed_error_branches": [],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/original.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/original.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 38 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.920 ms\n"
+    },
+    "sroa": {
+      "ptx_sha256": "45b959185e5c08239a3aac2b5397d67b94dfa5a9e3131e55e0708e2f5d95bb88",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 12,
+      "global_store_sites": 13,
+      "bypassed_error_branches": [],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/sroa.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/sroa.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 38 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.852 ms\n"
+    },
+    "O2": {
+      "ptx_sha256": "52e38da308b1b87788ea39b810a319007cb5d1ee76e00df10f2a4ac7fe62579e",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 12,
+      "global_store_sites": 8,
+      "bypassed_error_branches": [],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.245 ms\n"
+    },
+    "O2_no_overflow": {
+      "ptx_sha256": "cb61a7e26d2e44e041d068a31532d9478bcae1d69ae9dd74b3c55ed42acb5427",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 12,
+      "global_store_sites": 8,
+      "bypassed_error_branches": [
+        "integer.overflow",
+        "integer.overflow",
+        "integer.overflow"
+      ],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_no_overflow.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_no_overflow.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.559 ms\n"
+    },
+    "O2_no_validation": {
+      "ptx_sha256": "a8e6c381cf220c352a328c863ede3aaf0581cf938333bdd8acb54ee87a2107bf",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 14,
+      "global_store_sites": 10,
+      "bypassed_error_branches": [
+        "queue.capacity.exceeded",
+        "invalid.node",
+        "visit.limit.exceeded",
+        "queue.capacity.exceeded",
+        "invalid.node",
+        "invalid.csr.offsets"
+      ],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_no_validation.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_no_validation.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.684 ms\n"
+    },
+    "O2_unchecked": {
+      "ptx_sha256": "daf4f6a3085e9f1faef7a7aa78256d7d3b959e8c6cd2a28b60ee790d180805a5",
+      "allocas": 0,
+      "optimized_allocas": 0,
+      "local_load_sites": 0,
+      "local_store_sites": 0,
+      "global_load_sites": 14,
+      "global_store_sites": 10,
+      "bypassed_error_branches": [
+        "queue.capacity.exceeded",
+        "invalid.node",
+        "visit.limit.exceeded",
+        "integer.overflow",
+        "queue.capacity.exceeded",
+        "invalid.node",
+        "integer.overflow",
+        "invalid.csr.offsets",
+        "integer.overflow"
+      ],
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_unchecked.ptx",
+        "-o",
+        "scripts/gpu_walker/subtree_query/validation/20261021/codegen/O2_unchecked.cubin"
+      ],
+      "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_SubtreeQuery_csr_batch' for 'sm_86'\nptxas info    : Function properties for jac_SubtreeQuery_csr_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 528 bytes cmem[0]\nptxas info    : Compile time = 6.428 ms\n"
+    }
+  }
+}

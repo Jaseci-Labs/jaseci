@@ -1,0 +1,17 @@
+# Completed final commands, repository root; PYTHONPATH=jac:scripts/gpu_walker for Jac compiler/CPU commands.
+# Reports use one interleaved primary run and one separate interleaved ablation run.
+env/bin/python scripts/gpu_walker/subtree_query/common.py --probe scripts/gpu_walker/subtree_query/validation/20261021/memory-probe.json
+env/bin/python scripts/gpu_walker/subtree_query/prepare.py --output scripts/gpu_walker/subtree_query/validation/20261021 --memory-probe scripts/gpu_walker/subtree_query/validation/20261021/memory-probe.json
+env/bin/python scripts/gpu_walker/subtree_query/run.py --inputs scripts/gpu_walker/subtree_query/validation/20261021/inputs.json --output scripts/gpu_walker/subtree_query/validation/20261021/ordinary
+/usr/local/bin/nsys profile --trace=cuda --cuda-graph-trace=node --sample=none --cpuctxsw=none --force-overwrite=true --output scripts/gpu_walker/subtree_query/validation/20261021/profile/trace env/bin/python scripts/gpu_walker/subtree_query/run.py --inputs scripts/gpu_walker/subtree_query/validation/20261021/inputs.json --output scripts/gpu_walker/subtree_query/validation/20261021/profile --warmup 3 --repeats 15
+/usr/local/bin/nsys export --type sqlite --force-overwrite=true --output scripts/gpu_walker/subtree_query/validation/20261021/profile/trace.sqlite scripts/gpu_walker/subtree_query/validation/20261021/profile/trace.nsys-rep
+env/bin/python scripts/gpu_walker/subtree_query/analyze.py scripts/gpu_walker/subtree_query/validation/20261021/profile/results.json scripts/gpu_walker/subtree_query/validation/20261021/profile/trace.sqlite --output scripts/gpu_walker/subtree_query/validation/20261021/profile/verified.json
+env/bin/python scripts/gpu_walker/subtree_query/run.py --inputs scripts/gpu_walker/subtree_query/validation/20261021/inputs.json --output scripts/gpu_walker/subtree_query/validation/20261021/ablation-ordinary --ablations --warmup 3 --repeats 15
+/usr/local/bin/nsys profile --trace=cuda --cuda-graph-trace=node --sample=none --cpuctxsw=none --force-overwrite=true --output scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/trace env/bin/python scripts/gpu_walker/subtree_query/run.py --inputs scripts/gpu_walker/subtree_query/validation/20261021/inputs.json --output scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile --ablations --warmup 3 --repeats 15
+/usr/local/bin/nsys export --type sqlite --force-overwrite=true --output scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/trace.sqlite scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/trace.nsys-rep
+env/bin/python scripts/gpu_walker/subtree_query/analyze.py scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/results.json scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/trace.sqlite --output scripts/gpu_walker/subtree_query/validation/20261021/ablation-profile/verified.json
+env/bin/python scripts/gpu_walker/subtree_query/validate.py --validation scripts/gpu_walker/subtree_query/validation/20261021
+env/bin/python -m unittest discover -s scripts/gpu_walker -p test_subtree.py -v
+env/bin/python scripts/gpu_walker/subtree_query/build_report.py scripts/gpu_walker/subtree_query/validation/20261021
+env/bin/python docs/presentations/jac-gpu-subtree/generate.py
+env/bin/python scripts/gpu_walker/subtree_query/record_provenance.py scripts/gpu_walker/subtree_query/validation/20261021 --write-commands

@@ -1,0 +1,2782 @@
+{
+  "timestamp_utc": "2026-10-22T03:42:34.066020+00:00",
+  "generator_sha256": "571e9dcd4263ef0b1a8d4537751af0843be3cc4b531b103ee1084fbe5fde53d9",
+  "jac_source": "jac/examples/gpu/subtree_query.jac",
+  "jac_source_sha256": "38d7a81d3085f7127f39d3c3d941b29189d4b94dda062230303b44dd312bd713",
+  "memory_probe": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "memory_after_context": {
+      "free": 370475008,
+      "total": 25272516608
+    },
+    "snapshot": "Wed Oct 21 23:40:03 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 30%   34C    P2             26W /  350W |   23749MiB /  24576MiB |      5%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         2713465      C   env/bin/python                          256MiB |\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n"
+  },
+  "semantics": "FIFO traversal includes root; match amount>=threshold; count,total,has_alert among matches; visited over all arrivals; threshold retained",
+  "fields": [
+    "amount",
+    "alert"
+  ],
+  "states": [
+    "count",
+    "total",
+    "has_alert",
+    "visited",
+    "threshold"
+  ],
+  "cases": [
+    {
+      "id": "ragged37-mixed33",
+      "tree_nodes": 37,
+      "packed_nodes": 37,
+      "edges": 36,
+      "branching": 2,
+      "max_depth": 5,
+      "queries": 33,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 19,
+      "max_visits": 37,
+      "queue_bytes_per_arm": 5016,
+      "allocation_upper_eight_arms": 54520,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 186,
+      "total_matches": 145,
+      "visit_min": 0,
+      "visit_median": 1.0,
+      "visit_max": 37,
+      "max_abs_amount": 980,
+      "sum_bound": 36260,
+      "setup_ms": {
+        "cpu_oracle": 0.27963705360889435,
+        "graph_objects": 0.11345604434609413,
+        "serial_jac": 5.376379005610943,
+        "packing": 0.6366430316120386
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            37
+          ],
+          "bytes": 296,
+          "sha256": "a3b469a1ead2c6318b0a80441b416f72124865fbf4c0d0875cf10a2a1b6cb19f"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            37
+          ],
+          "bytes": 296,
+          "sha256": "14088d9a1dac3f13baddcf563198fd2f83b56369a6a055ea8ec0887e5f0e8a40"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            38
+          ],
+          "bytes": 304,
+          "sha256": "12adc9fae53e5e2d96046cdb866c30f841efea28493ddf99db5a971f8d1b5b8c"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            36
+          ],
+          "bytes": 288,
+          "sha256": "11515d1652721f625d11a9d8bad0d569ea11fd524eac52f931e22fdb0409c4b4"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "3e0fa9266abdd084ea0b08fd455c3efaa88aae0eb7e589c10612f1a5cd0651eb"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "8280ad45cbfba5b84ed93a000614cf6e7840441be4ac26b2ac89c8e2f763013e"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            33,
+            5
+          ],
+          "bytes": 1320,
+          "sha256": "27beebbe7d8d2b9d136024950708362e7f229fd88e0a982fa26f87ac51656726"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            33,
+            5
+          ],
+          "bytes": 1320,
+          "sha256": "27beebbe7d8d2b9d136024950708362e7f229fd88e0a982fa26f87ac51656726"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            37
+          ],
+          "bytes": 296,
+          "sha256": "5afa2beb94c0d4850f91f89126b411f0e1a7cecbfd4bb64ea5e9fa1dae738344"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            33
+          ],
+          "bytes": 264,
+          "sha256": "72bc6da6508df48cb188b3ceb36ef105abc2d4092da40104cd2df92514b50c84"
+        }
+      }
+    },
+    {
+      "id": "binary511-root32",
+      "tree_nodes": 511,
+      "packed_nodes": 511,
+      "edges": 510,
+      "branching": 2,
+      "max_depth": 8,
+      "queries": 32,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 256,
+      "max_visits": 511,
+      "queue_bytes_per_arm": 65536,
+      "allocation_upper_eight_arms": 553448,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 16352,
+      "total_matches": 8872,
+      "visit_min": 511,
+      "visit_median": 511.0,
+      "visit_max": 511,
+      "max_abs_amount": 1000,
+      "sum_bound": 511000,
+      "setup_ms": {
+        "cpu_oracle": 8.321505971252918,
+        "graph_objects": 1.3157299254089594,
+        "serial_jac": 246.89473188482225,
+        "packing": 5.264592124149203
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "7eab960bfd716efb75140e3e0472b2dbfa7383754a38f26358a3fe7b27b8688f"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "e12d9895b996081dd67e1a93d81a9e7ce96187e3ab19f20f4461f13ed6c89ebc"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            512
+          ],
+          "bytes": 4096,
+          "sha256": "761158061b0eae8b35e46347d96a58809312098f21444045851f71bd6facaea5"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            510
+          ],
+          "bytes": 4080,
+          "sha256": "1e788fa3ce8a2b9812de4a4b77cfa5bf1f551d48f0a8856b61201a82d7b81cd4"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "958c7af903d15fcf426f514511d7c1219e47ed8ebe3f90abcda9e3cdf08af7b3"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "b719eb7e716e2cc48f4fd791e142c74c25073787a90ae849f70cefa1487b8f6f"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "b719eb7e716e2cc48f4fd791e142c74c25073787a90ae849f70cefa1487b8f6f"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "976db3461a2d98ab5dd4271ffe39c07a018b7244418032430d6b07fbd10eabe2"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        }
+      }
+    },
+    {
+      "id": "binary511-mixed256",
+      "tree_nodes": 511,
+      "packed_nodes": 511,
+      "edges": 510,
+      "branching": 2,
+      "max_depth": 8,
+      "queries": 256,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 256,
+      "max_visits": 511,
+      "queue_bytes_per_arm": 524288,
+      "allocation_upper_eight_arms": 4313064,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 2222,
+      "total_matches": 1295,
+      "visit_min": 1,
+      "visit_median": 3.0,
+      "visit_max": 511,
+      "max_abs_amount": 1000,
+      "sum_bound": 511000,
+      "setup_ms": {
+        "cpu_oracle": 4.603873938322067,
+        "graph_objects": 1.246986910700798,
+        "serial_jac": 39.11521704867482,
+        "packing": 6.663495907559991
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "c0302db018c6207113bc3149f654a13528d0f3be46fd64eb6a87c2a431d5c0c9"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "d772136c6b0ad7b43fbee177c66a2d988447112b2c690a1c625bb1cab0a23d0d"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            512
+          ],
+          "bytes": 4096,
+          "sha256": "816735da0e2b3b9341da5bdd4ead6630b69c3ad77cfcc8468b10660331db0e36"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            510
+          ],
+          "bytes": 4080,
+          "sha256": "d2cee8d90def9235e3e2a824c59b5c6c263f16b506ee69b9e4cd903221dfed40"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "1538bdb0d43a40c8777080bfde83ba5a97aa46954abdcdc37cea8f0de683b9e5"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "a60d45c72f63beca5095e99a7260e283e87fd1820909f7a381fd11d709ab012c"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "a60d45c72f63beca5095e99a7260e283e87fd1820909f7a381fd11d709ab012c"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            511
+          ],
+          "bytes": 4088,
+          "sha256": "695099867692c5b03da458e96610754a3420cf2adf3b04b5e8cb99b7dc8cb914"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "f300477c0dfbc3c2cef4fb584e260936990c18ccf3381d0e8a270083cd13e704"
+        }
+      }
+    },
+    {
+      "id": "binary4095-root16",
+      "tree_nodes": 4095,
+      "packed_nodes": 4095,
+      "edges": 4094,
+      "branching": 2,
+      "max_depth": 11,
+      "queries": 16,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 2048,
+      "max_visits": 4095,
+      "queue_bytes_per_arm": 262144,
+      "allocation_upper_eight_arms": 2234600,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 65520,
+      "total_matches": 36144,
+      "visit_min": 4095,
+      "visit_median": 4095.0,
+      "visit_max": 4095,
+      "max_abs_amount": 1000,
+      "sum_bound": 4095000,
+      "setup_ms": {
+        "cpu_oracle": 226.96731216274202,
+        "graph_objects": 10.872512124478817,
+        "serial_jac": 989.0647048596293,
+        "packing": 35.31448799185455
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "a606c3a36a417135940f3816de5eab6d128a703787d78e938658aa8ecbb21b38"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "b3e60d27f493b019224f734fe5c674d514b7ac983285f434219650d9be4ee502"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4096
+          ],
+          "bytes": 32768,
+          "sha256": "1af85a4ec700ea7c18743a374d5395d1f2a5220c857dd85f3464a7080f788f5f"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4094
+          ],
+          "bytes": 32752,
+          "sha256": "2ee78d5ec2abd5832ff124164ab7f809bfb829dcaaf9da106768612662b86d1e"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "692af757291d838bd85f9e1bac29d91127fcd2d273251ce9b7597bf22e171251"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            16,
+            5
+          ],
+          "bytes": 640,
+          "sha256": "ecb790af45498f76065c833293f359fa7f711fcfd0aa62c65208a7fe316808a7"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            16,
+            5
+          ],
+          "bytes": 640,
+          "sha256": "ecb790af45498f76065c833293f359fa7f711fcfd0aa62c65208a7fe316808a7"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "92b1065814a3829ff2789d12d4835fc54ef478ffb1c9d92c9101bc72e23f1cb4"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        }
+      }
+    },
+    {
+      "id": "binary4095-mixed256",
+      "tree_nodes": 4095,
+      "packed_nodes": 4095,
+      "edges": 4094,
+      "branching": 2,
+      "max_depth": 11,
+      "queries": 256,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 2048,
+      "max_visits": 4095,
+      "queue_bytes_per_arm": 4194304,
+      "allocation_upper_eight_arms": 33787880,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 6290,
+      "total_matches": 5128,
+      "visit_min": 1,
+      "visit_median": 1.0,
+      "visit_max": 4095,
+      "max_abs_amount": 1000,
+      "sum_bound": 4095000,
+      "setup_ms": {
+        "cpu_oracle": 207.6184598263353,
+        "graph_objects": 37.197286961600184,
+        "serial_jac": 103.25032309629023,
+        "packing": 38.417204981669784
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "7f977d547560841487e3ab858bcdff6839540fd3a8ffa5fd312f9c0da730a190"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "019f36ca129d01b73f84400136aafa9392d3a49b9e81cc77452b0382c1f0c7d1"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4096
+          ],
+          "bytes": 32768,
+          "sha256": "983310b667eadb8a39e27e825f752ae0dea388dd8801f69aece2e043376ec4b3"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4094
+          ],
+          "bytes": 32752,
+          "sha256": "b9223e166031ecafbca3660e21bc529c192954b37ca97e7f86b64f1781957820"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "dbfc52a3e3cbad45e05fd6666e3f3efcb4387be451a146897561149feb9fc550"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "8cc49989087f9e8e867392751a44b158f41bbe7663dbfab8b6d181346e734fdd"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "8cc49989087f9e8e867392751a44b158f41bbe7663dbfab8b6d181346e734fdd"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "5ee50e85a4736088eb96fb4194de3b3300ce13f445c3c43360f84ded7fa7c5e1"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "9ec9c21a77720fe2826d3645d9d2f39c2384117adb4c3b36936cbde4bb603289"
+        }
+      }
+    },
+    {
+      "id": "binary4095-leaf1024",
+      "tree_nodes": 4095,
+      "packed_nodes": 817,
+      "edges": 0,
+      "branching": 2,
+      "max_depth": 11,
+      "queries": 1024,
+      "root_mode": "leaf",
+      "predicate_mode": "varied",
+      "queue_capacity": 1,
+      "max_visits": 1,
+      "queue_bytes_per_arm": 8192,
+      "allocation_upper_eight_arms": 606184,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 1024,
+      "total_matches": 522,
+      "visit_min": 1,
+      "visit_median": 1.0,
+      "visit_max": 1,
+      "max_abs_amount": 1000,
+      "sum_bound": 1000,
+      "setup_ms": {
+        "cpu_oracle": 208.3242549560964,
+        "graph_objects": 11.25545590184629,
+        "serial_jac": 32.816109945997596,
+        "packing": 10.06408198736608
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            817
+          ],
+          "bytes": 6536,
+          "sha256": "3cc9cab89b098042fac71d46165143c5950eb5aecc2aed1a6b021fae74a7b8f4"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            817
+          ],
+          "bytes": 6536,
+          "sha256": "5c43e1b6ab096be1c206cc1ffa11fc7c3101437cc51f1f0234078610449ada5a"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            818
+          ],
+          "bytes": 6544,
+          "sha256": "94d4ae6842b156d033327f9242a8f923776185de10f54b63935dbfc5307e8617"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            0
+          ],
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "29bf384840ac3543229205f0ef506964fbdbfd1915ecf21128027e2ff8c34c71"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "159052104eadfaa6185c5182c163e2d291ee1b07cf529bc15e14a3b37338e093"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024,
+            5
+          ],
+          "bytes": 40960,
+          "sha256": "0b3d7b46640e99d72018efd5915e52084f486c3350ec8e2b1b2e6e462cf3f5a6"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024,
+            5
+          ],
+          "bytes": 40960,
+          "sha256": "0b3d7b46640e99d72018efd5915e52084f486c3350ec8e2b1b2e6e462cf3f5a6"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            817
+          ],
+          "bytes": 6536,
+          "sha256": "453000ebadbd6ba2e34b20af25e9e5cc343da5bef6b496defcbeac6f17151604"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "3b869393b4c2eaac2d147517176fb46b599c1dd23db3d3ad637dc63150c208dc"
+        }
+      }
+    },
+    {
+      "id": "binary4095-small1024",
+      "tree_nodes": 4095,
+      "packed_nodes": 1311,
+      "edges": 616,
+      "branching": 2,
+      "max_depth": 11,
+      "queries": 1024,
+      "root_mode": "small",
+      "predicate_mode": "varied",
+      "queue_capacity": 2,
+      "max_visits": 3,
+      "queue_bytes_per_arm": 16384,
+      "allocation_upper_eight_arms": 671720,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 1744,
+      "total_matches": 898,
+      "visit_min": 1,
+      "visit_median": 1.0,
+      "visit_max": 3,
+      "max_abs_amount": 1000,
+      "sum_bound": 3000,
+      "setup_ms": {
+        "cpu_oracle": 209.4256228301674,
+        "graph_objects": 48.42985002323985,
+        "serial_jac": 45.63059308566153,
+        "packing": 15.664339065551758
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1311
+          ],
+          "bytes": 10488,
+          "sha256": "2e3ee20a3cb81c3e7e5458c1da8c0d06052458bb6592ccaed14caa4c58545c06"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1311
+          ],
+          "bytes": 10488,
+          "sha256": "d6730134f4b39bc02addce94a0012059aa185f0857f8f19b4d2251cb7fd47ef3"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1312
+          ],
+          "bytes": 10496,
+          "sha256": "8bea8a234b5576d385fe893796447f84d6444e0b0ff0d57cfc0cc202946ceda2"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            616
+          ],
+          "bytes": 4928,
+          "sha256": "c9802edb8be4bbb1899ac89f9139b5e93a923d55f32af1b0f24e2681cd1a791f"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "4e0118721545c41224e6bb13d8bdc47fa61fa6fcd76ea3c5e1412c375f15135e"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "159052104eadfaa6185c5182c163e2d291ee1b07cf529bc15e14a3b37338e093"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024,
+            5
+          ],
+          "bytes": 40960,
+          "sha256": "f798b96a15ec5ae0ae1f3877dcf489efd84268da895c9fc91ab719b7961b44b9"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024,
+            5
+          ],
+          "bytes": 40960,
+          "sha256": "f798b96a15ec5ae0ae1f3877dcf489efd84268da895c9fc91ab719b7961b44b9"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1311
+          ],
+          "bytes": 10488,
+          "sha256": "22483aef93972b339ea9ebd83cad5643c63f1d46872e273ace22ac7dff9a7118"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "bc0c0a6fb7a2334c350da644281448392e534c950cee0875011bb2a1ec417459"
+        }
+      }
+    },
+    {
+      "id": "ternary3280-root16",
+      "tree_nodes": 3280,
+      "packed_nodes": 3280,
+      "edges": 3279,
+      "branching": 3,
+      "max_depth": 7,
+      "queries": 16,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 2187,
+      "max_visits": 3280,
+      "queue_bytes_per_arm": 279936,
+      "allocation_upper_eight_arms": 2350856,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 52480,
+      "total_matches": 29185,
+      "visit_min": 3280,
+      "visit_median": 3280.0,
+      "visit_max": 3280,
+      "max_abs_amount": 1000,
+      "sum_bound": 3280000,
+      "setup_ms": {
+        "cpu_oracle": 150.91833798214793,
+        "graph_objects": 8.600879926234484,
+        "serial_jac": 776.2491188477725,
+        "packing": 28.586329892277718
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            3280
+          ],
+          "bytes": 26240,
+          "sha256": "348057acbe61bd15b8e79ae486860eca12301407efc6f6dd3be776e24172c6ac"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            3280
+          ],
+          "bytes": 26240,
+          "sha256": "8dce1f0d9c0cd58e91a4dfe7831ac968bc7db36e462b853008acda1a095224b3"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            3281
+          ],
+          "bytes": 26248,
+          "sha256": "aae1ad4af200de67f7cfcd6420346e09d8a76de0e616c809cba8bbeb52e26d35"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            3279
+          ],
+          "bytes": 26232,
+          "sha256": "ac5fa843235d3a6aff12a1911f45861f0961e2472c721a28f4ae85f149469306"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "692af757291d838bd85f9e1bac29d91127fcd2d273251ce9b7597bf22e171251"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            16,
+            5
+          ],
+          "bytes": 640,
+          "sha256": "1b8cbbe614e24a4b795220215c0b97549901101853d728e12fb0e633513404b4"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            16,
+            5
+          ],
+          "bytes": 640,
+          "sha256": "1b8cbbe614e24a4b795220215c0b97549901101853d728e12fb0e633513404b4"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            3280
+          ],
+          "bytes": 26240,
+          "sha256": "60e983beb1595fa12019f128210fa64e05156643982ab3bf0a724238ffa1c294"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            16
+          ],
+          "bytes": 128,
+          "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        }
+      }
+    },
+    {
+      "id": "quaternary4093-mixed128",
+      "tree_nodes": 4093,
+      "packed_nodes": 4093,
+      "edges": 4092,
+      "branching": 4,
+      "max_depth": 6,
+      "queries": 128,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 3070,
+      "max_visits": 4093,
+      "queue_bytes_per_arm": 3143680,
+      "allocation_upper_eight_arms": 25331624,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 4516,
+      "total_matches": 4404,
+      "visit_min": 1,
+      "visit_median": 1.0,
+      "visit_max": 4093,
+      "max_abs_amount": 1000,
+      "sum_bound": 4093000,
+      "setup_ms": {
+        "cpu_oracle": 209.91182699799538,
+        "graph_objects": 40.66699184477329,
+        "serial_jac": 68.33932199515402,
+        "packing": 37.703416077420115
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            4093
+          ],
+          "bytes": 32744,
+          "sha256": "e66dda439b64bd7afe74e115ebeff797e192fcc4bc0e9761d31914cfd78fbe93"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            4093
+          ],
+          "bytes": 32744,
+          "sha256": "274102384804450b9a0ccffe8363e8c6079f5379f2a589bd9d5a8d504aaebc79"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4094
+          ],
+          "bytes": 32752,
+          "sha256": "5fb27333f78a7ea4c7996f3c679ed73f15636d570ae33043eefcc616e0a520e6"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4092
+          ],
+          "bytes": 32736,
+          "sha256": "a15ff8f546165585e1c99dd25ad15faae9ad941690a4e115d7bb20cc0038374a"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "e26797017df5589a8e82a0ae1417516495b3913f1f73da42010d032e6d8627c1"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "505f131fe1b8caa0513467ac48e037e132da1c4c609020e31117c8bdfeb5497c"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "f0831212ce35da3b7c5435cc78118d99e211310c533c6752889d2f7dae2b0ab9"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "f0831212ce35da3b7c5435cc78118d99e211310c533c6752889d2f7dae2b0ab9"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            4093
+          ],
+          "bytes": 32744,
+          "sha256": "b5b3001f5909901022a6d6175756d02a9e9c8267d9133b20b55281510f7d42cf"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "ca52a2db1d8867161c0bb634e6dbf58b9d0619994f61b4a76d314cd32854b6d0"
+        }
+      }
+    },
+    {
+      "id": "chain2048-mixed32",
+      "tree_nodes": 2048,
+      "packed_nodes": 2048,
+      "edges": 2047,
+      "branching": 1,
+      "max_depth": 2047,
+      "queries": 32,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 1,
+      "max_visits": 2048,
+      "queue_bytes_per_arm": 256,
+      "allocation_upper_eight_arms": 80392,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 32015,
+      "total_matches": 20163,
+      "visit_min": 36,
+      "visit_median": 880.0,
+      "visit_max": 2048,
+      "max_abs_amount": 1000,
+      "sum_bound": 2048000,
+      "setup_ms": {
+        "cpu_oracle": 59.79590700007975,
+        "graph_objects": 5.974532105028629,
+        "serial_jac": 508.4401988424361,
+        "packing": 19.310487899929285
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            2048
+          ],
+          "bytes": 16384,
+          "sha256": "14988cb97b13c4dc02e25caa03086748377d5096e8c9f665f7ca7ee65126deb4"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            2048
+          ],
+          "bytes": 16384,
+          "sha256": "37e7fee7480513f517073e22e68f413ab1dafed2e38e0e16403287546beb9167"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            2049
+          ],
+          "bytes": 16392,
+          "sha256": "13947d2c55addb1ad93c36093352d817346f1e4c18d1463ed4d4b5a583c49fee"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            2047
+          ],
+          "bytes": 16376,
+          "sha256": "1721530c1b9157cbb871cf583a2dd5a31ae9e89cef317bfee9b04d28342f2baa"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "bcc9bcfc670935c6018dc26a74956a373b655f8930dd55ab074d816d7d233780"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "958c7af903d15fcf426f514511d7c1219e47ed8ebe3f90abcda9e3cdf08af7b3"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "785bf0e372293ec8515aaa6f2717590bc23fa849f3aa6446d4eb86d15f989de5"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "785bf0e372293ec8515aaa6f2717590bc23fa849f3aa6446d4eb86d15f989de5"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            2048
+          ],
+          "bytes": 16384,
+          "sha256": "f4737df178acd79f55983bea5f1a4a8ed172963631f67201e38e5f9bf29054aa"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "eca27731f7de5d7f2519493cb7897cdfc398b786d8f849cdb8f74d0c9fd4f1ed"
+        }
+      }
+    },
+    {
+      "id": "irregular4095-mixed128",
+      "tree_nodes": 4095,
+      "packed_nodes": 4095,
+      "edges": 4094,
+      "branching": "irregular",
+      "max_depth": 22,
+      "queries": 128,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 475,
+      "max_visits": 4095,
+      "queue_bytes_per_arm": 486400,
+      "allocation_upper_eight_arms": 4073448,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 5286,
+      "total_matches": 4788,
+      "visit_min": 1,
+      "visit_median": 2.0,
+      "visit_max": 4095,
+      "max_abs_amount": 1000,
+      "sum_bound": 4095000,
+      "setup_ms": {
+        "cpu_oracle": 206.05785003863275,
+        "graph_objects": 11.508390074595809,
+        "serial_jac": 85.41965205222368,
+        "packing": 73.71934689581394
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "e23727a3c519db33366903aac66469df8fbbff890da57e13b3c9f2bc6c8b3f4f"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "d9cd1fd3ce645b16ba90c358f0841eb8c6f69ba4a2e0f670179ae5d4fd66f1ae"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4096
+          ],
+          "bytes": 32768,
+          "sha256": "77800d4f2000230dabe370754da7d97fbda1353e5a6e7ba84cfa144c66d25069"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            4094
+          ],
+          "bytes": 32752,
+          "sha256": "302548a842d78298c759fb1ace0afbfe08a3c6b8f7e712a9290383fc77eef6ad"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "58b772fe9d2851f7d1ecdfb9e4d8bc720681a1511293c15b70c968f6760df2c0"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "505f131fe1b8caa0513467ac48e037e132da1c4c609020e31117c8bdfeb5497c"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "7de72c6cfa12f8f44cb599f17245c923abb805f40e548b8b294b59ed3965202e"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "7de72c6cfa12f8f44cb599f17245c923abb805f40e548b8b294b59ed3965202e"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            4095
+          ],
+          "bytes": 32760,
+          "sha256": "9e10f011952793e5fbcc97461e9376124abf6e1398805e41ad662c5a76b4fe1d"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "b75fdbde974486db2e9d7361cfb77c8dbe3fcdbabfac5dc7dc025513f0d40fb1"
+        }
+      }
+    },
+    {
+      "id": "irregular16383-mixed256",
+      "tree_nodes": 16383,
+      "packed_nodes": 16383,
+      "edges": 16382,
+      "branching": "irregular",
+      "max_depth": 23,
+      "queries": 256,
+      "root_mode": "mixed",
+      "predicate_mode": "varied",
+      "queue_capacity": 2028,
+      "max_visits": 16383,
+      "queue_bytes_per_arm": 4153344,
+      "allocation_upper_eight_arms": 33853416,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 18603,
+      "total_matches": 17688,
+      "visit_min": 1,
+      "visit_median": 2.0,
+      "visit_max": 16383,
+      "max_abs_amount": 1000,
+      "sum_bound": 16383000,
+      "setup_ms": {
+        "cpu_oracle": 3249.1242189425975,
+        "graph_objects": 87.40964601747692,
+        "serial_jac": 305.0226520281285,
+        "packing": 201.34150981903076
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            16383
+          ],
+          "bytes": 131064,
+          "sha256": "0127cb2e8f326b72006ae7fd512cd9def023cdf70aa61ec91ce30d1e886af966"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            16383
+          ],
+          "bytes": 131064,
+          "sha256": "ddc61c8dc3155ff63f0af1472292e67c32ebeada3c390b270958dd675baa8247"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            16384
+          ],
+          "bytes": 131072,
+          "sha256": "1d3693fcd0a8cef1f5ac6a0311ec93bf0f597c9ffc82016c0d9dbe0a3f985567"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            16382
+          ],
+          "bytes": 131056,
+          "sha256": "922339914cca01ad7aa0c27c8bae357b61d5f9d77431381d0d3d8b589ad2d50b"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "3f4e8996cd7afbe28d21fbca073ea7595712e95bae4de3274debc2ce4c508d5f"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "590957e0c4b5d9a4b3fe8dd26f258df38e778c3d22ac7f389d2e824ddd7b9bf4"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            256,
+            5
+          ],
+          "bytes": 10240,
+          "sha256": "590957e0c4b5d9a4b3fe8dd26f258df38e778c3d22ac7f389d2e824ddd7b9bf4"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            16383
+          ],
+          "bytes": 131064,
+          "sha256": "9c809c33fdcb295a8155640ce896987dd5f08a870b8208766e40ff9bf4307787"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            256
+          ],
+          "bytes": 2048,
+          "sha256": "f130cc4fe490fb3efe9c2b6c86a17df814480ff7fc58f09d2503c6c7549820ca"
+        }
+      }
+    },
+    {
+      "id": "binary1023-root1",
+      "tree_nodes": 1023,
+      "packed_nodes": 1023,
+      "edges": 1022,
+      "branching": 2,
+      "max_depth": 9,
+      "queries": 1,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 512,
+      "max_visits": 1023,
+      "queue_bytes_per_arm": 4096,
+      "allocation_upper_eight_arms": 65912,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 1023,
+      "total_matches": 1023,
+      "visit_min": 1023,
+      "visit_median": 1023.0,
+      "visit_max": 1023,
+      "max_abs_amount": 999,
+      "sum_bound": 1021977,
+      "setup_ms": {
+        "cpu_oracle": 15.422101132571697,
+        "graph_objects": 2.876554150134325,
+        "serial_jac": 15.796152874827385,
+        "packing": 9.190225973725319
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "d058c1b060bb2bb6d03578bfbf30e69cb66d4fa64842f175b89442d85641d819"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "5198e986193ba2297785292205671a76557055c3333018e9fb4a90402b01d145"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "361b72c2bc2d5169904e83efede9369b4724b4dd17e2a7b109e2edbb036b2d2a"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1022
+          ],
+          "bytes": 8176,
+          "sha256": "14d921b998fbfdc2a5043f2f8ad3a84e24c5e822035f510242e17b8d89918a33"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "8283eb3250d4d30aa124a3a85a9e6393a608f2bb1aa4694d74ff659b5f44cf0e"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            1,
+            5
+          ],
+          "bytes": 40,
+          "sha256": "8c0ee84cb6b60b86bd3d15bf493028d43d389b7cf902ed0be82a09073497ed70"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            1,
+            5
+          ],
+          "bytes": 40,
+          "sha256": "8c0ee84cb6b60b86bd3d15bf493028d43d389b7cf902ed0be82a09073497ed70"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "c740458864bde0fb83b1666dedabc53c5f87ad990e976c319bb585efd13c4375"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            1
+          ],
+          "bytes": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        }
+      }
+    },
+    {
+      "id": "binary1023-root32",
+      "tree_nodes": 1023,
+      "packed_nodes": 1023,
+      "edges": 1022,
+      "branching": 2,
+      "max_depth": 9,
+      "queries": 32,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 512,
+      "max_visits": 1023,
+      "queue_bytes_per_arm": 131072,
+      "allocation_upper_eight_arms": 1094120,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 32736,
+      "total_matches": 17877,
+      "visit_min": 1023,
+      "visit_median": 1023.0,
+      "visit_max": 1023,
+      "max_abs_amount": 999,
+      "sum_bound": 1021977,
+      "setup_ms": {
+        "cpu_oracle": 23.70521379634738,
+        "graph_objects": 2.8789080679416656,
+        "serial_jac": 493.52254695259035,
+        "packing": 9.093116968870163
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "d058c1b060bb2bb6d03578bfbf30e69cb66d4fa64842f175b89442d85641d819"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "5198e986193ba2297785292205671a76557055c3333018e9fb4a90402b01d145"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "361b72c2bc2d5169904e83efede9369b4724b4dd17e2a7b109e2edbb036b2d2a"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1022
+          ],
+          "bytes": 8176,
+          "sha256": "14d921b998fbfdc2a5043f2f8ad3a84e24c5e822035f510242e17b8d89918a33"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "958c7af903d15fcf426f514511d7c1219e47ed8ebe3f90abcda9e3cdf08af7b3"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "f4de86815eb30cdaaa702ad116a2a16e7130d2ae2864f54fea39d23d65abfe12"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            32,
+            5
+          ],
+          "bytes": 1280,
+          "sha256": "f4de86815eb30cdaaa702ad116a2a16e7130d2ae2864f54fea39d23d65abfe12"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "c740458864bde0fb83b1666dedabc53c5f87ad990e976c319bb585efd13c4375"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            32
+          ],
+          "bytes": 256,
+          "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+        }
+      }
+    },
+    {
+      "id": "binary1023-root128",
+      "tree_nodes": 1023,
+      "packed_nodes": 1023,
+      "edges": 1022,
+      "branching": 2,
+      "max_depth": 9,
+      "queries": 128,
+      "root_mode": "root",
+      "predicate_mode": "varied",
+      "queue_capacity": 512,
+      "max_visits": 1023,
+      "queue_bytes_per_arm": 524288,
+      "allocation_upper_eight_arms": 4278248,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 130944,
+      "total_matches": 69350,
+      "visit_min": 1023,
+      "visit_median": 1023.0,
+      "visit_max": 1023,
+      "max_abs_amount": 999,
+      "sum_bound": 1021977,
+      "setup_ms": {
+        "cpu_oracle": 51.79291218519211,
+        "graph_objects": 2.7514679823070765,
+        "serial_jac": 1965.4928559903055,
+        "packing": 9.625303093343973
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "d058c1b060bb2bb6d03578bfbf30e69cb66d4fa64842f175b89442d85641d819"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "5198e986193ba2297785292205671a76557055c3333018e9fb4a90402b01d145"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "361b72c2bc2d5169904e83efede9369b4724b4dd17e2a7b109e2edbb036b2d2a"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1022
+          ],
+          "bytes": 8176,
+          "sha256": "14d921b998fbfdc2a5043f2f8ad3a84e24c5e822035f510242e17b8d89918a33"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "505f131fe1b8caa0513467ac48e037e132da1c4c609020e31117c8bdfeb5497c"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "5e1ebb852517ba0f13cc1397fb07bb2f717e7931c11a72ed545931cc3aec58c6"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "5e1ebb852517ba0f13cc1397fb07bb2f717e7931c11a72ed545931cc3aec58c6"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "c740458864bde0fb83b1666dedabc53c5f87ad990e976c319bb585efd13c4375"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        }
+      }
+    },
+    {
+      "id": "binary1023-root128-all",
+      "tree_nodes": 1023,
+      "packed_nodes": 1023,
+      "edges": 1022,
+      "branching": 2,
+      "max_depth": 9,
+      "queries": 128,
+      "root_mode": "root",
+      "predicate_mode": "all",
+      "queue_capacity": 512,
+      "max_visits": 1023,
+      "queue_bytes_per_arm": 524288,
+      "allocation_upper_eight_arms": 4278248,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 130944,
+      "total_matches": 130944,
+      "visit_min": 1023,
+      "visit_median": 1023.0,
+      "visit_max": 1023,
+      "max_abs_amount": 999,
+      "sum_bound": 1021977,
+      "setup_ms": {
+        "cpu_oracle": 55.42526300996542,
+        "graph_objects": 2.8785408940166235,
+        "serial_jac": 2015.9961259923875,
+        "packing": 9.698105975985527
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "d058c1b060bb2bb6d03578bfbf30e69cb66d4fa64842f175b89442d85641d819"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "5198e986193ba2297785292205671a76557055c3333018e9fb4a90402b01d145"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "361b72c2bc2d5169904e83efede9369b4724b4dd17e2a7b109e2edbb036b2d2a"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1022
+          ],
+          "bytes": 8176,
+          "sha256": "14d921b998fbfdc2a5043f2f8ad3a84e24c5e822035f510242e17b8d89918a33"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "c3c0df3f6ea8f1ebce14987fa95b87125573f7a73292b8599377380fcd7faaa9"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "06591280c02e478d34870dd773febee01b1b4f860cbe6c0c9a50fe7e204241af"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "06591280c02e478d34870dd773febee01b1b4f860cbe6c0c9a50fe7e204241af"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "c740458864bde0fb83b1666dedabc53c5f87ad990e976c319bb585efd13c4375"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        }
+      }
+    },
+    {
+      "id": "binary1023-root128-none",
+      "tree_nodes": 1023,
+      "packed_nodes": 1023,
+      "edges": 1022,
+      "branching": 2,
+      "max_depth": 9,
+      "queries": 128,
+      "root_mode": "root",
+      "predicate_mode": "none",
+      "queue_capacity": 512,
+      "max_visits": 1023,
+      "queue_bytes_per_arm": 524288,
+      "allocation_upper_eight_arms": 4278248,
+      "memory_budget": 203761254,
+      "layout": "production pack_walkers discovery order",
+      "total_node_visits": 130944,
+      "total_matches": 0,
+      "visit_min": 1023,
+      "visit_median": 1023.0,
+      "visit_max": 1023,
+      "max_abs_amount": 999,
+      "sum_bound": 1021977,
+      "setup_ms": {
+        "cpu_oracle": 48.0513870716095,
+        "graph_objects": 3.1247390434145927,
+        "serial_jac": 1937.5344289001077,
+        "packing": 10.169096989557147
+      },
+      "serial_and_independent_oracle_verified": true,
+      "packed_graph_identity_verified": true,
+      "files": {
+        "amount": {
+          "path": "amount.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "d058c1b060bb2bb6d03578bfbf30e69cb66d4fa64842f175b89442d85641d819"
+        },
+        "alert": {
+          "path": "alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "5198e986193ba2297785292205671a76557055c3333018e9fb4a90402b01d145"
+        },
+        "offsets": {
+          "path": "offsets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1024
+          ],
+          "bytes": 8192,
+          "sha256": "361b72c2bc2d5169904e83efede9369b4724b4dd17e2a7b109e2edbb036b2d2a"
+        },
+        "targets": {
+          "path": "targets.bin",
+          "dtype": "<i8",
+          "shape": [
+            1022
+          ],
+          "bytes": 8176,
+          "sha256": "14d921b998fbfdc2a5043f2f8ad3a84e24c5e822035f510242e17b8d89918a33"
+        },
+        "heads": {
+          "path": "heads.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_count": {
+          "path": "initial_count.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_total": {
+          "path": "initial_total.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_has_alert": {
+          "path": "initial_has_alert.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_visited": {
+          "path": "initial_visited.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        },
+        "initial_threshold": {
+          "path": "initial_threshold.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "894433fa4a25e6fdea76da9aff976051f8d33596fbdd6aaf122fd5e9a4c7a906"
+        },
+        "expected": {
+          "path": "expected.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "45aa1086697b7868d2031fc5f03feb0ed7b5e070ef1598ba7acfc368fba540ab"
+        },
+        "serial": {
+          "path": "serial.bin",
+          "dtype": "<i8",
+          "shape": [
+            128,
+            5
+          ],
+          "bytes": 5120,
+          "sha256": "45aa1086697b7868d2031fc5f03feb0ed7b5e070ef1598ba7acfc368fba540ab"
+        },
+        "original_node_ids": {
+          "path": "original_node_ids.bin",
+          "dtype": "<i8",
+          "shape": [
+            1023
+          ],
+          "bytes": 8184,
+          "sha256": "c740458864bde0fb83b1666dedabc53c5f87ad990e976c319bb585efd13c4375"
+        },
+        "original_roots": {
+          "path": "original_roots.bin",
+          "dtype": "<i8",
+          "shape": [
+            128
+          ],
+          "bytes": 1024,
+          "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+        }
+      }
+    }
+  ]
+}

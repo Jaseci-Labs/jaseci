@@ -1,0 +1,22 @@
+ragged37-mixed33 {'Jac original': 19.144, 'Jac O2': 19.86, 'CUDA checked': 19.22}
+binary511-root32 {'Jac original': 243.144, 'Jac O2': 265.108, 'CUDA checked': 246.296}
+binary511-mixed256 {'Jac original': 175.112, 'Jac O2': 186.396, 'CUDA checked': 177.036}
+binary4095-root16 {'Jac original': 2024.056, 'Jac O2': 2178.804, 'CUDA checked': 2051.356}
+binary4095-mixed256 {'Jac original': 2058.452, 'Jac O2': 2247.764, 'CUDA checked': 2079.668}
+binary4095-leaf1024 {'Jac original': 3.58, 'Jac O2': 3.584, 'CUDA checked': 3.564}
+binary4095-small1024 {'Jac original': 5.092, 'Jac O2': 5.092, 'CUDA checked': 5.008}
+ternary3280-root16 {'Jac original': 1654.284, 'Jac O2': 1768.992, 'CUDA checked': 1674.46}
+quaternary4093-mixed128 {'Jac original': 2047.868, 'Jac O2': 2206.46, 'CUDA checked': 2072.984}
+chain2048-mixed32 {'Jac original': 750.836, 'Jac O2': 791.404, 'CUDA checked': 757.62}
+irregular4095-mixed128 {'Jac original': 1654.176, 'Jac O2': 1866.092, 'CUDA checked': 1674.7}
+irregular16383-mixed256 {'Jac original': 8274.608, 'Jac O2': 8942.124, 'CUDA checked': 8368.12}
+binary1023-root1 {'Jac original': 404.828, 'Jac O2': 442.868, 'CUDA checked': 410.552}
+binary1023-root32 {'Jac original': 490.592, 'Jac O2': 527.712, 'CUDA checked': 495.912}
+binary1023-root128 {'Jac original': 519.208, 'Jac O2': 559.448, 'CUDA checked': 524.924}
+binary1023-root128-all {'Jac original': 508.672, 'Jac O2': 549.556, 'CUDA checked': 514.592}
+binary1023-root128-none {'Jac original': 471.092, 'Jac O2': 460.3, 'CUDA checked': 450.428}
+Collecting data...
+Generating '/tmp/nsys-report-b8ed.qdstrm'
+[1/1] [0%                          ] trace.nsys-rep[1/1] [0%                          ] trace.nsys-rep[1/1] [=====29%                    ] trace.nsys-rep[1/1] [=====32%                    ] trace.nsys-rep[1/1] [======35%                   ] trace.nsys-rep[1/1] [=======36%                  ] trace.nsys-rep[1/1] [==============64%           ] trace.nsys-rep[1/1] [=================74%        ] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep
+Generated:
+	/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/subtree_query/validation/20261021/profile/trace.nsys-rep
