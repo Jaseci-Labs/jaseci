@@ -926,22 +926,48 @@ impl JacBuiltin.log_register(fn: any) -> int {
 }
 
 impl JacBuiltin.se_snap(v: any, tensor_type: any) -> any {
-    if isinstance(v, tensor_type) {
-        return v.clone();
+    origs: list[any] = [];
+    copies: list[any] = [];
+    def _snap(x: any) -> any {
+        if isinstance(x, tensor_type) {
+            return x.clone();
+        }
+        for i in range(len(origs)) {
+            if origs[i] is x {
+                return copies[i];
+            }
+        }
+        if type(x) is list {
+            out: list[any] = [];
+            origs.append(x);
+            copies.append(out);
+            for e in x {
+                out.append(_snap(e));
+            }
+            origs.pop();
+            copies.pop();
+            return out;
+        }
+        if type(x) is dict {
+            table: dict[any, any] = {};
+            origs.append(x);
+            copies.append(table);
+            for (k, e) in x.items() {
+                table[k] = _snap(e);
+            }
+            origs.pop();
+            copies.pop();
+            return table;
+        }
+        if type(x) is tuple {
+            return tuple([_snap(e) for e in x]);
+        }
+        if type(x) is set {
+            return set(x);
+        }
+        return x;
     }
-    if type(v) is list {
-        return [JacBuiltin.se_snap(e, tensor_type) for e in v];
-    }
-    if type(v) is tuple {
-        return tuple([JacBuiltin.se_snap(e, tensor_type) for e in v]);
-    }
-    if type(v) is dict {
-        return {k: JacBuiltin.se_snap(e, tensor_type) for (k, e) in v.items()};
-    }
-    if type(v) is set {
-        return set(v);
-    }
-    return v;
+    return _snap(v);
 }
 
 impl JacBuiltin.log_emit(

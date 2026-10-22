@@ -408,6 +408,14 @@ test "the snapshot helper copies builtin containers and clones the tensor type" 
     assert __jac_se_snap__((item, ), _Cloneable)[0] is not item;
     other = object();
     assert __jac_se_snap__(other, _Cloneable) is other;
+    loop: list[any] = [];
+    loop.append(loop);
+    snap_loop = __jac_se_snap__(loop, _Cloneable);
+    assert (snap_loop is not loop) and (snap_loop[0] is snap_loop);
+    cyclic: dict[str, any] = {};
+    cyclic["self"] = cyclic;
+    snap_cyclic = __jac_se_snap__(cyclic, _Cloneable);
+    assert (snap_cyclic is not cyclic) and (snap_cyclic["self"] is snap_cyclic);
 }
 
 test "prints and logger calls replay in emission order" {
