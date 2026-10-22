@@ -5033,7 +5033,7 @@ graph import client {
         HeaderBuilder
     }
     source_mapping ++> client_diagnostics { JacLocator, SourceLocation, _npm_specifier }
-    source_mapping --> jac_client_compiler.JacClientCompiler._write_source_map {
+    source_mapping --> jac_client_compiler.JacClientCompiler._write_js {
         generate_source_map_json
     }
     targets.node_tooling_common ++> vite_bundler._build_vite_command {
@@ -5701,12 +5701,12 @@ graph import compiler {
             classify_cross_app_import
         },
         placement.placement._element_reqs { classify_import },
+        placement.placement._scan_blockers_under { ability_delegates_to_model },
         placement.placement.module_anchor_reasons {
             ability_delegates_to_model,
             classify_import,
             is_service_app_entry
         },
-        placement.placement.native_blocker_scan { ability_delegates_to_model },
         placement.placement_export.collect_placement_rows {
             ClientImportVerdict,
             classify_client_import_item,
@@ -6181,6 +6181,8 @@ graph import compiler {
             JACSTR_DESC_FIELDS,
             NativeFuncLayout,
             RC_SENTINEL,
+            STR_ASCII_TAG_BIT,
+            STR_LEN_PAYLOAD_MASK,
             STR_LEN_TAG_BIT,
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
@@ -6403,7 +6405,7 @@ graph import compiler {
         passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
-        placement.placement.native_blocker_scan {
+        placement.placement._scan_blockers_under {
             NATIVE_SUPPORTED_STDLIB,
             is_bundled_native_module,
             resolve_native_module
@@ -7342,7 +7344,7 @@ graph import compiler {
         backends.es.esast_gen_pass
             | backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
-            | driver.boundary_classify.python_side_name_refs
+            | driver.boundary_classify.is_server_anchored_module
             | driver.module_compile
             | driver.program.JacProgram.stamp_native_import_facts
             | native_bindings
@@ -7354,6 +7356,7 @@ graph import compiler {
             | passes.placement_pass
             | passes.rc_facts_pass
             | passes.type_checker_pass.TypeCheckPass._is_generator
+            | placement.placement
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7363,8 +7366,9 @@ graph import compiler {
             ModuleFacts,
             client_capability_violations
         },
+        driver.boundary_classify.python_side_name_refs
+            | types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
         passes.placement_pass.client_refused_elements { client_capability_violations },
-        types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
     frontend.parser.frontend ++> [
         driver.compiler.JacCompiler._prepare_tool_program
@@ -12304,6 +12308,7 @@ graph import compiler.frontend {
             ModuleCode,
             ModuleItem,
             Name,
+            Test,
             TupleVal,
             UniNode,
             YieldExpr,
@@ -13801,7 +13806,7 @@ graph import compiler.placement {
         },
     ]
     placement_pins --> [
-        placement.native_blocker_scan { config_module_pin as _cmp, config_pin_for },
+        placement._scan_blockers_under { config_module_pin as _cmp, config_pin_for },
         placement.project_kind_name { config_project_kind },
         placement.summarize_module {
             config_element_pin,
@@ -15386,8 +15391,22 @@ graph import runtime.na_stdlib {
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
         _time_native { raise_errno },
+        fcntl | select { EINTR, errno_message, last_errno },
+        termios { errno_message, last_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fcntl_native ++> fcntl {
+        _F_GETFD,
+        _F_GETFL,
+        _F_SETFD,
+        _F_SETFL,
+        _F_SETOWN,
+        _O_APPEND,
+        _O_ASYNC,
+        _O_NONBLOCK,
+        do_fcntl,
+        do_ioctl
+    }
     _fd_native ++> _replace_native { AT_FDCWD }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
@@ -15468,6 +15487,15 @@ graph import runtime.na_stdlib {
         _default_types_val
     }
     _replace_native ++> _os_native { replace_file }
+    _select_native ++> select {
+        _FD_SETSIZE,
+        _POLLERR,
+        _POLLHUP,
+        _POLLIN,
+        _POLLNVAL,
+        _POLLOUT,
+        do_poll
+    }
     _socket_abi ++> [
         _socket_native {
             ADDRINFO_ADDRLEN_OFFSET,
@@ -15545,6 +15573,72 @@ graph import runtime.na_stdlib {
         tar_utime,
         tar_write
     }
+    _termios_native ++> termios {
+        _BRKINT,
+        _CREAD,
+        _CS7,
+        _CS8,
+        _CSIZE,
+        _CSTOPB,
+        _ECHO,
+        _ECHOE,
+        _ECHOK,
+        _ECHONL,
+        _HUPCL,
+        _ICANON,
+        _ICRNL,
+        _IEXTEN,
+        _IGNBRK,
+        _IGNCR,
+        _IGNPAR,
+        _INLCR,
+        _INPCK,
+        _ISIG,
+        _ISTRIP,
+        _IXANY,
+        _IXOFF,
+        _IXON,
+        _NCCS,
+        _NOFLSH,
+        _OFF_CC,
+        _OFF_CFLAG,
+        _OFF_IFLAG,
+        _OFF_LFLAG,
+        _OFF_OFLAG,
+        _ONLCR,
+        _OPOST,
+        _PARENB,
+        _PARMRK,
+        _PARODD,
+        _TCSADRAIN,
+        _TCSAFLUSH,
+        _TCSANOW,
+        _TIOCGWINSZ,
+        _TOSTOP,
+        _VDISCARD,
+        _VEOF,
+        _VEOL,
+        _VEOL2,
+        _VERASE,
+        _VINTR,
+        _VKILL,
+        _VLNEXT,
+        _VMIN,
+        _VQUIT,
+        _VREPRINT,
+        _VSTART,
+        _VSTOP,
+        _VSUSP,
+        _VTIME,
+        _VWERASE,
+        get_attrs,
+        in_speed,
+        out_speed,
+        put_word,
+        set_attrs,
+        set_speeds,
+        word_at
+    }
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
@@ -15616,6 +15710,38 @@ graph import runtime.na_stdlib {
     }
     datetime ++> zoneinfo { _MAXORDINAL, _ord2ymd }
     http.client ++> urllib.request { HTTPResponse }
+    termios ++> tty {
+        BRKINT,
+        CS8,
+        CSIZE,
+        ECHO,
+        ECHOE,
+        ECHOK,
+        ECHONL,
+        ICANON,
+        ICRNL,
+        IEXTEN,
+        IGNBRK,
+        IGNCR,
+        IGNPAR,
+        INLCR,
+        INPCK,
+        ISIG,
+        ISTRIP,
+        IXANY,
+        IXOFF,
+        IXON,
+        NOFLSH,
+        OPOST,
+        PARENB,
+        PARMRK,
+        TCSAFLUSH,
+        TOSTOP,
+        VMIN,
+        VTIME,
+        tcgetattr,
+        tcsetattr
+    }
 }
 
 graph import runtime.python {
