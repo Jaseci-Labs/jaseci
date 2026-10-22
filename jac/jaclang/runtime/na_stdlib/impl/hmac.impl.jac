@@ -1,11 +1,11 @@
 impl HMAC.update(data: bytes) {
-    ctx_require(self._ctx, "hmac");
-    hmac_ctx_update(self._ctx, data);
+    self._inner.update(data);
 }
 
 impl HMAC.digest -> bytes {
-    ctx_require(self._ctx, "hmac");
-    return hmac_ctx_digest(self._ctx);
+    outer = self._outer.clone();
+    outer.update(self._inner.finish());
+    return outer.finish();
 }
 
 impl HMAC.hexdigest -> str {
@@ -13,21 +13,16 @@ impl HMAC.hexdigest -> str {
 }
 
 impl HMAC.copy -> HMAC {
-    ctx_require(self._ctx, "hmac");
     return HMAC(
-        _ctx=hmac_ctx_clone(self._ctx),
+        _inner=self._inner.clone(),
+        _outer=self._outer.clone(),
         digest_size=self.digest_size,
         block_size=self.block_size,
         name=self.name
     );
 }
 
-impl HMAC.drop {
-    if self._ctx != 0 {
-        hmac_ctx_free(self._ctx);
-        self._ctx = 0;
-    }
-}
+impl HMAC.drop {}
 
 impl new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
     k: bytes = b"";
@@ -43,10 +38,30 @@ impl new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
     if digestmod == "" {
         raise TypeError("Missing required argument 'digestmod'.");
     }
-    md: int = evp_md_for(digestmod);
-    if md == 0 {
+    inner = new_core(digestmod);
+    outer = new_core(digestmod);
+    if inner is None or outer is None {
         raise ValueError("unsupported hash type " + digestmod);
     }
+    bs: int = inner.block_size;
+    if len(k) > bs {
+        shrink = new_core(digestmod);
+        if shrink is not None {
+            shrink.update(k);
+            k = shrink.finish();
+        }
+    }
+    ipad: list[int] = [];
+    opad: list[int] = [];
+    i: int = 0;
+    while i < bs {
+        kb: int = k[i] if i < len(k) else 0;
+        ipad.append(kb ^ 0x36);
+        opad.append(kb ^ 0x5c);
+        i += 1;
+    }
+    inner.update(bytes(ipad));
+    outer.update(bytes(opad));
     data: bytes = b"";
     if isinstance(msg, bytearray) {
         data = bytes(msg);
@@ -58,9 +73,10 @@ impl new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
         raise TypeError("object supporting the buffer API required");
     }
     hm = HMAC(
-        _ctx=hmac_ctx_new(md, k),
-        digest_size=digest_size_for(digestmod),
-        block_size=block_size_for(digestmod),
+        _inner=inner,
+        _outer=outer,
+        digest_size=inner.digest_size,
+        block_size=bs,
         name="hmac-" + digestmod
     );
     hm.update(data);

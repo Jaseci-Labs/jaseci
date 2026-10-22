@@ -58,7 +58,9 @@ glob _COLS: list[dict[str, any]] = [
 
      ];
 
-def:pub Footer -> JsxElement {
+def:pub Footer -> JsxElement;
+
+impl Footer -> JsxElement {
     return
         <footer className="border-t border-border/60 bg-card/40">
             <div

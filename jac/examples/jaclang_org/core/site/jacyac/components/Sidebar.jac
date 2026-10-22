@@ -16,6 +16,16 @@ def:pub Sidebar(
     notifCount: int,
     onNavigate: Callable[[str], None],
     onLogout: Callable[[], None],
+) -> JsxElement;
+
+impl Sidebar(
+    activeTab: str,
+    displayUsername: str,
+    profileUsername: str,
+    profileAvatar: str,
+    notifCount: int,
+    onNavigate: Callable[[str], None],
+    onLogout: Callable[[], None],
 ) -> JsxElement {
     nav_base = "h-12 w-full justify-start gap-4 rounded-full px-4 text-lg font-medium";
     initial = displayUsername[0].upper() if displayUsername else "?";
