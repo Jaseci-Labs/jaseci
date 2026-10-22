@@ -826,6 +826,84 @@ native layout records the emitted name separately from its source-level key.
   `sigwait`/`sigwaitinfo`/`setitimer`/`getitimer` are not provided.
   Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
 
+- **`fcntl.jac`** (Mechanism F) + **`_fcntl_native.linux.jac`** /
+  **`_fcntl_native.darwin.jac`** (libc FFI floor: `fcntl(2)` and
+  `ioctl(2)`; per-OS `F_*`/`O_*` flag values) -- `fcntl(fd, cmd, arg=0)`
+  for the `F_GETFL`/`F_SETFL`/`F_GETFD`/`F_SETFD`/`F_SETOWN` family and
+  `ioctl(fd, request, arg)` with a `bytes` arg (e.g. the packed `winsize`
+  for `termios`'s `TIOCGWINSZ`). As in CPython, `ioctl` copies `arg` into a
+  private 1024-byte buffer followed by a guard, so the request writes
+  memory the call owns whatever size the caller passed, and answers fresh
+  `bytes` of `len(arg)`; the caller's object is never written. An `arg`
+  longer than 1024 bytes raises `ValueError`, and a request that writes
+  past `len(arg)` (a short buffer) is caught by the guard. Both calls
+  retry on `EINTR`, as CPython's do (PEP 475). The
+  `fcntl(2)` extern is declared at fixed arity (the flag word as `i64`),
+  the ABI shape the calls here make. DIVERGENCES: the short-buffer case
+  raises `RuntimeError("buffer overflow")` where CPython raises
+  `SystemError` (no native `SystemError`); an int or mutable-buffer `arg`
+  to `ioctl` is not accepted; errors
+  raise `ValueError` carrying CPython's `[Errno N] <strerror>` text where
+  CPython raises `OSError`; `flock`/`lockf` and the `struct flock`
+  commands are not provided. Pinned sv<->na congruent by
+  `prim_fcntl.jac`.
+- **`termios.jac`** (Mechanism F) + **`_termios_native.linux.jac`** /
+  **`_termios_native.darwin.jac`** (libc FFI floor: `tcgetattr(3)` /
+  `tcsetattr(3)` / `cfgetispeed(3)` / `cfgetospeed(3)` over an opaque
+  `struct termios` image; per-OS layout and constants) --
+  CPython-shaped `tcgetattr(fd)` / `tcsetattr(fd, when, attrs)` over the
+  `[iflag, oflag, cflag, lflag, ispeed, ospeed, cc]` form with `cc` as
+  `NCCS` ints (32 on glibc, 20 on darwin), plus the V*/I*/O*/C*/L*
+  constant groups, `TCSANOW`/`TCSADRAIN`/`TCSAFLUSH`, and `TIOCGWINSZ`.
+  The raw struct bytes travel opaquely through the floor, so a
+  save/restore pair is byte-exact for every byte the CPython shape
+  carries; speeds are read the way CPython reads them (`cfget*`).
+  `tcsetattr` packs over the fd's current `struct termios` (as CPython
+  does), so bytes outside the CPython shape (glibc's `c_line`) keep their
+  values, and it rejects malformed attributes with CPython's `TypeError`
+  before touching the terminal: a list that is not 7 elements, a `cc` list
+  that is not exactly `NCCS` entries, or a `cc` entry that is neither an
+  int nor a one-byte `bytes`. As in CPython, no `termios` call is retried
+  on `EINTR`. The
+  floor split is structural: glibc lays the struct out as four `u32` flag
+  words + `c_cc[32]` (60 bytes), Libsystem as four `u64` words +
+  `c_cc[20]` (72 bytes), and the surface parameterizes on the floor's
+  `_FLAG_BYTES`/offsets, so only the floor files differ. Constant values
+  are per-OS. DIVERGENCES: `VSWTC` (Linux-only in CPython) is not
+  exported, since the public surface is the same on every OS; errors raise `ValueError` carrying CPython's
+  `[Errno N] <strerror>` text where CPython raises `termios.error`; `cc` entries are ints (one-item `bytes` entries
+  are still accepted by `tcsetattr`, as there). Pinned sv<->na congruent
+  by `prim_termios.jac`.
+- **`tty.jac`** (Mechanism B over the bundled `termios`) -- `setraw(fd,
+  when=TCSAFLUSH)` / `setcbreak(fd, when=TCSAFLUSH)`, a direct port of
+  CPython's `tty.py` formulas over the bundled `termios` surface, sharing
+  its constants and error model. As in CPython 3.12+, the new mode gets
+  its own copy of the `cc` list, so the VMIN=1/VTIME=0 writes do not leak
+  into the returned original-mode list (pinned by `prim_tty.jac` from a
+  seeded VMIN). `cfmakeraw`/`cfmakecbreak` are not provided. Terminals
+  are the host's, so raw mode
+  behaves identically to CPython's by construction; the module is
+  per-OS only through what `termios` resolves to.
+- **`select.jac`** (Mechanism F) + **`_select_native.jac`** (libc FFI
+  floor: `poll(2)` -- one file, no per-OS split, since the `pollfd`
+  layout, `POLL*` values and timeout shape are identical on every POSIX
+  host) -- `select(rlist, wlist, xlist, timeout=-1.0)` merging the three
+  lists into one pollfd array and building each result by walking its own
+  input list, so order and repeated fds come back as CPython returns them.
+  A wait interrupted by a signal whose handler returns is retried, as in
+  CPython (PEP 475): a finite timeout is recomputed from the monotonic
+  clock, and a deadline already passed answers three empty lists. The
+  module also exports the `POLLIN`/`POLLOUT`/`POLLERR`/`POLLHUP`/`POLLNVAL`
+  constants.
+  DIVERGENCES: `-1.0` is the block-forever sentinel where CPython spells
+  `None` (any negative timeout other than the sentinel raises `ValueError`);
+  `POLLERR`/`POLLHUP` report the fd readable AND writable where CPython
+  reports the event that fired; the exceptional list is always empty (no
+  `xlist` events are polled); errors raise `ValueError` carrying
+  CPython's `[Errno N] <strerror>` text where CPython raises
+  `OSError`/`select.error`. Timeout is truncated to milliseconds.
+  Pinned sv<->na congruent by `prim_select.jac`.
+
 - **`subprocess.linux.jac`** (Mechanism F) +
   **`_subprocess_native.linux.jac`** (libc FFI floor: `posix_spawnp` and its
   file-actions API, `pipe`, `waitpid`, `poll`, `kill`) -- `Popen`, `run`,
