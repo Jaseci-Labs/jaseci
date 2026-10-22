@@ -1,4 +1,5 @@
 import os;
+import struct;
 import tempfile;
 import from contextlib { ExitStack }
 import from pathlib { Path }
@@ -8,20 +9,33 @@ import from jaclang.byllm.model_cache { gguf_path }
 import from jaclang.byllm.local_runtime { LOCAL_MODELS }
 import from jaclang.byllm.cli { model }
 
+"""A GGUF v3 file with a string array, an alignment key and one 16-value f32 tensor."""
+def tiny_gguf -> bytes {
+    def text(s: bytes) -> bytes {
+        return struct.pack("<Q", len(s)) + s;
+    }
+    header = b"GGUF" + struct.pack("<IQQ", 3, 1, 2);
+    header += text(b"tokenizer.ggml.tokens") + struct.pack("<IIQ", 9, 8, 2);
+    header += text(b"a") + text(b"bc");
+    header += text(b"general.alignment") + struct.pack("<II", 4, 32);
+    header += text(b"w") + struct.pack("<IQIQ", 1, 16, 0, 0);
+    return header + bytes(-len(header) % 32) + bytes(range(64));
+}
+
 glob ALIAS: str = "gemma-4-e2b",
-     GOOD: bytes = b"GGUF" + bytes(range(60));
+     GOOD: bytes = tiny_gguf();
 
 """Point the cache at `<base>/models`, fake `_download` to record each call in `calls`
-and, like huggingface_hub, write `GOOD` only where no file is, and give consent; return
-the cache dir."""
+and, like huggingface_hub, write `GOOD` only where no file is unless forced, and give
+consent; return the cache dir."""
 def use_temp_cache(stack: ExitStack, base: Path, calls: list[str]) -> Path {
     cache_dir = base / "models";
     cache_dir.mkdir(parents=True);
-    def fake_download(alias: str, spec: dict[str, any]) -> Path {
+    def fake_download(alias: str, spec: dict[str, any], force: bool = False) -> Path {
         calls.append(alias);
         target = gguf_path(alias, spec);
         target.parent.mkdir(parents=True, exist_ok=True);
-        if not target.exists() {
+        if force or not target.exists() {
             target.write_bytes(GOOD);
         }
         return target;
@@ -71,7 +85,13 @@ test "jac model rm deletes only a known alias" {
 }
 
 test "jac model pull replaces a bad weight and keeps a good one" {
-    rows = [("good weight", GOOD, 0), ("junk bytes", b"junk", 1)];
+    rows = [
+        ("good weight", GOOD, 0),
+        ("junk bytes", b"junk", 1),
+        ("only the magic", b"GGUF", 1),
+        ("cut in the header", GOOD[:40], 1),
+        ("cut in the tensor data", GOOD[:-1], 1)
+    ];
     for (label, on_disk, want_downloads) in rows {
         with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack {
             calls: list[str] = [];

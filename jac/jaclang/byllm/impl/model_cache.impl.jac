@@ -32,9 +32,79 @@ impl is_downloaded(alias: str, spec: dict[str, any]) -> bool {
     if not p.is_file() {
         return False;
     }
-    with open(p, "rb") as f {
-        return f.read(4) == b"GGUF";
+    try {
+        with open(p, "rb") as f {
+            return f.read(4) == b"GGUF" and p.stat().st_size >= _gguf_size_needed(f);
+        }
+    } except (ValueError, OverflowError, ZeroDivisionError) {
+        return False;
     }
+}
+
+impl _read_le(f: any, fmt: str) -> int {
+    n = struct.calcsize(fmt);
+    data = f.read(n);
+    if len(data) < n {
+        raise ValueError("GGUF header is cut short");
+    }
+    return struct.unpack("<" + fmt, data)[0];
+}
+
+impl _skip_gguf_value(f: any, vtype: int) {
+    if vtype in _GGUF_SCALAR_SIZES {
+        f.seek(_GGUF_SCALAR_SIZES[vtype], 1);
+    } elif vtype == 8 {
+        f.seek(_read_le(f, "Q"), 1);
+    } elif vtype == 9 {
+        etype = _read_le(f, "I");
+        count = _read_le(f, "Q");
+        if etype in _GGUF_SCALAR_SIZES {
+            f.seek(count * _GGUF_SCALAR_SIZES[etype], 1);
+        } else {
+            for _ in range(count) {
+                _skip_gguf_value(f, etype);
+            }
+        }
+    } else {
+        raise ValueError(f"unknown GGUF value type {vtype}");
+    }
+}
+
+impl _gguf_size_needed(f: any) -> int {
+    if _read_le(f, "I") not in (2, 3) {
+        return 0;
+    }
+    n_tensors = _read_le(f, "Q");
+    n_kv = _read_le(f, "Q");
+    alignment = 32;
+    for _ in range(n_kv) {
+        key_len = _read_le(f, "Q");
+        key = f.read(key_len) if key_len == len(b"general.alignment") else b"";
+        if not key {
+            f.seek(key_len, 1);
+        }
+        vtype = _read_le(f, "I");
+        if key == b"general.alignment" and vtype == 4 {
+            alignment = _read_le(f, "I");
+        } else {
+            _skip_gguf_value(f, vtype);
+        }
+    }
+    data_end = 0;
+    for _ in range(n_tensors) {
+        f.seek(_read_le(f, "Q"), 1);
+        elements = 1;
+        for _ in range(_read_le(f, "I")) {
+            elements *= _read_le(f, "Q");
+        }
+        ttype = _read_le(f, "I");
+        offset = _read_le(f, "Q");
+        # A type this table does not know still has to start inside the file.
+        (block, block_bytes) = _GGML_BLOCKS.get(ttype, (1, 0));
+        data_end = max(data_end, offset + elements // block * block_bytes);
+    }
+    header_end = f.tell();
+    return -(-header_end // alignment) * alignment + data_end;
 }
 
 impl _fmt_size(mb: int) -> str {
@@ -88,7 +158,7 @@ impl _resolve_consent(alias: str, spec: dict[str, any], auto_download: bool) -> 
     return False;
 }
 
-impl _download(alias: str, spec: dict[str, any]) -> Path {
+impl _download(alias: str, spec: dict[str, any], force: bool = False) -> Path {
     try {
         import from huggingface_hub { hf_hub_download }
     } except ImportError {
@@ -106,7 +176,10 @@ impl _download(alias: str, spec: dict[str, any]) -> Path {
         )})...\n"
     );
     path = hf_hub_download(
-        repo_id=spec["repo"], filename=spec["file"], local_dir=str(target_dir),
+        repo_id=spec["repo"],
+        filename=spec["file"],
+        local_dir=str(target_dir),
+        force_download=force,
     );
     return Path(path);
 }
@@ -123,8 +196,9 @@ impl ensure_model(
             f"in this context (no TTY). Run: jac model pull {alias}"
         );
     }
-    gguf_path(alias, spec).unlink(missing_ok=True);
-    _download(alias, spec);
+    # huggingface_hub keeps a file already at the path unless forced. A forced download
+    # is renamed over the bad file, so a concurrent pull's finished weight is never deleted.
+    _download(alias, spec, force=gguf_path(alias, spec).exists());
     if not is_downloaded(alias, spec) {
         raise RuntimeError(
             f"Download for '{alias}' completed but file is missing or not a GGUF file: "
