@@ -375,6 +375,16 @@ walker NaIRGenPass(CompilerPass) {
         str_import_fn: (ir.Function | None) = None,
         str_unwrap_fn: (ir.Function | None) = None,
         str_materialize_fn: (ir.Function | None) = None,
+        str_isascii_fn: (ir.Function | None) = None,
+        utf8_cplen_fn: (ir.Function | None) = None,
+        utf8_cp_off_fn: (ir.Function | None) = None,
+        utf8_cp_len_at_fn: (ir.Function | None) = None,
+        utf8_char_at_fn: (ir.Function | None) = None,
+        utf8_advance_fn: (ir.Function | None) = None,
+        utf8_prev_fn: (ir.Function | None) = None,
+        utf8_decode_fn: (ir.Function | None) = None,
+        utf8_unit_in_fn: (ir.Function | None) = None,
+        utf8_gather_fn: (ir.Function | None) = None,
         _str_desc_ty: (ir.IdentifiedStructType | None) = None,
         rc_roots_buf_gv: (ir.GlobalVariable | None) = None,
         rc_roots_cap_gv: (ir.GlobalVariable | None) = None,
@@ -566,13 +576,25 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Value | None);
 
     def _codegen_string_index(
-        target_val: ir.Value, index_val: ir.Value, len_val: (ir.Value | None) = None
+        target_val: ir.Value,
+        index_val: ir.Value,
+        len_val: (ir.Value | None) = None,
+        root_val: (ir.Value | None) = None
     ) -> (ir.Value | None);
 
+    def _fstring_str_fit(val: ir.Value, directive: str) -> tuple[str, list[ir.Value]];
     def _emit_is_strip_char(ch: ir.Value, charset: (ir.Value | None)) -> ir.Value;
     def _codegen_str_strip_chars(
         str_val: ir.Value, charset: (ir.Value | None), do_left: bool, do_right: bool
     ) -> (ir.Value | None);
+
+    def _codegen_str_strip_units(
+        str_val: ir.Value,
+        slen: ir.Value,
+        charset: ir.Value,
+        do_left: bool,
+        do_right: bool
+    ) -> ir.Value;
 
     def _emit_whitespace_width(
         text: ir.Value, cursor: ir.Value, length: ir.Value, reverse: bool
@@ -2529,7 +2551,13 @@ walker NaIRGenPass(CompilerPass) {
         b: ir.IRBuilder, ptr: ir.Value, name: str = "s.truthy"
     ) -> ir.Value;
 
-    def _stamp_str_len(b: ir.IRBuilder, ptr: ir.Value, len_val: ir.Value) -> None;
+    def _stamp_str_len(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        len_val: ir.Value,
+        ascii: (ir.Value | None) = None
+    ) -> None;
+
     def _emit_str_cmp_helper -> None;
     def _call_str_cmp(
         b: ir.IRBuilder, lhs: ir.Value, rhs: ir.Value, name: str = "s.cmp"
@@ -2558,6 +2586,106 @@ walker NaIRGenPass(CompilerPass) {
         b: ir.IRBuilder, ptr: ir.Value, name: str = "s.rlen"
     ) -> ir.Value;
 
+    def _call_str_isascii(
+        b: ir.IRBuilder,
+        base: ir.Value,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        name: str = "s.isascii"
+    ) -> ir.Value;
+
+    def _emit_utf8_helpers -> None;
+    def _call_utf8_cplen(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        ascii: ir.Value,
+        name: str = "u8.cplen"
+    ) -> ir.Value;
+
+    def _call_utf8_cp_off(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        cp_index: ir.Value,
+        ascii: ir.Value,
+        name: str = "u8.cpoff"
+    ) -> ir.Value;
+
+    def _call_utf8_cp_len_at(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        off: ir.Value,
+        name: str = "u8.cplenat"
+    ) -> ir.Value;
+
+    def _call_utf8_char_at(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        off: ir.Value,
+        name: str = "u8.char"
+    ) -> ir.Value;
+
+    def _call_utf8_prev(
+        b: ir.IRBuilder, ptr: ir.Value, off: ir.Value, name: str = "u8.prev"
+    ) -> ir.Value;
+
+    def _call_utf8_advance(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        off: ir.Value,
+        delta: ir.Value,
+        ascii: ir.Value,
+        name: str = "u8.adv"
+    ) -> ir.Value;
+
+    def _call_utf8_decode(
+        b: ir.IRBuilder, ptr: ir.Value, nbytes: ir.Value, name: str = "u8.decode"
+    ) -> ir.Value;
+
+    def _call_utf8_gather(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        start: ir.Value,
+        stop: ir.Value,
+        step: ir.Value,
+        ascii: ir.Value,
+        out: ir.Value,
+        cap: ir.Value,
+        name: str = "u8.gather"
+    ) -> ir.Value;
+
+    def _call_utf8_unit_in(
+        b: ir.IRBuilder,
+        charset: ir.Value,
+        charset_len: ir.Value,
+        unit: ir.Value,
+        width: ir.Value,
+        name: str = "u8.unitin"
+    ) -> ir.Value;
+
+    def _emit_u8_lone_ascii(
+        b: ir.IRBuilder,
+        s: ir.Value,
+        n: ir.Value,
+        off: ir.Value,
+        byte: ir.Value,
+        name: str = "u8.lone"
+    ) -> ir.Value;
+
+    def _emit_wrap_clamp(
+        b: ir.IRBuilder,
+        value: ir.Value,
+        length: ir.Value,
+        lo: ir.Value,
+        hi: ir.Value,
+        name: str = "wc"
+    ) -> ir.Value;
+
     def _str_desc_type -> ir.IdentifiedStructType;
     def _str_desc_kind -> str;
     def _str_norm(val: ir.Value) -> ir.Value;
@@ -2571,7 +2699,13 @@ walker NaIRGenPass(CompilerPass) {
     def _membrane_str_out(b: ir.IRBuilder, val: ir.Value) -> ir.Value;
     def _membrane_str_in(b: ir.IRBuilder, val: ir.Value) -> ir.Value;
     def _str_alloc(b: ir.IRBuilder, size: ir.Value, name: str = "s.buf") -> ir.Value;
-    def _str_finish(b: ir.IRBuilder, buf: ir.Value, len_val: ir.Value) -> None;
+    def _str_finish(
+        b: ir.IRBuilder,
+        buf: ir.Value,
+        len_val: ir.Value,
+        ascii: (ir.Value | None) = None
+    ) -> None;
+
     def _rc_alloc(size: ir.Value, name: str = "rc.alloc") -> ir.Value;
     def _emit_rc_count_update(
         fn: ir.Function,
