@@ -317,7 +317,7 @@ impl MTRuntime.get_history_for_persist -> list[MessageType] {
             continue;
         }
         tool_calls = _tool_calls_of(msg);
-        if any(_is_finish_tool_call(tc) for tc in tool_calls) {
+        if tool_calls and any(_is_finish_tool_call(tc) for tc in tool_calls) {
             kept = [
                 tc
                 for tc in tool_calls
@@ -411,11 +411,10 @@ impl _is_finish_tool_call(tc: any) -> bool {
 }
 
 impl _tool_calls_of(msg: any) -> list[any] {
-    tool_calls: any = msg?.tool_calls;
-    if tool_calls is None and isinstance(msg, dict) {
-        tool_calls = msg.get("tool_calls");
-    }
-    return list(tool_calls) if tool_calls else [];
+    tool_calls: any = msg.get("tool_calls")
+        if isinstance(msg, dict)
+        else msg?.tool_calls;
+    return tool_calls or [];
 }
 
 
@@ -445,21 +444,26 @@ impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
     out: list[any] = [];
     for (i, msg) in enumerate(msgs) {
         tool_calls = _tool_calls_of(msg);
-        answered = _results_after(msgs, i + 1) if tool_calls else set();
-        kept = [
-            tc
-            for tc in tool_calls
-            if _tool_call_id(tc) == "" or _tool_call_id(tc) in answered
-        ];
+        if not tool_calls {
+            out.append(msg);
+            continue;
+        }
+        answered = _results_after(msgs, i + 1);
+        kept: list[any] = [];
+        for tc in tool_calls {
+            call_id = _tool_call_id(tc);
+            if call_id == "" or call_id in answered {
+                kept.append(tc);
+            }
+        }
         if len(kept) == len(tool_calls) {
             out.append(msg);
             continue;
         }
         content: any = msg.get("content") if isinstance(msg, dict) else msg?.content;
-        if not kept and not content {
-            continue;
+        if kept or content {
+            out.append(_with_tool_calls(msg, kept));
         }
-        out.append(_with_tool_calls(msg, kept));
     }
     return out;
 }

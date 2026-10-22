@@ -13,7 +13,15 @@ import from litellm.types.utils {
     Message as LiteLLMMessage
 }
 import from jaclang.byllm.lib { MockLLM }
-import from support { calls, finish, mk_run, say, sent_messages }
+import from support {
+    calls,
+    chunk_text,
+    finish,
+    mk_run,
+    say,
+    sent_messages,
+    stream_events
+}
 
 glob RAN: list[str] = [];
 
@@ -70,27 +78,51 @@ def tool_names(messages: list[any]) -> list[str] {
 }
 
 
-"""Two turns over one conversation. Turn one is `entries`, turn two a lone finish."""
-def two_turns(entries: list[any], stream: bool, parallel: bool) -> tuple[any, ...] {
+glob MODES: list[str] = ["plain", "stream", "events", "handler"];
+
+
+"""What the caller gets from one call, whichever way it consumes the reply."""
+def _answer(out: any, mode: str) -> str {
+    if mode == "stream" {
+        return "".join(out);
+    }
+    if mode == "events" {
+        return chunk_text(stream_events(out));
+    }
+    return out;
+}
+
+
+"""Two turns over one conversation. Turn one is `entries`, turn two a lone finish.
+
+`mode` is how the caller consumes the reply: plain, a token stream, a stream of
+events (`logging=True`) or a `stream_handler`. The last two run the event loop.
+"""
+def two_turns(entries: list[any], mode: str, parallel: bool) -> tuple[any, ...] {
     RAN.clear();
     history: list[dict[str, any]] = [];
+    streaming = mode != "plain";
     replies = [calls(entries)]
-        + ([say("FINAL")] if stream else [])
+        + ([say("FINAL")] if streaming else [])
         + [finish("two")]
-        + ([say("TWO")] if stream else []);
+        + ([say("TWO")] if streaming else []);
     llm = MockLLM(outputs=replies);
+    seen_events: list[any] = [];
 
     def ask(q: str) -> str by llm(
-        tools=[mul], conversation=history, stream=stream, parallelize=parallel
+        tools=[mul],
+        conversation=history,
+        stream=streaming,
+        logging=(mode == "events"),
+        stream_handler=(seen_events.append if mode == "handler" else None),
+        parallelize=parallel
     );
 
-    first = ask("first");
-    first_text = "".join(first) if stream else first;
+    first = _answer(ask("first"), mode);
     ran = list(RAN);
     turn_two_request = len(llm.seen);
-    second = ask("second");
-    second_text = "".join(second) if stream else second;
-    return (llm, history, first_text, second_text, ran, turn_two_request);
+    second = _answer(ask("second"), mode);
+    return (llm, history, first, second, ran, turn_two_request);
 }
 
 
@@ -121,16 +153,18 @@ glob LAYOUTS: list[tuple[any, ...]] = [
 
 test "no call is left unanswered, wherever finish_tool sits in the batch" {
     for (label, entries, ran_expected, skipped) in LAYOUTS {
-        for stream in [False, True] {
+        for mode in MODES {
             for parallel in [False, True] {
-                where = f"{label} stream={stream} parallelize={parallel}";
+                where = f"{label} mode={mode} parallelize={parallel}";
                 (llm, history, first, second, ran, _next) = two_turns(
-                    entries, stream, parallel
+                    entries, mode, parallel
                 );
 
                 assert ran == ran_expected , f"{where}: ran {ran}, expected {ran_expected}";
-                assert first == ("FINAL" if stream else "6") , f"{where}: got {first!r}";
-                assert second == ("TWO" if stream else "two") , f"{where}: got {second!r}";
+                expected = ("6", "two") if mode == "plain" else ("FINAL", "TWO");
+                assert (first, second) == expected , (
+                    f"{where}: got {(first, second)!r}, expected {expected!r}"
+                );
 
                 for n in range(len(llm.seen)) {
                     dangling = unanswered(sent_messages(llm, n));
@@ -153,13 +187,11 @@ test "no call is left unanswered, wherever finish_tool sits in the batch" {
 
 
 test "a call after finish_tool is answered as not executed, and kept that way" {
-    for stream in [False, True] {
+    for mode in MODES {
         for parallel in [False, True] {
-            where = f"stream={stream} parallelize={parallel}";
+            where = f"mode={mode} parallelize={parallel}";
             (llm, history, _first, _second, ran, turn_two) = two_turns(
-                [_call(2, 3, "c1"), _finish_entry(), _call(4, 5, "c2")],
-                stream,
-                parallel
+                [_call(2, 3, "c1"), _finish_entry(), _call(4, 5, "c2")], mode, parallel
             );
             assert "mul(4,5)" not in ran , f"{where}: a call after finish_tool ran: {ran}";
 
@@ -288,8 +320,9 @@ test "a call with no id is left alone, since no result can be matched to it" {
 
 
 """One turn in which finish_tool fails once while a call follows it, then succeeds."""
-def _failed_finish_turn(stream: bool) -> tuple[any, ...] {
+def _failed_finish_turn(mode: str) -> tuple[any, ...] {
     RAN.clear();
+    streaming = mode != "plain";
     attempts = [0];
 
     def finish_tool(final_output: str) -> str {
@@ -301,24 +334,27 @@ def _failed_finish_turn(stream: bool) -> tuple[any, ...] {
     }
 
     replies = [calls([_finish_entry(), _call(4, 5, "c2")]), finish("second try")]
-        + ([say("FINAL")] if stream else []);
+        + ([say("FINAL")] if streaming else []);
     llm = MockLLM(outputs=replies);
 
-    def ask(q: str) -> str by llm(tools=[mul, finish_tool], stream=stream);
+    def ask(q: str) -> str by llm(
+        tools=[mul, finish_tool],
+        stream=streaming,
+        logging=(mode == "events"),
+        stream_handler=([].append if mode == "handler" else None)
+    );
 
-    answer = ask("go");
-    answer_text = "".join(answer) if stream else answer;
-    return (llm, answer_text, list(RAN));
+    return (llm, _answer(ask("go"), mode), list(RAN));
 }
 
 
 test "a failed finish_tool retries with the call after it answered" {
-    for stream in [False, True] {
-        (llm, answer, ran) = _failed_finish_turn(stream);
+    for mode in MODES {
+        (llm, answer, ran) = _failed_finish_turn(mode);
         retry = sent_messages(llm, 1);
 
         assert unanswered(retry) == [] , (
-            f"stream={stream}: the retry request leaves {unanswered(retry)} unanswered"
+            f"mode={mode}: the retry request leaves {unanswered(retry)} unanswered"
         );
         results = {
             str(m.get("tool_call_id")): str(m.get("content"))
@@ -326,14 +362,14 @@ test "a failed finish_tool retries with the call after it answered" {
             if m.get("role") == "tool"
         };
         assert "not executed" in results.get("c2", "").lower() , (
-            f"stream={stream}: the trailing call needs its not-executed result: {results}"
+            f"mode={mode}: the trailing call needs its not-executed result: {results}"
         );
         assert "simulated finish invocation failure" in results.get("cf", "") , (
-            f"stream={stream}: the failed finish call needs its error result: {results}"
+            f"mode={mode}: the failed finish call needs its error result: {results}"
         );
-        assert ran == [] , f"stream={stream}: a call after finish_tool ran: {ran}";
-        assert answer == ("FINAL" if stream else "second try") , (
-            f"stream={stream}: got {answer!r}"
+        assert ran == [] , f"mode={mode}: a call after finish_tool ran: {ran}";
+        assert answer == ("second try" if mode == "plain" else "FINAL") , (
+            f"mode={mode}: got {answer!r}"
         );
     }
 }
