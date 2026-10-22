@@ -119,8 +119,37 @@ The work is split across the two service apps:
 - **A job** classifies the post (`core/ninjaclaw/brain.jac`), retrieves
   candidate tutorials and docs sections from the serving release's checkout
   (`core/ninjaclaw/index.jac`, BM25 over `##` sections), and asks the model
-  whether one answers it. A confident match is linked; otherwise the question
-  is recorded as a docs gap. A failed attempt is retried once.
+  whether one answers it. A confident match is linked. A failed attempt is
+  retried once.
+- **When nothing answers**, the job writes a short tutorial
+  (`write_tutorial` in `core/ninjaclaw/brain.jac`). The model can search and
+  read the checkout's docs, guides and examples through the tools in
+  `core/ninjaclaw/tools.jac`, which cannot read anything else. Every ` ```jac `
+  block is then verified on the serving jac (`core/ninjaclaw/verify.jac`): it
+  must pass `jac check`, and a block with `with entry` that touches no server
+  or model feature must also `jac run`. Each block runs in a fresh temporary
+  project with a scratch `HOME`, CPU and memory limits, and, on Linux, no
+  network (`unshare -rn`). Failures go back to the model for up to two
+  repairs. A tutorial whose examples all pass is published under
+  `/jacyac/tutorials`; one that never passes becomes a docs gap instead.
+
+Upkeep runs on its own tick (`ninjaclaw_upkeep_tick`, every 60 s, background
+work in `core/ninjaclaw/upkeep.jac`):
+
+- **Re-verification.** When the serving jac version changes, every tutorial
+  not yet verified on it is re-run. Passing tutorials are marked verified on
+  the new version; failing ones are marked stale, drop out of answers, and
+  are written afresh the next time someone asks.
+- **Docs PRs** (`core/ninjaclaw/promote.jac`) are off unless
+  `NINJACLAW_DOCS_REPO` (`owner/repo`) and `NINJACLAW_GITHUB_TOKEN` are set;
+  `NINJACLAW_DOCS_FORK` pushes the branch to a fork, and
+  `NINJACLAW_DOCS_DRY_RUN=1` only reports what it would do. A tutorial
+  qualifies once `NINJACLAW_PROMOTE_ASKERS` distinct people (default 3) were
+  sent to it, it is `NINJACLAW_PROMOTE_AGE_DAYS` old (default 7), and it is
+  verified on the serving jac. The PR adds the page under
+  `docs/tutorials/jacyac/`, a nav entry and a release fragment. Only one PR
+  is open at a time, its state is checked hourly, and a tutorial whose PR was
+  closed without merging is never proposed again.
 
 The submit and collect calls between the apps carry a shared secret
 (`NINJACLAW_SERVICE_SECRET`, or a generated file under the knowledge
