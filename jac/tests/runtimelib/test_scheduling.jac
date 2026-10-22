@@ -380,6 +380,58 @@ class _Records(logging.Handler) {
 }
 
 
+"""A hot reload replaces the served module. Scheduled targets are looked up
+when they fire, and that lookup read the introspector's state without the
+freshness check requests get, so after a reload every tick of a scheduled
+function failed with "'<name>' is no longer registered" until a restart."""
+test "a scheduled function still fires after a hot reload" {
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.testing.testing { JacTestClient }
+    with TemporaryDirectory() as tmpdir {
+        base = Path(tmpdir);
+        (base / "jac.toml").write_text(
+            '[project]\nname = "reloaded"\ndefault-app = "api"\n\n'
+                + '[apps.api]\nkind = "service"\nentry-point = "main"\n'
+        );
+        (base / "tasks.jac").write_text(
+            "glob TICKS: list[int] = [];\n\n"
+            "@schedule(interval=60, trigger=ScheduleTrigger.STATIC)\n"
+            "def:protect tick -> None {\n    TICKS.append(1);\n}\n"
+        );
+        app = base / "main.jac";
+        app.write_text("import tasks;\n\ndef:pub ping -> int {\n    return 1;\n}\n");
+        client = JacTestClient.from_file(str(app), base_path=tmpdir);
+        records = _Records();
+        log = logging.getLogger("jaclang.serve");
+        log.addHandler(records);
+        try {
+            server: any = client.server;
+            server._register_scheduled_tasks();
+            names = [t.name for t in server.scheduler._tasks];
+            assert "tick" in names , f"the submodule's schedule must register: {names}";
+            app.write_text(app.read_text() + "\n# reloaded\n");
+            client.reload();
+            server.introspector._reset_targets();
+            task = [
+                t
+                for t in server.scheduler._tasks
+                if t.name == "tick"
+            ][0];
+            server.scheduler._execute(task);
+            failures = [
+                m
+                for m in records.messages
+                if "no longer registered" in m
+            ];
+            assert not failures , f"a scheduled function was lost on reload: {failures}";
+        } finally {
+            log.removeHandler(records);
+            client.close();
+        }
+    }
+}
+
+
 # The server registers a scheduled walker as a closure that runs the walker
 # itself and returns nothing. _execute used to spawn that return value, so every
 # tick logged "Invalid walker object" after the walker had already run. The

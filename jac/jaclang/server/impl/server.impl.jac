@@ -1282,6 +1282,12 @@ impl JacAPIServer._register_scheduled_tasks -> None {
                 }
             }
             if name not in registry {
+                resolved = intro.target(name);
+                if resolved is not None and isinstance(resolved, type) == is_walker {
+                    registry[name] = resolved;
+                }
+            }
+            if name not in registry {
                 return {'error': f"'{name}' is no longer registered"};
             }
             with _self.request_scope() {
