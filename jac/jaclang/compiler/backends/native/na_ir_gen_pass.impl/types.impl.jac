@@ -3248,7 +3248,7 @@ impl NaIRGenPass._str_concat_fresh(
     i64 = ir.IntType(64);
     memcpy_cc = self._get_or_declare_extern("memcpy", i8p, [i8p, i8p, i64]);
     buf_size = self.builder.add(total, ir.Constant(i64, 1), name="buf_size");
-    _concat_loc = getattr(left, 'jac_loc', getattr(right, 'jac_loc', ''));
+    _concat_loc = left.jac_loc;
     self._set_rc_ctx("str_concat", _concat_loc);
     buf = self._str_alloc(self.builder, buf_size, name="concat.buf");
     self._clear_rc_ctx();
