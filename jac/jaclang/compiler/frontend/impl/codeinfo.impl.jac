@@ -189,7 +189,7 @@ impl _reserved_c_symbols -> frozenset[str] {
         "chmod chdir getcwd mkdir rmdir link symlink readlink unlink utime "
         "opendir readdir closedir getpid getpwuid_r getpwnam_r getuid uname "
         "gnu_get_libc_version errno __error "
-        "pipe poll waitpid posix_spawnp posix_spawn_file_actions_init "
+        "pipe poll fcntl ioctl tcgetattr tcsetattr cfgetispeed cfgetospeed cfsetispeed cfsetospeed waitpid posix_spawnp posix_spawn_file_actions_init "
         "posix_spawn_file_actions_destroy posix_spawn_file_actions_addopen "
         "posix_spawn_file_actions_addclose posix_spawn_file_actions_adddup2 "
         "posix_spawn_file_actions_addchdir_np "
