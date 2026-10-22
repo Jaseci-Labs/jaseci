@@ -2296,10 +2296,10 @@ graph import {
         runtime.traceback_render { pretty_print_source_location },
         scale.injector.bundle.BundleSourceFilter.parks { path_matches_exclude },
     ]
-    project.source --> [
-        compiler.passes.import_wiring_pass { pascal_to_snake },
-        compiler.passes.pyast_load_pass.PyastBuildPass.convert { pascal_to_snake },
-    ]
+    project.source ++> compiler.passes.import_wiring_pass { pascal_to_snake }
+    project.source --> compiler.passes.pyast_load_pass.PyastBuildPass.convert {
+        pascal_to_snake
+    }
     project.source ++> compiler.tools.lang_tools { pascal_to_snake }
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
@@ -3416,6 +3416,15 @@ graph import {
         client.cli.run_client_setup { JacRuntime as Jac },
     ]
     runtime.scalars ++> [
+        compiler.type_registry {
+            ScalarShape,
+            numeric_shapes,
+            shape_literal_fits,
+            shape_range,
+            shapes_unify,
+            shapes_widen_to,
+            sized_scalar_names
+        },
         compiler.backends.es.esast_gen_pass.EsastGenPass._apply_fw_coercion
             | compiler.backends.es.primitives_es.ESBuiltinEmitter.emit_print
             | compiler.backends.py.jcir_gen_pass
