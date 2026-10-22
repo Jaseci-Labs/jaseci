@@ -1,4 +1,7 @@
 impl SymbolCollector.collect_scope with uni.UniScopeNode entry {
+    if here.folded {
+        return;
+    }
     self.symbols.extend(here.names_in_scope.values());
     for bucket in here.names_in_scope_overload.values() {
         self.symbols.extend(bucket);
