@@ -27,7 +27,8 @@ obj NativeBlockerScan {
     has module: str = '',
         sites: list[tuple[uni.UniNode, str]] = [],
         deps: list[str] = [],
-        dep_imports: list[tuple[uni.Import, str]] = [];
+        dep_imports: list[tuple[uni.Import, str]] = [],
+        tests: list[tuple[uni.Test, str]] = [];
 
     def first -> str;
 }
@@ -105,6 +106,14 @@ def native_blocker_scan(
     allow_pub: bool = False,
     hold_exempt: bool = False
 ) -> NativeBlockerScan;
+
+def _scan_blocker_stmts(
+    scan: NativeBlockerScan,
+    stmts: list[uni.UniNode],
+    module: uni.Module,
+    base_dir: str,
+    allow_pub: bool
+);
 
 def scan_native_blockers(
     module: uni.Module,

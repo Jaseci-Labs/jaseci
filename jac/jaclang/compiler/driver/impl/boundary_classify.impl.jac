@@ -86,25 +86,26 @@ impl is_server_anchored_module(module: (uni.Module | None)) -> bool {
     if anchor_path and is_service_app_entry(anchor_path) {
         return True;
     }
-    for arch in module.get_all_sub_nodes(uni.Archetype) {
+    weighed = ModuleFacts.iter_placement_stmts(module);
+    for arch in ModuleFacts.stmts_sub_nodes(weighed, uni.Archetype) {
         if arch.arch_kind is not None {
             return True;
         }
     }
-    if module.get_all_sub_nodes(uni.PyInlineCode) {
+    if ModuleFacts.stmts_sub_nodes(weighed, uni.PyInlineCode) {
         return True;
     }
-    for stmt in module.body {
+    for stmt in weighed {
         if isinstance(stmt, uni.TypedCtxBlock) {
             return True;
         }
     }
-    for ab in module.get_all_sub_nodes(uni.Ability) {
+    for ab in ModuleFacts.stmts_sub_nodes(weighed, uni.Ability) {
         if ability_delegates_to_model(ab) {
             return True;
         }
     }
-    for imp in module.get_all_sub_nodes(uni.Import) {
+    for imp in ModuleFacts.stmts_sub_nodes(weighed, uni.Import) {
         if imp.has_clib_decls or imp.is_virtual_jac or imp.has_string_path {
             continue;
         }

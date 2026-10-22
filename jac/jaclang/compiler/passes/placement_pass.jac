@@ -350,6 +350,18 @@ impl build_native_legality(
         for (site, why) in scan.sites {
             legality.blockers.append(NativeRefusal(kind="module", name=why, site=site));
         }
+        for (blocked_test, why) in scan.tests {
+            legality.refuse_unit(
+                blocked_test,
+                NativeRefusal(
+                    kind="test",
+                    name=why,
+                    site=blocked_test,
+                    help="A test does not decide where its module runs, so this "
+                    "test is placed on the server and the module it tests is not."
+                )
+            );
+        }
         import from jaclang.compiler.native_bindings { import_gaps }
         for elem in mod.elements {
             if isinstance(elem, Import) and not legality.blockers {
@@ -635,8 +647,13 @@ impl uncrossable_native(mod: Module, prog: JacProgram, held: set[int]) -> set[in
     changed = True;
     while changed {
         changed = False;
-        mixed = any(e.code_context == CodeContext.NATIVE for e in tops.values())
-            and any(e.code_context == CodeContext.SERVER for e in tops.values());
+        runs = [
+            e
+            for e in tops.values()
+            if not isinstance(e, Test)
+        ];
+        mixed = any(e.code_context == CodeContext.NATIVE for e in runs)
+            and any(e.code_context == CodeContext.SERVER for e in runs);
         if mixed {
             for (eid, elem) in tops.items() {
                 if eid not in held
@@ -668,7 +685,8 @@ impl uncrossable_native(mod: Module, prog: JacProgram, held: set[int]) -> set[in
                     continue;
                 }
                 native_side = elem if caller_native else target;
-                if id(native_side) in held {
+                if id(native_side) in held
+                    or (isinstance(elem, Test) and native_side is not elem) {
                     continue;
                 }
                 _stamp_context_element(native_side, CodeContext.SERVER);
@@ -903,6 +921,17 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
             elem.code_context = CodeContext.SERVER;
         }
     }
+    if mod_path
+        and self.prog.options is not None
+        and self.prog.options.native_required_for(mod_path) {
+        for elem in tentative {
+            if isinstance(elem, Test) and elem.code_context == CodeContext.SERVER {
+                for refusal in legality.unit_refusals(elem) {
+                    self._emit_refusal(refusal, "the module is native-required");
+                }
+            }
+        }
+    }
     if tentative {
         inferred_refused.update(
             uncrossable_native(ir_in, self.prog, set(required.keys()))
@@ -954,12 +983,16 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     }
 
     placed: list[CodeContext] = [];
+    runs: list[CodeContext] = [];
     seen: set[int] = set();
     for elem in ir_in.elements {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
         placed.append(elem.code_context);
+        if not isinstance(elem, Test) {
+            runs.append(elem.code_context);
+        }
         need = required.get(id(elem));
         if elem.code_context == CodeContext.NATIVE and id(elem) in native_refused {
             refusals: list[NativeRefusal] = list(legality.module);
@@ -1005,7 +1038,8 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     }
     self._report_unmet(legality, "" if candidate else why);
 
-    uniform = placed[0] if placed and all(ctx == placed[0] for ctx in placed) else None;
+    runs = runs or placed;
+    uniform = runs[0] if runs and all(ctx == runs[0] for ctx in runs) else None;
     ir_in.decided_codespace = uniform.value
         if uniform is not None and uniform != CodeContext.SERVER
         else "";
