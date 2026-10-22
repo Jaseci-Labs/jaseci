@@ -274,6 +274,8 @@ check '(() => {
 })()'
 sleep 1
 jac browse fill '#lx-username' "$USER_NAME" || fail "could not fill username"
+jac browse wait '#lx-email' || fail "signup form has no email field"
+jac browse fill '#lx-email' "${USER_NAME}@example.com" || fail "could not fill email"
 jac browse fill '#lx-password' "$USER_PASS" || fail "could not fill password"
 check '(() => {
   const submit = document.querySelector("button[type=submit]");
