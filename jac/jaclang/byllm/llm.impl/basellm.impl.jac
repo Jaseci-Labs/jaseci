@@ -1039,14 +1039,11 @@ impl BaseLLM.format_prompt(params: dict[str, any]) -> str {
 
 def _error_tool_call(call_id: str, tool_name: str, reason: str) -> ToolCall;
 
-
 def _split_at_finish(
     tool_calls: list[ToolCall]
 ) -> tuple[list[ToolCall], ToolCall | None, list[ToolCall]];
 
-
 def _answer_skipped(mt_run: MTRuntime, skipped: list[ToolCall]) -> None;
-
 
 def _parse_tool_calls(
     mt_run: MTRuntime,
@@ -2759,7 +2756,6 @@ impl _error_tool_call(call_id: str, tool_name: str, reason: str) -> ToolCall {
     return ToolCall(call_id=call_id, tool=Tool(func=_report_error), args={});
 }
 
-
 impl _split_at_finish(
     tool_calls: list[ToolCall]
 ) -> tuple[list[ToolCall], ToolCall | None, list[ToolCall]] {
@@ -2773,7 +2769,6 @@ impl _split_at_finish(
     return (before, None, []);
 }
 
-
 impl _answer_skipped(mt_run: MTRuntime, skipped: list[ToolCall]) -> None {
     for tc in skipped {
         mt_run.add_message(
@@ -2786,7 +2781,6 @@ impl _answer_skipped(mt_run: MTRuntime, skipped: list[ToolCall]) -> None {
         );
     }
 }
-
 
 impl _parse_tool_calls(
     mt_run: MTRuntime,

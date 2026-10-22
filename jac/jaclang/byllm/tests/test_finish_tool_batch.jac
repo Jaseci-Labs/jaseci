@@ -21,22 +21,18 @@ import from support {
 glob RAN: list[str] = [],
      MODES: list[str] = ["plain", "stream", "events", "handler"];
 
-
 def mul(a: int, b: int) -> int {
     RAN.append(f"mul({a},{b})");
     return a * b;
 }
 
-
 def _call(a: int, b: int, call_id: str) -> tuple[any, ...] {
     return ("mul", {"a": a, "b": b}, call_id);
 }
 
-
 def _finish_entry(call_id: str = "cf") -> tuple[any, ...] {
     return ("finish_tool", {"final_output": "6"}, call_id);
 }
-
 
 """The ids of tool calls that no tool message in `messages` answers."""
 def unanswered(messages: list[any]) -> list[str] {
@@ -53,7 +49,6 @@ def unanswered(messages: list[any]) -> list[str] {
     ];
 }
 
-
 def tool_results(messages: list[any]) -> dict[str, str] {
     return {
         str(m.get("tool_call_id")): str(m.get("content"))
@@ -61,7 +56,6 @@ def tool_results(messages: list[any]) -> dict[str, str] {
         if m.get("role") == "tool"
     };
 }
-
 
 def tool_names(messages: list[any]) -> list[str] {
     calls_made = [
@@ -76,7 +70,6 @@ def tool_names(messages: list[any]) -> list[str] {
         ];
 }
 
-
 """The text the caller gets from one call, in whichever way it consumes the reply."""
 def _answer(out: any, mode: str) -> str {
     if mode == "stream" {
@@ -87,7 +80,6 @@ def _answer(out: any, mode: str) -> str {
     }
     return out;
 }
-
 
 """Two turns over one conversation: `entries` as the model sent them, then a lone finish.
 
@@ -118,7 +110,6 @@ def two_turns(entries: list[any], mode: str, parallel: bool) -> tuple[any, ...] 
     return (llm, history, first, second, ran);
 }
 
-
 glob LAYOUTS: list[tuple[any, ...]] = [
          ("alone", [_finish_entry()], [], []),
          ("last", [_call(2, 3, "c1"), _finish_entry()], ["mul(2,3)"], []),
@@ -142,7 +133,6 @@ glob LAYOUTS: list[tuple[any, ...]] = [
          ),
 
      ];
-
 
 test "no call is left unanswered, wherever finish_tool sits in the batch" {
     for (label, entries, ran_expected, skipped) in LAYOUTS {
@@ -181,7 +171,6 @@ test "no call is left unanswered, wherever finish_tool sits in the batch" {
     }
 }
 
-
 def _tool_call_dict(call_id: str) -> dict[str, any] {
     return {
         "id": call_id,
@@ -189,7 +178,6 @@ def _tool_call_dict(call_id: str) -> dict[str, any] {
         "function": {"name": "mul", "arguments": "{}"}
     };
 }
-
 
 """An assistant message calling every id in `call_ids`, then a result for each in `answered`."""
 def _turn_messages(
@@ -206,7 +194,6 @@ def _turn_messages(
     return [{"role": "user", "content": "go"}, asked] + results;
 }
 
-
 """The history byLLM would save for `messages`, as the dicts that land in the list."""
 def _persisted(messages: list[any]) -> list[dict[str, any]] {
     run = mk_run(tools=[mul], messages=messages);
@@ -214,7 +201,6 @@ def _persisted(messages: list[any]) -> list[dict[str, any]] {
         m if isinstance(m, dict) else m.to_dict() for m in run.get_history_for_persist()
     ];
 }
-
 
 test "a turn cut short before its results arrived does not save the dangling call" {
     for (label, call_ids, answered, content, kept_ids, kept_msgs) in [
@@ -240,7 +226,6 @@ test "a turn cut short before its results arrived does not save the dangling cal
     }
 }
 
-
 test "an earlier turn's result does not answer a call that reuses its id" {
     cut_short = {
         "role": "assistant",
@@ -258,12 +243,10 @@ test "an earlier turn's result does not answer a call that reuses its id" {
     );
 }
 
-
 test "a call with no id is left alone, since no result can be matched to it" {
     anonymous = _turn_messages([""], [""]);
     assert len(_persisted(anonymous)) == len(anonymous) , "an id-less call was dropped";
 }
-
 
 test "a message object is edited on a copy, like a dict" {
     asked = [
@@ -289,7 +272,6 @@ test "a message object is edited on a copy, like a dict" {
         f"the run's own message was edited: {live.tool_calls}"
     );
 }
-
 
 test "a failed finish_tool retries with the call after it answered" {
     for mode in MODES {

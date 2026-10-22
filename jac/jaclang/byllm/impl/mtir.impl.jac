@@ -281,21 +281,15 @@ def _is_system_message(msg: any) -> bool;
 
 def _is_finish_tool_call(tc: any) -> bool;
 
-
 def _tool_calls_of(msg: any) -> list[any];
-
 
 def _tool_call_id(tc: any) -> str;
 
-
 def _with_tool_calls(msg: any, tool_calls: list[any]) -> any;
-
 
 def _drop_unanswered_calls(msgs: list[any]) -> list[any];
 
-
 def _results_after(msgs: list[any], start: int) -> set[str];
-
 
 impl MTRuntime.get_history_for_persist -> list[MessageType] {
     scaff_ids = set(self._scaffolding_ids);
