@@ -26,8 +26,16 @@ import from jaclang { JacRuntime as Jac }
 import from jaclang.project.config { JacConfig, set_config }
 import from jaclang.client.targets.desktop.native { host_boot }
 
-
-glob _APP_SRC: str = (
+glob _SERVICE_SRC: str = (
+         "walker:pub service_greet {\n"
+         "    has name: str = \"world\";\n"
+         "\n"
+         "    can run with Root entry {\n"
+         "        report {\"greeting\": f\"service hello {self.name}\"};\n"
+         "    }\n"
+         "}\n"
+     ),
+     _APP_SRC: str = (
          "walker:pub greet {\n"
          "    has name: str = \"world\";\n"
          "\n"
@@ -280,11 +288,20 @@ test "desktop entry and colocated service match in dev and sealed boots" {
             + "[apps.web]\nkind=\"web-app\"\nentry-point=\"web.main\"\n"
         );
         (Path(proj) / "jac.toml").write_text(full_toml);
-        (api_dir / "main.jac").write_text(_APP_SRC);
+        (api_dir / "main.jac").write_text(_SERVICE_SRC);
         (web_dir / "main.jac").write_text("with entry {}\n");
         config = JacConfig.load(Path(proj) / "jac.toml");
         assert serving_app_for(config, Path(proj) / "main.jac", "embedded")
             == "desktop";
+        import from jaclang.client.targets.desktop.desktop_build {
+            desktop_storage_identifier
+        }
+        with patch("jaclang.project.config.get_config_for_dir", return_value=config) {
+            assert desktop_storage_identifier(
+                "org.example.hostapp", Path(proj), Path(proj) / "main.jac", "embedded"
+            )
+                == "org.example.hostapp.web";
+        }
         (Path(proj) / "jac.toml").write_text(
             "[project]\nname=\"hostapp\"\ndefault-app=\"desktop\"\n"
                 + "[apps.desktop]\nkind=\"desktop\"\nentry-point=\"main\"\n"
@@ -302,8 +319,13 @@ test "desktop entry and colocated service match in dev and sealed boots" {
             _config(app_dir, {"entry": str(Path(proj) / "main.jac")})
         );
         origin = f"http://127.0.0.1:{dev_ctx.port}";
-        (dev_code, dev_body) = _post(f"{origin}/walker/greet", {"name": "service"});
-        assert dev_code == 200 and "hello service" in dev_body , (dev_code, dev_body);
+        (dev_code, dev_body) = _post(
+            f"{origin}/api/api/walker/service_greet", {"name": "service"}
+        );
+        assert dev_code == 200 and "service hello service" in dev_body , (
+            dev_code,
+            dev_body
+        );
         dev_ctx.shutdown();
         dev_ctx = None;
 
@@ -317,9 +339,9 @@ test "desktop entry and colocated service match in dev and sealed boots" {
         sealed_ctx = host_boot.boot(_config(app_dir, {"jab": str(jab)}));
         origin = f"http://127.0.0.1:{sealed_ctx.port}";
         (sealed_code, sealed_body) = _post(
-            f"{origin}/walker/greet", {"name": "service"}
+            f"{origin}/api/api/walker/service_greet", {"name": "service"}
         );
-        assert sealed_code == dev_code and "hello service" in sealed_body , (
+        assert sealed_code == dev_code and "service hello service" in sealed_body , (
             f"dev={dev_code} {dev_body}; sealed={sealed_code} {sealed_body}"
         );
     } finally {
@@ -351,7 +373,7 @@ test "desktop release colocates services without an unrelated web app" {
                 + "[apps.desktop]\nkind=\"desktop\"\nentry-point=\"main\"\n"
                 + "[apps.api]\nkind=\"service\"\nentry-point=\"api.main\"\n"
         );
-        (api_dir / "main.jac").write_text(_APP_SRC);
+        (api_dir / "main.jac").write_text(_SERVICE_SRC);
         config = JacConfig.load(Path(proj) / "jac.toml");
         app_dir = _app_dir(tmp);
         os.environ["JAC_DATA_PATH"] = os.path.join(tmp, "data");
@@ -359,8 +381,13 @@ test "desktop release colocates services without an unrelated web app" {
             _config(app_dir, {"entry": str(Path(proj) / "main.jac")})
         );
         origin = f"http://127.0.0.1:{dev_ctx.port}";
-        (dev_code, dev_body) = _post(f"{origin}/walker/greet", {"name": "service"});
-        assert dev_code == 200 and "hello service" in dev_body , (dev_code, dev_body);
+        (dev_code, dev_body) = _post(
+            f"{origin}/api/api/walker/service_greet", {"name": "service"}
+        );
+        assert dev_code == 200 and "service hello service" in dev_body , (
+            dev_code,
+            dev_body
+        );
         dev_ctx.shutdown();
         dev_ctx = None;
 
@@ -371,9 +398,9 @@ test "desktop release colocates services without an unrelated web app" {
         sealed_ctx = host_boot.boot(_config(app_dir, {"jab": str(jab)}));
         origin = f"http://127.0.0.1:{sealed_ctx.port}";
         (sealed_code, sealed_body) = _post(
-            f"{origin}/walker/greet", {"name": "service"}
+            f"{origin}/api/api/walker/service_greet", {"name": "service"}
         );
-        assert sealed_code == dev_code and "hello service" in sealed_body , (
+        assert sealed_code == dev_code and "service hello service" in sealed_body , (
             f"dev={dev_code} {dev_body}; sealed={sealed_code} {sealed_body}"
         );
     } finally {
