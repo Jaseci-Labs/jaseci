@@ -237,7 +237,8 @@ impl register_py_callbacks(
             }
             return callback;
         }
-        cb = cb_type(_make_callback(binding.name, py_func_table));
+        lookup_name = getattr(binding, "lookup_name", "") or binding.name;
+        cb = cb_type(_make_callback(lookup_name, py_func_table));
         callbacks_list.append(cb);
         cb_addr = ctypes.cast(cb, ctypes.c_void_p).value;
         if cb_addr is None {

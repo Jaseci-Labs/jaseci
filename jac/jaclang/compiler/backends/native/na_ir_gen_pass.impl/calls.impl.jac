@@ -2594,6 +2594,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                 );
             } elif binding.source_context.value == "server" {
                 _extern_sym = self._symbol_for(func_name);
+                binding.native_symbol = _extern_sym;
             }
             func = self._get_or_declare_extern(
                 _extern_sym, ret_ir_type, param_ir_types

@@ -502,15 +502,22 @@ impl native_build_sealed_pair(
                     continue;
                 }
 
-                suffixes = {"." + local_name, "." + binding.name};
+                local_suffix = "." + local_name;
                 matches = [
                     str(function.name)
                     for function in unit_ir.functions
                     if function.is_declaration
-                        and any(
-                            str(function.name).endswith(suffix) for suffix in suffixes
-                        )
+                        and str(function.name).endswith(local_suffix)
                 ];
+                if not matches and binding.name != local_name {
+                    provider_suffix = "." + binding.name;
+                    matches = [
+                        str(function.name)
+                        for function in unit_ir.functions
+                        if function.is_declaration
+                            and str(function.name).endswith(provider_suffix)
+                    ];
+                }
                 if len(matches) == 1 {
                     binding.native_symbol = matches[0];
                     bindings.append(binding);

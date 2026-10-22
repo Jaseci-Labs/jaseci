@@ -1558,6 +1558,7 @@ impl _run_native_lib(
             NativeCallback(
                 name=str(cb.get("name") or ""),
                 native_symbol=str(cb.get("symbol") or ""),
+                lookup_name=str(cb.get("symbol") or ""),
                 ret_type=str(cb.get("ret_type") or "int"),
                 param_types=[str(t) for t in (cb.get("param_types") or [])]
             ) for cb in callbacks

@@ -354,6 +354,8 @@ impl link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     if spec.shared {
         if not spec.entry_lib {
             parts.append(shared_init_registration_ir(spec));
+        } elif spec.platform == "pe" {
+            parts.append(entry_lib_pe_dll_entry_ir());
         }
         exports.append(SHARED_INIT_SYMBOL);
     }
@@ -500,5 +502,14 @@ impl entry_lib_protocol_ir(spec: GlueSpec) -> str {
         + "() {\nentry:\n"
         + call
         + "  ret void\n}\n\n"
+    );
+}
+
+impl entry_lib_pe_dll_entry_ir -> str {
+    return (
+        "define i32 @__jac_dll_main(ptr %module, i32 %reason, ptr %reserved) {\n"
+        "entry:\n"
+        "    ret i32 1\n"
+        "}\n\n"
     );
 }

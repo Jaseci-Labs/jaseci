@@ -75,3 +75,5 @@ def inject_heap_accounting(
 ) -> tuple[str, list[str]];
 
 def entry_lib_protocol_ir(spec: GlueSpec) -> str;
+
+def entry_lib_pe_dll_entry_ir -> str;

@@ -35,6 +35,7 @@ import from jaclang.compiler.frontend.codeinfo {
     native_entry_name,
     native_glob_init_name
 }
+import from jaclang.compiler.backends.native.link_glue { GlueSpec, link_glue_ir }
 
 glob FIXTURES = str(Path(__file__).resolve().parent / "fixtures" / "link_diamond"),
      UNITS: list[str] = ["base.jac", "left.jac", "right.jac", "extra.jac", "top.jac"];
@@ -1458,4 +1459,14 @@ test "the formatting kernel lowers before a unit that parses an int or calls a b
     assert max(live_at_lower) == 0 , (
         f"a kernel lowered inside a consumer's pass: {live_at_lower}"
     );
+}
+
+test "PE entry libraries retain a passive DLL entry point" {
+    spec = GlueSpec(
+        units=[], shared=True, entry_lib=True, platform="pe", needs_region_hook=False
+    );
+    (ir_text, exports) = link_glue_ir(spec);
+    assert "define i32 @__jac_dll_main" in ir_text , ir_text;
+    assert "call void @__jac_shared_init()" not in ir_text , ir_text;
+    assert "__jac_shared_init" in exports , exports;
 }

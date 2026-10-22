@@ -3,7 +3,9 @@ import logging;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
 class CallbackSignature(Protocol) {
-    has name: str,
+    has native_symbol: str,
+        lookup_name: str,
+        name: str,
         ret_type: str,
         param_types: list[str];
 }
@@ -12,7 +14,8 @@ obj NativeCallback {
     has name: str,
         ret_type: str,
         param_types: list[str],
-        native_symbol: str = "";
+        native_symbol: str = "",
+        lookup_name: str = "";
 }
 
 obj NativeLibrary {

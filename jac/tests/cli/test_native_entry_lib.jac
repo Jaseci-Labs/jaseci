@@ -520,3 +520,101 @@ test "seal succeeds when a native module imports a server fn it never calls" {
         shutil.rmtree(tmp, ignore_errors=True);
     }
 }
+
+test "qualified Python callback keys bind and invoke the callback" {
+    import ctypes;
+    import from jaclang.runtime.interop_bridge { register_py_callbacks }
+    class _Binding {
+        has name: str = "py_double",
+            ret_type: str = "int",
+            param_types: list[str] = ["int"],
+            native_symbol: str = "caller.py_double",
+            lookup_name: str = "caller.py_double";
+    }
+    def _double(value: int) -> int {
+        return value * 2;
+    }
+    registered: list[tuple[str, int]] = [];
+    def _capture(sym: str, addr: int) {
+        registered.append((sym, addr));
+    }
+    table: dict[(str, Callable[(..., object)])] = {"caller.py_double": _double};
+    callbacks: list[object] = [];
+    register_py_callbacks([_Binding()], table, callbacks, _capture);
+    assert registered[0][0] == "caller.py_double" , registered;
+    callback_type = ctypes.CFUNCTYPE(ctypes.c_int64, ctypes.c_int64);
+    callback = callback_type(registered[0][1]);
+    assert callback(21) == 42;
+}
+
+test "aliased server callbacks resolve by caller-local symbol" {
+    if not sys.platform.startswith("linux") or not _llvm_available() {
+        testskip("requires the Linux native linker");
+    }
+    tmp = tempfile.mkdtemp(prefix="jac_native_callback_alias_");
+    try {
+        proj = Path(tmp);
+        (proj / "first.jac").write_text(
+            "def:pub foo(x: int) -> int {\n    return x + 1;\n}\n", encoding="utf-8"
+        );
+        (proj / "second.jac").write_text(
+            "def:pub foo(x: int) -> int {\n    return x + 2;\n}\n", encoding="utf-8"
+        );
+        (proj / "main.jac").write_text(
+            "import from .first { foo }\n"
+                + "import from .second { foo as bar }\n\n"
+                + "with entry {\n    print(foo(1));\n    print(bar(1));\n}\n",
+            encoding="utf-8"
+        );
+        (proj / "jac.toml").write_text(
+            '[project]\nname = "callback-alias"\nversion = "0.1.0"\n'
+                + 'entry-point = "main"\nkind = "cli-native"\n'
+                + '[placement.pins]\nmain = "native"\n'
+                + 'first = "server"\nsecond = "server"\n',
+            encoding="utf-8"
+        );
+        import from jaclang.cli.commands.native_build { native_build_sealed_pair }
+        lib = str(proj / "libmain.entry.so");
+        rc = native_build_sealed_pair(
+            filename=str(proj / "main.jac"),
+            exe_output=str(proj / "main"),
+            lib_output=lib,
+            image_root=str(proj)
+        );
+        assert rc == 0 , "aliased native imports must seal";
+        record = json.loads(Path(lib + ".interop.json").read_text(encoding="utf-8"));
+        callbacks = record.get("callbacks") or [];
+        assert len(callbacks) == 2 , callbacks;
+        symbols = {str(cb.get("symbol")) for cb in callbacks};
+        assert any(symbol.endswith(".foo") for symbol in symbols) , symbols;
+        assert any(symbol.endswith(".bar") for symbol in symbols) , symbols;
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "JIT callback registers its native symbol but looks up Python name" {
+    import ctypes;
+    import from jaclang.runtime.interop_bridge { register_py_callbacks }
+    class _Binding {
+        has name: str = "py_double",
+            ret_type: str = "int",
+            param_types: list[str] = ["int"],
+            native_symbol: str = "caller.py_double",
+            lookup_name: str = "";
+    }
+    def _double(value: int) -> int {
+        return value * 2;
+    }
+    registered: list[tuple[str, int]] = [];
+    def _capture(sym: str, addr: int) {
+        registered.append((sym, addr));
+    }
+    table: dict[(str, Callable[(..., object)])] = {"py_double": _double};
+    callbacks: list[object] = [];
+    register_py_callbacks([_Binding()], table, callbacks, _capture);
+    assert registered[0][0] == "caller.py_double" , registered;
+    callback_type = ctypes.CFUNCTYPE(ctypes.c_int64, ctypes.c_int64);
+    callback = callback_type(registered[0][1]);
+    assert callback(21) == 42;
+}
