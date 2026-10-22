@@ -1,58 +1,5 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    Ability,
-    ArchHas,
-    Archetype,
-    Assignment,
-    AstSymbolNode,
-    AtomTrailer,
-    BinaryExpr,
-    Bool,
-    BuiltinType,
-    DictVal,
-    Enum,
-    Float,
-    FuncCall,
-    FuncSignature,
-    HasVar,
-    Import,
-    IndexSlice,
-    Int,
-    KVPair,
-    LambdaExpr,
-    ListVal,
-    ModuleItem,
-    ModulePath,
-    MultiString,
-    Name,
-    NameAtom,
-    Null,
-    ParamVar,
-    Slice,
-    String,
-    Token,
-    TupleVal,
-    UnaryExpr,
-    ability_of_symbol,
-    resolved_decl_of
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    SymbolType,
-    Tokens as Tok
-}
-import from jaclang.compiler.frontend.codeinfo {
-    BoundaryTypeInfo,
-    InteropBinding,
-    InteropContext,
-    InteropManifest
-}
-
 walker BoundaryAnalysisPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _func_defs: dict[(str, tuple[(InteropContext, Ability)])] = {},
         _imported_native_funcs: dict[(str, tuple[(str, InteropContext)])] = {},
         _imported_native_modules: dict[(str, tuple[(str, InteropContext)])] = {};
@@ -113,4 +60,8 @@ walker BoundaryAnalysisPass(TreePass) {
     def _literal_default(expr: (UniNode | None)) -> tuple[(bool, any)];
     can finish with exit;
     def _record_surface(manifest: InteropManifest) -> None;
+    def _export_mixed_native(manifest: InteropManifest) -> None;
+    def _route_facts(
+        item: (Ability | Archetype)
+    ) -> tuple[(dict[str, any] | None), bool, bool];
 }

@@ -1,49 +1,5 @@
 """Compiler constants and code objects become retained CPython values."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyBool_FromLong,
-    PyComplex_FromDoubles,
-    PyFloat_FromDouble,
-    PyLong_FromLongLong,
-    PyNumber_Negative,
-    PyObject,
-    PySlice_New,
-    PyTuple_New,
-    Py_NewRef,
-    jacpy_code_new,
-    jacpy_ellipsis,
-    jacpy_long_from_bytes,
-    jacpy_none,
-    jacpy_release,
-    jacpy_set_new,
-    jacpy_tuple_set_owned
-}
-import from jaclang.runtime.python.objects {
-    PyObj,
-    PyNoneType,
-    PyEllipsis,
-    PyBool,
-    PyInt,
-    PyFloat,
-    PyComplex,
-    PyStr,
-    PyBytes,
-    PyTuple,
-    PySet,
-    PySlice,
-    PyCode
-}
-import from jaclang.runtime.python.compiler_integer { PyBigInt }
-import from jaclang.runtime.python.constant_keys { constant_key }
-import from jaclang.runtime.python.opcode_meta {
-    CO_OPTIMIZED,
-    CO_FAST_HIDDEN,
-    CO_FAST_LOCAL,
-    CO_FAST_CELL,
-    CO_FAST_FREE
-}
-import from jaclang.runtime.python.capi { checked, required, text_object, write_buffer }
 def constant_object(constant: PyObj) -> ptr[PyObject] {
     writer = constant_writer();
     try {
@@ -63,10 +19,10 @@ obj constant_writer {
 
     def write(constant: PyObj) -> ptr[PyObject] {
         if isinstance(constant, PyNoneType) {
-            return required(jacpy_none());
+            return required(Py_NewRef(Py_None));
         }
         if isinstance(constant, PyEllipsis) {
-            return required(jacpy_ellipsis());
+            return required(Py_NewRef(Py_Ellipsis));
         }
         if isinstance(constant, PyBool) {
             return required(PyBool_FromLong(i64(constant.val)));

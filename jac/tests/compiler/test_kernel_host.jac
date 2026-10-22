@@ -6,7 +6,7 @@ the facts every compile needs and the host adds an answer each time the
 kernel asks; the `KernelHost` serves those answers, does its own file I/O,
 buffers events for replay, and hands the few host-only services (compiler
 objects, Python parsing, interface caches) back to the host.
-`JAC_KERNEL_HOST=1` routes every user-module analysis through it, which must
+`set_kernel_host_mode("on")` routes every user-module analysis through it, which must
 change nothing a user can see."""
 import json;
 import os;
@@ -14,7 +14,7 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host { KERNEL_HOST_ENV, active_host }
+import from jaclang.compiler.frontend.host { active_host, set_kernel_host_mode }
 import from jaclang.compiler.frontend.kernel_host { KernelHost }
 import from jaclang.project.kernel_snapshot {
     kernel_census,
@@ -65,21 +65,12 @@ diagnostic and, per project module, its decided codespace, placement
 summary and native verdict, with the project directory normalized away."""
 def observe(base: Path, kernel: bool) -> dict[str, any] {
     import from jaclang.compiler.placement.placement { get_module_summary }
-    previous = os.environ.get(KERNEL_HOST_ENV);
-    if kernel {
-        os.environ[KERNEL_HOST_ENV] = "1";
-    } else {
-        os.environ.pop(KERNEL_HOST_ENV, None);
-    }
+    previous = set_kernel_host_mode("on" if kernel else "");
     try {
         program = JacProgram();
         program.compile(str(base / 'main.jac'), no_cgen=True);
     } finally {
-        if previous is None {
-            os.environ.pop(KERNEL_HOST_ENV, None);
-        } else {
-            os.environ[KERNEL_HOST_ENV] = previous;
-        }
+        set_kernel_host_mode(previous);
     }
     prefix = str(base);
     real_prefix = os.path.realpath(prefix);
@@ -92,11 +83,9 @@ def observe(base: Path, kernel: bool) -> dict[str, any] {
             if not os.path.realpath(path).startswith(real_prefix) {
                 continue;
             }
-            verdict = active_host().native_verdict(path, context);
             facts[norm(path)] = (
                 mod.decided_codespace,
-                norm(repr(get_module_summary(mod, context))),
-                repr(verdict)
+                norm(repr(get_module_summary(mod, context)))
             );
         }
     }

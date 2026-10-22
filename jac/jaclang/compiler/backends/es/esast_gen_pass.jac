@@ -1,78 +1,5 @@
-import from jaclang.compiler.frontend.roles { Kid }
 import json;
 import from typing { cast }
-import jaclang.compiler.backends.es.estree as es;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.backends.es.es_unparse { es_to_js, JSCodeGenerator }
-import from jaclang.compiler.types.types { TypeBase, ClassType }
-import from jaclang.compiler.types.ct_value {
-    CtBool,
-    CtDict,
-    CtFloat,
-    CtInt,
-    CtList,
-    CtNone,
-    CtSet,
-    CtStr,
-    CtTuple,
-    CtValue,
-    int_host
-}
-import from jaclang.compiler.backends.es.primitives_es {
-    ESBuiltinEmitter,
-    ESEmitCtx,
-    es_sized_cast
-}
-import from jaclang.compiler.backends.common.primitives { PrimitiveEmitter }
-import from jaclang.compiler.frontend.constant { CodeContext, SymbolType }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.types.operations { AUG_TO_BINARY_MAP }
-import from jaclang.compiler.passes.osp_analysis { OspAnalysis, OspModel, OspSlot }
-import from jaclang.compiler.passes.context { TreePass }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.backends.es.jsx_processor { EsJsxProcessor }
-import from jaclang.compiler.frontend.codeinfo {
-    BoundaryTypeInfo,
-    ClientManifest,
-    InteropManifest
-}
-import from jaclang.compiler.backends.es.scoped_styles {
-    ScopedStyleSheet,
-    load_style_annex
-}
-import from jaclang.compiler.backends.es.framework_backend { FrameworkBackend }
-import from jaclang.compiler.backends.es.free_ident_audit {
-    FreeIdentifier,
-    RUNTIME_PRELUDE_GLOBALS,
-    client_ambient_globals,
-    free_identifiers,
-    js_identifiers
-}
-import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.client.client_surface { WASM_HOST_MODULE }
-import from jaclang.compiler.backends.es.js_paths {
-    convert_to_js_import_path,
-    relative_js_specifier
-}
-import from jaclang.compiler.frontend.diagnostics {
-    E2025,
-    E5010,
-    E5011,
-    E5012,
-    E5016,
-    E5017,
-    E5018,
-    W5013,
-    W5014,
-    W5015,
-    E5080,
-    E5081,
-    E5085,
-    E5086,
-    E5099,
-    E5101,
-    E5103
-}
 
 glob _T = TypeVar('_T', bound=es.Node),
      ES_LOGICAL_OPS: dict[str, str] = {Tok.KW_AND: '&&', Tok.KW_OR: '||'},
@@ -241,6 +168,7 @@ obj CallArgSlot {
 }
 
 walker EsastGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _ct_only_names: (set[str] | None) = None,
         imports: list[es.ImportDeclaration] = [],
         module_import_paths: dict[str, str] = {},
@@ -283,7 +211,9 @@ walker EsastGenPass(TreePass) {
         _primitive_emitters: dict[str, PrimitiveEmitter[(str, ESEmitCtx)]] = {},
         _emitters_ready: bool = False,
         _builtin_emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter(),
-        _poly_methods: (set[str] | None) = None;
+        _poly_methods: (set[str] | None) = None,
+        loop_links: LoopLinks = LoopLinks(),
+        _native_links: dict[int, bool] = {};
 
     has resolved_backend: FrameworkBackend {
         getter {
@@ -431,6 +361,14 @@ walker EsastGenPass(TreePass) {
     def _is_ct_type_param(nd: uni.Name) -> bool;
     def _ct_ctor_slots(nd: uni.UniNode) -> (list[tuple[str, uni.Expr]] | None);
     def _trailer_reaches_ct_class(nd: uni.AtomTrailer) -> bool;
+    def _pass_link_name(link: PassLink) -> str;
+    def _pass_link_ref(link: PassLink, nd: uni.UniNode) -> es.Expression;
+    def _build_pass_block(loop: LoopStmt) -> es.BlockStatement;
+    def _pass_link_native(link: PassLink) -> bool;
+    def _target_confined(loop: uni.InForStmt) -> bool;
+    def _target_rebound(loop: uni.InForStmt) -> bool;
+    def _frame_scope_of(nd: uni.UniNode) -> (ScopeInfo | None);
+    def _pass_link_detaches(loop: (LoopStmt | None)) -> list[es.Statement];
     def _build_block_statement(
         scope_node: uni.UniScopeNode, body_nodes: (Sequence[uni.UniNode] | None)
     ) -> es.BlockStatement;
@@ -474,6 +412,8 @@ walker EsastGenPass(TreePass) {
     def _es_json_literal(value: any) -> any;
     can exit_type_alias with uni.TypeAlias exit;
     can exit_type_param with uni.TypeParam exit;
+    can enter_archetype with uni.Archetype entry;
+    can enter_enum with uni.Enum entry;
     can exit_archetype with uni.Archetype exit;
     can exit_enum with uni.Enum exit;
     can enter_ability with uni.Ability entry;
@@ -678,6 +618,16 @@ walker EsastGenPass(TreePass) {
     def _pos_params_from_ability(ability_node: uni.Ability) -> list[uni.ParamVar];
     def _param_names_from_ability(ability_node: uni.Ability) -> list[str];
     def _param_type_map_from_ability(ability_node: uni.Ability) -> dict[(str, str)];
+    def _builtin_param_names(nd: uni.FuncCall) -> (list[str] | None);
+    def _slot_builtin_kwargs(
+        nd: uni.FuncCall,
+        args: list[(es.Expression | es.SpreadElement)],
+        props: list[(es.Property | es.SpreadElement)],
+        func_name: str
+    ) -> (
+        tuple[(list[(es.Expression | es.SpreadElement)], (es.Expression | None))] | None
+    );
+
     def _wrap_to_wire_if_boundary(
         expr: es.Expression,
         type_name: str,

@@ -1,102 +1,8 @@
 """Native compiler entry points: each request returns a retained CPython value
 or zero with the Python exception set."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyLong_FromLongLong,
-    PyObject,
-    PyTuple_New,
-    jacpy_error_pending,
-    jacpy_none,
-    jacpy_raise_compiler_error,
-    jacpy_release,
-    jacpy_source_kind,
-    jacpy_tuple_set_owned
-}
-import from jaclang.runtime.python.bindings.pickle { PyInit__pickle }
-import from jaclang.runtime.python.bindings.array { PyInit_array }
-import from jaclang.runtime.python.bindings.itertools { PyInit_itertools }
-import from jaclang.runtime.python.bindings.functools { PyInit__functools }
-import from jaclang.runtime.python.bindings.math { PyInit_math }
-import from jaclang.runtime.python.bindings.collections { PyInit__collections }
-import from jaclang.runtime.python.bindings.struct { PyInit__struct }
-import from jaclang.runtime.python.bindings.cmath { PyInit_cmath }
-
-import from jaclang.runtime.python.bindings.csv { PyInit__csv }
-import from jaclang.runtime.python.bindings.json { PyInit__json }
-import from jaclang.runtime.python.bindings.queue { PyInit__queue }
-import from jaclang.runtime.python.bindings.operator { PyInit__operator }
-import from jaclang.runtime.python.bindings.binascii { PyInit_binascii }
-import from jaclang.runtime.python.bindings.random { PyInit__random }
-import from jaclang.runtime.python.bindings.bisect { PyInit__bisect }
-import from jaclang.runtime.python.bindings.heapq { PyInit__heapq }
-import from jaclang.runtime.python.bindings.statistics { PyInit__statistics }
-import from jaclang.runtime.python.bindings.stat { PyInit__stat }
-import from jaclang.runtime.python.bindings.opcode { PyInit__opcode }
-import from jaclang.runtime.python.bindings.pwd { PyInit_pwd }
-import from jaclang.runtime.python.bindings.grp { PyInit_grp }
-import from jaclang.runtime.python.bindings.types { PyInit__types }
-import from jaclang.runtime.python.bindings.typing { PyInit__typing }
-import from jaclang.runtime.python.bindings.suggestions { PyInit__suggestions }
-import from jaclang.runtime.python.bindings.sysconfig { PyInit__sysconfig }
-import from jaclang.runtime.python.bindings.weakref { PyInit__weakref }
-import from jaclang.runtime.python.bindings.tracemalloc { PyInit__tracemalloc }
-import from jaclang.runtime.python.bindings.zlib { PyInit_zlib }
-import from jaclang.runtime.python.bindings.bz2 { PyInit__bz2 }
-import from jaclang.runtime.python.bindings.errno { PyInit_errno }
-import from jaclang.runtime.python.bindings.syslog { PyInit_syslog }
-import from jaclang.runtime.python.bindings.resource { PyInit_resource }
-import from jaclang.runtime.python.bindings.atexit { PyInit_atexit }
-import from jaclang.runtime.python.bindings.md5 { PyInit__md5 }
-import from jaclang.runtime.python.bindings.sha1 { PyInit__sha1 }
-import from jaclang.runtime.python.bindings.sha2 { PyInit__sha2 }
-import from jaclang.runtime.python.bindings.sha3 { PyInit__sha3 }
-import from jaclang.runtime.python.bindings.blake2 { PyInit__blake2 }
-import from jaclang.runtime.python.bindings.hmac { PyInit__hmac }
-import from jaclang.runtime.python.tokenize {
-    token_iterator_state,
-    token_iterator,
-    token_object,
-    jacpy_token_close
-}
-import from jaclang.compiler.frontend.python.source_encoding { source_fd_encoding }
-import from jaclang.compiler.backends.py.jacpython.product_compile {
-    compile_source,
-    compile_ast,
-    prepare_ast_output
-}
-import from jaclang.compiler.frontend.python.parser {
-    parse_file,
-    parse_eval_source,
-    parse_interactive,
-    parse_func_type
-}
-import from jaclang.compiler.frontend.python.ast_nodes { mod }
-import from jaclang.compiler.frontend.python.syntax_error {
-    syntax_failure,
-    split_source_lines,
-    source_character_column
-}
-import from jaclang.runtime.python.objects { PyObj, PyCode, PyError, PyInt }
-import from jaclang.runtime.python.capi {
-    boundary_failure,
-    checked,
-    required,
-    text_object,
-    text_value
-}
-import from jaclang.runtime.python.constant_output { constant_object }
-import from jaclang.compiler.frontend.python.ast_input { read_node }
-import from jaclang.compiler.frontend.python.ast_output { ast_write_node }
-import from jaclang.compiler.frontend.python.ast_validation { validate_ast_value }
-import from jaclang.runtime.python.symtable {
-    source_symtable,
-    symtable_to_object,
-    SymtableEntry
-}
-import from jaclang.compiler.frontend.python.compiler_symtable { mangle_name }
-import from jaclang.runtime.python.opcode_meta { stack_effect }
-import from jaclang.compiler.frontend.python.source_input { decode_source_value }
+# Object-model ports define interpreter types and objects under their C names
+# (Objects/boolobject.c: PyBool_Type, _Py_FalseStruct, _Py_TrueStruct).
 glob PyCF_ONLY_AST: int = 1024;
 
 # A request runs its compiler work inside one region: the tokens, trees,
@@ -147,6 +53,36 @@ def respond(request: native_request) -> ptr[PyObject] {
     return NULL;
 }
 
+"""The exception type a compiler diagnostic names; NULL for an unknown kind."""
+def:priv failure_type(kind: str) -> ptr[PyObject] {
+    if kind == "SyntaxError" {
+        return PyExc_SyntaxError;
+    } elif kind == "IndentationError" {
+        return PyExc_IndentationError;
+    } elif kind == "TabError" {
+        return PyExc_TabError;
+    } elif kind == "_IncompleteInputError" {
+        return addressof(_PyExc_IncompleteInputError);
+    } elif kind == "ValueError" {
+        return PyExc_ValueError;
+    } elif kind == "TypeError" {
+        return PyExc_TypeError;
+    } elif kind == "OverflowError" {
+        return PyExc_OverflowError;
+    } elif kind == "RecursionError" {
+        return PyExc_RecursionError;
+    } elif kind == "RuntimeError" {
+        return PyExc_RuntimeError;
+    } elif kind == "NotImplementedError" {
+        return PyExc_NotImplementedError;
+    } elif kind == "MemoryError" {
+        return PyExc_MemoryError;
+    } elif kind == "SystemError" {
+        return PyExc_SystemError;
+    }
+    return NULL;
+}
+
 def raise_failure(request: native_request, error: syntax_failure) {
     try {
         message = text_object(error.msg);
@@ -156,7 +92,22 @@ def raise_failure(request: native_request, error: syntax_failure) {
                 location = failure_location(request.filename, error);
             }
             try {
-                jacpy_raise_compiler_error(error.kind, message, location);
+                kind = failure_type(error.kind);
+                if kind == 0 {
+                    object_error(
+                        PyExc_SystemError, "unknown native diagnostic " + error.kind
+                    );
+                } elif location and PyObject_IsSubclass(kind, PyExc_SyntaxError) > 0 {
+                    # A SyntaxError subclass takes CPython's argument shape:
+                    # (message, (filename, lineno, offset, text, end_lineno, end_offset)).
+                    args = PyTuple_Pack(2, message, location);
+                    if args {
+                        PyErr_SetObject(kind, args);
+                        jacpy_release(args);
+                    }
+                } else {
+                    PyErr_SetObject(kind, message);
+                }
             } finally {
                 jacpy_release(location);
             }
@@ -187,17 +138,25 @@ def failure_location(filename: str, error: syntax_failure) -> ptr[PyObject] {
                 3,
                 text_object(error.text)
                     if error.text is not None
-                    else required(jacpy_none())
+                    else required(Py_NewRef(Py_None))
             )
         );
         checked(
             jacpy_tuple_set_owned(
-                result, 4, required(PyLong_FromLongLong(i64(error.end_lineno)))
+                result,
+                4,
+                required(Py_NewRef(Py_None))
+                    if error.open_end
+                    else required(PyLong_FromLongLong(i64(error.end_lineno)))
             )
         );
         checked(
             jacpy_tuple_set_owned(
-                result, 5, required(PyLong_FromLongLong(i64(error.end_offset)))
+                result,
+                5,
+                required(Py_NewRef(Py_None))
+                    if error.open_end
+                    else required(PyLong_FromLongLong(i64(error.end_offset)))
             )
         );
     } except Exception {
@@ -302,6 +261,20 @@ obj compile_request(native_request) {
     }
 
     def compile_tree -> ptr[PyObject] {
+        # PyAST_obj2mod(): the root must be the mode's node before any field
+        # is converted.
+        (required_kind, required_name) = {
+            "exec": (ast_kind.Module, "Module"),
+            "eval": (ast_kind.Expression, "Expression"),
+            "single": (ast_kind.Interactive, "Interactive"),
+            "func_type": (ast_kind.FunctionType, "FunctionType")
+        }[self.mode];
+        if int(jacpy_ast_kind(self.source)) != required_kind.value {
+            raise syntax_failure(
+                f"expected {required_name} node, got {type_name(self.source)}",
+                kind="TypeError"
+            );
+        }
         tree = read_node(self.source);
         validate_ast_value(tree);
         if not isinstance(tree, mod) {
