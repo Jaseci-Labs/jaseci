@@ -7,6 +7,34 @@ module is ported, what stays C and why, and the design for the two tiers that
 cannot be ported yet: the object model (`Objects/`) and the evaluator
 (`Python/`).
 
+## Detaching from CPython's C
+
+The end state is a JacPython with no dependence on CPython's C source: no
+CPython C file is compiled into the runtime, no upstream C file is read at
+build time, and the previous JacPython builds the next one. The scope:
+
+| Part | End state |
+|---|---|
+| `Objects/`, `Python/`, `Modules/` C | ported to Jac, tier by tier |
+| allocator (`obmalloc.c` and CPython's mimalloc copy) | ported to Jac |
+| instruction set (`Python/bytecodes.c`, `generated_cases.c.h`) | defined in Jac; no translation of the upstream DSL |
+| Argument Clinic signatures, `Python.asdl`/`Python-ast.c`, grammar and token tables | owned as Jac data; generators stop reading upstream C |
+| `Include/` | generated from the Jac layouts and declarations, so C extensions still compile |
+| configure, `Makefile.pre.in`, makesetup, `Tools/build` | replaced by `build_python.zig` and Jac scripts |
+| the build-only host CPython | replaced by the previous JacPython |
+| remote debugging, perf trampolines, `getaddrinfo`/`getnameinfo` fallbacks | dropped, not ported |
+| HACL\*, OpenSSL, sqlite, expat, libmpdec, libffi, zlib, bzip2, xz, zstd | stay vendored libraries |
+
+The order follows cost. The binding layer's per-call overhead (thread-state
+lookups through `pthread_getspecific`, a `sigsetjmp` per `try`, heap
+allocation on call paths, C API checks that are not inlined) comes down before the hot
+core moves: ported modules run 1.5x (pyperformance geometric mean) to 2.3x
+(the module microbenchmarks) slower than the stock build of the same recipe,
+and `dict`, `str`, `int` and the evaluator would carry that cost into every
+program. The containers, numbers and text, `typeobject.c`, the allocator,
+the evaluator and the runtime services follow, then the generated headers,
+the build system and self-hosting.
+
 ## Porting a module
 
 Four generated files and three lists do the bookkeeping. A port touches only
@@ -308,7 +336,7 @@ only where Jac cannot express the operation:
 | struct fields of object layouts and interpreter state (`tp_richcompare`, `ob_alloc`, weakref lists, `PyCFunctionObject.m_ml`, `interp->atexit`, `interp->cached_objects`) and of `struct dirent` | layout differs between builds (macOS x86_64 binds the `$INODE64` `readdir`, `stat`, `fstatat` and `statfs`) | helpers (`jacpy_typing_types` returns the interpreter's typing types); object ports read the fields gen_layouts generates and asserts instead (`interp->gc`, `interp->object_state.freelists`) |
 | CPU feature probes (CPUID) | an intrinsic | `jacpy_hacl_simd_features` |
 | the libm functions Zig's compiler-rt also defines (`log`, `sin`, `fma`, ...) | a Mach-O link binds compiler-rt's weak copies ahead of libSystem's | `jacpy_libm_*` look them up in libSystem |
-| vendored libraries (HACL*, libmpdec, expat, zlib, bzip2, xz, zstd, sqlite, OpenSSL, mimalloc) | external dependencies, not CPython | built and linked as before |
+| vendored libraries (HACL*, libmpdec, expat, zlib, bzip2, xz, zstd, sqlite, OpenSSL) | external dependencies, not CPython | built and linked as before |
 
 `object_api.c`, `compiler_runtime.c` and `binding_api.c` hold only these. They
 take and return typed pointers (`PyObject *`, `Py_buffer *`,
@@ -576,19 +604,21 @@ on the bitcode version.
 Order after the leaf types: containers (`tupleobject.c`, `listobject.c`,
 `setobject.c`, `dictobject.c`), then numbers and text (`floatobject.c`,
 `complexobject.c`, `longobject.c`, `bytesobject.c`, `unicodeobject.c`), and
-`typeobject.c` (12,312 lines) last. `mimalloc` and `obmalloc.c` stay the
-allocator.
+`typeobject.c` (12,312 lines) last. The allocator (`obmalloc.c` and the
+mimalloc copy under `Objects/mimalloc/`) follows the object model.
 
 ## Evaluator (`Python/`, 132k lines)
 
 The instruction set is defined once, in the DSL of `Python/bytecodes.c`
 (5,549 lines, 359 instruction, op, macro and family definitions);
 `Tools/cases_generator` turns it into `generated_cases.c.h` (12,528 lines).
-The Jac evaluator follows the clinic pattern: a Jac backend for
-`cases_generator` reads the same definitions and emits Jac instruction
-bodies. The bodies are restricted C over macros (`DEOPT_IF`, `ERROR_IF`,
-`PyStackRef_*`), so that backend is a translator for that dialect, not a
-general C translator. Requirements beyond the object model:
+The Jac evaluator owns its instruction definitions: each instruction, op,
+macro and family is Jac, with the stack effects and metadata the generator
+derives (`opcode_meta.jac`, the `_opcode` tables) produced from those
+definitions, so the build reads no upstream C. The bodies are restricted C
+over macros (`DEOPT_IF`, `ERROR_IF`, `PyStackRef_*`); a one-time conversion
+writes them as Jac, after which the Jac definitions are the source.
+Requirements beyond the object model:
 
 - tagged stack references (`_PyStackRef` stores tag bits in the pointer):
   pointer/integer conversion and bit operations (gap 1);
