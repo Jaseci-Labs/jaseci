@@ -115,6 +115,21 @@ def _runs_as(bundle: dict[str, any], svc: str) -> (str | None) {
 }
 
 
+def _show_yaml_kinds(bundle: dict[str, any]) -> list[str] {
+    plan = Plan(
+        bundle=bundle,
+        routes={},
+        gateway_cfg={},
+        svc_configs={},
+        cluster_type="kind",
+        namespace="shop-ns",
+        services=[],
+        ingress=None
+    );
+    return [m["kind"] for m in plan._flatten_manifests()];
+}
+
+
 test "only the gateway runs as the console's ServiceAccount, and the Role is never bound to default" {
     # (ops_console, service_account_name, gateway runs as, service runs as)
     cases = [
@@ -129,14 +144,22 @@ test "only the gateway runs as the console's ServiceAccount, and the Role is nev
         label = f"ops_console={console} service_account_name={sa!r}";
         assert _runs_as(bundle, GATEWAY_NAME) == gateway_sa , label;
         assert _runs_as(bundle, "orders_app") == service_sa , label;
+        kinds = _show_yaml_kinds(bundle);
         if not console {
             assert "ops_rbac" not in bundle , label;
+            assert "ServiceAccount" not in kinds , label;
             continue;
         }
         rbac = bundle["ops_rbac"];
         assert rbac["service_account"]["metadata"]["name"] == "shop-ops" , label;
         subjects = rbac["role_binding"]["subjects"];
         assert [s["name"] for s in subjects] == ["shop-ops"] , label;
+        # --show-yaml must carry the account the gateway names, ahead of the
+        # Deployments, or the exported manifests leave the gateway unable to start.
+        first_deployment = kinds.index("Deployment");
+        for kind in ["ServiceAccount", "Role", "RoleBinding"] {
+            assert kind in kinds[:first_deployment] , f"{label}: {kind} not before Deployments in {kinds}";
+        }
     }
 
     # The console's own account cannot also be the workloads' account: every

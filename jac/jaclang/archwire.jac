@@ -30980,6 +30980,7 @@ graph import scale {
         StandardLogger
     }
     runtime.cli.diagnostics ++> tests.deploy.test_pdb_budget { PlanValidator }
+    runtime.cli.plan ++> tests.deploy.test_ops_rbac { Plan }
     runtime.context.auth_ctx ++> [
         server.extensions.ObservabilityExtension.register {
             reset_current_auth,
