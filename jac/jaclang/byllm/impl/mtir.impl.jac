@@ -282,6 +282,18 @@ def _is_system_message(msg: any) -> bool;
 def _is_finish_tool_call(tc: any) -> bool;
 
 
+def _tool_calls_of(msg: any) -> list[any];
+
+
+def _tool_call_id(tc: any) -> str;
+
+
+def _with_tool_calls(msg: any, tool_calls: list[any]) -> any;
+
+
+def _drop_unanswered_calls(msgs: list[any]) -> list[any];
+
+
 impl MTRuntime.get_history_for_persist -> list[MessageType] {
     scaff_ids = set(self._scaffolding_ids);
     out: list[any] = [];
@@ -301,16 +313,21 @@ impl MTRuntime.get_history_for_persist -> list[MessageType] {
         if isinstance(msg, ToolCallResultMsg) and msg.name == "finish_tool" {
             continue;
         }
-        tool_calls: any = msg?.tool_calls;
-        if tool_calls is None and isinstance(msg, dict) {
-            tool_calls = msg.get("tool_calls");
-        }
-        if tool_calls and all(_is_finish_tool_call(tc) for tc in tool_calls) {
-            continue;
+        tool_calls = _tool_calls_of(msg);
+        if any(_is_finish_tool_call(tc) for tc in tool_calls) {
+            kept = [
+                tc
+                for tc in tool_calls
+                if not _is_finish_tool_call(tc)
+            ];
+            if not kept {
+                continue;
+            }
+            msg = _with_tool_calls(msg, kept);
         }
         out.append(msg);
     }
-    return out;
+    return _drop_unanswered_calls(out);
 }
 
 impl MTRuntime.parse_response(response: str) -> any {
@@ -389,6 +406,69 @@ impl _is_finish_tool_call(tc: any) -> bool {
     }
     return False;
 }
+
+impl _tool_calls_of(msg: any) -> list[any] {
+    tool_calls: any = msg?.tool_calls;
+    if tool_calls is None and isinstance(msg, dict) {
+        tool_calls = msg.get("tool_calls");
+    }
+    return list(tool_calls) if tool_calls else [];
+}
+
+
+impl _tool_call_id(tc: any) -> str {
+    call_id: any = tc.get("id") if isinstance(tc, dict) else tc?.id;
+    return str(call_id or "");
+}
+
+
+impl _with_tool_calls(msg: any, tool_calls: list[any]) -> any {
+    if isinstance(msg, dict) {
+        edited = dict(msg);
+        if tool_calls {
+            edited["tool_calls"] = tool_calls;
+        } else {
+            edited.pop("tool_calls", None);
+        }
+        return edited;
+    }
+    edited = copy.copy(msg);
+    setattr(edited, "tool_calls", tool_calls or None);
+    return edited;
+}
+
+
+impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
+    answered: set[str] = set();
+    for msg in msgs {
+        result_id: any = msg.get("tool_call_id")
+            if isinstance(msg, dict)
+            else msg?.tool_call_id;
+        if result_id {
+            answered.add(str(result_id));
+        }
+    }
+    out: list[any] = [];
+    for msg in msgs {
+        tool_calls = _tool_calls_of(msg);
+        kept = [
+            tc
+            for tc in tool_calls
+            if _tool_call_id(tc) in answered
+        ];
+        if len(kept) == len(tool_calls) {
+            out.append(msg);
+            continue;
+        }
+        content: any = msg.get("content") if isinstance(msg, dict) else msg?.content;
+        if not kept and not content {
+            continue;
+        }
+        out.append(_with_tool_calls(msg, kept));
+    }
+    return out;
+}
+
 
 impl _media_entries(value: any, semstr: str) -> list[any] {
     media = as_media_list(value);
