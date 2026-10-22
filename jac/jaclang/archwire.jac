@@ -5112,7 +5112,7 @@ graph import client.targets {
         run_manifest_install as _node_run_manifest_install
     }
     pwa_build --> [
-        web_target.WebTarget.build { apply_pwa },
+        web_target.WebTarget.build { apply_pwa, refresh_pwa_precache },
         web_target.WebTarget.setup { ensure_pwa_icons },
     ]
     react_native.build ++> mobile_target {

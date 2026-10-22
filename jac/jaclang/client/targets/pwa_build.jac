@@ -61,6 +61,8 @@ def _copy_pwa_icons_to_project(dest_dir: Path);
 
 def apply_pwa(dist_dir: Path, project_dir: Path);
 
+def refresh_pwa_precache(dist_dir: Path) -> None;
+
 impl _load_pwa_context -> tuple[dict[str, any], str] {
     config = get_config();
     project_name = "Jac App";
@@ -633,4 +635,9 @@ impl apply_pwa(dist_dir: Path, project_dir: Path) {
     _generate_service_worker(dist_dir, pwa_config);
     _update_html_for_pwa(dist_dir, pwa_config);
     console.print("  ✔ PWA manifest and service worker written", style="success");
+}
+
+impl refresh_pwa_precache(dist_dir: Path) -> None {
+    (pwa_config, _) = _load_pwa_context();
+    _generate_service_worker(dist_dir, pwa_config);
 }
