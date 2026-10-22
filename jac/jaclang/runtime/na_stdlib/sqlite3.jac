@@ -186,17 +186,13 @@ glob SQLITE_INTEGER: int = 1,
 obj:pub Warning(Exception) {
     has message: str = "";
 
-    def __str__ -> str {
-        return self.message;
-    }
+    def __str__ -> str;
 }
 
 obj:pub Error(Exception) {
     has message: str = "";
 
-    def __str__ -> str {
-        return self.message;
-    }
+    def __str__ -> str;
 }
 
 obj:pub InterfaceError(Error) {}
