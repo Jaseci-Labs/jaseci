@@ -164,3 +164,7 @@ def ok_str_format_optional_aug(x: str | None) -> str {
     s %= x;
     return s;
 }
+
+def ok_any_member_receiver_format(fmt: str | any, value: str | None) -> str {
+    return fmt % value;
+}

@@ -47,6 +47,9 @@ impl _every_member_accepts(
 ) -> bool {
     members = receiver.types if isinstance(receiver, UnionType) else [receiver];
     for member in members {
+        if isinstance(member, (AnyType, UnknownType)) or member.is_any_instance() {
+            continue;
+        }
         if evaluator.get_type_of_magic_method_call(member, method, [arg], None)
             is None {
             return False;
