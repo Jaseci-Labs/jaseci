@@ -10,7 +10,8 @@ enum IntrinsicDispatch {
     ALLOCA = "alloca",
     LIST_DATA = "list_data",
     BUFFER_DATA = "buffer_data",
-    REF_ADDR = "ref_addr"
+    REF_ADDR = "ref_addr",
+    STR_DATA = "str_data"
 }
 
 obj IntrinsicEntry {
@@ -136,6 +137,12 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  param_specs=["ref"],
                  result_spec="i64",
                  dispatch=IntrinsicDispatch.BUFFER_DATA
+             ),
+             "__str_data": IntrinsicEntry(
+                 name="__str_data",
+                 param_specs=["ref"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.STR_DATA
              ),
              "__ref_addr": IntrinsicEntry(
                  name="__ref_addr",
