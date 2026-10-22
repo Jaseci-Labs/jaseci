@@ -11,7 +11,9 @@ import from pathlib { Path }
 
 def _mini_app -> str {
     d = tempfile.mkdtemp(prefix="jac-app-");
-    Path(d, "jac.toml").write_text("[project]\nname = \"mini\"\n");
+    Path(d, "jac.toml").write_text(
+        "[project]\nname = \"mini\"\nentry-point = \"svc\"\n"
+    );
     Path(d, "svc.jac").write_text("def:pub ping -> str { return \"pong\"; }\n");
     return d;
 }

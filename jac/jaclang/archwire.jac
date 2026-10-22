@@ -3719,13 +3719,15 @@ graph import {
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
         dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
         dist.seal.build_serve_manifest { serve_manifest_stamp },
+        scale.injector.bundle.require_serve_manifest { SERVE_MANIFEST_REL },
     ]
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
             sealed_root_for,
             unlisted_image_root
         },
-        scale.injector.bundle.pack_jab { SERVE_MANIFEST_REL },
+        scale.injector.bundle.pack_jab
+            | scale.tests.microservices.test_app_precompile { SERVE_MANIFEST_REL },
     ]
     server.server ++> [
         client.targets.desktop.native.broker_extension

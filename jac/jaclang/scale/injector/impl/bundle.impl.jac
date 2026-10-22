@@ -551,8 +551,6 @@ impl sealed_app_name(project_dir: str, fleet: (FleetSpec | None)) -> str {
 }
 
 impl require_serve_manifest(stage: Path, detail: str = "") -> Path {
-    import from jaclang.server.sealed_serve { SERVE_MANIFEST_REL }
-
     serve_manifest = stage / SERVE_MANIFEST_REL;
     if not serve_manifest.is_file() {
         raise RuntimeError(
