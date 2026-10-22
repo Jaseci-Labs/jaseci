@@ -44,6 +44,8 @@ A Jac dependency is either a version requirement string (from a registry) or a t
 
 Names are always scoped: `org/name`, both halves lowercase identifiers (`[a-z][a-z0-9_]*`).
 
+Repeated path dependencies must resolve to the same directory; relative and symlink aliases are allowed. Different directories for one package name fail with both sources and their requesting manifests in the error. Repeated git dependencies must use the same repository URL and resolved commit.
+
 !!! note "Migrating from the old `[dependencies]`"
     Before packages, `[dependencies]` held PyPI requirements. `jac.toml` now rejects a bare `numpy = ">=2"` under `[dependencies]` with an error that names the move. Run `jac fix dependencies` to move every PyPI entry (including the old `[dependencies.git]` table) into `[dependencies.pypi]`.
 
@@ -172,7 +174,7 @@ internal = "https://raw.githubusercontent.com/acme/jac-index/main/"
 "acme/secret" = { version = "^1", registry = "internal" }
 ```
 
-`JAC_REGISTRY` overrides the default registry's URL (a mirror, or a `file://` directory in tests), and `JAC_OFFLINE=1` resolves from cached index files and the store only.
+`JAC_REGISTRY` overrides the default registry's URL (a mirror, or a `file://` directory in tests), and an offline project (`[network] offline = true` in `jac.toml`) resolves from cached index files and the store only.
 
 ## Templates
 

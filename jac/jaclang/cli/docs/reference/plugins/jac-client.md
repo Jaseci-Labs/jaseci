@@ -1816,7 +1816,7 @@ jac setup [app]
 |--------|-------------|
 | `app` | An app name from `[apps]`. Omit to set up the default app |
 
-What setup does follows the app's kind: a `mobile` app gets its Expo/Metro scaffold at `.jac/mobile-rn/` and its packages installed; a `web-app` with a `[client.pwa]` table gets a `pwa_icons/` directory with placeholder icons; `desktop` apps need no setup. Under `JAC_OFFLINE=1` a run cannot provision, so a missing mobile scaffold or stale packages stop with `jac setup <app>` as the hint.
+What setup does follows the app's kind: a `mobile` app gets its Expo/Metro scaffold at `.jac/mobile-rn/` and its packages installed; a `web-app` with a `[client.pwa]` table gets a `pwa_icons/` directory with placeholder icons; `desktop` apps need no setup. In an offline project (`[network] offline = true` in `jac.toml`) a run cannot provision, so a missing mobile scaffold or stale packages stop with `jac setup <app>` as the hint.
 
 **Examples:**
 
@@ -1969,7 +1969,7 @@ Packages only the Expo project needs go under `[dependencies.npm.native]`; `jac 
 
 **Notes:**
 
-- The Expo project lives at `.jac/mobile-rn/` (configurable via `[client.react_native].project_dir`; under the centralized `.jac` build root, so it stays out of the source tree). The first native `jac run` / `jac run --dev` / `jac build` scaffolds it and installs its packages (narrated as a one-time setup); later runs re-sync the packages only when the manifest or lockfile changed, and `--platform web` never touches it. `jac setup mobile` provisions the same ahead of time; under `JAC_OFFLINE=1` a missing scaffold stops with that hint.
+- The Expo project lives at `.jac/mobile-rn/` (configurable via `[client.react_native].project_dir`; under the centralized `.jac` build root, so it stays out of the source tree). The first native `jac run` / `jac run --dev` / `jac build` scaffolds it and installs its packages (narrated as a one-time setup); later runs re-sync the packages only when the manifest or lockfile changed, and `--platform web` never touches it. `jac setup mobile` provisions the same ahead of time; under `[network] offline = true` in `jac.toml` a missing scaffold stops with that hint.
 - Dev networking is auto-resolved (LAN IPv4 > `127.0.0.1`); `adb reverse` is auto-attempted for Android. The dev API base URL is injected into `app.json` and restored on exit.
 - `jac run <app>` without `--dev` picks its platform from `--platform` (which sets `JAC_MOBILE_PLATFORM` for the run), else `[apps.<name>] platform`, else `[client.react_native].default_platform`, else `android`.
 - iOS device builds and App Store archives require Xcode signing. On non-macOS hosts, `--platform ios` errors out and points at EAS Build.

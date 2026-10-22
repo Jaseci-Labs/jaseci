@@ -5,46 +5,6 @@ traversal, identity validation and map selection execute in native Jac.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyDict_Copy,
-    PyDict_Keys,
-    PyErr_GetRaisedException,
-    PyErr_SetRaisedException,
-    PyImport_Import,
-    PyImport_ImportModuleAttrString,
-    PyList_GetItemRef,
-    PyObject,
-    PyObject_GetAttr,
-    PyObject_Str,
-    PyTuple_Size,
-    Py_NewRef,
-    jacpy_audit_pickle_find,
-    jacpy_dict_get,
-    jacpy_error_is,
-    jacpy_error_pending,
-    jacpy_is_none,
-    jacpy_is_tuple,
-    jacpy_is_unicode,
-    jacpy_list_size,
-    jacpy_optional_attr,
-    jacpy_release,
-    jacpy_tuple_item
-}
-import from jaclang.runtime.python.capi {
-    repr_value,
-    required,
-    checked,
-    boundary_failure,
-    object_tuple,
-    text_object,
-    text_value
-}
-import from jaclang.runtime.python.modules.pickle_stream {
-    stream_error,
-    builtin_stream_error
-}
-
 def attribute_path(
     value: ptr[PyObject], name: ptr[PyObject], dotted: bool
 ) -> ptr[PyObject] {
@@ -117,10 +77,7 @@ def mapped_names(
 def find_global(
     module: ptr[PyObject], name: ptr[PyObject], protocol: int, fix_imports: bool
 ) -> ptr[PyObject] {
-    if jacpy_is_unicode(module) == 0 or jacpy_is_unicode(name) == 0 {
-        builtin_stream_error("TypeError", "module and name must be strings");
-    }
-    checked(jacpy_audit_pickle_find(module, name));
+    checked(i64(PySys_Audit("pickle.find_class", "OO", module, name)));
     names: ptr[PyObject] = NULL;
     mapped_module: ptr[PyObject] = NULL;
     mapped_name: ptr[PyObject] = NULL;
@@ -130,7 +87,7 @@ def find_global(
             if protocol < 3 and fix_imports
             else object_tuple([module, name]);
         if jacpy_is_tuple(names) == 0 or PyTuple_Size(names) != 2 {
-            builtin_stream_error("RuntimeError", "invalid pickle import mapping");
+            builtin_stream_error(PyExc_RuntimeError, "invalid pickle import mapping");
         }
         mapped_module = required(jacpy_tuple_item(names, 0));
         mapped_name = required(jacpy_tuple_item(names, 1));
@@ -140,9 +97,9 @@ def find_global(
         } except boundary_failure {
             if protocol >= 4
                 and "." in text_value(mapped_name)
-                and jacpy_error_is("AttributeError") != 0 {
+                and PyErr_ExceptionMatches(PyExc_AttributeError) != 0 {
                 builtin_stream_error(
-                    "AttributeError",
+                    PyExc_AttributeError,
                     "Can't resolve path "
                         + repr_value(name)
                         + " on module "
@@ -186,7 +143,7 @@ def global_names(
         if jacpy_error_pending() != 0 {
             raise boundary_failure();
         }
-        if module != 0 and jacpy_is_none(module) != 0 {
+        if module != 0 and module == Py_None {
             jacpy_release(module);
             module = NULL;
         }
@@ -207,13 +164,13 @@ def global_names(
                             continue;
                         }
                         imported = required(jacpy_dict_get(snapshot, candidate));
-                        if jacpy_is_none(imported) != 0 {
+                        if imported == Py_None {
                             continue;
                         }
                         try {
                             found = attribute_path(imported, name, True);
                         } except boundary_failure {
-                            if jacpy_error_is("Exception") != 0 {
+                            if PyErr_ExceptionMatches(PyExc_Exception) != 0 {
                                 jacpy_release(PyErr_GetRaisedException());
                                 continue;
                             }
@@ -258,10 +215,10 @@ def global_names(
                 );
             }
         } except boundary_failure {
-            if jacpy_error_is("ImportError") != 0
-                or jacpy_error_is("AttributeError") != 0
-                or jacpy_error_is("ValueError") != 0 {
-                missing_attribute = jacpy_error_is("AttributeError") != 0;
+            if PyErr_ExceptionMatches(PyExc_ImportError) != 0
+                or PyErr_ExceptionMatches(PyExc_AttributeError) != 0
+                or PyErr_ExceptionMatches(PyExc_ValueError) != 0 {
+                missing_attribute = PyErr_ExceptionMatches(PyExc_AttributeError) != 0;
                 cause = PyErr_GetRaisedException();
                 reason: ptr[PyObject] = NULL;
                 try {

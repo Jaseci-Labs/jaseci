@@ -1,41 +1,5 @@
 """The _bz2 module: BZ2Compressor and BZ2Decompressor over the generated clinic glue."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyBool_FromLong,
-    PyObject,
-    Py_NewRef
-}
-import from jaclang.runtime.python.bindings.module {
-    ModuleDefinition,
-    ModuleHooks,
-    add_state_owned
-}
-import from jaclang.runtime.python.bindings.type {
-    TypeDefinition,
-    TypeHooks,
-    TypeFlags,
-    PropertyDefinition,
-    PropertyCallbacks
-}
-import from jaclang.runtime.python.bindings.payload {
-    dispose_payload,
-    traverse_payload
-}
-import from jaclang.runtime.python.bindings.clinic.bz2 {
-    BZ2Compressor_methods,
-    BZ2Decompressor_methods,
-    BZ2Compressor_doc,
-    BZ2Decompressor_doc,
-    _bz2_BZ2Compressor_new,
-    _bz2_BZ2Decompressor_new
-}
-import from jaclang.runtime.python.modules.bz2 {
-    BZ2Compressor_token,
-    BZ2Decompressor_token,
-    decompressor_of
-}
-
 def:priv compressor_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, BZ2Compressor_token.handle);
 }
@@ -47,6 +11,7 @@ def:priv compressor_traverse(
 }
 
 def:priv decompressor_dealloc(instance: ptr[PyObject]) {
+    record_clear(jacpy_binding_record(instance, BZ2Decompressor_token.handle), 16);
     dispose_payload(instance, BZ2Decompressor_token.handle);
 }
 
@@ -54,21 +19,6 @@ def:priv decompressor_traverse(
     instance: ptr[PyObject], visitor: ptr, context: ptr
 ) -> i32 {
     return traverse_payload(instance, BZ2Decompressor_token.handle, visitor, context);
-}
-
-def:priv eof(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    state = decompressor_of(instance);
-    return PyBool_FromLong(i64(state.eof)) if state is not None else NULL;
-}
-
-def:priv unused_data(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    state = decompressor_of(instance);
-    return Py_NewRef(state.unused_data) if state is not None else NULL;
-}
-
-def:priv needs_input(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    state = decompressor_of(instance);
-    return PyBool_FromLong(i64(state.needs_input)) if state is not None else NULL;
 }
 
 glob:priv compressor_type = TypeDefinition(
@@ -92,26 +42,30 @@ glob:priv compressor_type = TypeDefinition(
              dealloc=decompressor_dealloc,
              traverse=decompressor_traverse
          ),
-         [
-             PropertyDefinition(
+         members=[
+             MemberField(
                  "eof",
-                 PropertyCallbacks(read=eof),
+                 MemberType.BOOL.value,
                  0,
-                 "True if the end-of-stream marker has been reached."
+                 readonly=True,
+                 doc=BZ2Decompressor_eof__doc__
              ),
-             PropertyDefinition(
+             MemberField(
                  "unused_data",
-                 PropertyCallbacks(read=unused_data),
-                 0,
-                 "Data found after the end of the compressed stream."
+                 MemberType.OBJECT_EX.value,
+                 8,
+                 readonly=True,
+                 doc=BZ2Decompressor_unused_data__doc__
              ),
-             PropertyDefinition(
+             MemberField(
                  "needs_input",
-                 PropertyCallbacks(read=needs_input),
-                 0,
-                 "True if more input is needed before more decompressed data can be produced."
+                 MemberType.BOOL.value,
+                 1,
+                 readonly=True,
+                 doc=BZ2Decompressor_needs_input_doc
              )
-         ]
+         ],
+         record_size=16
      );
 
 def:priv execute(module: ptr[PyObject]) -> i32 {

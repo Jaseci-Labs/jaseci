@@ -1,6 +1,6 @@
 """Measure uncached AOT builds with a warm compiler.
 
-    jac kernel build
+    jac native build kernel
     jac run scripts/native_compile_bench.jac jac/examples/chess/chess.jac --rounds 5
 
 Compiler startup and warmup are excluded;
@@ -35,7 +35,9 @@ def main -> None {
 
     kernel = ensure_loaded();
     if kernel is None {
-        parser.error("no compiler kernel is loaded; run `jac kernel build` first");
+        parser.error(
+            "no compiler kernel is loaded; run `jac native build kernel` first"
+        );
         return;
     }
     times: list[float] = [];

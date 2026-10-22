@@ -5,40 +5,6 @@ metadata and stack effects are the native compiler's own tables in
 opcode_meta.jac, so dis and the compiler cannot disagree.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyErr_Occurred,
-    PyList_Append,
-    PyList_New,
-    PyLong_AsLong,
-    PyObject,
-    PyUnicode_FromString,
-    PyUnicode_InternFromString,
-    Py_NewRef,
-    _PyCompile_GetBinaryIntrinsicName,
-    _PyCompile_GetUnaryIntrinsicName,
-    jacpy_is_code,
-    jacpy_is_none,
-    jacpy_release
-}
-import from jaclang.runtime.python.bindings.converters {
-    borrowed_none,
-    borrowed_true,
-    borrowed_false
-}
-import from jaclang.runtime.python.capi { object_error, object_tuple, type_name }
-import from jaclang.runtime.python.opcode_meta {
-    opcode_is_valid,
-    opcode_has_arg,
-    opcode_has_const,
-    opcode_has_name,
-    opcode_has_jump,
-    opcode_has_free,
-    opcode_has_local,
-    is_block_push_opcode,
-    stack_effect
-}
-
 glob ENABLE_SPECIALIZATION: i64 = 1,
      ENABLE_SPECIALIZATION_FT: i64 = 1;
 
@@ -79,7 +45,7 @@ def _opcode_stack_effect_impl(
     module: ptr[PyObject], opcode: i32, oparg: ptr[PyObject], jump: ptr[PyObject]
 ) -> i32 {
     argument = 0;
-    if jacpy_is_none(oparg) == 0 {
+    if oparg != Py_None {
         argument = int(i32(PyLong_AsLong(oparg)));
         if argument == -1 and PyErr_Occurred() {
             return i32(-1);
@@ -90,13 +56,15 @@ def _opcode_stack_effect_impl(
         direction = 1;
     } elif jump == borrowed_false() {
         direction = 0;
-    } elif jacpy_is_none(jump) == 0 {
-        object_error("ValueError", "stack_effect: jump must be False, True or None");
+    } elif jump != Py_None {
+        object_error(
+            PyExc_ValueError, "stack_effect: jump must be False, True or None"
+        );
         return i32(-1);
     }
     effect = stack_effect(int(opcode), argument, direction);
     if effect is None {
-        object_error("ValueError", "invalid opcode or oparg");
+        object_error(PyExc_ValueError, "invalid opcode or oparg");
         return i32(-1);
     }
     return i32(effect);
@@ -195,9 +163,11 @@ def _opcode_get_executor_impl(
     module: ptr[PyObject], code: ptr[PyObject], offset: i32
 ) -> ptr[PyObject] {
     if jacpy_is_code(code) == 0 {
-        object_error("TypeError", f"expected a code object, not '{type_name(code)}'");
+        object_error(
+            PyExc_TypeError, f"expected a code object, not '{type_name(code)}'"
+        );
         return NULL;
     }
-    object_error("RuntimeError", "Executors are not available in this build");
+    object_error(PyExc_RuntimeError, "Executors are not available in this build");
     return NULL;
 }

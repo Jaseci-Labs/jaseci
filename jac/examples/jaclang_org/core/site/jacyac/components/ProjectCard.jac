@@ -17,6 +17,17 @@ def:pub ProjectCard(
     onRemove: Callable[[str], None],
     onRescore: Callable[[str], None],
     onViewOwner: Callable[[str], None],
+) -> JsxElement;
+
+impl ProjectCard(
+    project: Project,
+    isMine: bool,
+    showOwner: bool,
+    avatars: dict[str, str],
+    busy: bool,
+    onRemove: Callable[[str], None],
+    onRescore: Callable[[str], None],
+    onViewOwner: Callable[[str], None],
 ) -> JsxElement {
     scored = project.status == "scored";
     owner_handle = handle_of(project.owner_username);

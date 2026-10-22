@@ -16,11 +16,19 @@ that writes it. Two switches, each consumed by the run that honours it:
 `runs` counts how many times the walker body ran, `failed_commits` how many
 COMMITs were made to fail.
 
+`ReadPoll` reads the poll through a typed hop. With `lock_exhaustions`
+armed, that many of the request's following queries first make Postgres
+itself fail the transaction the way an exhausted predicate-lock table does
+(SQLSTATE 53200); `exhausted_queries` counts them.
+
 `Bump` is a read-modify-write of one `Counter` that holds its transaction
 open for `hold` seconds, the shape of a real update handler; many of them
 at once on the same counter is the contention case. With `busy` the hold
 is CPU work instead of a sleep, so the requests compete for the process as
 well as for the row, the way a saturated server does.
+
+`Deliver` reports a status dict that its own `on_commit` callback marks as
+sent, the shape of a send-then-confirm handler.
 """
 
 import from jaclang.data.pgwire { PgWireError }
@@ -30,7 +38,9 @@ import from jaclang.runtime.runtime { JacRuntimeInterface as Jac }
 glob runs: list[int] = [],
      rival_commits: list[int] = [],
      commit_faults: list[int] = [],
-     failed_commits: list[int] = [];
+     failed_commits: list[int] = [],
+     lock_exhaustions: list[int] = [],
+     exhausted_queries: list[int] = [];
 
 node Poll {
     has total: int = 0;
@@ -83,6 +93,37 @@ def fail_commits(times: int) {
         real_commit();
     }
     store.commit = failing_commit;
+}
+
+
+def exhaust_queries(times: int) {
+    store: any = request_store();
+    real_rows = store.rows;
+    left = [times];
+    def exhausting_rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] {
+        if left[0] > 0 and store.in_txn() {
+            left[0] -= 1;
+            exhausted_queries.append(1);
+            real_rows(
+                "DO $$ BEGIN RAISE EXCEPTION 'out of shared memory' "
+                "USING ERRCODE = '53200'; END $$",
+                {}
+            );
+        }
+        return real_rows(sql, params);
+    }
+    store.rows = exhausting_rows;
+}
+
+
+walker:pub ReadPoll {
+    can read_total with Root entry {
+        if lock_exhaustions {
+            exhaust_queries(lock_exhaustions.pop());
+        }
+        polls = [here-->[?:Poll]];
+        report polls[0].total;
+    }
 }
 
 
@@ -165,5 +206,16 @@ walker:pub Bump {
 walker:pub ReadCounter {
     can read with Root entry {
         report [here-->[?:Counter]][0].n;
+    }
+}
+
+walker:pub Deliver {
+    can go with Root entry {
+        status = {"sent": False};
+        def mark_sent {
+            status["sent"] = True;
+        }
+        Jac.on_commit(mark_sent);
+        report status;
     }
 }

@@ -22,6 +22,19 @@ glob TESTS_DIR: str = str(Path(__file__).resolve().parent),
      # Repo root (the `jac/` dir): the parent of `tests/`.
      JAC_ROOT: str = str(Path(__file__).resolve().parent.parent);
 
+"""The JavaScript runtime this process runs (js_engine or bun), or None when
+neither is built: suites that need one skip on None, and strict lanes, which
+ship a kit with bun, never see it."""
+def js_runtime_or_none -> (str | None) {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
+    try {
+        return js_runtime_path();
+    } except ArtifactUnavailable {
+        return None;
+    }
+}
+
 """Environment overrides isolating every machine-wide cache family."""
 def cache_env(cache_dir: Path | str) -> dict[str, str] {
     import from jaclang.cache.registry { BUCKETS }
@@ -33,6 +46,28 @@ def cache_env(cache_dir: Path | str) -> dict[str, str] {
         }
     }
     return env;
+}
+
+"""Let a child under a private cache root reuse this process's Postgres
+distribution instead of provisioning its own (a system Postgres it finds
+by itself)."""
+def share_postgres(cache_home: Path | str) {
+    import from jaclang.data.pg_dist { dist_cache_dir, postgres_bin_dir }
+    dist = Path(postgres_bin_dir()).parent;
+    if not dist.is_relative_to(Path(dist_cache_dir())) {
+        return;
+    }
+    link = Path(cache_home) / "pg" / "dist" / dist.name;
+    link.parent.mkdir(parents=True, exist_ok=True);
+    if not link.exists() {
+        link.symlink_to(dist, target_is_directory=True);
+    }
+}
+
+"""Run as a project whose jac.toml sets `[network] offline`."""
+def offline_project -> any {
+    import from unittest.mock { patch }
+    return patch("jaclang.project.config.offline_mode", return_value=True);
 }
 
 """Select the parent's compiler, or an explicit checkout for comparative tests."""
