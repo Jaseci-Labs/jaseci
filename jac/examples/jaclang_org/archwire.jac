@@ -42,6 +42,7 @@ graph import core {
         | jacyac.native.components.TweetCard
         | jacyac.native.screens.AuthScreen
         | jacyac.native.screens.ChannelsScreen
+        | jacyac.native.screens.ClawScreen
         | jacyac.native.screens.ExploreScreen
         | jacyac.native.screens.FeedScreen
         | jacyac.native.screens.ProfileScreen
@@ -158,6 +159,7 @@ graph import core {
     ninjaclaw.index ++> knowledge_service { IndexDoc, docs_from_tree, index_doc }
     ninjaclaw.model ++> [
         jacyac.claw { Activity, JobView, TutorialCard, TutorialView },
+        jacyac.native.screens.ClawScreen { JobView },
         knowledge_service {
             Activity,
             AskInput,
@@ -325,6 +327,7 @@ graph import core.docs {
 }
 
 graph import core.jacyac {
+    claw ++> native.screens.ClawScreen { useClaw }
     format ++> [
         identity
             | native.components.TweetCard
@@ -332,6 +335,7 @@ graph import core.jacyac {
             | native.screens.ProfileScreen { handle_of },
         native.components.Avatar { handle_of, initial_of },
         native.screens.ChannelsScreen { count_label },
+        native.screens.ClawScreen { count_label, handle_of },
     ]
     github.auth ++> session { github_enabled }
     github.login ++> session { github_login }
@@ -358,10 +362,10 @@ graph import core.jacyac.native {
     components.BridgeBanner ++> JacYacMobile { BridgeBanner }
     components.Composer ++> screens.ChannelsScreen | screens.FeedScreen { Composer }
     components.StatusView ++> [
-        screens.ChannelsScreen | screens.ExploreScreen | screens.FeedScreen {
-            EmptyState,
-            LoadingRows
-        },
+        screens.ChannelsScreen
+            | screens.ClawScreen
+            | screens.ExploreScreen
+            | screens.FeedScreen { EmptyState, LoadingRows },
         screens.ProfileScreen { EmptyState },
     ]
     components.TabBar ++> JacYacMobile { TabBar }
@@ -374,11 +378,13 @@ graph import core.jacyac.native {
         | components.TweetCard
         | screens.AuthScreen
         | screens.ChannelsScreen
+        | screens.ClawScreen
         | screens.ExploreScreen
         | screens.FeedScreen
         | screens.ProfileScreen { Icon }
     screens.AuthScreen ++> JacYacMobile { AuthScreen }
     screens.ChannelsScreen ++> JacYacMobile { ChannelsScreen }
+    screens.ClawScreen ++> JacYacMobile { ClawScreen }
     screens.ExploreScreen ++> JacYacMobile { ExploreScreen }
     screens.FeedScreen ++> JacYacMobile { FeedScreen }
     screens.ProfileScreen ++> JacYacMobile { ProfileScreen }
@@ -391,6 +397,7 @@ graph import core.jacyac.native {
         | components.TweetCard
         | screens.AuthScreen
         | screens.ChannelsScreen
+        | screens.ClawScreen
         | screens.ExploreScreen
         | screens.FeedScreen
         | screens.ProfileScreen { makeStyles }

@@ -11,6 +11,7 @@ glob TAB_TITLES: dict[str, str] = {
          "feed": "Home",
          "explore": "Explore",
          "channels": "Channels",
+         "ninjaclaw": "ninjaclaw",
          "profile": "Profile"
      };
 
@@ -161,6 +162,8 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
                         onComment={model.handleComment}
                         onDelete={model.handleDelete}
                     />
+                } elif model.activeTab == "ninjaclaw" {
+                    <ClawScreen/>
                 } else {
                     <ProfileScreen
                         avatars={model.avatars}
