@@ -507,8 +507,11 @@ impl real_path(path: str) -> str {
     return found;
 }
 
-impl forget_real_paths {
+impl forget_path_lookups {
     _REAL_PATHS.clear();
+    _VARIANT_PATHS.clear();
+    _STDLIB_ROOTS.clear();
+    _NATIVE_MODULES.clear();
 }
 
 impl is_kernel_unit_path(path: str) -> bool {
@@ -576,8 +579,13 @@ impl native_stdlib_root -> (str | None) {
     if not pkg {
         return None;
     }
-    stdlib_dir = os.path.join(pkg, "runtime", "na_stdlib");
-    return stdlib_dir if os.path.isdir(stdlib_dir) else None;
+    found = _STDLIB_ROOTS.get(pkg);
+    if found is None {
+        stdlib_dir = os.path.join(pkg, "runtime", "na_stdlib");
+        found = stdlib_dir if os.path.isdir(stdlib_dir) else "";
+        _STDLIB_ROOTS[pkg] = found;
+    }
+    return found or None;
 }
 
 impl bundled_pkg_roots -> list[str] {
@@ -781,31 +789,34 @@ impl native_target_arch -> str {
 }
 
 impl _native_variant_path(base_no_ext: str) -> (str | None) {
+    target_os = native_target_os();
+    target_arch = native_target_arch();
+    key = f"{target_os}|{target_arch}|{base_no_ext}";
+    found = _VARIANT_PATHS.get(key);
+    if found is None {
+        found = _find_native_variant(base_no_ext, target_os, target_arch);
+        _VARIANT_PATHS[key] = found;
+    }
+    return found or None;
+}
+
+impl _find_native_variant(base_no_ext: str, target_os: str, target_arch: str) -> str {
     import os;
-    _osarchv = f"{base_no_ext}.{native_target_os()}.{native_target_arch()}.jac";
-    if os.path.exists(_osarchv) {
-        return _osarchv;
+    candidates = [
+        f"{base_no_ext}.{target_os}.{target_arch}.jac",
+        f"{base_no_ext}.{target_arch}.jac",
+        f"{base_no_ext}.{target_os}.jac"
+    ];
+    if target_os == "windows" {
+        candidates.append(f"{base_no_ext}.linux.jac");
     }
-    _archv = f"{base_no_ext}.{native_target_arch()}.jac";
-    if os.path.exists(_archv) {
-        return _archv;
-    }
-    _os = native_target_os();
-    _osv = os.path.join(f"{base_no_ext}.{_os}.jac");
-    if os.path.exists(_osv) {
-        return _osv;
-    }
-    if _os == "windows" {
-        _floorv = f"{base_no_ext}.linux.jac";
-        if os.path.exists(_floorv) {
-            return _floorv;
+    candidates.append(f"{base_no_ext}.jac");
+    for candidate in candidates {
+        if os.path.exists(candidate) {
+            return candidate;
         }
     }
-    _plain = f"{base_no_ext}.jac";
-    if os.path.exists(_plain) {
-        return _plain;
-    }
-    return None;
+    return "";
 }
 
 impl is_selected_native_variant(path: str) -> bool {
@@ -877,6 +888,25 @@ impl _inferred_native_path(candidate: (str | None)) -> (str | None) {
 
 impl resolve_native_module(
     module_name: str, base_dir: str, allow_inferred: bool = True
+) -> tuple[(str | None, str | None)] {
+    key = (
+        f"{module_name}|{base_dir}|{allow_inferred}|{native_unit_compile_active()}|"
+        f"{effective_native_target()}|{target_pkg_root()}"
+    );
+    found = _NATIVE_MODULES.get(key);
+    if found is None {
+        (name, path) = _resolve_native_module_uncached(
+            module_name, base_dir, allow_inferred
+        );
+        found = f"{name or ''}\n{path or ''}";
+        _NATIVE_MODULES[key] = found;
+    }
+    (name, _, path) = found.partition("\n");
+    return (name or None, path or None);
+}
+
+impl _resolve_native_module_uncached(
+    module_name: str, base_dir: str, allow_inferred: bool
 ) -> tuple[(str | None, str | None)] {
     import os;
     clean = module_name.lstrip('.');

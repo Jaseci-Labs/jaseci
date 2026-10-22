@@ -178,11 +178,14 @@ def kernel_unit_path(rel: str) -> str;
 
 def kernel_unit_paths -> list[str];
 
-glob _REAL_PATHS: dict[str, str] = {};
+glob _REAL_PATHS: dict[str, str] = {},
+     _VARIANT_PATHS: dict[str, str] = {},
+     _STDLIB_ROOTS: dict[str, str] = {},
+     _NATIVE_MODULES: dict[str, str] = {};
 
 def real_path(path: str) -> str;
 
-def forget_real_paths;
+def forget_path_lookups;
 
 def is_kernel_unit_path(path: str) -> bool;
 
@@ -290,6 +293,8 @@ def native_target_arch -> str;
 
 def _native_variant_path(base_no_ext: str) -> (str | None);
 
+def _find_native_variant(base_no_ext: str, target_os: str, target_arch: str) -> str;
+
 glob NATIVE_VARIANT_OSES: frozenset[str] = frozenset(
          {"darwin", "linux", "windows"}
      ),
@@ -307,6 +312,10 @@ def _inferred_native_path(candidate: (str | None)) -> (str | None);
 
 def resolve_native_module(
     module_name: str, base_dir: str, allow_inferred: bool = True
+) -> tuple[(str | None, str | None)];
+
+def _resolve_native_module_uncached(
+    module_name: str, base_dir: str, allow_inferred: bool
 ) -> tuple[(str | None, str | None)];
 
 def native_wasm_stem(path: str) -> str;

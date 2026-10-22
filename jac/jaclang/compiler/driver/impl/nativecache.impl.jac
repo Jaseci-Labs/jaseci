@@ -134,10 +134,26 @@ impl NativeUnitRegistry._timed(name: str, started: float) {
     self._add_time(name, time.perf_counter() - started);
 }
 
-impl NativeUnitRegistry._timed_unit(name: str, path: str, started: float) {
+impl NativeUnitRegistry.open_span -> int {
+    self.nested_seconds.append(0.0);
+    return len(self.nested_seconds);
+}
+
+impl NativeUnitRegistry.close_span(
+    name: str, started: float, depth: int, path: str = ""
+) {
     elapsed = time.perf_counter() - started;
-    self._add_time(name, elapsed);
-    self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0) + elapsed;
+    del self.nested_seconds[depth:];
+    nested = self.nested_seconds.pop() if self.nested_seconds else 0.0;
+    if self.nested_seconds {
+        self.nested_seconds[-1] += elapsed;
+    }
+    span_seconds = elapsed - nested;
+    self._add_time(name, span_seconds);
+    if path {
+        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0)
+            + span_seconds;
+    }
 }
 
 impl NativeUnitRegistry.phase_summary -> str {
@@ -912,6 +928,7 @@ impl NativeBuildSession.close_discovery -> bool {
 }
 
 impl NativeBuildSession.postinit {
+    self.memo = begin_prepare_memo();
     self.prog = JacProgram();
     self.prog.options = self.options.clone_for_native_import();
     self.prog._natives = self.registry;
@@ -957,8 +974,9 @@ impl NativeBuildSession.lower(
             self.source_keys[resolved] = NativeUnitRegistry._source_key(resolved);
             opts.no_cgen = True;
             started = self.registry.note_step("analyze", resolved);
+            depth = self.registry.open_span();
             mod = self.prog.compile(resolved, use_str=use_str, options=opts);
-            self.registry._timed("NATIVE_ANALYSIS", started);
+            self.registry.close_span("NATIVE_ANALYSIS", started, depth);
             self.registry._event("native_unit_analysis");
             self.registry.note_slow_step("analyzing", resolved, started);
             self.settle_heap();
@@ -979,13 +997,14 @@ impl NativeBuildSession.lower(
             started = self.registry.note_step("lower", resolved);
             self.deferred.append(set());
             self.discovery_open.append(discover);
+            depth = self.registry.open_span();
             try {
                 require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
             } finally {
+                self.registry.close_span("NATIVE_LOWER", started, depth, resolved);
                 pending = self.deferred.pop();
                 self.discovery_open.pop();
             }
-            self.registry._timed_unit("NATIVE_LOWER", resolved, started);
             if not pending {
                 break;
             }
@@ -1058,6 +1077,23 @@ impl NativeBuildSession.lower(
     }
 }
 
+impl NativeBuildSession._symbols_of(
+    path: str, unit_ir: any
+) -> (tuple[set[str], set[str]] | None) {
+    if unit_ir is None {
+        return None;
+    }
+    if self.symbol_irs.get(path) is unit_ir {
+        return self.symbol_sets[path];
+    }
+    found = _ir_symbols(unit_ir);
+    if found is not None {
+        self.symbol_irs[path] = unit_ir;
+        self.symbol_sets[path] = found;
+    }
+    return found;
+}
+
 impl NativeBuildSession.unbound_symbols(
     path: str, deps: list[str]
 ) -> (list[str] | None) {
@@ -1065,7 +1101,7 @@ impl NativeBuildSession.unbound_symbols(
     if consumer is None {
         return None;
     }
-    bound = _ir_symbols(consumer.gen.llvm_ir);
+    bound = self._symbols_of(os.path.realpath(path), consumer.gen.llvm_ir);
     if bound is None {
         return None;
     }
@@ -1075,7 +1111,9 @@ impl NativeBuildSession.unbound_symbols(
         real = os.path.realpath(dep);
         provider = self.lowered.get(real);
         ent = self.registry.entries.get(real);
-        provided = _ir_symbols(provider.gen.llvm_ir if provider is not None else None);
+        provided = self._symbols_of(
+            real, provider.gen.llvm_ir if provider is not None else None
+        );
         if provided is None or ent is None {
             return None;
         }
@@ -1161,6 +1199,10 @@ impl NativeBuildSession._finish(paths: list[str]) {
         optimized products for an intermediate state.""";
     import from jaclang.compiler.driver.pipeline { require }
     import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+    if self.memo is not None {
+        end_prepare_memo(self.memo);
+        self.memo = None;
+    }
     self.prog.options = self.options.clone_for_native_import();
     for path in paths {
         if path in self.source_keys
@@ -1216,10 +1258,16 @@ impl NativeBuildSession.close {
         }
         self.lowered.clear();
         self.source_keys.clear();
+        self.symbol_irs.clear();
+        self.symbol_sets.clear();
         self.prog._natives = None;
         self.prog.release_compile_closure();
     } finally {
         self.heap.release();
+        if self.memo is not None {
+            end_prepare_memo(self.memo);
+            self.memo = None;
+        }
     }
 }
 

@@ -261,6 +261,14 @@ impl get_jir_cache_dir -> Path {
 }
 
 impl compute_content_sha256(file_path: str) -> str {
+    memo = _PREPARE_MEMO.get();
+    key = "sha\x1f" + file_path;
+    if memo is not None {
+        found = memo.get(key);
+        if found is not None {
+            return found;
+        }
+    }
     h = hashlib.sha256();
     with open(file_path, 'rb') as f {
         while True {
@@ -271,7 +279,11 @@ impl compute_content_sha256(file_path: str) -> str {
             h.update(chunk);
         }
     }
-    return h.hexdigest();
+    digest = h.hexdigest();
+    if memo is not None {
+        memo[key] = digest;
+    }
+    return digest;
 }
 
 impl _related_files(source_path: str) -> list[tuple[str, str]] {
@@ -780,7 +792,7 @@ impl _module_projection(source_path: str) -> str {
 }
 
 impl begin_prepare_memo -> any {
-    return _PREPARE_MEMO.set({});
+    return _PREPARE_MEMO.set(_PREPARE_MEMO.get() or {});
 }
 
 impl end_prepare_memo(token: any) {

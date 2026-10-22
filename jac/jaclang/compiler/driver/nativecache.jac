@@ -38,7 +38,8 @@ obj NativeUnitRegistry {
         stop_after: int = 0,
         lowered_units: int = 0,
         unit_lower_seconds: dict[str, float] = {},
-        unit_functions: dict[str, tuple[int, int]] = {};
+        unit_functions: dict[str, tuple[int, int]] = {},
+        nested_seconds: list[float] = [];
 
     def postinit;
     def begin_parse(path: str);
@@ -53,7 +54,8 @@ obj NativeUnitRegistry {
     def _event(name: str);
     def _add_time(name: str, seconds: float);
     def _timed(name: str, started: float);
-    def _timed_unit(name: str, path: str, started: float);
+    def open_span -> int;
+    def close_span(name: str, started: float, depth: int, path: str = "");
     def phase_summary -> str;
     def note_codegen(path: str, object_emitted: bool = True);
     def note_link(reused: bool);
@@ -175,7 +177,10 @@ obj NativeBuildSession {
         deferred: list[set[str]] = [],
         discovery_open: list[bool] = [],
         unlowerable: set[str] = set(),
-        heap: SessionHeap = SessionHeap();
+        heap: SessionHeap = SessionHeap(),
+        memo: any = None,
+        symbol_irs: dict[str, any] = {},
+        symbol_sets: dict[str, tuple[set[str], set[str]]] = {};
 
     def discovering -> bool;
     def defer(path: str);
@@ -183,6 +188,7 @@ obj NativeBuildSession {
     def postinit;
     def settle_heap;
     def lower(path: str, use_str: (str | None) = None) -> (NativeUnitEntry | None);
+    def _symbols_of(path: str, unit_ir: any) -> (tuple[set[str], set[str]] | None);
     def unbound_symbols(path: str, deps: list[str]) -> (list[str] | None);
     def finish(paths: list[str]);
     def _optimize_in_parallel(paths: list[str]) -> set[str];
