@@ -927,8 +927,8 @@ impl NaIRGenPass._codegen_while(nd: uni.WhileStmt) -> None {
         );
         self.builder.branch(cond_bb);
     }
-    self._emit_loop_else(nd, else_bb, end_bb);
     self.loop_stack.pop();
+    self._emit_loop_else(nd, else_bb, end_bb);
 }
 
 impl NaIRGenPass._codegen_open_stmt(nd: uni.OpenStmt) -> None {
@@ -1061,8 +1061,8 @@ impl NaIRGenPass._codegen_iter_for(nd: uni.IterForStmt) -> None {
         self.builder.branch(cond_bb);
     }
 
-    self._emit_loop_else(nd, else_bb, end_bb);
     self.loop_stack.pop();
+    self._emit_loop_else(nd, else_bb, end_bb);
 }
 
 impl NaIRGenPass._codegen_match(nd: uni.MatchStmt) -> None {
@@ -4948,8 +4948,8 @@ impl NaIRGenPass._codegen_for_indexed(
     self.builder.store(next_idx, idx_alloca);
     self.builder.branch(cond_bb);
 
-    self._emit_loop_else(nd, else_bb, end_bb);
     self.loop_stack.pop();
+    self._emit_loop_else(nd, else_bb, end_bb);
 
     if _gen_coll_slot is not None {
         _coll_end = self.builder.load(_gen_coll_slot, name="for.coll.end");
@@ -5130,7 +5130,7 @@ impl NaIRGenPass._try_chunked_for(nd: uni.InForStmt) -> bool {
     );
     self.builder.branch(_c_cond);
 
-    self._emit_loop_else(nd, _c_else, _c_end);
     self.loop_stack.pop();
+    self._emit_loop_else(nd, _c_else, _c_end);
     return True;
 }

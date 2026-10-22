@@ -1561,8 +1561,8 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
         );
         self.builder.branch(cond_bb);
     }
-    self._emit_loop_else(nd, else_bb, end_bb);
     self.loop_stack.pop();
+    self._emit_loop_else(nd, else_bb, end_bb);
 
     if _gen_it_spill is not None {
         _it_end = self._mark_owned(
