@@ -244,16 +244,27 @@ impl ManifestBuilder._prepare_injector(app_config: AppConfig) -> PvcInjector {
     proj = self.project_dir or app_config.code_folder;
     self.project_dir = proj;
     fleet = self._fleet(app_config);
-    self._build_client_bundle(proj);
-    selection = select_injector(
-        self.k8s_config.bundle_storage_class,
-        k8s_safe_name(self.k8s_config.app_name),
-        self.k8s_config.namespace,
-        proj,
-        dry_run=self.dry_run,
-        access_mode=self.k8s_config.bundle_access_mode,
-        fleet=fleet
-    );
+    (client_wait, client_ready) = self._start_client_build(proj);
+    try {
+        selection = select_injector(
+            self.k8s_config.bundle_storage_class,
+            k8s_safe_name(self.k8s_config.app_name),
+            self.k8s_config.namespace,
+            proj,
+            dry_run=self.dry_run,
+            access_mode=self.k8s_config.bundle_access_mode,
+            fleet=fleet,
+            client_ready=client_wait
+        );
+    } except Exception {
+        if client_wait is not None {
+            client_wait();
+        }
+        raise;
+    }
+    if client_ready is not None {
+        client_ready();
+    }
     injector: PvcInjector = selection[0];
     self._toolchain_object_key = str(selection[1]);
     self._pod_binary_sha256 = str(getattr(injector, "_pod_binary_sha256", ""));
@@ -284,6 +295,44 @@ impl ManifestBuilder._install_app_deps(
         return f"'jac install' exited {result.returncode}:\n{_output_tail(result)}";
     }
     return "";
+}
+
+impl client_build_alongside_seal -> bool {
+    import os;
+    if not os.path.isfile("/proc/meminfo") {
+        return False;
+    }
+    return memory_headroom_bytes()
+        >= _CLIENT_BUILD_ALONGSIDE_SEAL_GIB * 1024 * 1024 * 1024;
+}
+
+impl ManifestBuilder._start_client_build(project_dir: str) -> tuple[any, any] {
+    if self.dry_run or not self._client_entry() or not client_build_alongside_seal() {
+        self._build_client_bundle(project_dir);
+        return (None, None);
+    }
+    import threading;
+    failure: list[BaseException] = [];
+    def build {
+        try {
+            self._build_client_bundle(project_dir);
+        } except BaseException as exc {
+            failure.append(exc);
+        }
+    }
+    worker = threading.Thread(target=build, name="client-bundle", daemon=True);
+    worker.start();
+    console.print("Building the client bundle while the app is sealed.");
+    def join_build {
+        worker.join();
+    }
+    def ready {
+        worker.join();
+        if failure {
+            raise failure[0];
+        }
+    }
+    return (join_build, ready);
 }
 
 impl ManifestBuilder._build_client_bundle(project_dir: str) {
@@ -387,7 +436,7 @@ impl ManifestBuilder._build_client_bundle(project_dir: str) {
             f"running this deploy ({pinned})."
         );
     }
-    stage_root = _stage_app(base, sanitized_jac_toml(base));
+    stage_root = _stage_app(base, sanitized_jac_toml(base), client_build_sources(base));
     stage = str(stage_root / "app");
     dist_candidates = self._client_dist_candidates(stage, entry_rel);
     try {
