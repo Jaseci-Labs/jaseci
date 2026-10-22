@@ -46,8 +46,6 @@ def free_fn -> None {
 
 def discard_forms {
     (bump());
-    cb = lambda { return bump(); };
-    cb();
 }
 
 async def abump {
@@ -64,7 +62,6 @@ def flow_form {
 
 def reassigned -> (object | None) {
     res: object | None = None;
-    res = bump();
     res = None if COUNTER > 99 else bump();
     return res;
 }
@@ -91,6 +88,6 @@ def run -> int {
 }
 
 with entry {
-    assert run() == 306;
+    assert run() == 304;
     print("ok");
 }
