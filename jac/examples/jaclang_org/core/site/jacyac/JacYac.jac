@@ -2,7 +2,11 @@ import from "lucide-react" { Feather, ArrowLeft }
 
 glob AVATAR_SIDE: int = 256;
 
-async def shrink_avatar(file: any) -> str {
+async def shrink_avatar(file: any) -> str;
+
+def:pub JacYac(initialTab: str = "feed") -> JsxElement;
+
+impl shrink_avatar(file: any) -> str {
     win: any = window;
     bmp: any = await win.createImageBitmap(file);
     side = bmp.width if bmp.width < bmp.height else bmp.height;
@@ -25,7 +29,7 @@ async def shrink_avatar(file: any) -> str {
     return canvas.toDataURL("image/jpeg", 0.86);
 }
 
-def:pub JacYac(initialTab: str = "feed") -> JsxElement {
+impl JacYac(initialTab: str = "feed") -> JsxElement {
     model = useJacYac();
     can with entry {
         if initialTab == "scores" {

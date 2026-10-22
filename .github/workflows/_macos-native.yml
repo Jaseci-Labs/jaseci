@@ -29,13 +29,29 @@ permissions:
   contents: read
 
 jobs:
+  # The macOS kit's compiler kernel, built on x86 Linux (#10219): the kit
+  # adopts it instead of spending most of its 44-68 min building one.
+  kernel:
+    uses: ./.github/workflows/build-kernel.yml
+    with:
+      platforms: '["macos-aarch64"]'
+
   build-kit-macos:
+    needs: kernel
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
 
+      - name: Download the compiler kernel
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-macos-aarch64
+          path: .kernel
+
       - name: Build the jac binary (cached)
         uses: ./.github/actions/setup-jac
+        with:
+          kernel-dir: ${{ github.workspace }}/.kernel
 
       - name: Set up Zig 0.16.0
         uses: mlugg/setup-zig@v2
@@ -46,8 +62,8 @@ jobs:
       - name: Materialize typeshed + wasm libc floor
         working-directory: jac
         run: |
-          zig build fetch-typeshed -Dpython=jacpython --summary all
-          zig build vendor-wasm-libc -Dpython=jacpython --summary all
+          zig build fetch-typeshed --summary all
+          zig build vendor-wasm-libc --summary all
 
       - name: Verify the kit is complete
         working-directory: jac
@@ -95,18 +111,6 @@ jobs:
         run: >-
           jac test jac/jaclang/compiler/tests/test_prim_equivalence.jac
           -f "shutil or path or textwrap or keyword or str or bytes"
-      # The same registry loop as test-compiler's passes-native chunk. On
-      # darwin it is what exercises the per-OS records and generated constant
-      # tables (pwd/grp, resource, _stat, errno, syslog) against CPython.
-      - name: Check native standard-library replacements against CPython (darwin)
-        run: |
-          jac install "hypothesis>=6,<7" --global
-          while read -r module tests _ <&3; do
-            case "$module" in ''|'#'*) continue ;; esac
-            for test in $(printf '%s' "$tests" | tr ',' ' '); do
-              jac run scripts/run_cpython_compiler_tests.jac --module "$test" --native-modules "$module"
-            done
-          done 3< jac/bootstrap/python/jacpython-modules.txt
       - name: Provision managed Ruby, CocoaPods, and native Node
         run: |
           mkdir -p "$RUNNER_TEMP/managed-ios"

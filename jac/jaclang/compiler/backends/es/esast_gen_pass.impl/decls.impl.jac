@@ -1,6 +1,3 @@
-import from jaclang.compiler.symbol_utils { return_type_is_jsx }
-import from jaclang.compiler.frontend.diagnostics { E5097 }
-
 impl EsastGenPass.exit_has_var with uni.HasVar exit {
     here.gen.es_ast = None;
 }
@@ -324,16 +321,21 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
 }
 
 impl EsastGenPass.enter_ability with uni.Ability entry {
-    if isinstance(here.body, uni.ImplDef) and (here.body not in [here->:Kid:->]) {
-        here.add_kids_right([here.body], pos_update=False, parent_update=True);
-    }
-
     self._loop_label_savepoints.append(self._loop_label_stack);
     self._loop_label_stack = [];
 
     self._view_stack.append(None);
     self.reactive_vars_stack.append(self.reactive_vars);
     self.reactive_vars = set(self.reactive_vars);
+    self.walk_decl_body(here);
+}
+
+impl EsastGenPass.enter_archetype with uni.Archetype entry {
+    self.walk_decl_body(here);
+}
+
+impl EsastGenPass.enter_enum with uni.Enum entry {
+    self.walk_decl_body(here);
 }
 
 impl EsastGenPass.exit_enum with uni.Enum exit {
@@ -769,7 +771,7 @@ impl EsastGenPass.exit_archetype with uni.Archetype exit {
     );
     class_body = self.sync_loc(es.ClassBody(body=body_stmts), jac_node=here);
     super_class: (es.Expression | None) = None;
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     if here.base_classes {
         base = here.base_classes[0];
         if base.gen.es_ast {

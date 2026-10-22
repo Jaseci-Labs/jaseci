@@ -78,21 +78,7 @@ obj WebSocket {
         _buf: bytearray postinit,
         path: str postinit;
 
-    def postinit {
-        if not self.url.startswith("ws://") {
-            raise ValueError(f"only ws:// supported, got {self.url}");
-        }
-        rest = self.url[len("ws://"):];
-        (host_port, _, tail) = rest.partition("/");
-        (host, _, port) = host_port.partition(":");
-        self.path = "/" + tail;
-        port_num = int(port) if port else 80;
-        self.sock = socket.create_connection((host, port_num), timeout=self.timeout);
-        self.sock.settimeout(self.timeout);
-        self._buf = bytearray();
-        self._handshake(host, port_num);
-    }
-
+    def postinit;
     def _handshake(host: str, port: int);
     def _read_until(delim: bytes) -> bytes;
     def _recv_exact(n: int) -> bytes;
@@ -109,11 +95,7 @@ obj CDP {
         ws: WebSocket postinit,
         events: list[dict[str, any]] postinit;
 
-    def postinit {
-        self.ws = WebSocket(url=self.ws_url);
-        self.events = [];
-    }
-
+    def postinit;
     def call(
         method: str, params: (dict[str, any] | None) = None, timeout: float = 30.0
     ) -> dict[str, any];

@@ -1,13 +1,4 @@
 import from pathlib { Path }
-import from jaclang.project.client_paths {
-    client_app_dir_for,
-    client_app_root,
-    client_assets_config,
-    client_assets_dir
-}
-import from jaclang.project.config { find_project_root, get_config, get_config_for_dir }
-import from jaclang.project.kinds { kind_has_client }
-import from jaclang.runtime.runtime { JacRuntime as Jac }
 
 
 glob DEFAULT_ASSET_EXTENSIONS: set[str] = {
@@ -33,102 +24,25 @@ glob DEFAULT_ASSET_EXTENSIONS: set[str] = {
      };
 
 
-def asset_extensions -> set[str] {
-    return set(client_assets_config(get_config()).get('custom_extensions', []))
-        or DEFAULT_ASSET_EXTENSIONS;
-}
+def asset_extensions -> set[str];
 
-def resolve_static_base(base_path: str) -> Path {
-    base_path_dir = Path(base_path) if base_path else Path.cwd();
-    project_root_result = find_project_root(base_path_dir);
-    if project_root_result {
-        (resolved, _) = project_root_result;
-        return resolved;
-    }
-    return base_path_dir;
-}
+def resolve_static_base(base_path: str) -> Path;
 
-def client_dist_index(client_dist: str) -> (Path | None) {
-    if not client_dist {
-        return None;
-    }
-    index = Path(client_dist) / 'index.html';
-    return index if index.is_file() else None;
-}
+def client_dist_index(client_dist: str) -> (Path | None);
 
 def static_roots(
     base_path: str, client_dist: str = ''
-) -> tuple[list[Path], list[Path], list[Path]] {
-    base = resolve_static_base(base_path);
-    roots: list[Path] = [];
-    dists: list[Path] = [];
-    asset_dirs: list[Path] = [];
-    if client_dist {
-        dists.append(Path(client_dist));
-    }
-    cfg = get_config_for_dir(str(base));
-    if cfg is not None {
-        app_root = Path(client_app_root(cfg, base));
-        if app_root != base {
-            roots.append(app_root);
-        }
-        dists.append(client_app_dir_for(cfg) / 'dist');
-        asset_dirs.append(client_assets_dir(cfg, base));
-    }
-    roots.append(base);
-    base_dist = base / '.jac' / 'client' / 'dist';
-    if base_dist not in dists {
-        dists.append(base_dist);
-    }
-    for root_dir in roots {
-        if root_dir / 'assets' not in asset_dirs {
-            asset_dirs.append(root_dir / 'assets');
-        }
-    }
-    return (roots, dists, asset_dirs);
-}
+) -> tuple[list[Path], list[Path], list[Path]];
 
-def _within_assets(rel: str) -> str {
-    return rel[len('assets/'):] if rel.startswith('assets/') else rel;
-}
+def _within_assets(rel: str) -> str;
 
-def _climbs(rel: str) -> bool {
-    return '..' in Path(rel).parts;
-}
+def _climbs(rel: str) -> bool;
 
-def _contained_file(within: Path, candidate: Path) -> bool {
-    if not (candidate.exists() and candidate.is_file()) {
-        return False;
-    }
-    return within.resolve() in candidate.resolve().parents;
-}
+def _contained_file(within: Path, candidate: Path) -> bool;
 
 def find_static_candidate(
     base_path: str, relative_path: str, client_dist: str = ''
-) -> (Path | None) {
-    rel = relative_path.lstrip('/');
-    if _climbs(rel) {
-        return None;
-    }
-    (roots, dists, asset_dirs) = static_roots(base_path, client_dist);
-    file_name = Path(rel).name;
-
-    bases: list[tuple[Path, str]] = [(dist, rel) for dist in dists];
-    for root_dir in roots {
-        bases.append((root_dir / 'dist', rel));
-    }
-    for asset_dir in asset_dirs {
-        bases.append((asset_dir, _within_assets(rel)));
-    }
-    for (base, sub_path) in bases {
-        for candidate in (base / sub_path, base / file_name) {
-            if _contained_file(base, candidate) {
-                return candidate;
-            }
-        }
-    }
-    return None;
-}
+) -> (Path | None);
 
 glob ROOT_ASSET_EXTENSIONS: set[str] = DEFAULT_ASSET_EXTENSIONS
          | {'.pdf', '.txt', '.xml'};
@@ -136,103 +50,15 @@ glob ROOT_ASSET_EXTENSIONS: set[str] = DEFAULT_ASSET_EXTENSIONS
 
 def find_root_asset(
     base_path: str, relative_path: str, client_dist: str = ''
-) -> (Path | None) {
-    rel = relative_path.lstrip('/');
-    if not rel
-        or _climbs(rel)
-        or Path(rel).suffix.lower() not in ROOT_ASSET_EXTENSIONS {
-        return None;
-    }
-    (project_roots, dists, asset_dirs) = static_roots(base_path, client_dist);
-    file_name = Path(rel).name;
-    roots: list[Path] = list(dists) + list(asset_dirs);
-    for root_dir in project_roots {
-        for sub in ('dist', 'public', 'src') {
-            roots.append(root_dir / sub);
-        }
-    }
-    for asset_root in roots {
-        for candidate in (asset_root / rel, asset_root / file_name) {
-            if _contained_file(asset_root, candidate) {
-                return candidate;
-            }
-        }
-    }
-    return None;
-}
+) -> (Path | None);
 
 def is_asset_request(
     path: str, cl_route_path: str, reserved_prefixes: (list[str] | None) = None
-) -> bool {
-    if path == '/' or path.startswith('/static/') {
-        return False;
-    }
-    if path.startswith(cl_route_path) {
-        return False;
-    }
-    reserved = reserved_prefixes
-        if reserved_prefixes is not None
-        else [
-            '/function/',
-            '/walker/',
-            '/user/',
-            '/functions',
-            '/walkers',
-            '/protected'
-        ];
-    for prefix in reserved {
-        if path.startswith(prefix) {
-            return False;
-        }
-    }
-    return Path(path).suffix in asset_extensions();
-}
+) -> bool;
 
 
-def sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None) {
-    if config is None or not config.is_workspace {
-        return None;
-    }
-    app = config.app(name);
-    if app is None {
-        return None;
-    }
-    served = config.app_for_path(Jac.get_full_target_path() or "");
-    if served is not None and served.name == app.name {
-        return None;
-    }
-    if not kind_has_client(config.resolved_kind(app)) {
-        return None;
-    }
-    root_dir = str(config.project_root) if config.project_root else base_path;
-    if not root_dir {
-        return None;
-    }
-    dist = Path(root_dir) / 'dist' / app.name;
-    return dist if (dist / 'index.html').is_file() else None;
-}
+def sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None);
 
-def sibling_app_file(dist: Path, rel: str) -> Path {
-    candidate = (dist / rel) if rel else (dist / 'index.html');
-    try {
-        resolved = candidate.resolve();
-        inside = resolved == dist.resolve() or dist.resolve() in resolved.parents;
-    } except Exception {
-        inside = False;
-    }
-    if inside and candidate.is_file() {
-        return candidate;
-    }
-    return dist / 'index.html';
-}
+def sibling_app_file(dist: Path, rel: str) -> Path;
 
-def sibling_app_names(config: any, base_path: str) -> list[str] {
-    if config is None or not config.is_workspace {
-        return [];
-    }
-    return [
-        name
-        for name in config.apps.keys()
-        if sibling_app_dist(config, name, base_path) is not None
-    ];
-}
+def sibling_app_names(config: any, base_path: str) -> list[str];

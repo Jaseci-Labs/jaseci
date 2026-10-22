@@ -15,7 +15,9 @@ glob TAB_TITLES: dict[str, str] = {
          "profile": "Profile"
      };
 
-def:pub JacYacMobile(embedded: bool = False) -> JsxElement {
+def:pub JacYacMobile(embedded: bool = False) -> JsxElement;
+
+impl JacYacMobile(embedded: bool = False) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);
