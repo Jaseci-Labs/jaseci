@@ -181,6 +181,7 @@ glob RETIRED: tuple[str, ...] = (
              name="pg",
              relpath="pg",
              policy=Policy(retention=Retention.EXTERNAL),
+             root_env="JAC_PG_HOME",
              summary="the embedded Postgres cluster and distribution (jac db)"
          ),
          Bucket(
