@@ -12,7 +12,8 @@ import from jaclang.lib.jaclib {
     __jac_log_register__,
     __jac_se_emit__,
     __jac_se_guard__,
-    __jac_se_region_open__
+    __jac_se_region_open__,
+    __jac_se_snap__
 }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.roles { Kid }
@@ -65,6 +66,13 @@ def _record_guard(msg: str) {
 """A guarded body that only buffers a logger call."""
 def _guarded_body {
     __jac_log_emit__(_GUARD_SLOT[0], ("inner", ), {});
+}
+
+"""Stands in for a tensor in the snapshot-helper test."""
+class _Cloneable {
+    def clone(self: _Cloneable) -> _Cloneable {
+        return _Cloneable();
+    }
 }
 
 """Registered twice by the slot-stability test; never called."""
@@ -130,9 +138,7 @@ test "print is buffered and flushed via the runtime helper" {
     # deferred value.
     assert "__gm_se_arg_0 = x" in src;
     assert (
-        "__jac_se_emit__(print, "
-        "(__gm_se_arg_0.clone() if isinstance(__gm_se_arg_0, torch.Tensor) "
-        "else __gm_se_arg_0,), {})"
+        "__jac_se_emit__(print, (__jac_se_snap__(__gm_se_arg_0, torch.Tensor),), {})"
     )
         in src;
     assert "__jac_se_flush__()" in src;
@@ -184,11 +190,7 @@ test "a buffered call's keyword arguments are preserved" {
 test "a non-literal keyword value is snapshotted like a positional" {
     src = _pysrc("side_effect_kwarg.jac", True);
     assert "__gm_se_arg_0 = y" in src;
-    assert (
-        "{'extra': __gm_se_arg_0.clone() if isinstance(__gm_se_arg_0, torch.Tensor) "
-        "else __gm_se_arg_0}"
-    )
-        in src;
+    assert ("{'extra': __jac_se_snap__(__gm_se_arg_0, torch.Tensor)}") in src;
 }
 
 test "an unpacked argument declines instead of being dropped" {
@@ -212,9 +214,13 @@ test "a logger bound after its class leaves the call eager" {
     assert "logger.warning('GM-LATE')" in src;
 }
 
-test "a print into a with-bound file stays eager and stderr is still buffered" {
+test "a print into a with-bound file stays eager" {
     src = _pysrc("side_effect_file.jac", True);
     assert "print('GM-FILE', file=fh)" in src;
+}
+
+test "a print to stderr is still buffered" {
+    src = _pysrc("side_effect_stderr.jac", True);
     assert "__jac_se_emit__(print, ('GM-ERR',)" in src;
 }
 
@@ -224,7 +230,7 @@ test "a logger call reading the handled exception stays eager" {
     assert "__jac_se_emit__" not in src;
 }
 
-test "a function whose output cannot all be deferred keeps it all eager" {
+test "a module whose output cannot all be deferred keeps it all eager" {
     src = _pysrc("side_effect_declined_order.jac", True);
     assert "__jac_se_emit__" not in src;
     assert "logger.warning('first')" in src;
@@ -387,6 +393,21 @@ test "a raising log call cannot replay stale entries on the next pass" {
     __jac_log_emit__(ok_slot, ("third", ), {});
     __jac_log_flush_hook__(None, None, None);
     assert _LOG_SEEN == ["third"] , f"stale entries replayed: {_LOG_SEEN}";
+}
+
+test "the snapshot helper copies builtin containers and clones the tensor type" {
+    inner = [2, 3];
+    snap = __jac_se_snap__([1, inner], _Cloneable);
+    inner.append(4);
+    assert snap == [1, [2, 3]];
+    table = {"k": [1]};
+    snap_table = __jac_se_snap__(table, _Cloneable);
+    table["k"].append(2);
+    assert snap_table == {"k": [1]};
+    item = _Cloneable();
+    assert __jac_se_snap__((item, ), _Cloneable)[0] is not item;
+    other = object();
+    assert __jac_se_snap__(other, _Cloneable) is other;
 }
 
 test "prints and logger calls replay in emission order" {

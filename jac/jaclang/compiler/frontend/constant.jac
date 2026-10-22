@@ -146,6 +146,7 @@ enum GraphMendHelper {
     EQ_ASSERT = '__jac_tensor_eq_assert__',
     TRAP_GUARD = '__jac_trap_guard__',
     SE_EMIT = '__jac_se_emit__',
+    SE_SNAP = '__jac_se_snap__',
     SE_FLUSH = '__jac_se_flush__',
     SE_GUARD = '__jac_se_guard__',
     SE_REGION_OPEN = '__jac_se_region_open__',

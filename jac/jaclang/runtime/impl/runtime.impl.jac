@@ -925,6 +925,25 @@ impl JacBuiltin.log_register(fn: any) -> int {
     return slot;
 }
 
+impl JacBuiltin.se_snap(v: any, tensor_type: any) -> any {
+    if isinstance(v, tensor_type) {
+        return v.clone();
+    }
+    if type(v) is list {
+        return [JacBuiltin.se_snap(e, tensor_type) for e in v];
+    }
+    if type(v) is tuple {
+        return tuple([JacBuiltin.se_snap(e, tensor_type) for e in v]);
+    }
+    if type(v) is dict {
+        return {k: JacBuiltin.se_snap(e, tensor_type) for (k, e) in v.items()};
+    }
+    if type(v) is set {
+        return set(v);
+    }
+    return v;
+}
+
 impl JacBuiltin.log_emit(
     slot: int, args: tuple[any, ...], kwargs: dict[str, any]
 ) -> None {

@@ -398,6 +398,7 @@ class JacBuiltin {
         callee: any, args: tuple[any, ...], kwargs: dict[str, any]
     ) -> None;
 
+    static def se_snap(v: any, tensor_type: any) -> any;
     static def se_flush -> None;
     static def se_region_enter -> None;
     static def se_region_exit -> None;

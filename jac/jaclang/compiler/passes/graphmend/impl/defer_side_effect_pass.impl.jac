@@ -6,19 +6,14 @@ impl DeferSideEffectPass.prepare with entry {
     if not self._enabled {
         disengage;
     }
-}
-
-impl DeferSideEffectPass.enter_ability with uni.Ability entry {
-    nd = here;
-    if not self._enabled {
-        return;
-    }
-    for c in nd.get_all_sub_nodes(uni.FuncCall) {
-        if (c.enclosing_decl(uni.Ability) is nd)
+    self._module_eager = False;
+    for c in self.module.get_all_sub_nodes(uni.FuncCall) {
+        ab = c.enclosing_decl(uni.Ability);
+        if (ab is not None)
             and (facts_for(c).breaks.get(c) == GraphBreakKind.SIDE_EFFECT)
-            and self._stays_eager(c, nd) {
-            self._eager_abilities.add(id(nd));
-            return;
+            and self._stays_eager(c, ab) {
+            self._module_eager = True;
+            break;
         }
     }
 }
@@ -39,7 +34,7 @@ impl DeferSideEffectPass.exit_func_call with uni.FuncCall exit {
     if ability is None {
         return;
     }
-    if (id(ability) in self._eager_abilities) or self._stays_eager(nd, ability) {
+    if self._module_eager or self._stays_eager(nd, ability) {
         return;
     }
     if self._is_logger_call(nd) and (ability.sym_name == 'forward') {
@@ -271,24 +266,13 @@ impl DeferSideEffectPass._snapshot(
             target=[store], value=v, type_tag=None, mutable=True, kid=[store, v]
         )
     );
-    return self._clone_guard(call, tmp);
+    return self._snap_call(call, tmp);
 }
 
-impl DeferSideEffectPass._clone_guard(at: uni.UniNode, tmp: str) -> uni.IfElseExpr {
+impl DeferSideEffectPass._snap_call(at: uni.UniNode, tmp: str) -> uni.FuncCall {
+    need_helper(at, GraphMendHelper.SE_SNAP);
+    snap = gen_name(at, '__jac_se_snap__', False);
     recv = gen_name(at, tmp, False);
-    clone_nm = gen_name(at, 'clone', False);
-    trailer = uni.AtomTrailer(
-        target=recv,
-        right=clone_nm,
-        is_attr=True,
-        is_null_ok=False,
-        kid=[recv, clone_nm]
-    );
-    clone_call = uni.FuncCall(
-        target=trailer, params=[], genai_call=None, kid=[trailer]
-    );
-    isinst = gen_name(at, 'isinstance', False);
-    test_recv = gen_name(at, tmp, False);
     torch_nm = gen_name(at, 'torch', False);
     tensor_nm = gen_name(at, 'Tensor', False);
     tensor_ref = uni.AtomTrailer(
@@ -298,21 +282,11 @@ impl DeferSideEffectPass._clone_guard(at: uni.UniNode, tmp: str) -> uni.IfElseEx
         is_null_ok=False,
         kid=[torch_nm, tensor_nm]
     );
-    `test = uni.FuncCall(
-        target=isinst,
-        params=[test_recv, tensor_ref],
+    return uni.FuncCall(
+        target=snap,
+        params=[recv, tensor_ref],
         genai_call=None,
-        kid=[isinst, test_recv, tensor_ref]
-    );
-    else_recv = gen_name(at, tmp, False);
-    val_cfg = uni.CfgExpr(expr=clone_call, kid=[clone_call]);
-    cond_cfg = uni.CfgExpr(expr=`test, kid=[`test]);
-    else_cfg = uni.CfgExpr(expr=else_recv, kid=[else_recv]);
-    return uni.IfElseExpr(
-        value=val_cfg,
-        condition=cond_cfg,
-        else_value=else_cfg,
-        kid=[val_cfg, cond_cfg, else_cfg]
+        kid=[snap, recv, tensor_ref]
     );
 }
 

@@ -9,7 +9,7 @@ walker DeferSideEffectPass(TreePass) {
         _needs_se: set[int] = set(),
         _guarded: set[int] = set(),
         _defer_mods: set[int] = set(),
-        _eager_abilities: set[int] = set(),
+        _module_eager: bool = False,
         _pending_regs: list[tuple[(uni.Archetype | None), uni.Assignment]] = [];
 
     static has _LOG_METHODS: set[str] = {
@@ -26,7 +26,6 @@ walker DeferSideEffectPass(TreePass) {
     };
 
     can prepare with entry;
-    can enter_ability with uni.Ability entry;
     can exit_func_call with uni.FuncCall exit;
     can exit_assignment with uni.Assignment exit;
     can exit_return_stmt with uni.ReturnStmt exit;
@@ -65,7 +64,7 @@ walker DeferSideEffectPass(TreePass) {
         call: uni.FuncCall, v: uni.Expr, hoists: list[uni.UniNode]
     ) -> uni.Expr;
 
-    def _clone_guard(at: uni.UniNode, tmp: str) -> uni.IfElseExpr;
+    def _snap_call(at: uni.UniNode, tmp: str) -> uni.FuncCall;
     def _buffer_append(at: uni.UniNode, ent: uni.TupleVal) -> uni.FuncCall;
     def _flush_stmt(at: uni.UniNode) -> uni.ExprStmt;
 }
