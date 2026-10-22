@@ -4,7 +4,9 @@ glob _PROMPT_LINES: list[str] = [
 
      ];
 
-def:pub Agents -> JsxElement {
+def:pub Agents -> JsxElement;
+
+impl Agents -> JsxElement {
     return
         <section id="agents" className="pt-16 pb-16 sm:pt-24 sm:pb-24">
             <div
