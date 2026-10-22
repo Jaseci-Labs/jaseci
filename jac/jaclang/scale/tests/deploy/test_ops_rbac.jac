@@ -115,7 +115,7 @@ def _runs_as(bundle: dict[str, any], svc: str) -> (str | None) {
 }
 
 
-def _show_yaml_kinds(bundle: dict[str, any]) -> list[str] {
+def _show_yaml(bundle: dict[str, any]) -> list[dict[str, any]] {
     plan = Plan(
         bundle=bundle,
         routes={},
@@ -126,7 +126,7 @@ def _show_yaml_kinds(bundle: dict[str, any]) -> list[str] {
         services=[],
         ingress=None
     );
-    return [m["kind"] for m in plan._flatten_manifests()];
+    return plan._flatten_manifests();
 }
 
 
@@ -144,7 +144,8 @@ test "only the gateway runs as the console's ServiceAccount, and the Role is nev
         label = f"ops_console={console} service_account_name={sa!r}";
         assert _runs_as(bundle, GATEWAY_NAME) == gateway_sa , label;
         assert _runs_as(bundle, "orders_app") == service_sa , label;
-        kinds = _show_yaml_kinds(bundle);
+        exported = _show_yaml(bundle);
+        kinds = [m["kind"] for m in exported];
         if not console {
             assert "ops_rbac" not in bundle , label;
             assert "ServiceAccount" not in kinds , label;
@@ -160,6 +161,13 @@ test "only the gateway runs as the console's ServiceAccount, and the Role is nev
         for kind in ["ServiceAccount", "Role", "RoleBinding"] {
             assert kind in kinds[:first_deployment] , f"{label}: {kind} not before Deployments in {kinds}";
         }
+        # Applied over an account the user pre-created for a cloud identity, the
+        # exported account must not claim it, or destroy would delete it. A
+        # deploy still stamps the bundle's own account, which destroy relies on.
+        account = exported[kinds.index("ServiceAccount")];
+        assert "labels" not in account["metadata"] , f"{label}: {account['metadata']}";
+        assert rbac["service_account"]["metadata"]["labels"]["managed"]
+            == "jac-scale" , label;
     }
 
     # The console's own account cannot also be the workloads' account: every
