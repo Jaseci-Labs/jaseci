@@ -57,7 +57,7 @@ impl TrapLoweringPass.exit_if_stmt with uni.IfStmt exit {
     if self._inside_try(nd) {
         return;
     }
-    if (not nd.body) or (len(nd.body) != 1) {
+    if (not nd.body) or (len(nd.body) != 1) or (nd.else_body is not None) {
         return;
     }
     rs = nd.body[0];
@@ -330,6 +330,12 @@ impl TrapLoweringPass._condition_is_tensor(cond: uni.Expr, site: uni.UniNode) ->
 impl TrapLoweringPass._operand_is_tensor(e: uni.Expr, site: uni.UniNode) -> bool {
     if isinstance(e, uni.AtomUnit) and isinstance(e.value, uni.Expr) {
         return self._operand_is_tensor(e.value, site);
+    }
+    if isinstance(e, uni.FuncCall)
+        and isinstance(e.target, uni.AtomTrailer)
+        and isinstance(e.target.right, uni.Name)
+        and (e.target.right.value in SCALAR_TORCH_ATTRS) {
+        return False;
     }
     if self._returns_tensor_bool(e) or isinstance(e, uni.FuncCall) {
         if self._tensor_receiver_provable(e, site) {

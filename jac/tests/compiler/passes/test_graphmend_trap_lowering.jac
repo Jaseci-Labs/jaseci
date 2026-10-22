@@ -133,6 +133,25 @@ test "a comparison guard without a tensor operand is declined" {
     assert _break_count("guard_compare_unproven.jac") == 1;
 }
 
+test "a guard with an else branch declines instead of dropping the else body" {
+    src = _pysrc("guard_with_else.jac", True);
+    assert "torch._assert_async(" not in src;
+    assert "raise ValueError('mask must be all true')" in src;
+    assert "x = x * 2.0" in src;
+}
+
+test "an allclose guard declines because allclose returns a Python bool" {
+    src = _pysrc("guard_allclose.jac", True);
+    assert "torch._assert_async(" not in src;
+    assert "if not x.allclose(ref):" in src;
+}
+
+test "a comparison on a scalar tensor method declines" {
+    src = _pysrc("guard_scalar_compare.jac", True);
+    assert "torch._assert_async(" not in src;
+    assert "if loss.item() > 100.0:" in src;
+}
+
 test "a guard inside a lexical try declines to keep the handler live" {
     # The lowered assert fails at the boundary, outside the enclosing except,
     # so the handler would silently stop firing; the guard stays.

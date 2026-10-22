@@ -137,7 +137,7 @@ test "declined guard keeps its original exception contract intact" {
 
 test "shape mismatch trips the torch.equal precheck" {
     # (a == b).all() would broadcast [1,2,3] against [[1,2,3]] to True; the
-    # static shape/dtype precheck in tensor_eq_assert must keep the lowered
+    # static shape precheck in tensor_eq_assert must keep the lowered
     # guard faithful to torch.equal, which reports them unequal, and raise.
     torch = _torch();
     ns = _exec_gm("val_guard.jac", True, True);
@@ -158,6 +158,26 @@ test "shape mismatch trips the torch.equal precheck" {
     assert str(raised) == "unsupported attention mask" , f"message lost: {repr(
         raised
     )}";
+}
+
+test "the lowered torch.equal guard ignores dtype and keeps its exception on any shape" {
+    torch = _torch();
+    ns = _exec_gm("val_guard.jac", True, True);
+    a = torch.tensor([1.0, 2.0, 3.0]);
+
+    torch._dynamo.reset();
+    out = ns["f"](a, torch.tensor([1, 2, 3]));
+    assert torch.allclose(out, torch.sin(torch.relu(a)) * 2.0);
+
+    torch._dynamo.reset();
+    raised = None;
+    try {
+        ns["f"](torch.ones(2), torch.ones(3));
+    } except BaseException as e {
+        raised = e;
+    }
+    assert type(raised) is ValueError , f"expected ValueError, got {repr(raised)}";
+    assert str(raised) == "unsupported attention mask";
 }
 
 """Raise a RuntimeError carrying `text` verbatim (trap-guard parse probe)."""

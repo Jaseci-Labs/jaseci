@@ -1,5 +1,5 @@
 """Soundness: a `.all()` guard whose receiver has no tensor proof. The match
-on `.all`/`.any`/`.allclose` is structural; nothing shows `mask` is a tensor,
+on `.all`/`.any` is structural; nothing shows `mask` is a tensor,
 and a duck-typed receiver returning a Python bool would turn a graph-native
 assert into a type error. Without a proof the guard must DECLINE and keep its
 original semantics."""

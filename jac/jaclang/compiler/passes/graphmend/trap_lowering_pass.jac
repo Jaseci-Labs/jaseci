@@ -1,4 +1,4 @@
-glob _TENSOR_BOOL_OPS: set[str] = {'all', 'any', 'allclose'};
+glob _TENSOR_BOOL_OPS: set[str] = {'all', 'any'};
 
 walker TrapLoweringPass(TreePass) {
     static has contract: PassContract = PassContract(
