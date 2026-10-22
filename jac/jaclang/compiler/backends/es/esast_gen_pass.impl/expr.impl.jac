@@ -790,7 +790,9 @@ impl EsastGenPass.exit_atom_trailer with uni.AtomTrailer exit {
                 es.Identifier(name=here.right.sym_name), jac_node=here.right
             );
             member_expr = self.sync_loc(
-                es.MemberExpression(object=`obj, property=prop, computed=False),
+                es.MemberExpression(
+                    object=`obj, property=prop, computed=False, optional=here.is_null_ok
+                ),
                 jac_node=here
             );
             here.gen.es_ast = member_expr;
@@ -817,7 +819,8 @@ impl EsastGenPass.exit_atom_trailer with uni.AtomTrailer exit {
                                 property=self.sync_loc(
                                     es.Identifier(name='slice'), jac_node=here
                                 ),
-                                computed=False
+                                computed=False,
+                                optional=here.is_null_ok
                             ),
                             jac_node=here
                         ),
@@ -834,12 +837,118 @@ impl EsastGenPass.exit_atom_trailer with uni.AtomTrailer exit {
                         or self.sync_loc(es.Literal(value=0), jac_node=here)
                     )
                 );
-                here.gen.es_ast = self._lower_subscript(here.target, `obj, idx, here);
+                lowered = self._lower_subscript(here.target, `obj, idx, here);
+                if here.is_null_ok and not self._mark_optional_link(`obj, lowered) {
+                    ref = self._null_safe_ref(`obj, here);
+                    lowered = self._null_safe_guard(
+                        `obj,
+                        ref,
+                        self._lower_subscript(here.target, ref, idx, here),
+                        here
+                    );
+                }
+                here.gen.es_ast = lowered;
             } else {
                 here.gen.es_ast = `obj;
             }
         } else {
             here.gen.es_ast = here.right.gen.es_ast;
+        }
+    }
+}
+
+impl EsastGenPass._mark_optional_link(
+    recv: es.Expression, lowered: es.Expression
+) -> bool {
+    if isinstance(lowered, es.MemberExpression) and lowered.object is recv {
+        lowered.optional = True;
+        return True;
+    }
+    if isinstance(lowered, es.CallExpression)
+        and isinstance(lowered.callee, es.MemberExpression)
+        and lowered.callee.object is recv {
+        lowered.callee.optional = True;
+        return True;
+    }
+    return False;
+}
+
+impl EsastGenPass._null_safe_ref(
+    recv: es.Expression, jac_node: uni.UniNode
+) -> es.Expression {
+    if isinstance(recv, (es.Identifier, es.ThisExpression)) {
+        return recv;
+    }
+    return self.sync_loc(es.Identifier(name='__jac_opt'), jac_node=jac_node);
+}
+
+impl EsastGenPass._null_safe_guard(
+    recv: es.Expression,
+    ref: es.Expression,
+    lowered: es.Expression,
+    jac_node: uni.UniNode
+) -> es.Expression {
+    guard = self.sync_loc(
+        es.ConditionalExpression(
+            `test=self.sync_loc(
+                es.BinaryExpression(
+                    operator='==',
+                    left=ref,
+                    right=self.sync_loc(es.Literal(value=None), jac_node=jac_node)
+                ),
+                jac_node=jac_node
+            ),
+            consequent=self.sync_loc(
+                es.Identifier(name='undefined'), jac_node=jac_node
+            ),
+            alternate=lowered
+        ),
+        jac_node=jac_node
+    );
+    if ref is recv or not isinstance(ref, es.Identifier) {
+        return guard;
+    }
+    return self.sync_loc(
+        es.CallExpression(
+            callee=self.sync_loc(
+                es.ArrowFunctionExpression(
+                    params=[ref], body=guard, expression=True, async_=False
+                ),
+                jac_node=jac_node
+            ),
+            arguments=[recv]
+        ),
+        jac_node=jac_node
+    );
+}
+
+impl EsastGenPass._null_safe_new(
+    new_expr: es.NewExpression, jac_node: uni.UniNode
+) -> es.Expression {
+    callee = new_expr.callee;
+    if not isinstance(callee, es.MemberExpression)
+        or not callee.optional
+        or callee.object is None {
+        return new_expr;
+    }
+    recv = callee.object;
+    ref = self._null_safe_ref(recv, jac_node);
+    callee.object = ref;
+    callee.optional = False;
+    return self._null_safe_guard(recv, ref, new_expr, jac_node);
+}
+
+impl EsastGenPass._strip_optional_chain(expr: (es.Node | None)) -> None {
+    cur = expr;
+    while cur is not None {
+        if isinstance(cur, es.MemberExpression) {
+            cur.optional = False;
+            cur = cur.object;
+        } elif isinstance(cur, es.CallExpression) {
+            cur.optional = False;
+            cur = cur.callee;
+        } else {
+            return;
         }
     }
 }

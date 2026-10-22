@@ -591,6 +591,20 @@ walker EsastGenPass(TreePass) {
         target: uni.UniNode, value_es: (es.Expression | None), jac_node: uni.UniNode
     ) -> (es.Statement | None);
 
+    def _mark_optional_link(recv: es.Expression, lowered: es.Expression) -> bool;
+    def _null_safe_ref(recv: es.Expression, jac_node: uni.UniNode) -> es.Expression;
+    def _null_safe_guard(
+        recv: es.Expression,
+        ref: es.Expression,
+        lowered: es.Expression,
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _null_safe_new(
+        new_expr: es.NewExpression, jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _strip_optional_chain(expr: (es.Node | None)) -> None;
     can exit_binary_expr with uni.BinaryExpr exit;
     can exit_cfg_expr with uni.CfgExpr exit;
     can exit_bool_expr with uni.BoolExpr exit;
