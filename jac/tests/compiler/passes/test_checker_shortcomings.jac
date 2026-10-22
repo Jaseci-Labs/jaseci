@@ -112,10 +112,21 @@ test "shortcoming_26_lambda_unknown" {
 test "shortcoming_30_try_except_no_narrowing" {
     program = compile_and_check("checker_bug_try_except_no_narrowing.jac");
 
-    # Expected: at least 1 error (ValueError assigned to int, or raise non-exception)
-    assert len(program.errors_had) >= 1 , "#30: Try/except has no exception type narrowing. "
-    f"Expected at least 1 type error but got {len(program.errors_had)}. "
-    "'except ValueError as e:' should narrow e to ValueError.";
+    # Exactly the marked lines error; every accepted raise stays clean.
+    found = {
+        (e.code.code, e.loc.first_line)
+        for e in program.errors_had
+        if e.code
+    };
+    expected = {
+        ("E1001", 19),
+        ("E1090", 24),
+        ("E1090", 86),
+        ("E1090", 90),
+        ("E1090", 94),
+        ("E1161", 98)
+    };
+    assert found == expected , f"#30: expected {sorted(expected)}, got {sorted(found)}";
 }
 
 # =========================================================================
