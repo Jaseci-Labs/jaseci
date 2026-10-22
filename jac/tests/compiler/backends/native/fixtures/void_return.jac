@@ -65,6 +65,7 @@ def flow_form {
 def reassigned -> (object | None) {
     res: object | None = None;
     res = bump();
+    res = None if COUNTER > 99 else bump();
     return res;
 }
 
@@ -90,6 +91,6 @@ def run -> int {
 }
 
 with entry {
-    assert run() == 305;
+    assert run() == 306;
     print("ok");
 }

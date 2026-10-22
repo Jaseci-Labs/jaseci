@@ -188,8 +188,12 @@ impl NaIRGenPass._void_call_value(
     if value is None or not isinstance(value.type, ir.VoidType) {
         return value;
     }
+    cur: uni.UniNode = nd;
     up = nd.parent;
-    while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr)) {
+    while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr, uni.CfgExpr))
+        or isinstance(up, uni.IfElseExpr)
+        and cur is not up.condition {
+        cur = up;
         up = up.parent;
     }
     if isinstance(up, (uni.ExprStmt, uni.Assignment, uni.ReturnStmt))

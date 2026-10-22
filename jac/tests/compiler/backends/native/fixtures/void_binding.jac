@@ -29,3 +29,7 @@ def method_caller(s: Sink) -> int {
 def str_caller(x: int) -> str {
     return str(bare_sink(x));
 }
+
+def cond_caller(x: int) -> int {
+    return 1 if bare_sink(x) else 2;
+}

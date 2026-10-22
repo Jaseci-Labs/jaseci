@@ -91,9 +91,9 @@ test "the returned expression is still evaluated for its effects" {
     addr = native_address(_eng, "run");
     assert addr != 0 , "'run' not found in the JIT engine";
     run = ctypes.CFUNCTYPE(ctypes.c_int64)(addr);
-    assert run() == 305 , (
-        "three `touch`-style calls and five `bump()` calls (a `return bump()`, a "
-        "nested def, parens, a lambda, a reassignment): n == 3, COUNTER == 5"
+    assert run() == 306 , (
+        "three `touch`-style calls and six `bump()` calls (a `return bump()`, a "
+        "nested def, parens, a lambda, two reassignments): n == 3, COUNTER == 6"
     );
 }
 
@@ -112,7 +112,8 @@ test "a caller using a None call result as a value refuses with E5092" {
     for (caller, refusal) in (
         ("caller", "binding a void-typed value"),
         ("method_caller", "binding a void-typed value"),
-        ("str_caller", "call returning None")
+        ("str_caller", "call returning None"),
+        ("cond_caller", "call returning None")
     ) {
         assert any(
             s.startswith(f"{caller}: [E5092]") and refusal in s for s in seams
