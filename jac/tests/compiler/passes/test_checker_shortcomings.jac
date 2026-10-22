@@ -119,12 +119,13 @@ test "shortcoming_30_try_except_no_narrowing" {
         if e.code
     };
     expected = {
-        ("E1001", 19),
-        ("E1090", 24),
-        ("E1090", 86),
-        ("E1090", 90),
-        ("E1090", 94),
-        ("E1161", 98)
+        ("E1001", 21),
+        ("E1090", 26),
+        ("E1090", 92),
+        ("E1090", 96),
+        ("E1090", 100),
+        ("E1161", 104),
+        ("E1161", 108)
     };
     assert found == expected , f"#30: expected {sorted(expected)}, got {sorted(found)}";
 }

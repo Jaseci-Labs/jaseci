@@ -9,6 +9,8 @@ Expected: `except ValueError as e:` should narrow e to ValueError, and
 and a `from` cause an exception or None (E1161); `any` is accepted.
 """
 
+import from types { NoneType }
+
 obj NotAnError {}
 
 with entry {
@@ -36,6 +38,10 @@ def raise_any_param(e: any) {
 
 def raise_exception_class(t: type[ValueError]) {
     raise t;
+}
+
+def raise_any_class(c: type) {
+    raise c;
 }
 
 def raise_exception_union(e: ValueError | TypeError) {
@@ -96,4 +102,8 @@ def raise_mixed_union(e: ValueError | int) {
 
 def raise_from_int {
     raise ValueError("x") from 5;  # <-- E1161
+}
+
+def raise_from_nonetype_class {
+    raise ValueError("y") from NoneType;  # <-- E1161
 }

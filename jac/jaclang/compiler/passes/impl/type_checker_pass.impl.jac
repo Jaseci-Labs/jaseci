@@ -1756,8 +1756,9 @@ impl TypeCheckPass._is_exception_operand(ty: TypeBase, allow_none: bool) -> bool
     if isinstance(ty, (UnknownType, NeverType)) or self.evaluator.is_any_type(ty) {
         return True;
     }
-    if isinstance(ty, ClassType) and self.evaluator._is_type_subscript(ty) {
-        return self._is_exception_operand(ty.private.type_args[0], allow_none=False);
+    if isinstance(ty, ClassType) and ty.is_builtin("type") and ty.is_class_instance() {
+        return not ty.private.type_args
+            or self._is_exception_operand(ty.private.type_args[0], allow_none=False);
     }
     if self.evaluator.is_none_type(ty) {
         return allow_none and ty.is_class_instance();
