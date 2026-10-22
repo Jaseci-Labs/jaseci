@@ -3479,17 +3479,45 @@ impl NaIRGenPass._emit_str_concat_inplace(
     self.builder.store(
         ir.Constant(i8, 0), self.builder.gep(buf, [total], name="ip.term")
     );
+    _len_slot = self.builder.bitcast(
+        self.builder.gep(buf, [ir.Constant(i64, HDR_DTOR_OFF)], name="ip.len.slot"),
+        i64p,
+        name="ip.len.p"
+    );
+    _old_dv = self.builder.load(_len_slot, name="ip.odv");
+    _rroot = self.builder.extract_value(right, 0, name="ip.rroot")
+        if _rhs_desc
+        else right;
+    _isa = self.builder.and_(
+        self.builder.icmp_unsigned(
+            "!=",
+            self.builder.and_(
+                _old_dv, ir.Constant(i64, STR_ASCII_TAG_BIT), name="ip.oabit"
+            ),
+            ir.Constant(i64, 0),
+            name="ip.oisa"
+        ),
+        self._call_str_isascii(self.builder, _rroot, rdata, len2, name="ip.risa"),
+        name="ip.isa"
+    );
     self.builder.store(
         self.builder.or_(
-            self.builder.shl(total, ir.Constant(i64, 1), name="ip.shl"),
-            ir.Constant(i64, 1),
+            self.builder.or_(
+                self.builder.shl(
+                    total, ir.Constant(i64, STR_LEN_TAG_SHIFT), name="ip.shl"
+                ),
+                ir.Constant(i64, STR_LEN_TAG_BIT),
+                name="ip.enc0"
+            ),
+            self.builder.select(
+                _isa,
+                ir.Constant(i64, STR_ASCII_TAG_BIT),
+                ir.Constant(i64, 0),
+                name="ip.abit"
+            ),
             name="ip.enc"
         ),
-        self.builder.bitcast(
-            self.builder.gep(buf, [ir.Constant(i64, HDR_DTOR_OFF)], name="ip.len.slot"),
-            i64p,
-            name="ip.len.p"
-        )
+        _len_slot
     );
     ip_res: ir.Value = buf;
     if _desc_slot {

@@ -10,7 +10,8 @@ literal's sentinel refcount never passes that test.
 """
 
 import os;
-import from tests.support { TESTS_DIR, native_force_opts }
+import ctypes;
+import from tests.support { TESTS_DIR, compile_native, get_func, native_force_opts }
 import from jaclang.compiler.driver.program { JacProgram }
 
 glob FIXTURES = os.path.join(
@@ -65,5 +66,16 @@ test "in-place str append reads the refcount before the allocation word" {
     );
     assert 'label %"cat.fresh"' in rc_blk , (
         "a shared or static string falls back to a fresh allocation"
+    );
+}
+
+test "in-place str append keeps the ASCII flag honest" {
+    (eng, _) = compile_native("inplace_concat_ascii.jac");
+    grow_ascii = get_func(eng, "grow_ascii", ctypes.c_int64, ctypes.c_int64);
+    grow_then_wide = get_func(eng, "grow_then_wide", ctypes.c_int64, ctypes.c_int64);
+    assert grow_ascii(8) == 1 , "appending ASCII in place must keep the string ASCII";
+    assert grow_then_wide(8) == 22 , (
+        f"a non-ASCII append in place clears the flag and len counts codepoints: "
+        f"{grow_then_wide(8)}"
     );
 }
