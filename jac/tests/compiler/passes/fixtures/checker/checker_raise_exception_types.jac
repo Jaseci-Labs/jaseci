@@ -1,6 +1,7 @@
 """A raised value and a `from` cause must be exceptions (a cause may also be None).
 
-`any`, `type[E]`, narrowed optionals and bounded TypeVars are accepted; a
+`any`, `type[E]`, narrowed optionals, bounded TypeVars and the name bound by
+`except (A, B) as e` (an `A | B`, not the tuple) are accepted; a
 non-exception, `None`, or a union with a non-exception member is E1090, and a
 non-exception cause is E1161.
 """
@@ -33,10 +34,33 @@ def raise_bounded_type_var[T: Exception](e: T) {
     raise e;
 }
 
-def raise_from_valid_causes(c: Exception | None, d: any) {
+def raise_from_optional_exception(c: Exception | None) {
     raise ValueError("a") from c;
-    raise ValueError("b") from d;
+}
+
+def raise_from_any(c: any) {
+    raise ValueError("b") from c;
+}
+
+def raise_from_none {
     raise ValueError("c") from None;
+}
+
+def reraise_from_tuple_handler {
+    try {
+        raise TimeoutError("slow");
+    } except (TimeoutError, RuntimeError) as exc {
+        print(exc.args);
+        raise RuntimeError("wrapped") from exc;
+    }
+}
+
+def reraise_tuple_handler {
+    try {
+        raise KeyError("k");
+    } except (KeyError, ValueError) as exc {
+        raise exc;
+    }
 }
 
 def raise_int {

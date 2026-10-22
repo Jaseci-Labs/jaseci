@@ -2960,6 +2960,9 @@ impl TypeEvaluator._get_type_of_symbol_decl(
 
             if isinstance(node_.parent, Except) and node_.parent.ex_type {
                 ex_type = self.get_type_of_expression(node_.parent.ex_type);
+                if caught := self._isinstance_class_alternatives(ex_type) {
+                    return self._union_narrowed_types(caught);
+                }
                 return self._convert_to_instance(ex_type);
             }
 
