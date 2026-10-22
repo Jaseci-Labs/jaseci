@@ -17,6 +17,7 @@ import shutil;
 import subprocess;
 import sys;
 import tempfile;
+import time;
 import from pathlib { Path }
 import jaclang;
 import from jaclang.compiler.driver.compile_options {
@@ -146,6 +147,13 @@ test "a no-op build lowers no units and preserves the linked artifact" {
         ) {
             assert timed.get(phase, 0.0) > 0.0 , f"{phase} was not timed: {timed}";
         }
+        spans = JacProgram().native_units();
+        outer = spans.open_span();
+        inner = spans.open_span();
+        spans.close_span("NATIVE_LOWER", time.perf_counter() - 4.0, inner, "inner.jac");
+        spans.close_span("NATIVE_LOWER", time.perf_counter() - 10.0, outer, "outer.jac");
+        outer_seconds = spans.unit_lower_seconds["outer.jac"];
+        assert 5.5 < outer_seconds < 6.5 , f"a unit was charged for the unit nested in it: {outer_seconds:.2f}s";
         summary = prog.native_units().phase_summary();
         assert "units analysed/lowered/optimized/emitted 5/5/5/" in summary , summary;
         (warm_prog, warm_plan) = _plan_for(root_dir);
