@@ -5,6 +5,28 @@ Python-congruent **standard library for the native (na) compiler pathway**
 (issues [#6404] / [#6940]). This is **Mechanism B**: ordinary Jac compiled and
 linked like user code, with zero per-module backend work.
 
+## The interface is Python's
+
+Each public module here implements the interface the Python stub of the same
+name declares. That is the rule the compiler checks (`E5116`):
+
+- A name is public (`def:pub`, `obj:pub`) only if the interface declares it,
+  and its parameters and members are ones the interface declares. A parameter
+  the interface takes by position only may have any name. A field that is a
+  constructor parameter in the interface is public; `init`, `postinit` and
+  `drop` are not part of the surface.
+- Anything else a module needs is internal: no `:pub`, or a leading
+  underscore for a member. Code whose placement is still open is typed
+  against the Python interface before it is placed, so it cannot rely on a
+  name the interface lacks.
+- Inside this tree a bare import of a standard-library name
+  (`import from datetime { date }`) resolves to the native module of that
+  name, as it does in any native code. An internal helper is imported
+  relatively (`import from ._hex { to_hex }`,
+  `import from .datetime { _ord2ymd }`), so a helper is never taken for a
+  standard-library module of the same name.
+- Every platform variant of a module exposes the same public surface.
+
 ## How resolution works
 
 `jaclang.compiler.frontend.codeinfo.resolve_native_module` is the single shared resolver
@@ -15,10 +37,12 @@ searches **nearest-wins**:
    walked up to the filesystem root), then
 2. this bundled root (`native_stdlib_root()`), which is native **by
    location** -- its modules are plain `.jac` files. At either step a
-   per-architecture variant `<name>.<arch>.jac` (e.g.
-   `_math_fused.aarch64.jac`) is probed first, then a per-OS variant
-   `<name>.<os>.jac` (e.g. `_dirent_native.darwin.jac`), then the plain
-   `<name>.jac`.
+   per-architecture variant `<name>.<arch>.jac` is probed first, then a
+   per-OS variant `<name>.<os>.jac` (e.g. `errno.darwin.jac`), then the plain
+   `<name>.jac`. A module the compiler kernel imports has no variants: what
+   it needs from a C library per target comes from the runtime floor's
+   `__jac_*` functions (`compiler/backends/native/posix_floor.c`), so the
+   kernel is the same program on every target.
 
 So `import from os.path { normpath }` binds CPython's `posixpath` on the sv
 (Python) pathway and `na_stdlib/os/path.jac` on the na (native) pathway (the
@@ -61,7 +85,7 @@ native layout records the emitted name separately from its source-level key.
   pinned byte-for-byte against CPython in the native suite.)
 - **`datetime.jac`** (#6940 Phase 1 / #6951, extended to the full surface) --
   a faithful port of CPython's `_pydatetime.py`: `timedelta`, `date`,
-  `tzinfo`, `time`, `datetime`, `timezone`, `struct_time`, and
+  `tzinfo`, `time`, `datetime`, `timezone`, `struct_time`, and the internal
   `IsoCalendarDate`, with the same class hierarchy (`datetime(date)`,
   `timezone(tzinfo)`). Civil-date math uses the proleptic-Gregorian ordinal
   algorithms; timezone-aware math rides the `tzinfo` protocol
@@ -326,7 +350,7 @@ native layout records the emitted name separately from its source-level key.
   `.set(value)` and `.reset(token)`. `get` walks CPython's precedence -- the
   value last `set`, else the default the call passed, else the default the
   constructor took, else `LookupError(name)`. `set` returns a `Token[T]`
-  (the class is `ContextVarToken`, with `Token` its alias, because a native
+  (the class is the internal `ContextVarToken`, with `Token` its public alias, because a native
   program identifies classes by bare name and the compiler has its own
   `Token`) carrying `.var` and `.old_value`, and `reset(token)` restores the value the
   variable held before that `set`, or unsets it when it held none. As in
@@ -415,8 +439,9 @@ native layout records the emitted name separately from its source-level key.
   SCOPE: an IPv6 address is an unsigned 128-bit `(hi, lo)` i64 pair, so there
   is no `.int`; `hosts()`/`subnets()` materialize a list rather than returning
   a generator; `__hash__`, pickling, and `ipaddress.v4_int_to_packed`-style
-  private helpers are not provided. `IPv6Address.teredo` is split into
-  `teredo_server` and `teredo_client` (each `IPv4Address | None`): CPython's
+  private helpers are not provided. `IPv6Address.teredo` is not provided; its
+  halves exist only as the internal `_teredo_server` and `_teredo_client`
+  (each `IPv4Address | None`): CPython's
   single 2-tuple-or-`None` property has to be typed `any` here, and a tuple of
   objects boxed into `any` does not lower -- it fails a native build closure
   outright ("Declarations in the native closure could not lower") and, worse,
@@ -450,8 +475,8 @@ native layout records the emitted name separately from its source-level key.
   `locale_encoding_alias`, generated verbatim) -- the `LC_*` category
   constants (per-OS, from the floor), `CHAR_MAX`, `Error`, `setlocale`,
   `localeconv`, `getencoding`, `getpreferredencoding`, `getlocale`,
-  `getdefaultlocale`, `strcoll`, `strxfrm`, `normalize`, `_parse_localename`,
-  `_build_localename`, `atof`, `atoi`, `delocalize`, `localize`,
+  `getdefaultlocale`, `strcoll`, `strxfrm`, `normalize`, `atof`, `atoi`,
+  `delocalize`, `localize`,
   `format_string` and `currency`. `normalize` is CPython's four-stage lookup
   including the `@euro` modifier rewrite and the `:`-as-encoding-delimiter
   form; `_group`/`_strip_padding`/`localize`/`currency` are its grouping and
@@ -465,32 +490,29 @@ native layout records the emitted name separately from its source-level key.
   `windows_locale` is absent; `_replace_encoding` consults
   `locale_encoding_alias` but not `encodings.aliases`; and `setlocale` takes
   a locale *string* (`None` queries, `""` sets from the environment) rather
-  than also accepting a `(language, encoding)` iterable -- compose it with
-  `normalize(_build_localename(lang, enc))` yourself.
+  than also accepting a `(language, encoding)` iterable -- compose the
+  string yourself and pass it through `normalize`.
 
 - **`gettext.jac`** (#6978) -- `NullTranslations` and `GNUTranslations`
   (`gettext`, `ngettext`, `pgettext`, `npgettext`, `add_fallback`, `info`,
   `charset`), a `.mo` parser that handles both endiannesses, the catalogue
   metadata block (`Content-Type` charset and `Plural-Forms`), `find`,
-  `find_all`, `translation`, `textdomain`, `bindtextdomain`, `dgettext`,
+  `translation`, `c2py`, `textdomain`, `bindtextdomain`, `dgettext`,
   `dngettext`, `dpgettext`, `dnpgettext` and the module-level
-  `gettext`/`ngettext`/`pgettext`/`npgettext`, plus `_expand_lang` over the
-  bundled `locale.normalize`.
+  `gettext`/`ngettext`/`pgettext`/`npgettext`.
 
   The C plural-form expression is the interesting part: CPython's `c2py`
   compiles it to a Python lambda through `exec`, which the native pathway
-  cannot do. Here `c2py_ast` tokenizes and parses the same grammar (the same
+  cannot do. Here `c2py` tokenizes and parses the same grammar (the same
   operator set, the same six precedence levels, the same left-associative
-  chained comparisons and low-priority `?:`) into an AST, and
-  `plural_index(tree, n)` evaluates it -- C truthiness, `/` as floor division,
+  chained comparisons and low-priority `?:`) into an AST, and returns a
+  closure that evaluates it -- C truthiness, `/` as floor division,
   the same `ValueError` messages for an invalid token, an unexpected token, an
   unbalanced parenthesis, and an over-long (>1000 character) expression.
 
-  SCOPE: `c2py` returns an AST (`c2py_ast`) evaluated by `plural_index` instead
-  of a callable; `install`/`NullTranslations.install` cannot inject `_` into
+  SCOPE: `install`/`NullTranslations.install` cannot inject `_` into
   builtins and are absent; `translation` takes no `class_` and does not cache
-  parsed catalogues; `find` returns `str | None` with `find_all` as the
-  `all=True` form; catalogues are read as bytes by path (no file objects); and
+  parsed catalogues; `find` returns `str | None` and has no `all=True` form; catalogues are read as bytes by path (no file objects); and
   the plural lookup is keyed by msgid into a `dict[str, list[str]]` rather than
   CPython's `(msgid, index)` tuple keys.
 
@@ -587,7 +609,8 @@ native layout records the emitted name separately from its source-level key.
   `hypot`/`dist` port its `vector_norm` and `sumprod` its triple-length
   accumulator. Where CPython's C build fuses a multiply-add (clang contracts
   `a*b + c` into one rounding on aarch64, never on baseline x86-64),
-  `_math_fused.<arch>.jac` supplies the same fused or unfused `fmadd`. A
+  `_math_fused.jac`'s `fmadd` calls the runtime floor's `__jac_fmadd`, which
+  is fused or unfused the same way on each target. A
   randomized sv/na differential sweep over every real function is
   bit-identical on macOS arm64. `floor`/`ceil`/`trunc` return an `int`
   argument unchanged (no float round trip), `gcd`/`lcm`/`hypot` are truly
@@ -631,11 +654,71 @@ native layout records the emitted name separately from its source-level key.
   `c_powi` with `OverflowError("complex exponentiation")`. The libm wrappers
   link against host libm on native and against the vendored musl bitcode on
   wasm.
+- **`itertools.jac`** (#8145) -- the CPython 3.14 `itertools` surface as
+  pure-Jac generators: `count` (int and float start/step), `cycle`,
+  `repeat`, `accumulate` (default `+` over int/float/str plus a custom
+  `func`, `initial=` included), `batched` (`strict=` included), `chain`
+`combinations`,
+  `combinations_with_replacement`, `compress`, `dropwhile`, `takewhile`,
+  `filterfalse` (`None` predicate falls back to truthiness), `groupby`,
+  `islice`, `pairwise`, `permutations`, `product` (`repeat=` included),
+  `starmap`, `tee`, and `zip_longest` (`fillvalue=` included).
+  `islice` splits its arguments on call arity, so `islice(it, 2)` is a
+  stop and `islice(it, 2, None)` a start exactly as CPython's positional
+  forms distinguish them, and non-integer/negative arguments raise the
+  same `ValueError` text (`"Start/Stop argument for islice() must be None
+  or an integer: 0 <= x <= sys.maxsize."`, `"Step for islice() must be a
+  positive integer or None."`) while a wrong arity raises CPython's
+  `TypeError` (`"islice expected at least/most N arguments, got M"`).
+  Negative `r`/`repeat`/`n` raise CPython's `ValueError`s
+  (`"r must be non-negative"`, `"repeat argument cannot be negative"`,
+  `"n must be at least one"`, `"n must be >= 0"`, `"batched():
+  incomplete batch"`). SCOPE/divergences: `chain.from_iterable` cannot be
+  spelled on na (`chain` is a function, not a class), so code that uses it
+  is placed in Python;
+  the zero-argument `zip_longest()` and the zero/five-argument `islice`
+  arity `TypeError`s behave as CPython does at runtime but are probed
+  standalone (the sv lane's checker enforces the typeshed arity, so those
+  shapes cannot appear in an equivalence fixture);
+  `groupby` yields `(key, list)` snapshots instead of lazily-invalidated
+  `_grouper` iterators, so a group is still readable after advancing
+  where CPython's is not (a superset, safe for collect-each-group use);
+  `tee` eagerly materializes the source into `n` independent `list`s --
+  same values, but the full memory cost is paid up front and the returned
+  children are re-iterable lists, not one-shot shared-head iterators; `zip_longest`
+  materializes every input *before* the first yield, so an infinite
+  input hangs where CPython streams (finite inputs are congruent);
+  `count`/`accumulate` arithmetic is i64/f64 bounded, not bignum; and
+  `repeat`'s `times` is typed `int | None`, so a non-integer count fails
+  at the Jac call boundary rather than through CPython's `__index__`
+  coercion. **Callables:** `dropwhile`, `takewhile`, `filterfalse`,
+  `groupby`'s `key=`, `accumulate`'s `func`, and `starmap`'s `func` are
+  typed `Callable` parameters (a boxed `any` has no native call path), so
+  callbacks must have `any`-typed parameters and return `any`;
+  `starmap` takes `Callable[[any, any], any]` -- exactly two arguments
+  per row (a fixed native signature cannot splat arbitrary rows) -- and
+  rows must be `list`s of length 2 or it raises `TypeError`.
+  **Variadic inputs:** `chain`, `zip_longest`, and `product` take
+  `*iterables: any`, and a `for` over a boxed `any` iterates only `list`s
+  (and `str` via an explicit check); dict/set/range/iterator arguments
+  through those parameters raise `TypeError`. Parameters declared
+  `[C: Iterable]` (`permutations`, `tee`, `compress`, ...) are
+  monomorphized, so they accept any iterable a native `for` drives --
+  lists, strs, ranges, dicts, and `Iterator`s. **Row shape:** the
+  tuple-valued iterators yield `list` snapshots on na -- `product`,
+  `permutations`, `combinations`, `combinations_with_replacement`,
+  `batched`, `zip_longest`, `pairwise`, and `groupby` rows, and `tee`'s
+  children, are all `list[any]` (a native tuple is a fixed-arity literal
+  struct, so `tuple(iterable)` is not a lowered builtin and a boxed
+  `any` only subscripts as a list). Values and order are identical to
+  CPython; only the container type differs, so na rows are mutable where
+  CPython's are not. Pinned sv<->na congruent by `prim_itertools.jac`.
 
 - **`time.jac`** (Mechanism F surface) + **`_time_common.jac`** (shared
   `clock_gettime` / `clock_settime` FFI and timespec loads) +
-  **`_time_native.linux.jac`** / **`_time_native.darwin.jac`** (per-OS clock
-  ids and the sleep floor: `clock_nanosleep` on Linux, `nanosleep` on Darwin) -- the clock half of CPython's
+  **`_time_native.jac`** (the target libc's clock ids and sleep, from the
+  runtime floor's `__jac_clock_id` and `__jac_sleep_ns`: an absolute
+  `clock_nanosleep` on Linux, a `nanosleep` loop on Darwin) -- the clock half of CPython's
   `time` module, replacing the former Mechanism-A intercept: `time`,
   `time_ns`, `monotonic`, `monotonic_ns`, `perf_counter`, `perf_counter_ns`,
   `process_time`, `process_time_ns`, `thread_time`, `thread_time_ns`,
@@ -717,6 +800,150 @@ native layout records the emitted name separately from its source-level key.
   instead of `connect` -- the image-wide clib-extern bare-name set would
   otherwise skip this module's `def:pub connect` body (SIGSEGV at
   JIT-execute).
+- **`signal.linux.jac`** (Mechanism F) + **`_signal_native.linux.jac`** (libc
+  FFI floor: `bsd_signal`, `kill`, `setitimer` (as `alarm`), `sigprocmask`) --
+  the Linux-numbered constant set plus `signal`/`getsignal`/`raise_signal`/
+  `alarm`/`pause`/`strsignal`/`valid_signals`/`pthread_sigmask`/
+  `default_int_handler`. User handlers dispatch through a C-ABI trampoline
+  that delivers `(signum, None)` where CPython delivers `(signum, frame)`.
+  `SIG_DFL`/`SIG_IGN` are sentinel callables that `signal()` maps onto real
+  kernel dispositions; `getsignal` answers from a shadow dict since libc
+  cannot distinguish a Jac trampoline from a real handler. FFI names carry
+  a `sig_` prefix because `alarm`/`pause` externs would collide with the
+  public `def:pub` names in the flat symbol table -- `alarm` is spelled
+  `setitimer(ITIMER_REAL, ...)` and `pause` is spelled `select(0, NULL,
+  NULL, NULL, NULL)`, which sleeps until a signal interrupts it.
+  `strsignal` answers from a baked-in table of glibc's description strings
+  rather than a libc call, so it is byte-identical under musl where
+  `sigdescr_np` does not exist.
+  SCOPE/divergences:
+  Linux only (signal numbers are glibc/Linux-specific, so
+  the module carries the `.linux.` suffix and other platforms get a clean
+  "not provided" rather than a link error); `valid_signals` and
+  `pthread_sigmask` return a `list` where CPython returns a `set`;
+  `default_int_handler` is exported but not installed on `SIGINT`, so Ctrl-C
+  terminates the process rather than raising `KeyboardInterrupt`;
+  `sigwait`/`sigwaitinfo`/`setitimer`/`getitimer` are not provided.
+  Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
+
+- **`subprocess.linux.jac`** (Mechanism F) +
+  **`_subprocess_native.linux.jac`** (libc FFI floor: `posix_spawnp` and its
+  file-actions API, `pipe`, `waitpid`, `poll`, `kill`) -- `Popen`, `run`,
+  `call`, `check_call`, `check_output`, `CompletedProcess`,
+  `CalledProcessError`, `TimeoutExpired`, and the `PIPE`/`STDOUT`/`DEVNULL`
+  sentinels. Spawn is `posix_spawnp` with file actions for stdio
+  dup2/open/`chdir_np`; `communicate` interleaves stdin writes with stdout
+  and stderr reads over a `poll` loop (the same selector shape CPython
+  uses), so a child filling one pipe while the parent drains the other does
+  not deadlock, and `timeout` covers the whole exchange. `wait(timeout)`
+  raises `TimeoutExpired` and leaves the child running -- matching CPython;
+  only `run()` kills on timeout. `shell=True` builds
+  `["/bin/sh", "-c"] + args` verbatim, as CPython does. The first `Popen`
+  installs `SIG_IGN` on `SIGPIPE` through `signal()` itself -- matching
+  CPython's interpreter startup, including `getsignal(SIGPIPE)` answering
+  `SIG_IGN` -- so a write to a closed pipe fails with EPIPE instead of
+  killing the caller.
+  SCOPE/divergences:
+  Linux only (`.linux.` suffix); `Popen` exposes `args`/`stdin`/`stdout`/
+  `stderr`/`text`/`cwd`/`env`/`shell`/`pid`/`returncode` only -- no `start_new_session`,
+  `executable`, `bufsize`, `encoding`, or the file-object stream API
+  (`Popen.stdout` is an int sentinel, not a reader); `kill`/`terminate`
+  signal only the child pid, not a process group; `returncode` is `0` when
+  the child was already reaped (CPython's `ChildProcessError` path).
+  Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
+
+- **`hashlib.jac`** + **`hmac.jac`** + **`_digest.jac`** (pure Jac, no C
+  library) -- CPython's hash-object model over Jac digest cores: `Hash` keeps a
+  live `DigestCore` (update buffers bytes into blocks and compresses each full
+  block, `digest()` pads and finalizes a copy, `copy()` clones the core), so
+  repeated `digest()` is O(block) rather than re-hashing every retained chunk.
+  MD5, SHA-1, SHA-224/256, SHA-384/512, SHA3-224/256/384/512, BLAKE2b and
+  BLAKE2s are implemented in Jac with fixed-width wrapping arithmetic, so a
+  native program, and the compiler kernel, links no `libcrypto` for hashing.
+  Surface: the named constructors (`md5`/`sha1`/`sha224`/`sha256`/`sha384`/
+  `sha512`/`sha3_224`/`sha3_256`/`sha3_384`/`sha3_512`/`blake2b`/`blake2s`),
+  `new(name, data)`, `update`/`digest`/`hexdigest`/`copy`, and the
+  `digest_size`/`block_size`/`name` attributes. `hmac.jac` builds RFC 2104
+  HMAC over the same cores (`new(key, msg=None, digestmod)` -- `digestmod` is
+  required and its absence raises `TypeError` like CPython, as does a
+  non-bytes `msg`; `key`/`msg` also accept `bytearray`; `digest(key, msg,
+  digest)`; `compare_digest(a, b)`). Pinned against CPython at every block
+  boundary by `test_native_hashlib.jac` and sv<->na congruent by
+  `test_prim_equivalence.jac`. SCOPE: `shake_128`/`shake_256` (XOF digests
+  take a caller-supplied length), keyed or sized BLAKE2 and `pbkdf2_hmac` are
+  not provided; the `usedforsecurity` kwarg and callable `digestmod` are not
+  accepted; algorithm lookup is the exact lowercase name (no case or alias
+  normalization); `update`/`new` `data`/`compare_digest` take `bytes` only
+  (no buffer protocol); `algorithms_*`
+  sets are not exposed; `digest_size`/`block_size`/`name` are plain `has`
+  fields (assignable, where CPython's are read-only).
+- **`secrets.jac`** (Mechanism F) + **`_csprng_native.jac`** (`RAND_bytes`
+  floor) -- `token_bytes`/`token_hex`/`token_urlsafe` (`nbytes=None` ->
+  `DEFAULT_ENTROPY` = 32; negative -> `ValueError`; other non-int ->
+  `TypeError`), `randbelow`
+  (rejection-sampled over whole-byte draws), and `compare_digest` re-exported
+  from `hmac`. `to_hex` lives once in `_hex` and is shared with
+  `hashlib`/`hmac`; CPython-style type names in `TypeError` messages
+  come from `_typename.typename` (an `isinstance` ladder -- `type(v).__name__`
+  does not lower on `any`), also shared with `hmac`. SCOPE: `compare_digest` takes `bytes` only (str
+  callers `.encode()`), and `SystemRandom`/`choice`/`randbits` are not
+  provided.
+- **`stat.jac`** (Mechanism B) -- the CPython `stat` constant/predicate
+  surface: `ST_*` indexes, the `S_IF*` file-type constants (with the
+  unsupported `S_IFDOOR`/`S_IFPORT`/`S_IFWHT` pinned to 0 and their `S_IS*`
+  predicates hardwired to `False`, exactly as CPython does off Solaris/BSD),
+  the `S_I*` permission and `S_ISUID`/`S_ISGID`/`S_ENFMT`/`S_ISVTX` bits, the
+  `UF_*`/`SF_*` BSD file flags, `S_IMODE`/`S_IFMT`, and `filemode` (the full
+  `_filemode_table` rendering including `s`/`S` for setuid/setgid and `t`/`T`
+  for the sticky bit, and `?` for an unknown type). No FFI floor -- the mode
+  is an `int`, so the module is portable to every native target. SCOPE: the
+  Windows `FILE_ATTRIBUTE_*` constants are not provided.
+- **`glob.jac`** (Mechanism B) + **`_glob_native.jac`** (tiny libc FFI floor:
+  `lstat` for `lexists` semantics, so broken symlinks still match literal
+  patterns, and `_directory_native`'s `opendir`/`readdir` for listings) --
+  a port of CPython 3.14's `_iglob`/`_glob0`/`_glob1`/`_glob2`/`_rlistdir`
+  walk: `glob`/`iglob`, `escape`, `has_magic`, `**` recursion under
+  `recursive=True`, the dotfile rules (`*`/`?`/`[` never match a leading `.`
+  unless the pattern segment starts with `.` or `include_hidden=True`), and
+  trailing-slash patterns matching directories only. Matching goes through
+  the bundled `fnmatch` (`fnmatchcase` == `fnmatch` here since `normcase` is
+  the POSIX identity). SCOPE/divergences: each directory's names are visited
+  in sorted order where CPython's order is explicitly undefined (scandir
+  order) -- sort or compare sets before pinning; `iglob` returns an eager
+  `list[str]`, not a lazy iterator; `root_dir`, `dir_fd`, `translate`, and
+  the deprecated `glob0`/`glob1` are not provided; POSIX paths only.
+- **`platform.jac`** (Mechanism B) + **`_platform_native.<os>.jac`** (libc
+  FFI floor: `uname(2)` into a heap `struct utsname`, `uname -p` via
+  `popen` for the processor field, `gnu_get_libc_version` on glibc, and
+  `sw_vers -productVersion` on Darwin) -- the query surface `system`,
+  `node`, `release`, `version`, `machine`, `processor` (with CPython 3.14's
+  `_unknown_as_blank` semantics), `uname()`, `architecture`,
+  `libc_ver`, `platform`, `python_version`, and `python_version_tuple`.
+  `platform()` reproduces CPython's join rules: `machine == processor` drops
+  the processor, Darwin reports `macOS-<sw_vers>` and the generic branch,
+  Linux reports `...-with-glibc<ver>` (and ignores `terse`, as CPython does).
+  SCOPE/divergences: glibc-Linux and Darwin only (on musl the
+  `gnu_get_libc_version` extern fails to link, and `libc_ver` hardcodes
+  `("glibc", <host glibc>)`); `uname()` returns an archetype, not a
+  namedtuple -- field access matches, indexing/iteration/`repr` do not;
+  `python_version`/`python_version_tuple` report a fixed "3.14.x" claim
+  matching the bundled sv runtime's major.minor rather than a probed
+  interpreter version; `aliased` is accepted but ignored (no
+  `system_alias`); `architecture` always answers `('64bit', 'ELF')` /
+  `('64bit', '')` rather than shelling out to `file`; `java_ver`,
+  `win32_ver`, `mac_ver`, `ios_ver`, `freedesktop_os_release`,
+  `python_implementation`/`python_build`/`python_compiler`/`python_branch`/
+  `python_revision`, and `system_alias`/`node`'s socket fallback are not
+  provided.
+- **`errno.<os>.jac`** (Mechanism B, per-OS variant module -- the resolver's
+  `<name>.<os>.jac` probe picks `errno.linux.jac` or `errno.darwin.jac`) --
+  the CPython `errno` constant surface: every `E*` the platform's
+  `<errno.h>` defines (value-aliased pairs like `EAGAIN`/`EWOULDBLOCK`,
+  `EDEADLK`/`EDEADLOCK`, `ENOTSUP`/`EOPNOTSUPP` included) plus the
+  `errorcode` reverse map built in CPython's `errnomodule.c` insertion order,
+  so aliased codes resolve to the same name CPython reports. SCOPE: Linux
+  and Darwin tables only; no `strerror`-style message lookup is exported
+  (`os.strerror` stays a compiler intercept).
 
 The syscall-backed `os` / `os.path` entry points (`makedirs`, `realpath`,
 `mkdir`, `exists`, `getmtime`, `normcase`, ...) are Mechanism-A/H compiler
@@ -740,8 +967,12 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 
 1. Drop `<name>.jac` (or `<pkg>/<name>.jac` for a dotted import) here,
    exporting its API with `def:pub`. If a module needs platform-specific
-   code, add a `<name>.<os>.jac` variant (e.g. `_dirent_native.darwin.jac`);
-   it wins over the plain file on that OS.
+   code, prefer a `__jac_*` function in the runtime floor
+   (`compiler/backends/native/posix_floor.c` and `win_floor.c`, regenerated
+   with `scripts/gen_posix_floor.jac` and `scripts/gen_win_floor.jac`): a
+   module the compiler kernel imports must not have variants. Otherwise add a
+   `<name>.<os>.jac` variant (e.g. `errno.darwin.jac`); it wins over the plain
+   file on that OS.
 2. Use only the native-supported subset; prefer typed containers
    (`list[str]`, `dict[str, any]`). A bare `list = []` defaults to `i64`
    elements. An empty `list[any] = []` then grown with `.append(x)` lowers and
@@ -750,7 +981,8 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
    `json.loads`). `dict[str, any]` literals box their values fine. Unbox a
    boxed scalar before operating on it (`i: int = some_any; str(i)`), and check
    container/None branches with `isinstance` -- `x is None` does not lower to a
-   branch condition on the native pathway.
+   branch condition on the native pathway for a boxed `any` read out of a
+   container (on an `any` *parameter* it does; `_typename.jac` relies on it).
 3. Add a tri-backend equivalence fixture
    (`jac/jaclang/compiler/tests/fixtures/prim_<name>.jac`) and register it in
    `test_prim_equivalence.jac` with `require=["na"]` so sv/na congruence is
@@ -771,7 +1003,7 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 - **F**: thin FFI wrappers over a system C library; native-host only. Examples:
   `_ssl_native.jac` -- the floor the verifying TLS client `ssl` is built on,
   over OpenSSL `libssl`/`libcrypto` (issue #6978 Phase 1); `_socket_native.jac`
-  over libc BSD sockets; `_hashlib_native.jac` over the bundled `libcrypto`.
+  over libc BSD sockets.
   An F module declares its C entry points with `import from <lib> { def ...; }`.
   `urllib/request.jac` (`urlopen`) is a pure-Jac surface over the `socket` +
   `ssl` floors -- it links no foreign C beyond libc/libssl/libcrypto (no

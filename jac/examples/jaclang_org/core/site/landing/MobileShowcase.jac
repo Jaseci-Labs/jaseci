@@ -9,7 +9,11 @@ glob _POINTS: list[str] = [
          "jac run mobile puts the identical source on an Android or iOS device through Expo; jac build --platform ios mobile ships it."
      ];
 
-def:pub PhoneFrame(children: any = None) -> JsxElement {
+def:pub PhoneFrame(children: any = None) -> JsxElement;
+
+def:pub MobileShowcase -> JsxElement;
+
+impl PhoneFrame(children: any = None) -> JsxElement {
     return
         <div className="mx-auto w-[344px] max-w-full">
             <div
@@ -36,7 +40,7 @@ def:pub PhoneFrame(children: any = None) -> JsxElement {
         </div>;
 }
 
-def:pub MobileShowcase -> JsxElement {
+impl MobileShowcase -> JsxElement {
     return
         <section
             id="mobile"

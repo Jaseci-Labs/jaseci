@@ -7,6 +7,25 @@ This page documents significant breaking changes in Jac and Jaseci that may affe
 
 ---
 
+### A closure created in a loop body keeps its own iteration's values (unreleased)
+
+A `lambda` or nested `def` created in a loop body used to share every name with the rest of the function, so a closure kept past its iteration saw whatever the last iteration assigned: in a JSX `for` slot every per-item handler acted on the last item, and on the server a list of callbacks built in a loop all read the final value. A name whose every assignment is inside the loop (the loop target, or a local the body introduces) is now shared with such a closure only while its pass through the body lasts; when the pass ends, the closure keeps that pass's value. This holds in every codespace.
+
+```jac
+def openers(items: list[str], show: Callable[[str], None]) -> list[Callable[[], None]] {
+    handlers: list[Callable[[], None]] = [];
+    for item in items {
+        row_id = item.strip();
+        handlers.append(lambda { show(row_id); });    # each handler shows its own row
+    }
+    return handlers;
+}
+```
+
+Code that relied on a loop's closures reading the final value of a loop-local name now sees each pass's value instead. A name that is also assigned outside the loop (a flag, a running total) is shared as before. See [Variables and Scope](../reference/language/variables-and-scope.md#4-scope-rules).
+
+---
+
 ### `[dependencies]` lists Jac packages; Python moves to `[dependencies.pypi]` (unreleased)
 
 Jac now has its own packages (`org/name`, see [Packages](../reference/packages.md)), and `[dependencies]` in `jac.toml` lists them. Python packages move to a `pypi` subtable:

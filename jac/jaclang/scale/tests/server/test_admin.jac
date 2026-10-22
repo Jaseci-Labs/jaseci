@@ -1,13 +1,10 @@
 """Tests for admin portal API endpoints using ScaleTestClient."""
 
+import os;
 import uuid;
-import from jaclang.scale.tests.scale_test_client {
-    ScaleTestClient,
-    make_client,
-    extract_data
-}
+import from unittest.mock { patch }
 
-glob DEFAULT_ADMIN_PASSWORD: str = "changeme";
+glob DEFAULT_ADMIN_PASSWORD: str = ADMIN_BOOTSTRAP_PASSWORD;
 
 # ============================================================================
 # Admin Login Tests
@@ -39,6 +36,84 @@ test "admin login wrong password" {
         assert response.status_code == 401;
         data = extract_data(response.json());
         assert "error" in data;
+    } finally {
+        client.close();
+    }
+}
+
+test "admin login needs the code once the admin has a verified second factor" {
+    client = make_client();
+    try {
+        root_admin = {"Authorization": f"Bearer {client.admin_login()}"};
+        username = f"mfaadmin_{uuid.uuid4().hex[:8]}";
+        password = "Adm1n!Passw0rd";
+        response = client.post(
+            "/admin/users",
+            json={"username": username, "password": password, "role": "admin"},
+            headers=root_admin
+        );
+        assert response.status_code == 201 , response.text;
+
+        # Before enrolling, the password alone signs the admin in, as today.
+        response = client.post(
+            "/admin/login", json={"username": username, "password": password}
+        );
+        assert response.status_code == 200 , response.text;
+        admin_auth = {
+            "Authorization": f"Bearer {extract_data(response.json())['token']}"
+        };
+
+        response = client.post(
+            "/user/mfa/enroll", json={"password": password}, headers=admin_auth
+        );
+        assert response.status_code == 201 , response.text;
+        enrolled = extract_data(response.json());
+        used: set[int] = set();
+        response = client.post(
+            "/user/mfa/verify",
+            json={
+                "factor_id": enrolled["factor_id"],
+                "code": fresh_totp_code(enrolled["secret"], used)
+            },
+            headers=admin_auth
+        );
+        assert response.status_code == 200 , response.text;
+
+        response = client.post(
+            "/admin/login", json={"username": username, "password": password}
+        );
+        assert response.status_code == 401 , response.text;
+        assert response.json()["error"]["code"] == "MFA_REQUIRED";
+        assert not response.json().get("data");
+
+        response = client.post(
+            "/admin/login",
+            json={
+                "username": username,
+                "password": password,
+                "code": wrong_totp_code(enrolled["secret"])
+            }
+        );
+        assert response.status_code == 401 , response.text;
+        assert response.json()["error"]["code"] == "INVALID_CODE";
+
+        response = client.post(
+            "/admin/login",
+            json={
+                "username": username,
+                "password": password,
+                "code": fresh_totp_code(enrolled["secret"], used)
+            }
+        );
+        assert response.status_code == 200 , response.text;
+        token = extract_data(response.json())["token"];
+        claims = jwt_decode(token, signing_secret(), algorithms=["HS256"]);
+        assert claims["aal"] == "aal2";
+        assert claims["amr"] == ["pwd", "otp"];
+        response = client.get(
+            "/admin/users", headers={"Authorization": f"Bearer {token}"}
+        );
+        assert response.status_code == 200 , response.text;
     } finally {
         client.close();
     }
@@ -324,22 +399,27 @@ test "admin reset password wrong current password" {
     }
 }
 
-test "admin reset password too short" {
-    client = make_client();
-    try {
-        token = client.admin_login();
+test "admin reset password is held to the shared password policy" {
+    # The suite lowers the password floor for its throwaway fixtures; this test
+    # runs against the shipped default of 8 characters.
+    with patch.dict(os.environ, {"JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH": "8"}) {
+        client = make_client();
+        try {
+            token = client.admin_login();
 
-        # After admin_login, the password is now "TestAdmin123!"
-        response = client.post(
-            "/admin/reset-password",
-            json={"current_password": "TestAdmin123!", "new_password": "short"},
-            headers={"Authorization": f"Bearer {token}"}
-        );
-        assert response.status_code == 400;
-        data = extract_data(response.json());
-        assert "8 characters" in data.get("error", "");
-    } finally {
-        client.close();
+            # After admin_login, the password is now "TestAdmin123!"
+            response = client.post(
+                "/admin/reset-password",
+                json={"current_password": "TestAdmin123!", "new_password": "short"},
+                headers={"Authorization": f"Bearer {token}"}
+            );
+            assert response.status_code == 400;
+            body = response.json();
+            assert body["error"]["code"] == "POLICY_VIOLATION" , body;
+            assert body["error"]["details"] == {"violations": ["PASSWORD_TOO_SHORT"]};
+        } finally {
+            client.close();
+        }
     }
 }
 

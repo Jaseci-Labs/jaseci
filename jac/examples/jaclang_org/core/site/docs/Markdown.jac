@@ -35,11 +35,43 @@ glob _ICON_MAP: dict[str, any] = {
 
      };
 
-def _is_alnum(c: str) -> bool {
+def _is_alnum(c: str) -> bool;
+
+def _count_hashes(s: str) -> int;
+
+def _leading_spaces(s: str) -> int;
+
+def _is_list_line(s: str) -> bool;
+
+def _is_table_sep(s: str) -> bool;
+
+def _split_row(s: str) -> list[str];
+
+def _parse_blocks(
+    lines: list[str], anchors: list[str] | None = None
+) -> list[dict[str, any]];
+
+def _icon_name_ok(name: str) -> bool;
+
+def _external_href(href: str) -> bool;
+
+def _parse_inline(t: str) -> list[dict[str, any]];
+
+def:pub MDLabel(text: str) -> JsxElement;
+
+def:pub MDSpans(text: str) -> JsxElement;
+
+def:pub MDBlocks(blocks: list[dict[str, any]]) -> JsxElement;
+
+def:pub Markdown(
+    lines: list[str], skip_title: str = "", anchors: list[str] | None = None
+) -> JsxElement;
+
+impl _is_alnum(c: str) -> bool {
     return ("a" <= c and c <= "z") or ("0" <= c and c <= "9");
 }
 
-def _count_hashes(s: str) -> int {
+impl _count_hashes(s: str) -> int {
     k = 0;
     while k < len(s) and s[k] == "#" {
         k = k + 1;
@@ -47,7 +79,7 @@ def _count_hashes(s: str) -> int {
     return k;
 }
 
-def _leading_spaces(s: str) -> int {
+impl _leading_spaces(s: str) -> int {
     k = 0;
     while k < len(s) and s[k] == " " {
         k = k + 1;
@@ -55,7 +87,7 @@ def _leading_spaces(s: str) -> int {
     return k;
 }
 
-def _is_list_line(s: str) -> bool {
+impl _is_list_line(s: str) -> bool {
     t = s.lstrip();
     if t.startswith("- ") or t.startswith("* ") or t.startswith("+ ") {
         return True;
@@ -67,7 +99,7 @@ def _is_list_line(s: str) -> bool {
     return k > 0 and k + 1 < len(t) and t[k] == "." and t[k + 1] == " ";
 }
 
-def _is_table_sep(s: str) -> bool {
+impl _is_table_sep(s: str) -> bool {
     t = s.strip();
     if not t.startswith("|") or "-" not in t {
         return False;
@@ -80,7 +112,7 @@ def _is_table_sep(s: str) -> bool {
     return True;
 }
 
-def _split_row(s: str) -> list[str] {
+impl _split_row(s: str) -> list[str] {
     t = s.strip();
     if t.startswith("|") {
         t = t[1:];
@@ -91,7 +123,7 @@ def _split_row(s: str) -> list[str] {
     return [c.strip() for c in t.split("|")];
 }
 
-def _parse_blocks(
+impl _parse_blocks(
     lines: list[str], anchors: list[str] | None = None
 ) -> list[dict[str, any]] {
     blocks: list[dict[str, any]] = [];
@@ -274,7 +306,7 @@ def _parse_blocks(
     return blocks;
 }
 
-def _icon_name_ok(name: str) -> bool {
+impl _icon_name_ok(name: str) -> bool {
     if not (
         name.startswith("octicons-")
         or name.startswith("material-")
@@ -291,7 +323,7 @@ def _icon_name_ok(name: str) -> bool {
     return True;
 }
 
-def _external_href(href: str) -> bool {
+impl _external_href(href: str) -> bool {
     s = href.strip().lower();
     for scheme in ("http:", "https:", "mailto:") {
         if s.startswith(scheme) {
@@ -301,7 +333,7 @@ def _external_href(href: str) -> bool {
     return ":" not in s;
 }
 
-def _parse_inline(t: str) -> list[dict[str, any]] {
+impl _parse_inline(t: str) -> list[dict[str, any]] {
     spans: list[dict[str, any]] = [];
     buf = "";
     i = 0;
@@ -406,7 +438,7 @@ def _parse_inline(t: str) -> list[dict[str, any]] {
     return spans;
 }
 
-def:pub MDLabel(text: str) -> JsxElement {
+impl MDLabel(text: str) -> JsxElement {
     return
         <span>
             {for (i, seg) in enumerate(text.split("`")) {
@@ -424,7 +456,7 @@ def:pub MDLabel(text: str) -> JsxElement {
         </span>;
 }
 
-def:pub MDSpans(text: str) -> JsxElement {
+impl MDSpans(text: str) -> JsxElement {
     return
         <span>
             {for (i, sp) in enumerate(_parse_inline(text)) {
@@ -500,7 +532,7 @@ def:pub MDSpans(text: str) -> JsxElement {
         </span>;
 }
 
-def:pub MDBlocks(blocks: list[dict[str, any]]) -> JsxElement {
+impl MDBlocks(blocks: list[dict[str, any]]) -> JsxElement {
     return
         <div>
             {for (bi, b) in enumerate(blocks) {
@@ -728,7 +760,7 @@ def:pub MDBlocks(blocks: list[dict[str, any]]) -> JsxElement {
         </div>;
 }
 
-def:pub Markdown(
+impl Markdown(
     lines: list[str], skip_title: str = "", anchors: list[str] | None = None
 ) -> JsxElement {
     blocks = _parse_blocks(lines, anchors);

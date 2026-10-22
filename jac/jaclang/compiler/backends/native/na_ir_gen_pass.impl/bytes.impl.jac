@@ -538,18 +538,33 @@ impl NaIRGenPass._emit_bytes_search(
             return None;
         }
     }
-    parts = self._emit_bytes_needle(args[0]);
+    i8p = ir.IntType(8).as_pointer();
+    parts: (tuple[ir.Value, ir.Value, ir.Value] | None) = None;
+    if target.type == i8p {
+        if args[0].type != i8p {
+            return None;
+        }
+        hay = target;
+        length = self._call_str_len(self.builder, target);
+        parts = (
+            args[0],
+            self._call_str_len(self.builder, args[0]),
+            ir.Constant(i64, 0)
+        );
+    } else {
+        hay = self._bytes_data_ptr(target);
+        length = self._bytes_len_val(target);
+        parts = self._emit_bytes_needle(args[0]);
+    }
     if parts is None {
         return None;
     }
     (data, size, byte) = parts;
     start = self._coerce_type(args[1], i64) if len(args) > 1 else ir.Constant(i64, 0);
-    end = self._coerce_type(args[2], i64)
-        if len(args) > 2
-        else self._bytes_len_val(target);
+    end = self._coerce_type(args[2], i64) if len(args) > 2 else length;
     result = self.builder.call(
         self._bytes_search_fn(),
-        [target, data, size, byte, start, end, ir.Constant(i64, modes[mode])],
+        [hay, length, data, size, byte, start, end, ir.Constant(i64, modes[mode])],
         name=f"by.{mode}"
     );
     if missing {
@@ -573,13 +588,13 @@ impl NaIRGenPass._bytes_search_fn -> ir.Function {
     zero = ir.Constant(i64, 0);
     one = ir.Constant(i64, 1);
     minus_one = ir.Constant(i64, -1);
-    bt_ptr = self._get_bytes_struct_type().as_pointer();
-    fnty = ir.FunctionType(i64, [bt_ptr, i8p, i64, i64, i64, i64, i64]);
+    fnty = ir.FunctionType(i64, [i8p, i64, i8p, i64, i64, i64, i64, i64]);
     fn = ir.Function(self.llvm_module, fnty, name="__jac_bytes_search");
     fn.linkage = "private";
-    (hay, needle, needle_len, byte, raw_start, raw_end, mode) = fn.args;
+    (data, length, needle, needle_len, byte, raw_start, raw_end, mode) = fn.args;
     for (arg, name) in zip(
-        fn.args, ["hay", "needle", "needle_len", "byte", "start", "end", "mode"]
+        fn.args,
+        ["data", "length", "needle", "needle_len", "byte", "start", "end", "mode"]
     ) {
         arg.name = name;
     }
@@ -588,12 +603,6 @@ impl NaIRGenPass._bytes_search_fn -> ir.Function {
     b = ir.IRBuilder(fn.append_basic_block("entry"));
     byte_slot = b.alloca(i8, name="s.byte");
     b.store(b.trunc(byte, i8), byte_slot);
-    length = b.load(
-        b.gep(hay, [ir.Constant(i32, 0), ir.Constant(i32, 0)]), name="s.len"
-    );
-    data = b.bitcast(
-        b.gep(hay, [ir.Constant(i32, 0), ir.Constant(i32, 1)]), i8p, name="s.data"
-    );
     is_byte = b.icmp_unsigned("==", needle, ir.Constant(i8p, None), name="s.isbyte");
     nd = b.select(is_byte, byte_slot, needle, name="s.nd");
     nd_len = b.select(is_byte, one, needle_len, name="s.ndlen");
@@ -806,21 +815,9 @@ impl NaIRGenPass._codec_lookup_fn -> ir.Function {
     if self._codec_lookup_function is not None {
         return self._codec_lookup_function;
     }
-    import encodings;
-    import encodings.aliases;
-    import pkgutil;
-    supported = {"utf_8": 1, "latin_1": 2, "ascii": 3};
-    aliases = encodings.aliases.aliases;
-    alias_rows = bytearray();
-    for key in sorted(aliases) {
-        alias_rows += bytes([supported.get(aliases[key], 4)]) + key.encode() + b"\x00";
-    }
-    module_rows = bytearray();
-    for mod in sorted(m.name for m in pkgutil.iter_modules(encodings.__path__)) {
-        if mod != "aliases" and mod not in aliases {
-            module_rows += bytes([supported.get(mod, 4)]) + mod.encode() + b"\x00";
-        }
-    }
+    codec_tables = active_host().native_fact(FACT_CODEC_TABLES, "").split(FACT_SEP);
+    alias_rows = bytes.fromhex(codec_tables[0]);
+    module_rows = bytes.fromhex(codec_tables[1]);
     i8 = ir.IntType(8);
     i8p = i8.as_pointer();
     i64 = ir.IntType(64);
@@ -832,8 +829,8 @@ impl NaIRGenPass._codec_lookup_fn -> ir.Function {
     fn.linkage = "private";
     name = fn.args[0];
     name.name = "name";
-    alias_table = self._private_cstr(bytes(alias_rows) + b"\x00", ".codec.aliases");
-    module_table = self._private_cstr(bytes(module_rows) + b"\x00", ".codec.modules");
+    alias_table = self._private_cstr(alias_rows + b"\x00", ".codec.aliases");
+    module_table = self._private_cstr(module_rows + b"\x00", ".codec.modules");
     lookup = self._name_lookup_fn();
     entry_bb = fn.append_basic_block("entry");
     loop = fn.append_basic_block("loop");
@@ -1292,7 +1289,6 @@ impl NaIRGenPass._emit_bytes_decode(
     Other arguments resolve at run time. Empty input decodes to "" without
     looking the codec up, as CPython does.
     """;
-    import codecs;
     i8 = ir.IntType(8);
     i8p = i8.as_pointer();
     i64 = ir.IntType(64);
@@ -1322,9 +1318,11 @@ impl NaIRGenPass._emit_bytes_decode(
         ];
     }
     specs: list[tuple[(str | None), (ir.Value | None)]] = [];
-    for (idx, (key, fallback)) in enumerate(
-        [("encoding", "utf-8"), ("errors", "strict")]
-    ) {
+    spec_keys: list[str] = ["encoding", "errors"];
+    spec_fallbacks: list[str] = ["utf-8", "strict"];
+    for idx in range(2) {
+        key = spec_keys[idx];
+        fallback = spec_fallbacks[idx];
         if idx < len(args) {
             arg_node = positional[idx] if len(positional) == len(args) else None;
             specs.append((self._decode_literal(arg_node), args[idx]));
@@ -1343,7 +1341,8 @@ impl NaIRGenPass._emit_bytes_decode(
             specs.append((fallback, None));
         }
     }
-    ((enc_literal, enc_value), (err_literal, err_value)) = (specs[0], specs[1]);
+    (enc_literal, enc_value) = specs[0];
+    (err_literal, err_value) = specs[1];
     for (literal, value) in specs {
         if literal is None and (value is None or value.type != i8p) {
             return None;
@@ -1356,17 +1355,17 @@ impl NaIRGenPass._emit_bytes_decode(
     n = self._bytes_len_val(target);
     nonempty = b.icmp_signed("!=", n, ir.Constant(i64, 0), name="dec.nonempty");
     if enc_literal is not None {
-        codec_name: (str | None) = None;
-        try {
-            codec_name = codecs.lookup(enc_literal).name;
-        } except LookupError {
+        codec_name: (str | None) = active_host().native_fact(
+            FACT_CODEC_NAME, enc_literal
+        );
+        if not codec_name {
             self._emit_runtime_raise(
                 nonempty, "LookupError", f"unknown encoding: {enc_literal}"
             );
             codec_name = "utf-8";
         }
         codec_ids = {"utf-8": 0, "iso8859-1": 1, "ascii": 2};
-        if codec_name not in codec_ids {
+        if codec_name is None or codec_name not in codec_ids {
             return None;
         }
         codec = ir.Constant(i64, codec_ids[codec_name]);
