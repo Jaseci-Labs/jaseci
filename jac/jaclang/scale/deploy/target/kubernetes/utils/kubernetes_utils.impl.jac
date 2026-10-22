@@ -11,14 +11,15 @@ impl KubectlCluster.environ -> dict[str, str] {
 
 impl kubectl_cluster(kube_context: str = "", kubeconfig: str = "") -> KubectlCluster {
     flags: list[str] = ['--context', kube_context] if kube_context else [];
-    if not kubeconfig {
-        return KubectlCluster(args=flags);
-    }
+    files = kubeconfig or os.environ.get('KUBECONFIG', '');
     paths = [
         os.path.abspath(os.path.expanduser(path))
-        for path in kubeconfig.split(os.pathsep)
+        for path in files.split(os.pathsep)
         if path
     ];
+    if not paths {
+        return KubectlCluster(args=flags);
+    }
     return KubectlCluster(args=flags, env={'KUBECONFIG': os.pathsep.join(paths)});
 }
 
