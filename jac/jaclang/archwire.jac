@@ -3716,10 +3716,10 @@ graph import {
             NATIVE_DIR_REL,
             SERVE_MANIFEST_REL
         },
-        dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
+        dist.precompile_bytecode.seal_runtime_closure
+            | scale.injector.bundle.require_serve_manifest { SERVE_MANIFEST_REL },
         dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
         dist.seal.build_serve_manifest { serve_manifest_stamp },
-        scale.injector.bundle.require_serve_manifest { SERVE_MANIFEST_REL },
     ]
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
