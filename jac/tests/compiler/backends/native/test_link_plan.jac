@@ -151,7 +151,9 @@ test "a no-op build lowers no units and preserves the linked artifact" {
         outer = spans.open_span();
         inner = spans.open_span();
         spans.close_span("NATIVE_LOWER", time.perf_counter() - 4.0, inner, "inner.jac");
-        spans.close_span("NATIVE_LOWER", time.perf_counter() - 10.0, outer, "outer.jac");
+        spans.close_span(
+            "NATIVE_LOWER", time.perf_counter() - 10.0, outer, "outer.jac"
+        );
         outer_seconds = spans.unit_lower_seconds["outer.jac"];
         assert 5.5 < outer_seconds < 6.5 , f"a unit was charged for the unit nested in it: {outer_seconds:.2f}s";
         summary = prog.native_units().phase_summary();

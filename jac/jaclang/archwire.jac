@@ -12054,12 +12054,12 @@ graph import compiler.frontend {
         source_layout { PathFacts },
     ]
     host --> [
-        codeinfo.effective_default_codespace
+        codeinfo._resolve_native_module_uncached
             | parser.frontend.annex_paths
             | unitree.Module.annexable_by.getter { active_host },
+        codeinfo.effective_default_codespace { active_host },
         codeinfo.effective_native_target { active_host },
         codeinfo.native_target_arch { active_host },
-        codeinfo._resolve_native_module_uncached { active_host },
     ]
     type kernel_analyze ++> host | kernel_host { CompileReport }
     kernel_host ++> kernel_analyze { HostAsker, KernelHost }
