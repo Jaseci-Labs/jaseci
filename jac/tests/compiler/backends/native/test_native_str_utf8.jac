@@ -54,6 +54,21 @@ def _units(raw: bytes) -> list[bytes] {
     return out;
 }
 
+"""Strip whole units, matching each against the units of the charset."""
+def _unit_strip(raw: bytes, chars: bytes, left: bool, right: bool) -> bytes {
+    units = _units(raw);
+    charset = set(_units(chars));
+    lo = 0;
+    hi = len(units);
+    while left and lo < hi and units[lo] in charset {
+        lo += 1;
+    }
+    while right and hi > lo and units[hi - 1] in charset {
+        hi -= 1;
+    }
+    return b"".join(units[lo:hi]);
+}
+
 def _unit_char(unit: bytes) -> bytes {
     try {
         text = unit.decode("utf-8", "surrogatepass");
@@ -296,6 +311,18 @@ test "strip with a charset removes whole codepoints" {
         )
     };
     assert fns["strip"]("è", "é").decode() == "è";
+    sides = {"strip": (True, True), "lstrip": (True, False), "rstrip": (False, True)};
+    for raw in MALFORMED
+        + [b"\xa9", b"\xa9x\xa9", b"\xa9\xc3\xa9", b"\xc3\xa9\xa9\xa9"] {
+        for chars in [b"\xc3\xa9", b"\xa9", b"\xe2\x82\xac\xa9", b"x", b"a\xc3"] {
+            for (name, fn) in fns.items() {
+                (left, right) = sides[name];
+                assert fn(raw, chars) == _unit_strip(raw, chars, left, right) , (
+                    f"{raw!r}.{name}({chars!r})"
+                );
+            }
+        }
+    }
     for s in SAMPLES + ["éaé", "日日x日", "🙂é🙂"] {
         for chars in ["é", "è", "日", "a日", "🙂", "xé", "c", ""] {
             for (name, fn) in fns.items() {

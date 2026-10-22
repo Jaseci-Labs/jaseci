@@ -564,8 +564,8 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     );
     _u_entry = in_fn.append_basic_block("entry");
     _u_chk = in_fn.append_basic_block("chk");
+    _u_body = in_fn.append_basic_block("body");
     _u_cmp = in_fn.append_basic_block("cmp");
-    _u_edge = in_fn.append_basic_block("edge");
     _u_next = in_fn.append_basic_block("next");
     _u_yes = in_fn.append_basic_block("yes");
     _u_no = in_fn.append_basic_block("no");
@@ -574,8 +574,10 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     b = ir.IRBuilder(_u_chk);
     u_j = b.phi(i64, name="u8in.j");
     u_j.add_incoming(zero, _u_entry);
-    u_lim = b.add(u_j, u_w, name="u8in.lim");
-    b.cbranch(b.icmp_signed("<=", u_lim, u_setn, name="u8in.fits"), _u_cmp, _u_no);
+    b.cbranch(b.icmp_signed("<", u_j, u_setn, name="u8in.more"), _u_body, _u_no);
+    b = ir.IRBuilder(_u_body);
+    u_cw = b.call(lat_fn, [u_set, u_setn, u_j], name="u8in.cw");
+    b.cbranch(b.icmp_signed("==", u_cw, u_w, name="u8in.same"), _u_cmp, _u_next);
     b = ir.IRBuilder(_u_cmp);
     u_eq = b.icmp_signed(
         "==",
@@ -587,23 +589,9 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
         ir.Constant(i32, 0),
         name="u8in.eq"
     );
-    b.cbranch(u_eq, _u_edge, _u_next);
-    b = ir.IRBuilder(_u_edge);
-    u_whole = b.or_(
-        b.icmp_signed("==", u_lim, u_setn, name="u8in.end"),
-        b.not_(
-            _u8_is_cont(
-                b,
-                b.load(b.gep(u_set, [u_lim], name="u8in.np"), name="u8in.nb"),
-                "u8in.ncont"
-            ),
-            name="u8in.nlead"
-        ),
-        name="u8in.whole"
-    );
-    b.cbranch(u_whole, _u_yes, _u_next);
+    b.cbranch(u_eq, _u_yes, _u_next);
     b = ir.IRBuilder(_u_next);
-    u_j.add_incoming(b.add(u_j, one, name="u8in.j1"), _u_next);
+    u_j.add_incoming(b.add(u_j, u_cw, name="u8in.j1"), _u_next);
     b.branch(_u_chk);
     b = ir.IRBuilder(_u_yes);
     b.ret(ir.Constant(i1, 1));
