@@ -1215,6 +1215,9 @@ impl Session._begin_writable -> None {
         if self._store is None {
             return;
         }
+        if self._ro_retry_raised is not None {
+            raise ReadOnlyRetry(anchor_id=UUID(int=0), unit_key=self._ro_retry_raised);
+        }
         self._reclaim_dead_txn();
         if self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
             if self._ro_units > 0 {

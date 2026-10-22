@@ -88,6 +88,16 @@ test "a swallowed read-only retry surfaces at the unit's exit" {
             }
             assert swallowed , "a read-only unit's first write must raise the retry";
             after = _loose(ctx, 7);
+            refused = False;
+            try {
+                ctx.mem.commit();
+            } except Exception {
+                refused = True;
+            }
+            assert refused , (
+                "a commit after the swallowed retry must not write: nested walks "
+                "commit inside the unit, before its exit could discard anything"
+            );
             surfaced = "";
             try {
                 sess.unit_exit();
