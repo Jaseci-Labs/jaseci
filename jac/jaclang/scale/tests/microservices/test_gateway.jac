@@ -1720,13 +1720,12 @@ def _stop_backend(srv: any) {
 }
 
 
-"""A port nothing listens on, so a connect to it is refused."""
-def _refused_port -> int {
+"""A bound port that never listens, so a connect is refused; the socket is
+returned so the port stays reserved until `_stop_backend` releases it."""
+def _refused_port -> tuple[any, ...] {
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
     s.bind(("127.0.0.1", 0));
-    port = s.getsockname()[1];
-    s.close();
-    return port;
+    return (s, s.getsockname()[1]);
 }
 
 
@@ -1890,9 +1889,8 @@ test "a fleet that publishes no specs keeps walker discovery by probing" {
     for (label, a_kind, b_routes, status, b_hits, named) in cases {
         hits_a: dict[str, any] = {};
         hits_b: dict[str, any] = {};
-        srv_a = None;
         if a_kind == "refused" {
-            port_a = _refused_port();
+            (srv_a, port_a) = _refused_port();
         } else {
             (srv_a, port_a) = _start_backend(
                 hits_a, {route: None} if a_kind == "drops" else {}
@@ -1913,9 +1911,7 @@ test "a fleet that publishes no specs keeps walker discovery by probing" {
                 wrong.append(f"{label}: expected {(status, b_hits, named)}, got {got}");
             }
         } finally {
-            if srv_a is not None {
-                _stop_backend(srv_a);
-            }
+            _stop_backend(srv_a);
             _stop_backend(srv_b);
         }
     }
