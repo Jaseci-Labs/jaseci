@@ -241,7 +241,7 @@ impl JacClientCompiler.emit_dependencies(
         self.SELF_COMPILED_VIRTUAL_MODULES,
         visited
     );
-    for unit in closure.modules {
+    for unit in closure.modules + closure.refreshed {
         module_path = unit.path;
         artifact = unit.artifact;
         self._collect_na_modules(artifact);
@@ -264,6 +264,14 @@ impl JacClientCompiler.emit_dependencies(
         }
         output_path.parent.mkdir(parents=True, exist_ok=True);
         source_header = f"/* Source: {module_path} */\n";
+        if unit in closure.refreshed and output_path.is_file() {
+            written = output_path.read_text(encoding='utf-8');
+            fresh = source_header + combined_js;
+            mapped = f"{fresh}\n//# sourceMappingURL={output_path.name}.map\n";
+            if written == fresh or (artifact.source_map and written == mapped) {
+                continue;
+            }
+        }
         _atomic_write_text(output_path, source_header + combined_js);
         self._write_source_map(
             artifact, str(module_path), output_path, source_header + combined_js

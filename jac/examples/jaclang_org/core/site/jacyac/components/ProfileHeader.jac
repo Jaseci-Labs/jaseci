@@ -19,6 +19,19 @@ def:pub ProfileHeader(
     avatarBusy: bool,
     onAvatarFile: Callable[[any], None],
     onClearAvatar: Callable[[], None],
+) -> JsxElement;
+
+impl ProfileHeader(
+    bundle: ProfileBundle,
+    isMine: bool,
+    avatars: dict[str, str],
+    isFollowing: bool,
+    onFollow: Callable[[str], None],
+    onUnfollow: Callable[[str], None],
+    onStartEdit: Callable[[], None],
+    avatarBusy: bool,
+    onAvatarFile: Callable[[any], None],
+    onClearAvatar: Callable[[], None],
 ) -> JsxElement {
     has fileRef: Ref[HTMLInputElement] = Ref();
 

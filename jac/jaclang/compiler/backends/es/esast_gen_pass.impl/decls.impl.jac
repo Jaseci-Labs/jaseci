@@ -321,16 +321,21 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
 }
 
 impl EsastGenPass.enter_ability with uni.Ability entry {
-    if isinstance(here.body, uni.ImplDef) and (here.body not in [here->:Kid:->]) {
-        here.add_kids_right([here.body], pos_update=False, parent_update=True);
-    }
-
     self._loop_label_savepoints.append(self._loop_label_stack);
     self._loop_label_stack = [];
 
     self._view_stack.append(None);
     self.reactive_vars_stack.append(self.reactive_vars);
     self.reactive_vars = set(self.reactive_vars);
+    self.walk_decl_body(here);
+}
+
+impl EsastGenPass.enter_archetype with uni.Archetype entry {
+    self.walk_decl_body(here);
+}
+
+impl EsastGenPass.enter_enum with uni.Enum entry {
+    self.walk_decl_body(here);
 }
 
 impl EsastGenPass.exit_enum with uni.Enum exit {

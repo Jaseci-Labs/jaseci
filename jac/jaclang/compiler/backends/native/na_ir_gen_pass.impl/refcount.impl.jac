@@ -439,6 +439,9 @@ impl NaIRGenPass._emit_rc_helpers -> None {
     }
     b = ir.IRBuilder(done_bb);
     b.ret_void();
+    if not self._rc_debug_codegen {
+        retain_fn.attributes.add("alwaysinline");
+    }
     self.rc_retain_fn = retain_fn;
 
     release_fnty = ir.FunctionType(ir.VoidType(), [i8_ptr, ir.IntType(1)]);
@@ -693,8 +696,80 @@ impl NaIRGenPass._emit_rc_helpers -> None {
     _pub_fn.args[0].name = "ptr";
     _pub_bb = _pub_fn.append_basic_block("entry");
     _pub_b = ir.IRBuilder(_pub_bb);
-    _pub_b.call(release_fn, [_pub_fn.args[0], ir.Constant(ir.IntType(1), 1)]);
-    _pub_b.ret_void();
+    if _cycles_on or self._rc_debug_codegen or self._gc_mode() == "none" {
+        _pub_b.call(release_fn, [_pub_fn.args[0], ir.Constant(ir.IntType(1), 1)]);
+        _pub_b.ret_void();
+    } else {
+        _fp_arg = _pub_fn.args[0];
+        _fp_done = _pub_fn.append_basic_block("done");
+        _fp_chk = _pub_fn.append_basic_block("gc_dis_check");
+        _fp_rc = _pub_fn.append_basic_block("check_sentinel");
+        _fp_mc = _pub_fn.append_basic_block("magic_check");
+        _fp_mode = _pub_fn.append_basic_block("check_last");
+        _fp_dec = _pub_fn.append_basic_block("decrement");
+        _fp_slow = _pub_fn.append_basic_block("release_impl");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned(
+                "==", _fp_arg, ir.Constant(i8_ptr, None), name="is.null"
+            ),
+            _fp_done,
+            _fp_chk
+        );
+        _pub_b = ir.IRBuilder(_fp_chk);
+        _fp_dis = _pub_b.load(self.rc_gc_disabled_gv, name="gc.dis");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned("!=", _fp_dis, ir.Constant(i8, 0), name="gc.dis.on"),
+            _fp_done,
+            _fp_rc
+        );
+        _pub_b = ir.IRBuilder(_fp_rc);
+        _fp_rc_ptr = _pub_b.bitcast(
+            _pub_b.gep(_fp_arg, [ir.Constant(i64, HDR_RC_OFF)], name="rc.slot"),
+            i64_ptr,
+            name="rc.ptr"
+        );
+        _fp_old = _pub_b.load(_fp_rc_ptr, name="old.rc");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned(
+                "==", _fp_old, ir.Constant(i64, RC_SENTINEL), name="is.static"
+            ),
+            _fp_done,
+            _fp_mc
+        );
+        _pub_b = ir.IRBuilder(_fp_mc);
+        _pub_b.cbranch(
+            self._emit_magic_check(_pub_b, _fp_arg, name_prefix="mc"),
+            _fp_mode,
+            _fp_done
+        );
+        _pub_b = ir.IRBuilder(_fp_mode);
+        _fp_last = _pub_b.icmp_unsigned(
+            "<=", _fp_old, ir.Constant(i64, 1), name="is.last"
+        );
+        if self.rc_threaded_gv is not None {
+            _fp_mt = _pub_b.load_atomic(
+                self.rc_threaded_gv, "monotonic", 1, name="rc.mt.flag"
+            );
+            _fp_last = _pub_b.or_(
+                _fp_last,
+                _pub_b.icmp_unsigned("!=", _fp_mt, ir.Constant(i8, 0), name="rc.mt.on"),
+                name="needs.impl"
+            );
+        }
+        _pub_b.cbranch(_fp_last, _fp_slow, _fp_dec);
+        _pub_b = ir.IRBuilder(_fp_dec);
+        _pub_b.store(
+            _pub_b.sub(_fp_old, ir.Constant(i64, 1), name="new.rc"), _fp_rc_ptr
+        );
+        _pub_b.branch(_fp_done);
+        _pub_b = ir.IRBuilder(_fp_slow);
+        _pub_b.call(release_fn, [_fp_arg, ir.Constant(ir.IntType(1), 1)]);
+        _pub_b.branch(_fp_done);
+        _pub_b = ir.IRBuilder(_fp_done);
+        _pub_b.ret_void();
+        _pub_fn.attributes.add("alwaysinline");
+        release_fn.attributes.add("noinline");
+    }
     self.rc_release_simple_fn = _pub_fn;
 
     for (_abi_name, _target) in (("jac_retain", retain_fn), ("jac_release", _pub_fn)) {
@@ -1785,8 +1860,10 @@ impl NaIRGenPass._emit_rc_release_typed(
         return;
     }
     _tn = self._struct_ptr_pointee_name(val);
+
     if (
         _tn is not None
+        and self._gc_mode() == "cycles"
         and self._arch_is_acyclic(_tn)
         and self.rc_release_impl_fn is not None
         and isinstance(val.type, ir.PointerType)
@@ -1941,12 +2018,7 @@ impl NaIRGenPass._drop_dispatches(type_name: str) -> bool {
     }
 
     reg = get_layout_registry(self.module, self.prog);
-    for cand in reg.mro_order {
-        if cand != type_name and type_name in self._mro_of(cand) {
-            return True;
-        }
-    }
-    return False;
+    return any(cand != type_name for cand in reg.descendants_of([type_name]));
 }
 
 impl NaIRGenPass._emit_nogc_field_drops(
@@ -2063,8 +2135,8 @@ impl NaIRGenPass._drop_member_of(owner: str) -> (uni.Ability | None) {
     if arch is None or arch.body is None {
         return None;
     }
-    for ability in arch.get_all_sub_nodes(uni.Ability) {
-        if ability.find_parent_of_type(uni.Archetype) is arch
+    for ability in arch.element_sub_nodes(uni.Ability) {
+        if ability.enclosing_decl(uni.Archetype) is arch
             and ability.name_ref is not None
             and ability.name_ref.sym_name == "drop" {
             return ability;

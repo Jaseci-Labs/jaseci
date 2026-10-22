@@ -1192,9 +1192,10 @@ glue object holding `jac_entry` / `__jac_shared_init`, the platform entry
 point and the `jac_retain` / `jac_release` / `jac_str_new` wrappers (each
 wrapper only when a unit defines its target), and links. Two modes read different
 sections of the same entries: `objects`, the incremental default, links the
-units' relocatable objects; `bitcode` links every unit's bitcode into one
-LLVM module and optimizes it whole-program before a single codegen (the
-release lane; also what the in-process JIT, PE and wasm targets use).
+units' relocatable objects (sealed images link the compiler kernel this
+way); `bitcode` links every unit's bitcode into one LLVM module, optimizes
+it whole-program and splits it into one partition per emit job for code
+generation (what the in-process JIT, PE and wasm targets use).
 Select it per build with `jac build --native --link-mode bitcode` or
 `[native] link_mode = "bitcode"` in `jac.toml`. The plan writes a digest over every unit's
 keys and stamps beside the artifact and into the `<lib>.layout.json`
