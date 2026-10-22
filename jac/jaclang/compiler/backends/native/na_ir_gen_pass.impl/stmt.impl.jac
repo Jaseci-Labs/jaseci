@@ -196,25 +196,42 @@ impl NaIRGenPass._codegen_assert_computed(
     if nd.error_msg is not None {
         said = self._codegen_expr(nd.error_msg);
     }
-    if said is not None {
-        said = self._str_norm(said);
+    if said is not None
+        and self._str_desc_ty is not None
+        and said.type == self._str_desc_ty {
+        said = self._str_materialize(said);
     }
-    suffix = self._str_norm(self._make_global_string(where, name_prefix=".assert.at"));
-    whole: (ir.Value | None) = None;
-    if said is not None and said.type == i8p and suffix.type == i8p {
-        whole = self._emit_binary_op(Tok.PLUS, said, suffix);
-        if whole is not None and whole is not said {
+    fallback = self._str_norm(
+        self._make_global_string("assertion failed" + where, name_prefix=".assert.at")
+    );
+    if said is None or said.type != i8p {
+        if said is not None {
             self._release_owned_args([said], op="assert_msg");
         }
+        self._emit_raise_value("AssertionError", fallback);
+        self.builder.position_at_end(ok_bb);
+        return;
     }
-    if whole is None {
-        whole = self._str_norm(
-            self._make_global_string(
-                "assertion failed" + where, name_prefix=".assert.at"
-            )
-        );
+    text_bb = func.append_basic_block(name="assert.text");
+    none_bb = func.append_basic_block(name="assert.none");
+    self.builder.cbranch(
+        self.builder.icmp_unsigned(
+            "==", said, ir.Constant(i8p, None), name="assert.msg.none"
+        ),
+        none_bb,
+        text_bb
+    );
+    self.builder.position_at_end(none_bb);
+    self._emit_raise_value("AssertionError", fallback);
+    self.builder.position_at_end(text_bb);
+    suffix = self._str_norm(self._make_global_string(where, name_prefix=".assert.at"));
+    whole = self._emit_binary_op(Tok.PLUS, said, suffix)
+        if suffix.type == i8p
+        else None;
+    if whole is not said {
+        self._release_owned_args([said], op="assert_msg");
     }
-    self._emit_raise_value("AssertionError", whole);
+    self._emit_raise_value("AssertionError", whole if whole is not None else fallback);
     self.builder.position_at_end(ok_bb);
 }
 
