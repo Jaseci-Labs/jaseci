@@ -238,17 +238,15 @@ impl UniNode.link_impl(impl_node: UniNode) -> None {
 }
 
 impl UniNode.decl_parent.getter -> (UniNode | None) {
-    up = self.parent;
-    if isinstance(self, ImplDef) {
-        up = self;
-    }
+    parent = self.parent;
+    up = self if isinstance(self, ImplDef) else parent;
     if isinstance(up, ImplDef) {
         decl = up.decl_link;
         if decl is not None {
             return decl;
         }
     }
-    return self.parent;
+    return parent;
 }
 
 impl UniNode.top_element.getter -> (UniNode | None) {

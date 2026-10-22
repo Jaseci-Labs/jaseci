@@ -6360,7 +6360,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
-        driver.program.JacProgram.init { forget_real_paths },
+        driver.program.JacProgram.init { forget_path_lookups },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -9502,7 +9502,7 @@ graph import compiler {
             package_host_edge
         },
         driver.selfhost.SelfHostCache.resolve
-            | frontend.codeinfo.resolve_native_module
+            | frontend.codeinfo._resolve_native_module_uncached
             | placement.placement_facts.native_unit { in_native_scope_path },
         frontend.codeinfo._inferred_native_path { scope_allows_inferred_path },
         frontend.codeinfo.native_arch_scope { binds_bare_arch_names },
@@ -11741,11 +11741,15 @@ graph import compiler.driver {
             SEC_NCTDEPS,
             SEC_NIFACE,
             SEC_NOBJ,
+            begin_digest_memo,
+            begin_prepare_memo,
             cache_mode,
             carried_native_sections,
             compute_content_sha256,
             ct_dep_text_fresh,
             current_native_stamp,
+            end_digest_memo,
+            end_prepare_memo,
             get_module_cache_path,
             jir_cacheable_source_path,
             module_cache_invalid_reason,
@@ -12052,12 +12056,12 @@ graph import compiler.frontend {
         source_layout { PathFacts },
     ]
     host --> [
-        codeinfo.effective_default_codespace
+        codeinfo._resolve_native_module_uncached
             | parser.frontend.annex_paths
             | unitree.Module.annexable_by.getter { active_host },
+        codeinfo.effective_default_codespace { active_host },
         codeinfo.effective_native_target { active_host },
         codeinfo.native_target_arch { active_host },
-        codeinfo.resolve_native_module { active_host },
     ]
     type kernel_analyze ++> host | kernel_host { CompileReport }
     kernel_host ++> kernel_analyze { HostAsker, KernelHost }
