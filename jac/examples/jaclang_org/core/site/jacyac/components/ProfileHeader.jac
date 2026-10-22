@@ -1,4 +1,6 @@
+import from "@jac/runtime" { Link as RouterLink }
 import from "lucide-react" {
+    Bot,
     MapPin,
     Link2,
     Github,
@@ -159,6 +161,16 @@ impl ProfileHeader(
                     No bio yet. Tell people what you build.
                 </p>
             } }
+            {if profile.username == "ninjaclaw" {
+                <RouterLink
+                    to="/jacyac/ninjaclaw"
+                    id="lx-claw-profile-link"
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                    <Bot size={14}/>
+                    See what ninjaclaw is working on
+                </RouterLink>
+            }}
             <div
                 className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground"
             >

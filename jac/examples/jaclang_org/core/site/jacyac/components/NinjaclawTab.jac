@@ -17,6 +17,7 @@ glob OUTCOME_LABELS: dict[str, str] = {
          "gap": "logged a docs gap",
          "ignored": "ignored: not about Jac",
          "throttled": "over today's budget",
+         "removed": "post removed",
          "failed": "failed"
      },
      STATE_TEXT: dict[str, str] = {
@@ -40,8 +41,14 @@ def JobDetail(job: JobView) -> JsxElement;
 
 def clock_of(stamp: str) -> str;
 
+def question_of(job: JobView) -> str;
+
 impl clock_of(stamp: str) -> str {
     return stamp[11:16] + " UTC" if len(stamp) >= 16 else "";
+}
+
+impl question_of(job: JobView) -> str {
+    return job.question or "(" + (job.detail or "not shown") + ")";
 }
 
 impl ClawHeader(model: ClawModel) -> JsxElement {
@@ -113,7 +120,7 @@ impl OutcomeBadge(job: JobView) -> JsxElement {
             </Badge>;
     }
     label = OUTCOME_LABELS.get(job.outcome, job.outcome or job.status);
-    if job.outcome == "ignored" or job.outcome == "throttled" {
+    if job.outcome in ["ignored", "throttled", "removed"] {
         return
             <Badge variant="outline" className="gap-1 text-muted-foreground">
                 <CircleSlash size={12}/>
@@ -166,9 +173,7 @@ impl JobRow(job: JobView) -> JsxElement {
                     + clock_of(job.created_at)}
             </span>
         </div>
-        <p className="mt-1 line-clamp-2 text-sm text-foreground">
-            {job.question or "(off-topic post, not shown)"}
-        </p>
+        <p className="mt-1 line-clamp-2 text-sm text-foreground">{question_of(job)}</p>
     </Link>
 }
 
@@ -186,7 +191,7 @@ impl JobDetail(job: JobView) -> JsxElement {
             </span>
         </div>
         <p className="mt-3 whitespace-pre-wrap text-[0.95rem] text-foreground">
-            {job.question or "(off-topic post, not shown)"}
+            {question_of(job)}
         </p>
         {if job.reply {
             <div className="mt-4 rounded-xl bg-muted px-4 py-3 text-sm">

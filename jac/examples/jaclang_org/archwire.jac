@@ -124,11 +124,12 @@ graph import core {
             ninjaclaw_tutorial,
             ninjaclaw_tutorials
         },
-        social_graph { ninjaclaw_results, ninjaclaw_submit },
+        social_graph { ninjaclaw_forget, ninjaclaw_results, ninjaclaw_submit },
     ]
     ninjaclaw.graph ++> knowledge_service {
         ClawHub,
         ClawJob,
+        JOB_RETENTION,
         RECENT_LIMIT,
         apply_pr,
         apply_pr_state,
@@ -139,11 +140,13 @@ graph import core {
         claw_tutorials,
         enqueue_asks,
         find_hub,
+        forget_jobs,
         job_view,
         next_queued,
         pr_cooling,
         pr_due,
         promote_candidates,
+        prune_jobs,
         record_outcome,
         replies_for,
         requeue_stale,

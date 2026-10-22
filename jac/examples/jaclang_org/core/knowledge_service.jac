@@ -59,6 +59,8 @@ def:pub ninjaclaw_submit(secret: str, asks: list[AskInput]) -> list[str];
 
 def:pub ninjaclaw_results(secret: str, job_ids: list[str]) -> list[JobReply];
 
+def:pub ninjaclaw_forget(secret: str, job_ids: list[str]) -> int;
+
 def:pub ninjaclaw_activity -> Activity;
 
 def:pub ninjaclaw_job(job_id: str) -> JobView | None;
@@ -168,7 +170,10 @@ impl tutorial_catalog -> list[IndexDoc] {
 
 impl public_view(job: ClawJob, live: list[StepView] | None = None) -> JobView {
     view = job_view(job, live);
-    if job.outcome == "ignored" {
+    if job.removed {
+        view.question = "";
+        view.detail = "the post was removed";
+    } elif job.outcome == "ignored" {
         view.question = "";
         view.detail = "ignored: not a Jac question";
     }
@@ -220,6 +225,10 @@ impl ninjaclaw_work_tick {
 
 impl ninjaclaw_upkeep_tick {
     finish_chore();
+    pruned = prune_jobs(JOB_RETENTION);
+    if pruned {
+        log.info("ninjaclaw: pruned " + str(pruned) + " old job(s)");
+    }
     (ok, _why) = ninjaclaw_enabled();
     if not ok or CHORE.busy() or RUNNER.busy() {
         return;
@@ -316,6 +325,13 @@ impl ninjaclaw_submit(secret: str, asks: list[AskInput]) -> list[str] {
         return [];
     }
     return enqueue_asks(asks);
+}
+
+impl ninjaclaw_forget(secret: str, job_ids: list[str]) -> int {
+    if not secret_ok(secret) {
+        return 0;
+    }
+    return forget_jobs(job_ids);
 }
 
 impl ninjaclaw_results(secret: str, job_ids: list[str]) -> list[JobReply] {

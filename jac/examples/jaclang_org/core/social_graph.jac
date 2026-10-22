@@ -66,6 +66,7 @@ node NinjaclawDesk {
     has started_at: str = "",
         handled: list[str] = [],
         pending: dict[str, str] = {},
+        asked: dict[str, str] = {},
         recent_asks: dict[str, list[str]] = {};
 }
 
@@ -74,6 +75,7 @@ glob NINJACLAW: str = "ninjaclaw",
      DESK_TICK_S: float = 15.0,
      ASKS_PER_HOUR: int = int(os.environ.get("NINJACLAW_ASKS_PER_HOUR", "3") or 3),
      HANDLED_LIMIT: int = 5000,
+     ASKED_LIMIT: int = 2000,
      MENTION_RE: str = r"(?<![\w@])@ninjaclaw\b";
 
 def mentions_ninjaclaw(text: str) -> bool;
@@ -84,7 +86,11 @@ def ninjaclaw_profile -> Profile;
 
 def help_channel(claw: Profile) -> Channel;
 
-def desk_asks(desk: NinjaclawDesk, help: Channel) -> list[AskInput];
+def live_tweets -> dict[str, Tweet];
+
+def desk_asks(
+    desk: NinjaclawDesk, help: Channel, tweets: dict[str, Tweet]
+) -> list[AskInput];
 
 def throttled(desk: NinjaclawDesk, asker: str) -> bool;
 
@@ -841,7 +847,9 @@ impl mentions_ninjaclaw(text: str) -> bool {
 }
 
 impl strip_mention(text: str) -> str {
-    return re.sub(r"\s+", " ", re.sub(MENTION_RE, "", text, flags=re.IGNORECASE)).strip();
+    return re.sub(
+        r"\s+", " ", re.sub(MENTION_RE, "", text, flags=re.IGNORECASE)
+    ).strip();
 }
 
 impl ninjaclaw_profile -> Profile {
@@ -875,7 +883,9 @@ impl help_channel(claw: Profile) -> Channel {
 }
 
 impl throttled(desk: NinjaclawDesk, asker: str) -> bool {
-    cutoff = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=1)).replace(
+    cutoff = (
+        datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=1)
+    ).replace(
         tzinfo=None
     ).isoformat()
         + "Z";
@@ -885,19 +895,38 @@ impl throttled(desk: NinjaclawDesk, asker: str) -> bool {
         if t >= cutoff
     ];
     if len(kept) >= ASKS_PER_HOUR {
-        desk.recent_asks = {**desk.recent_asks, asker: kept};
+        desk.recent_asks = {** desk.recent_asks, asker: kept};
         return True;
     }
-    desk.recent_asks = {**desk.recent_asks, asker: kept + [_now()]};
+    desk.recent_asks = {** desk.recent_asks, asker: kept + [_now()]};
     return False;
 }
 
-impl desk_asks(desk: NinjaclawDesk, help: Channel) -> list[AskInput] {
+impl live_tweets -> dict[str, Tweet] {
+    tweets: dict[str, Tweet] = {};
+    for r in allroots() {
+        for t in [r-->[?:Profile]-->[?:Tweet]] {
+            tweets[jid(t)] = t;
+        }
+        for c in [r-->[?:Profile]->:Member:->[?:Channel]] {
+            for t in [c-->[?:Tweet]] {
+                tweets[jid(t)] = t;
+            }
+        }
+    }
+    return tweets;
+}
+
+impl desk_asks(
+    desk: NinjaclawDesk, help: Channel, tweets: dict[str, Tweet]
+) -> list[AskInput] {
     seen = set(desk.handled);
     asks: list[AskInput] = [];
     fresh: list[str] = [];
 
-    def consider(key: str, tweet: Tweet, author: str, text: str, created: str, source: str) {
+    def consider(
+        key: str, tweet: Tweet, author: str, text: str, created: str, source: str
+    ) {
         if key in seen or created < desk.started_at or author == NINJACLAW {
             return;
         }
@@ -919,22 +948,18 @@ impl desk_asks(desk: NinjaclawDesk, help: Channel) -> list[AskInput] {
         );
     }
 
-    tweets: dict[str, Tweet] = {};
-    for r in allroots() {
-        for t in [r-->[?:Profile]-->[?:Tweet]] {
-            tweets[jid(t)] = t;
-        }
-        for c in [r-->[?:Profile]->:Member:->[?:Channel]] {
-            for t in [c-->[?:Tweet]] {
-                tweets[jid(t)] = t;
-            }
-        }
-    }
     help_posts = {jid(t) for t in [help-->[?:Tweet]]};
     for (tid, t) in tweets.items() {
         in_help = tid in help_posts;
         if in_help or mentions_ninjaclaw(t.content) {
-            consider(tid, t, t.author_username, t.content, t.created_at, "help" if in_help else "mention");
+            consider(
+                tid,
+                t,
+                t.author_username,
+                t.content,
+                t.created_at,
+                "help" if in_help else "mention"
+            );
         }
         for (n, c) in enumerate(t.comments) {
             body = str(c.get("content", ""));
@@ -972,16 +997,38 @@ impl ninjaclaw_desk.run with Root entry {
     claw = ninjaclaw_profile();
     help = help_channel(claw);
     secret = service_secret();
-    asks = desk_asks(desk, help);
+    tweets = live_tweets();
+    asks = desk_asks(desk, help, tweets);
     if asks {
         ids = await ninjaclaw_submit(secret=secret, asks=asks);
         pending = dict(desk.pending);
+        asked = dict(desk.asked);
         for (n, job_id) in enumerate(ids) {
             if n < len(asks) {
                 pending[job_id] = asks[n].tweet_id;
+                asked[job_id] = asks[n].tweet_id;
             }
         }
         desk.pending = pending;
+        desk.asked = dict(list(asked.items())[-ASKED_LIMIT:]);
+    }
+    gone = [
+        job_id
+        for (job_id, tweet_id) in desk.asked.items()
+        if tweet_id not in tweets
+    ];
+    if gone {
+        await ninjaclaw_forget(secret=secret, job_ids=gone);
+        desk.asked = {
+            k: v
+            for (k, v) in desk.asked.items()
+            if k not in gone
+        };
+        desk.pending = {
+            k: v
+            for (k, v) in desk.pending.items()
+            if k not in gone
+        };
     }
     if not desk.pending {
         return;

@@ -35,6 +35,7 @@ node ClawJob(ClawNode) {
         source: str = "",
         status: str = "queued",
         attempts: int = 0,
+        removed: bool = False,
         outcome: str = "",
         reply: str = "",
         detail: str = "",
@@ -86,7 +87,10 @@ glob DAILY_JOBS: int = int(os.environ.get("NINJACLAW_DAILY_JOBS", "200") or 200)
      STALE_WORKING_S: float = 900.0,
      MAX_ATTEMPTS: int = 2,
      RECENT_LIMIT: int = 30,
-     PR_POLL_S: float = 3600.0;
+     PR_POLL_S: float = 3600.0,
+     JOB_RETENTION: int = int(
+         os.environ.get("NINJACLAW_JOB_RETENTION", "1000") or 1000
+     );
 
 def find_hub -> ClawHub | None;
 
@@ -117,6 +121,10 @@ def job_view(job: ClawJob, live: list[StepView] | None = None) -> JobView;
 def tutorial_card(t: ClawTutorial) -> TutorialCard;
 
 def replies_for(job_ids: list[str]) -> list[JobReply];
+
+def forget_jobs(job_ids: list[str]) -> int;
+
+def prune_jobs(keep: int) -> int;
 
 def sweep_inputs -> list[tuple[str, str, str, str]];
 
@@ -223,7 +231,7 @@ impl enqueue_asks(asks: list[AskInput]) -> list[str] {
 
 impl next_queued -> ClawJob | None {
     for j in claw_jobs() {
-        if j.status == "queued" {
+        if j.status == "queued" and not j.removed {
             return j;
         }
     }
@@ -279,7 +287,7 @@ impl slug_for(title: str) -> str {
 impl record_outcome(job: ClawJob, outcome: Outcome) {
     hub = claw_hub();
     job.attempts = job.attempts + 1;
-    if outcome.status == "failed" and job.attempts < MAX_ATTEMPTS {
+    if outcome.status == "failed" and job.attempts < MAX_ATTEMPTS and not job.removed {
         job.status = "queued";
         job.detail = outcome.detail;
         job.steps = job.steps
@@ -503,4 +511,58 @@ impl apply_pr_state(state: str) {
         t.pr_state = state;
     }
     hub.pr_number = 0;
+}
+
+impl forget_jobs(job_ids: list[str]) -> int {
+    hub = find_hub();
+    if hub is None {
+        return 0;
+    }
+    wanted = set(job_ids);
+    count = 0;
+    for j in [hub->:HasJob:->[?:ClawJob]] {
+        if jid(j) not in wanted or j.removed {
+            continue;
+        }
+        j.removed = True;
+        j.question = "";
+        if j.status == "queued" {
+            j.status = "done";
+            j.outcome = "removed";
+            j.finished_at = stamp();
+        }
+        count += 1;
+    }
+    for gap in [hub->:HasGap:->[?:ClawGap]] {
+        if gap.job_id in wanted {
+            del gap;
+        }
+    }
+    return count;
+}
+
+impl prune_jobs(keep: int) -> int {
+    hub = find_hub();
+    if hub is None {
+        return 0;
+    }
+    finished = [
+        j
+        for j in [hub->:HasJob:->[?:ClawJob]]
+        if j.status not in ("queued", "working")
+    ];
+    if len(finished) <= keep {
+        return 0;
+    }
+    finished.sort(key=lambda (j: ClawJob) { j.finished_at or j.created_at; });
+    written = {t.job_id for t in claw_tutorials()};
+    count = 0;
+    for j in finished[:len(finished) - keep] {
+        if jid(j) in written {
+            continue;
+        }
+        del j;
+        count += 1;
+    }
+    return count;
 }
