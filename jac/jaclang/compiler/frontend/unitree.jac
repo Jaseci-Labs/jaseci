@@ -696,8 +696,7 @@ node Import(ContextAwareNode, ElementStmt, CodeBlockStmt) {
         is_comptime: bool = False,
         jac_detected: (bool | None) postinit,
         boundary_facts: (ImportBoundaryFacts | None) postinit,
-        native_only_drop: bool postinit,
-        native_only_target: str postinit;
+        native_only_drop: bool postinit;
 
     has from_loc: (ModulePath | None) { getter; }
     has items: Sequence[(ModuleItem | ModulePath)] { getter; }

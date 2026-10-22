@@ -157,7 +157,7 @@ impl NaIRGenPass._internal_error(
     self.emit(
         E5092,
         node_override=nd,
-        kind=f"{kind} (native emitter error in: " f"{type(exc).__name__}: {exc})",
+        kind=f"{kind} (native emitter error in)",
         name=name,
         help_text=f"The native backend raised {type(exc).__name__} while lowering "
         f"this {kind}: {exc}. This is a compiler bug -- please report it. Pin the "
@@ -223,11 +223,7 @@ impl NaIRGenPass._lower_module -> None {
             self._codegen_ability(stmt);
         } elif isinstance(stmt, uni.ModuleCode) {
             _entry_nodes.append(stmt);
-        }
-    }
-
-    for stmt in ModuleFacts.iter_context_stmts(self.module, CodeContext.NATIVE) {
-        if isinstance(stmt, uni.Test) {
+        } elif isinstance(stmt, uni.Test) {
             self._codegen_test(stmt);
         }
     }

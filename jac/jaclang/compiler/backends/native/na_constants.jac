@@ -67,8 +67,7 @@ glob RC_COLOR_BLACK: int = 0,
      RC_CYCLE_THRESHOLD: int = 1000,
      RC_CYCLE_PACE: int = 4;
 
-glob JACVAL_ELLIPSIS_TAG: int = 9,
-     JACVAL_STRUCT_TAG: int = 6;
+glob JACVAL_ELLIPSIS_TAG: int = 9;
 
 glob CLASS_DISPLAY_OFF: int = 24;
 
