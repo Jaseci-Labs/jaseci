@@ -8,7 +8,16 @@ def _sh(args: list[str], cwd: Path) -> None;
 def _origin(base: Path) -> Path;
 
 test "older lines keep the newest patch of each earlier minor line" {
-    tags = ["v0.38.0", "v0.37.25", "v0.37.3", "v0.36.9", "v0.35.1", "v0.34.27", "v2.3.28", "dev"];
+    tags = [
+        "v0.38.0",
+        "v0.37.25",
+        "v0.37.3",
+        "v0.36.9",
+        "v0.35.1",
+        "v0.34.27",
+        "v2.3.28",
+        "dev"
+    ];
     lines = older_lines("0.38.0", tags);
     assert [l.label for l in lines] == ["v0.37", "v0.36"];
     assert [l.tag for l in lines] == ["v0.37.25", "v0.36.9"];
@@ -67,7 +76,9 @@ impl _origin(base: Path) -> Path {
     _sh(["git", "config", "user.name", "t"], work);
     for version in ["0.36.1", "0.37.0", "0.37.2", "0.38.0", "2.3.28"] {
         (docs / "index.md").write_text("# Jac\n\nrelease " + version + "\n");
-        (docs / "nav.json").write_text('{"version": 1, "nav": [{"title": "Jac", "page": "index.md"}]}');
+        (docs / "nav.json").write_text(
+            '{"version": 1, "nav": [{"title": "Jac", "page": "index.md"}]}'
+        );
         _sh(["git", "add", "-A"], work);
         _sh(["git", "commit", "-q", "-m", "release " + version], work);
         _sh(["git", "tag", "v" + version], work);

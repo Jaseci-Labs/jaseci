@@ -1,13 +1,3 @@
-"""One clone of the jac repo per deployment, shared by everything the knowledge
-service does: the docs of older release lines and the tree ninjaclaw reads.
-
-The clone is treeless (`--filter=tree:0`) with a sparse checkout of the docs,
-the guides and the examples, so it costs seconds and a few megabytes. One
-process holds an exclusive file lock while it clones or fetches; every process
-reads the status file the holder writes. Older release lines are exported from
-git objects into their own directories through a throwaway index, so the
-checked-out tree never moves."""
-
 import os;
 import re;
 import json;
@@ -54,7 +44,9 @@ def repo_dir -> Path;
 
 def repo_url -> str;
 
-def git(args: list[str], cwd: Path | None = None, extra_env: dict[str, str] | None = None) -> str;
+def git(
+    args: list[str], cwd: Path | None = None, extra_env: dict[str, str] | None = None
+) -> str;
 
 def git_available -> bool;
 
@@ -64,7 +56,9 @@ def label_of_version(version: str) -> str;
 
 def release_tags -> list[str];
 
-def older_lines(serving: str, tags: list[str], count: int = OLDER_LINES) -> list[ReleaseLine];
+def older_lines(
+    serving: str, tags: list[str], count: int = OLDER_LINES
+) -> list[ReleaseLine];
 
 def checkout_target(serving: str, tags: list[str]) -> str;
 

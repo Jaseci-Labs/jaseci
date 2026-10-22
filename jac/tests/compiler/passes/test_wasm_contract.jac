@@ -134,8 +134,9 @@ test "host binding finds an export whose provider was read as an interface" {
         }
         return real(sym);
     }
-    with unittest.mock.patch.object(unitree, "ability_of_symbol", side_effect=lookup),
-        unittest.mock.patch.object(unitree, "resolved_decl_of", return_value=None) {
+    with unittest.mock.patch.object(unitree, "ability_of_symbol", side_effect=lookup), unittest.mock.patch.object(
+        unitree, "resolved_decl_of", return_value=None
+    ) {
         ok = host_errors('obj Host { def CloseWindow {} }\n');
         missing = host_errors('obj Host {}\n');
     }

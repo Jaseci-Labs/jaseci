@@ -314,7 +314,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         }}
                     </div>
                 }
-            }     }
+            }      }
         </main>
         <RightSidebar
             searchQuery={model.searchQuery}

@@ -1,6 +1,8 @@
 impl knowledge_dir -> Path {
     configured = os.environ.get(DIR_ENV, "").strip();
-    base = Path(configured) if configured else Path.cwd() / ".jac" / "data" / "knowledge";
+    base = Path(configured)
+        if configured
+        else Path.cwd() / ".jac" / "data" / "knowledge";
     base.mkdir(parents=True, exist_ok=True);
     return base;
 }
@@ -13,7 +15,9 @@ impl repo_url -> str {
     return os.environ.get(REPO_URL_ENV, "").strip() or DEFAULT_REPO_URL;
 }
 
-impl git(args: list[str], cwd: Path | None = None, extra_env: dict[str, str] | None = None) -> str {
+impl git(
+    args: list[str], cwd: Path | None = None, extra_env: dict[str, str] | None = None
+) -> str {
     env = dict(os.environ);
     env["GIT_TERMINAL_PROMPT"] = "0";
     env["GIT_ADVICE"] = "0";
@@ -66,7 +70,9 @@ impl release_tags -> list[str] {
     return tags;
 }
 
-impl older_lines(serving: str, tags: list[str], count: int = OLDER_LINES) -> list[ReleaseLine] {
+impl older_lines(
+    serving: str, tags: list[str], count: int = OLDER_LINES
+) -> list[ReleaseLine] {
     current = version_of(serving);
     newest: dict[tuple[int, int], str] = {};
     for t in tags {
@@ -75,7 +81,8 @@ impl older_lines(serving: str, tags: list[str], count: int = OLDER_LINES) -> lis
             continue;
         }
         line = (v[0], v[1]);
-        if current is not None and (v[0] != current[0] or line >= (current[0], current[1])) {
+        if current is not None
+            and (v[0] != current[0] or line >= (current[0], current[1])) {
             continue;
         }
         prior = newest.get(line);
@@ -201,7 +208,11 @@ impl checkout_root -> Path | None {
 impl ensure_repo(serving: str) -> RepoStatus {
     import fcntl;
     if not git_available() {
-        status = RepoStatus(phase="unavailable", detail="git is not installed on this server", serving_version=serving);
+        status = RepoStatus(
+            phase="unavailable",
+            detail="git is not installed on this server",
+            serving_version=serving
+        );
         write_status(status);
         return status;
     }
@@ -222,7 +233,9 @@ impl ensure_repo(serving: str) -> RepoStatus {
         stale = True;
         if status.fetched_at {
             try {
-                age = (datetime.now(UTC) - datetime.fromisoformat(status.fetched_at)).total_seconds();
+                age = (
+                    datetime.now(UTC) - datetime.fromisoformat(status.fetched_at)
+                ).total_seconds();
                 stale = age >= FETCH_EVERY_S;
             } except ValueError {
                 stale = True;
@@ -241,7 +254,14 @@ impl ensure_repo(serving: str) -> RepoStatus {
                     shutil.rmtree(staging);
                 }
                 git(
-                    ["clone", "--filter=tree:0", "--no-checkout", "--sparse", repo_url(), str(staging)]
+                    [
+                        "clone",
+                        "--filter=tree:0",
+                        "--no-checkout",
+                        "--sparse",
+                        repo_url(),
+                        str(staging)
+                    ]
                 );
                 git(["sparse-checkout", "set"] + SPARSE_PATHS, cwd=staging);
                 os.replace(staging, target);

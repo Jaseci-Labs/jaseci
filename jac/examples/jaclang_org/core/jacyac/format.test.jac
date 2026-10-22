@@ -18,7 +18,9 @@ test "count_label picks the singular form only for one" {
 }
 
 test "text_segments links urls and site paths and marks mentions" {
-    segs = text_segments("Walkers covers this: /docs/latest/walkers. Ask @ninjaclaw or see https://jaclang.org!");
+    segs = text_segments(
+        "Walkers covers this: /docs/latest/walkers. Ask @ninjaclaw or see https://jaclang.org!"
+    );
     kinds = [s["k"] for s in segs];
     assert kinds == ["t", "link", "t", "mention", "t", "link", "t"];
     assert segs[1]["t"] == "/docs/latest/walkers";
