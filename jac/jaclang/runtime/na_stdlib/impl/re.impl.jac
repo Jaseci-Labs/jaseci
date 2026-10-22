@@ -2411,28 +2411,52 @@ impl _compile_re(pattern: str, flags: int) -> _Re {
 }
 
 
+impl _cache_lock {
+    lk: int = __list_data_ptr(_CLK);
+    while __atomic_xchg_i64(lk, 1) != 0 {
+        sched_yield();
+    }
+}
+
+
+impl _cache_unlock {
+    __atomic_xchg_i64(__list_data_ptr(_CLK), 0);
+}
+
+
 impl _cached(pattern: str, flags: int) -> Pattern {
+    key: str = pattern;
+    if flags != 0 {
+        key = str(flags) + "\x00" + pattern;
+    }
+    _cache_lock();
     if flags == 0 {
         if pattern in _CACHE {
-            return _CACHE[pattern];
+            hit: Pattern = _CACHE[pattern];
+            _cache_unlock();
+            return hit;
         }
-        p: Pattern = Pattern(pattern, 0);
+    } elif key in _CACHEF {
+        hitf: Pattern = _CACHEF[key];
+        _cache_unlock();
+        return hitf;
+    }
+    _cache_unlock();
+    p: Pattern = Pattern(pattern, flags);
+    _cache_lock();
+    if flags == 0 {
         if len(_CACHE) >= _MAXCACHE {
             _CACHE.clear();
         }
         _CACHE[pattern] = p;
-        return p;
+    } else {
+        if len(_CACHEF) >= _MAXCACHE {
+            _CACHEF.clear();
+        }
+        _CACHEF[key] = p;
     }
-    key: str = str(flags) + "\x00" + pattern;
-    if key in _CACHEF {
-        return _CACHEF[key];
-    }
-    pf: Pattern = Pattern(pattern, flags);
-    if len(_CACHEF) >= _MAXCACHE {
-        _CACHEF.clear();
-    }
-    _CACHEF[key] = pf;
-    return pf;
+    _cache_unlock();
+    return p;
 }
 
 
@@ -2446,9 +2470,9 @@ impl _compile_repl(template: str, re: _Re) -> _Repl {
     }
     rp.literal = False;
     tps: list[int] = utf8_cps(template.encode());
+    n: int = len(tps);
     out: str = "";
     i: int = 0;
-    n: int = len(tps);
     while i < n {
         c: int = tps[i];
         if c != 92 {
@@ -2457,127 +2481,170 @@ impl _compile_repl(template: str, re: _Re) -> _Repl {
             continue;
         }
         bp: int = i;
-        i += 1;
-        if i >= n {
-            raise ValueError("bad escape (end of pattern) at position " + str(bp));
+        if i + 1 >= n {
+            raise ValueError("bad escape (end of pattern) at position " + str(n - 1));
         }
-        e: int = tps[i];
-        i += 1;
+        e: int = tps[i + 1];
+        i += 2;
         if e == 103 {
             if i >= n or tps[i] != 60 {
                 raise ValueError("missing < at position " + str(i));
             }
             i += 1;
-            j: int = i;
-            while j < n and tps[j] != 62 {
-                j += 1;
+            nm: str = "";
+            nlen: int = 0;
+            while True {
+                if i >= n {
+                    if nlen == 0 {
+                        raise ValueError("missing group name at position " + str(n));
+                    }
+                    raise ValueError(
+                        "missing >, unterminated name at position " + str(n - nlen)
+                    );
+                }
+                t: int = tps[i];
+                if t == 92 {
+                    if i + 1 >= n {
+                        raise ValueError(
+                            "bad escape (end of pattern) at position " + str(n - 1)
+                        );
+                    }
+                    nm += chr(t) + chr(tps[i + 1]);
+                    nlen += 2;
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                if t == 62 {
+                    if nlen == 0 {
+                        raise ValueError(
+                            "missing group name at position " + str(i - 1)
+                        );
+                    }
+                    break;
+                }
+                nm += chr(t);
+                nlen += 1;
             }
-            if j >= n {
-                raise ValueError("missing group name at position " + str(i));
-            }
-            nm: str = cps_str(tps, i, j);
-            if len(nm) == 0 {
-                raise ValueError("missing group name at position " + str(i));
-            }
+            npos: int = i - (nlen + 1);
             alldig: bool = True;
-            idname: bool = True;
-            k: int = 0;
-            while k < len(nm) {
-                cc: int = ord(nm[k]);
+            ident: bool = True;
+            k: int = i - 1 - nlen;
+            j: int = 0;
+            while j < nlen {
+                cc: int = tps[k + j];
                 if not is_digit(cc) {
                     alldig = False;
                 }
-                if not is_word(cc) or (k == 0 and is_digit(cc)) {
-                    idname = False;
+                if cc < 128 and (not is_word(cc) or (j == 0 and is_digit(cc))) {
+                    ident = False;
                 }
-                k += 1;
+                j += 1;
             }
-            num: int = -1;
+            num: int = 0;
             if alldig {
-                num = 0;
-                k = 0;
-                while k < len(nm) {
-                    num = num * 10 + (ord(nm[k]) - 48);
-                    k += 1;
+                j = 0;
+                while j < nlen {
+                    num = num * 10 + (tps[k + j] - 48);
+                    j += 1;
                 }
-            } elif not idname {
-                raise ValueError(
-                    "bad character in group name '" + nm + "' at position " + str(i)
-                );
-            }
-            i = j + 1;
-            if num < 0 {
+            } else {
+                if not ident {
+                    raise ValueError(
+                        "bad character in group name '"
+                            + nm
+                            + "' at position "
+                            + str(npos)
+                    );
+                }
                 num = _name_index(re.names, nm);
                 if num < 0 {
-                    raise ValueError("unknown group name '" + nm + "'");
+                    raise IndexError("unknown group name '" + nm + "'");
                 }
             }
             if num > re.ngroups {
                 raise ValueError(
-                    "invalid group reference "
-                        + str(num)
-                        + " at position "
-                        + str(j - len(nm))
+                    "invalid group reference " + str(num) + " at position " + str(npos)
                 );
             }
             rp.lits.append(out);
             rp.grps.append(num);
             out = "";
+            continue;
+        }
+        if e == 48 {
+            v: int = 0;
+            cnt: int = 0;
+            while cnt < 2 and i < n and tps[i] >= 48 and tps[i] <= 55 {
+                v = v * 8 + (tps[i] - 48);
+                i += 1;
+                cnt += 1;
+            }
+            out += chr(v & 255);
             continue;
         }
         if e >= 49 and e <= 57 {
-            num = e - 48;
+            gnum: int = e - 48;
+            octal: bool = False;
             if i < n and is_digit(tps[i]) {
-                num = num * 10 + (tps[i] - 48);
+                d2: int = tps[i];
                 i += 1;
+                if e <= 55 and d2 <= 55 and i < n and tps[i] >= 48 and tps[i] <= 55 {
+                    d3: int = tps[i];
+                    i += 1;
+                    ov: int = (e - 48) * 64 + (d2 - 48) * 8 + (d3 - 48);
+                    if ov > 255 {
+                        raise ValueError(
+                            "octal escape value \\"
+                                + chr(e)
+                                + chr(d2)
+                                + chr(d3)
+                                + " outside of range 0-0o377 at position "
+                                + str(bp)
+                        );
+                    }
+                    out += chr(ov);
+                    octal = True;
+                } else {
+                    gnum = gnum * 10 + (d2 - 48);
+                }
             }
-            if num > re.ngroups {
-                raise ValueError(
-                    "invalid group reference "
-                        + str(num)
-                        + " at position "
-                        + str(bp + 1)
-                );
+            if not octal {
+                if gnum > re.ngroups {
+                    raise ValueError(
+                        "invalid group reference "
+                            + str(gnum)
+                            + " at position "
+                            + str(bp + 1)
+                    );
+                }
+                rp.lits.append(out);
+                rp.grps.append(gnum);
+                out = "";
             }
-            rp.lits.append(out);
-            rp.grps.append(num);
-            out = "";
-            continue;
-        }
-        if e == 48 or e == 120 {
-            r: tuple[(int, int)] = _num_esc(tps, i, e, bp);
-            i = r[1];
-            out += chr(r[0]);
-            continue;
-        }
-        if e == 110 {
-            out += "\n";
-            continue;
-        }
-        if e == 114 {
-            out += "\r";
-            continue;
-        }
-        if e == 116 {
-            out += "\t";
-            continue;
-        }
-        if e == 102 {
-            out += "\x0c";
-            continue;
-        }
-        if e == 118 {
-            out += "\x0b";
             continue;
         }
         if e == 97 {
             out += "\x07";
-            continue;
-        }
-        if is_alpha(e) {
+        } elif e == 98 {
+            out += "\x08";
+        } elif e == 102 {
+            out += "\x0c";
+        } elif e == 110 {
+            out += "\n";
+        } elif e == 114 {
+            out += "\r";
+        } elif e == 116 {
+            out += "\t";
+        } elif e == 118 {
+            out += "\x0b";
+        } elif e == 92 {
+            out += "\\";
+        } elif is_alpha(e) {
             raise ValueError("bad escape \\" + chr(e) + " at position " + str(bp));
+        } else {
+            out += "\\" + chr(e);
         }
-        out += chr(e);
     }
     rp.lits.append(out);
     return rp;
@@ -2670,6 +2737,8 @@ impl escape(pattern: str) -> str {
 
 
 impl purge {
+    _cache_lock();
     _CACHE.clear();
     _CACHEF.clear();
+    _cache_unlock();
 }

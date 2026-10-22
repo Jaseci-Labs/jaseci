@@ -1,4 +1,5 @@
 import from c { def memchr(s: int, c: i32, n: u64) -> int;  }
+import from c { def sched_yield -> i32;  }
 
 glob:pub I: int = 2,
      IGNORECASE: int = 2,
@@ -335,7 +336,14 @@ obj:pub Pattern {
 
 
 glob _CACHE: dict[str, Pattern] = {},
-     _CACHEF: dict[str, Pattern] = {};
+     _CACHEF: dict[str, Pattern] = {},
+     _CLK: list[int] = [0];
+
+
+def _cache_lock;
+
+
+def _cache_unlock;
 
 
 def _cached(pattern: str, flags: int) -> Pattern;
