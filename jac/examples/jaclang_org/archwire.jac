@@ -130,16 +130,24 @@ graph import core {
         ClawHub,
         ClawJob,
         RECENT_LIMIT,
+        apply_pr,
+        apply_pr_state,
+        apply_sweep,
         claw_gaps,
+        claw_hub,
         claw_jobs,
         claw_tutorials,
         enqueue_asks,
         find_hub,
         job_view,
         next_queued,
+        pr_cooling,
+        pr_due,
+        promote_candidates,
         record_outcome,
         replies_for,
         requeue_stale,
+        sweep_inputs,
         take_budget,
         tutorial_by_slug,
         tutorial_card
@@ -150,6 +158,7 @@ graph import core {
         knowledge_service {
             Activity,
             AskInput,
+            BlockView,
             JobReply,
             JobView,
             StepView,
@@ -161,6 +170,15 @@ graph import core {
         site.jacyac.components.TutorialsTab { TutorialCard, TutorialView },
         social_graph { AskInput },
     ]
+    ninjaclaw.promote ++> knowledge_service {
+        PrResult,
+        eligible,
+        github,
+        open_docs_pr,
+        pr_state,
+        promote_config,
+        promote_ready
+    }
     ninjaclaw.runner ++> knowledge_service {
         JobSpec,
         Outcome,
@@ -172,6 +190,7 @@ graph import core {
         knowledge_service { secret_ok },
         social_graph { service_secret },
     ]
+    ninjaclaw.upkeep ++> knowledge_service { CHORE, sweep, sweep_items }
     packages.catalog ++> [
         site.packages.ApiDocs { ApiMember, ApiModule, ApiParam, ApiSymbol },
         site.packages.PackagePage { PackageDetail, PackageVersion },
@@ -402,14 +421,16 @@ graph import core.ninjaclaw {
             TutorialCard
         },
         runner { BlockView, LinkView, StepView },
-        verify { BlockView },
+        upkeep | verify { BlockView },
     ]
+    promote ++> graph { PrResult, PromoteCandidate }
     runner ++> graph { Outcome, stamp }
     tools ++> [
         brain { list_jac_guides, read_jac_file, read_jac_guide, search_jac },
         runner { agent_catalog, open_toolbox },
     ]
-    verify ++> runner { verify_markdown }
+    upkeep ++> graph { sweep_passed }
+    verify ++> runner | upkeep { verify_markdown }
 }
 
 graph import core.site {

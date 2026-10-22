@@ -76,7 +76,8 @@ obj UpkeepView {
         stale: int = 0,
         pr_state: str = "",
         pr_url: str = "",
-        pr_note: str = "";
+        pr_note: str = "",
+        running: str = "";
 }
 
 obj Activity {

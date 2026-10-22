@@ -21,7 +21,10 @@ node ClawHub(ClawNode) {
         sweep_stale: int = 0,
         pr_state: str = "",
         pr_url: str = "",
-        pr_note: str = "";
+        pr_note: str = "",
+        pr_number: int = 0,
+        pr_slug: str = "",
+        pr_checked_at: str = "";
 }
 
 node ClawJob(ClawNode) {
@@ -82,7 +85,8 @@ edge Answered(ClawEdge): ClawTutorial --> ClawJob {}
 glob DAILY_JOBS: int = int(os.environ.get("NINJACLAW_DAILY_JOBS", "200") or 200),
      STALE_WORKING_S: float = 900.0,
      MAX_ATTEMPTS: int = 2,
-     RECENT_LIMIT: int = 30;
+     RECENT_LIMIT: int = 30,
+     PR_POLL_S: float = 3600.0;
 
 def find_hub -> ClawHub | None;
 
@@ -113,6 +117,22 @@ def job_view(job: ClawJob, live: list[StepView] | None = None) -> JobView;
 def tutorial_card(t: ClawTutorial) -> TutorialCard;
 
 def replies_for(job_ids: list[str]) -> list[JobReply];
+
+def sweep_inputs -> list[tuple[str, str, str, str]];
+
+def apply_sweep(results: dict[str, list[BlockView]], version: str, error: str);
+
+def promote_candidates -> list[PromoteCandidate];
+
+def apply_pr(slug: str, result: PrResult);
+
+def pr_checked_recently(hub: ClawHub) -> bool;
+
+def pr_due -> bool;
+
+def pr_cooling -> bool;
+
+def apply_pr_state(state: str);
 
 impl ClawNode.__jac_access__ -> AccessLevel {
     return AccessLevel.READ;
@@ -365,4 +385,122 @@ impl replies_for(job_ids: list[str]) -> list[JobReply] {
         }
     }
     return out;
+}
+
+impl sweep_inputs -> list[tuple[str, str, str, str]] {
+    return [(t.slug, t.body, t.status, t.verified_version) for t in claw_tutorials()];
+}
+
+impl apply_sweep(results: dict[str, list[BlockView]], version: str, error: str) {
+    hub = claw_hub();
+    for t in claw_tutorials() {
+        blocks = results.get(t.slug);
+        if blocks is None {
+            continue;
+        }
+        t.blocks = blocks;
+        if sweep_passed(blocks) {
+            t.status = "published";
+            t.verified_version = version;
+        } else {
+            t.status = "stale";
+        }
+    }
+    current = [
+        t
+        for t in claw_tutorials()
+        if t.status != "removed"
+    ];
+    hub.last_sweep_at = stamp();
+    hub.swept_version = version if not error else hub.swept_version;
+    hub.sweep_passed = len(
+        [
+            t
+            for t in current
+            if t.status == "published" and t.verified_version == version
+        ]
+    );
+    hub.sweep_stale = len(
+        [
+            t
+            for t in current
+            if t.status == "stale"
+        ]
+    );
+}
+
+impl promote_candidates -> list[PromoteCandidate] {
+    return [
+        PromoteCandidate(
+            slug=t.slug,
+            title=t.title,
+            summary=t.summary,
+            body=t.body,
+            askers=t.answered,
+            created_at=t.created_at,
+            verified_version=t.verified_version,
+            status=t.status,
+            pr_state=t.pr_state
+        ) for t in claw_tutorials()
+    ];
+}
+
+impl apply_pr(slug: str, result: PrResult) {
+    hub = claw_hub();
+    hub.pr_state = result.state;
+    hub.pr_url = result.url;
+    hub.pr_note = result.note;
+    hub.pr_checked_at = stamp();
+    if result.state != "open" {
+        return;
+    }
+    hub.pr_number = result.number;
+    hub.pr_slug = slug;
+    t = tutorial_by_slug(slug);
+    if t is not None {
+        t.pr_state = "open";
+        t.pr_url = result.url;
+    }
+}
+
+impl pr_checked_recently(hub: ClawHub) -> bool {
+    cutoff = (datetime.now(UTC) - timedelta(seconds=PR_POLL_S)).replace(
+        tzinfo=None
+    ).isoformat()
+        + "Z";
+    return hub.pr_checked_at > cutoff;
+}
+
+impl pr_due -> bool {
+    hub = find_hub();
+    if hub is None or hub.pr_state != "open" or not hub.pr_number {
+        return False;
+    }
+    return not pr_checked_recently(hub);
+}
+
+impl pr_cooling -> bool {
+    hub = find_hub();
+    if hub is None {
+        return False;
+    }
+    if hub.pr_state == "open" {
+        return True;
+    }
+    return hub.pr_state == "failed" and pr_checked_recently(hub);
+}
+
+impl apply_pr_state(state: str) {
+    hub = claw_hub();
+    hub.pr_checked_at = stamp();
+    if not state or state == "open" {
+        return;
+    }
+    hub.pr_state = state;
+    hub.pr_note = "the docs PR was " + state;
+    t = tutorial_by_slug(hub.pr_slug);
+    if t is not None {
+        t.pr_state = state;
+    }
+    hub.pr_number = 0;
 }

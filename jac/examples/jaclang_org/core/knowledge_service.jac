@@ -1,5 +1,6 @@
 import logging;
 import os;
+import from datetime { datetime, UTC }
 import from jaclang.cli.manifest_route { resolve_cli_version }
 
 obj ReleaseDocsInfo {
@@ -17,6 +18,7 @@ obj ReleaseLines {
 
 glob REPO_TICK_S: float = 60.0,
      WORK_TICK_S: float = 5.0,
+     UPKEEP_TICK_S: float = 60.0,
      QUEUE_LIMIT: int = 20,
      _BUNDLES: dict[str, DocBundle] = {},
      _CATALOG: dict[str, list[IndexDoc]] = {},
@@ -43,6 +45,15 @@ def public_view(job: ClawJob, live: list[StepView] | None = None) -> JobView;
 
 @schedule(trigger=ScheduleTrigger.STATIC, interval=WORK_TICK_S)
 def:priv ninjaclaw_work_tick;
+
+@schedule(trigger=ScheduleTrigger.STATIC, interval=UPKEEP_TICK_S)
+def:priv ninjaclaw_upkeep_tick;
+
+def finish_chore;
+
+def start_sweep(version: str) -> bool;
+
+def start_promotion;
 
 def:pub ninjaclaw_submit(secret: str, asks: list[AskInput]) -> list[str];
 
@@ -207,6 +218,99 @@ impl ninjaclaw_work_tick {
     );
 }
 
+impl ninjaclaw_upkeep_tick {
+    finish_chore();
+    (ok, _why) = ninjaclaw_enabled();
+    if not ok or CHORE.busy() or RUNNER.busy() {
+        return;
+    }
+    version = resolve_cli_version();
+    hub = find_hub();
+    if hub is not None and hub.swept_version != version and start_sweep(version) {
+        return;
+    }
+    start_promotion();
+}
+
+impl finish_chore {
+    finished = CHORE.take();
+    if finished is None {
+        return;
+    }
+    (kind, result, error) = finished;
+    if kind == "sweep" {
+        (version, results) = result if result is not None else ("", {});
+        if error {
+            log.warning("ninjaclaw: re-verification failed: " + error);
+        }
+        apply_sweep(results, version, error);
+    } elif kind == "pr" {
+        (slug, pr) = result if result is not None else ("", PrResult());
+        if error {
+            pr = PrResult(state="failed", note=error);
+            log.warning("ninjaclaw: docs PR failed: " + error);
+        }
+        apply_pr(slug, pr);
+    } elif kind == "pr-poll" {
+        if error {
+            log.warning("ninjaclaw: docs PR check failed: " + error);
+        }
+        apply_pr_state(result or "");
+    }
+}
+
+impl start_sweep(version: str) -> bool {
+    items = sweep_items(sweep_inputs(), version);
+    if not items {
+        apply_sweep({}, version, "");
+        return False;
+    }
+    log.info(
+        "ninjaclaw: re-verifying " + str(len(items)) + " tutorial(s) on jac " + version
+    );
+
+    def work(note: Callable) -> tuple[str, dict[str, list[BlockView]]] {
+        return (version, sweep(items, note));
+    }
+    return CHORE.start("sweep", work);
+}
+
+impl start_promotion {
+    config = promote_config();
+    if not promote_ready(config) {
+        return;
+    }
+    if pr_due() {
+        hub = claw_hub();
+        number = hub.pr_number;
+
+        def poll(note: Callable) -> str {
+            return pr_state(number, config, github);
+        }
+        CHORE.start("pr-poll", poll);
+        return;
+    }
+    if pr_cooling() {
+        return;
+    }
+    pick = eligible(
+        promote_candidates(), resolve_cli_version(), config, datetime.now(UTC)
+    );
+    if pick is None {
+        return;
+    }
+    if config.dry_run {
+        apply_pr(pick.slug, open_docs_pr(pick, config, github));
+        return;
+    }
+    log.info("ninjaclaw: opening a docs PR for " + pick.slug);
+
+    def promote(note: Callable) -> tuple[str, PrResult] {
+        return (pick.slug, open_docs_pr(pick, config, github));
+    }
+    CHORE.start("pr", promote);
+}
+
 impl ninjaclaw_submit(secret: str, asks: list[AskInput]) -> list[str] {
     if not secret_ok(secret) {
         return [];
@@ -270,7 +374,8 @@ impl ninjaclaw_activity -> Activity {
             stale=hub.sweep_stale,
             pr_state=hub.pr_state,
             pr_url=hub.pr_url,
-            pr_note=hub.pr_note
+            pr_note=hub.pr_note,
+            running=CHORE.status()[1] if CHORE.status()[0] == "sweep" else ""
         ),
         tutorials=len(
             [

@@ -359,6 +359,15 @@ impl NinjaclawTab(model: ClawModel, focus: str) -> JsxElement {
                             if a.upkeep.last_sweep_at
                             else "No re-verification has run yet."}
                     </p>
+                    {if a.upkeep.running {
+                        <p
+                            className="mt-1 flex items-center gap-1.5 text-sm text-foreground"
+                            id="lx-claw-sweep"
+                        >
+                            <LoaderCircle size={12} className="animate-spin"/>
+                            {a.upkeep.running}
+                        </p>
+                    }}
                     {if a.upkeep.pr_state {
                         <p className="mt-1 text-sm text-muted-foreground">
                             {"Docs PR: "
