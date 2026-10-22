@@ -890,7 +890,11 @@ impl JacBuiltin.se_flush -> None {
     _gm_se_buffer.clear();
     for `entry in pending {
         (fn, args, kwargs) = `entry;
-        fn(*args, **kwargs);
+        if isinstance(fn, int) {
+            _gm_log_registry[fn](*args, **kwargs);
+        } else {
+            fn(*args, **kwargs);
+        }
     }
 }
 
@@ -925,7 +929,7 @@ impl JacBuiltin.log_emit(
     slot: int, args: tuple[any, ...], kwargs: dict[str, any]
 ) -> None {
     if _gm_se_depth[0] > 0 {
-        _gm_log_buffer.append((slot, args, kwargs));
+        _gm_se_buffer.append((slot, args, kwargs));
     } else {
         _gm_log_registry[slot](*args, **kwargs);
     }
@@ -934,15 +938,6 @@ impl JacBuiltin.log_emit(
 impl JacBuiltin.log_flush_hook(module: any, inputs: any, output: any) -> any {
     JacBuiltin.se_region_exit();
     JacBuiltin.se_flush();
-    if _gm_se_depth[0] > 0 {
-        return output;
-    }
-    pending: list[tuple[any, ...]] = list(_gm_log_buffer);
-    _gm_log_buffer.clear();
-    for `entry in pending {
-        (slot, args, kwargs) = `entry;
-        _gm_log_registry[slot](*args, **kwargs);
-    }
     return output;
 }
 

@@ -9493,6 +9493,7 @@ graph import compiler {
     frontend.unparse ++> [
         backends.es.esast_gen_pass
             | boundary_rules.json_refusal
+            | passes.graphmend.defer_side_effect_pass
             | passes.graphmend.predicate_ctrl_flow_pass
             | passes.layout_pass
             | passes.mtir_gen_pass
@@ -13922,6 +13923,7 @@ graph import compiler.passes.graphmend {
     scope_facts ++> [
         auto_detect._jac_binds_torch { module_binds_torch },
         auto_detect._py_imports_torch { module_binds_torch },
+        defer_side_effect_pass { torch_binds_name },
         graph_break_detect_pass {
             body_is_only,
             collect_wrap_entries,

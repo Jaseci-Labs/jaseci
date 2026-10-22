@@ -11,6 +11,7 @@ import from jaclang.lib.jaclib {
     __jac_log_flush_hook__,
     __jac_log_register__,
     __jac_se_emit__,
+    __jac_se_guard__,
     __jac_se_region_open__
 }
 import jaclang.compiler.frontend.unitree as uni;
@@ -45,6 +46,25 @@ glob _NESTED_SEEN: list[any] = [];
 """Record a replayed call from either buffer (nested-region probe)."""
 def _record_nested(msg: str) {
     _NESTED_SEEN.append(msg);
+}
+
+glob _ORDER_SEEN: list[any] = [],
+     _GUARD_SEEN: list[any] = [],
+     _GUARD_SLOT: list[int] = [];
+
+"""Record a replayed call in emission order (single-queue probe)."""
+def _record_order(msg: str) {
+    _ORDER_SEEN.append(msg);
+}
+
+"""Record a logger call replayed at a guarded function boundary."""
+def _record_guard(msg: str) {
+    _GUARD_SEEN.append(msg);
+}
+
+"""A guarded body that only buffers a logger call."""
+def _guarded_body {
+    __jac_log_emit__(_GUARD_SLOT[0], ("inner", ), {});
 }
 
 """Registered twice by the slot-stability test; never called."""
@@ -111,7 +131,7 @@ test "print is buffered and flushed via the runtime helper" {
     assert "__gm_se_arg_0 = x" in src;
     assert (
         "__jac_se_emit__(print, "
-        "(__gm_se_arg_0.clone() if hasattr(__gm_se_arg_0, 'clone') "
+        "(__gm_se_arg_0.clone() if isinstance(__gm_se_arg_0, torch.Tensor) "
         "else __gm_se_arg_0,), {})"
     )
         in src;
@@ -165,7 +185,7 @@ test "a non-literal keyword value is snapshotted like a positional" {
     src = _pysrc("side_effect_kwarg.jac", True);
     assert "__gm_se_arg_0 = y" in src;
     assert (
-        "{'extra': __gm_se_arg_0.clone() if hasattr(__gm_se_arg_0, 'clone') "
+        "{'extra': __gm_se_arg_0.clone() if isinstance(__gm_se_arg_0, torch.Tensor) "
         "else __gm_se_arg_0}"
     )
         in src;
@@ -178,6 +198,36 @@ test "an unpacked argument declines instead of being dropped" {
     assert "print('head', *extra)" in src;
     assert "logger.warning('deprecated', **opts)" in src;
     assert _break_kinds("side_effect_unpack.jac") == ["side_effect", "side_effect"];
+}
+
+test "an f-string argument is evaluated in order with the other arguments" {
+    src = _pysrc("side_effect_fstring_order.jac", True);
+    assert src.index("__gm_se_arg_0 = f'{q.pop()}'")
+        < src.index("__gm_se_arg_1 = q.pop()");
+}
+
+test "a logger bound after its class leaves the call eager" {
+    src = _pysrc("side_effect_late_logger.jac", True);
+    assert "__jac_log_register__" not in src;
+    assert "logger.warning('GM-LATE')" in src;
+}
+
+test "a print into a with-bound file stays eager and stderr is still buffered" {
+    src = _pysrc("side_effect_file.jac", True);
+    assert "print('GM-FILE', file=fh)" in src;
+    assert "__jac_se_emit__(print, ('GM-ERR',)" in src;
+}
+
+test "a logger call reading the handled exception stays eager" {
+    src = _pysrc("side_effect_exc_info.jac", True);
+    assert "logger.warning('GM-EXC', exc_info=True)" in src;
+    assert "__jac_se_emit__" not in src;
+}
+
+test "a logger slot call snapshots its arguments like a print" {
+    src = _pysrc("side_effect_logger_snapshot.jac", True);
+    assert "__gm_se_arg_0 = y" in src;
+    assert "__jac_log_emit__(" in src;
 }
 
 test "a receiver that does not bind to a logger is left untouched" {
@@ -331,6 +381,21 @@ test "a raising log call cannot replay stale entries on the next pass" {
     __jac_log_emit__(ok_slot, ("third", ), {});
     __jac_log_flush_hook__(None, None, None);
     assert _LOG_SEEN == ["third"] , f"stale entries replayed: {_LOG_SEEN}";
+}
+
+test "prints and logger calls replay in emission order" {
+    slot = __jac_log_register__(_record_order);
+    __jac_se_region_open__(None, None);
+    __jac_log_emit__(slot, ("first", ), {});
+    __jac_se_emit__(_record_order, ("second", ), {});
+    __jac_log_flush_hook__(None, None, None);
+    assert _ORDER_SEEN == ["first", "second"] , f"replay order changed: {_ORDER_SEEN}";
+}
+
+test "a guarded function boundary delivers buffered logger calls" {
+    _GUARD_SLOT.append(__jac_log_register__(_record_guard));
+    __jac_se_guard__(_guarded_body)();
+    assert _GUARD_SEEN == ["inner"] , f"logger call lost at the boundary: {_GUARD_SEEN}";
 }
 
 test "a nested region exit leaves the enclosing region's buffers intact" {

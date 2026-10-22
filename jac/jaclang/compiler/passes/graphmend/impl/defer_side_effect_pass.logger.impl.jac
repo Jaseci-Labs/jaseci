@@ -22,6 +22,64 @@ impl DeferSideEffectPass._base_binds_at_module(base: uni.Name) -> bool {
     return (decl is not None) and (decl.enclosing_decl(uni.Ability) is None);
 }
 
+impl DeferSideEffectPass._decline_call(nd: uni.FuncCall) -> bool {
+    if not torch_binds_name(nd) {
+        return True;
+    }
+    t = nd.target;
+    if isinstance(t, uni.AtomTrailer)
+        and isinstance(t.right, uni.Name)
+        and (t.right.value == 'exception') {
+        return True;
+    }
+    for kw in split_params(nd.params)[1] {
+        if kw.key is None {
+            continue;
+        }
+        k = kw.key.sym_name;
+        if k in ('exc_info', 'stack_info') {
+            return True;
+        }
+        if (k == 'file')
+            and (
+                unparse_node(kw.value).replace(' ', '')
+                not in ('sys.stdout', 'sys.stderr')
+            ) {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl DeferSideEffectPass._logger_bound_before(nd: uni.FuncCall) -> bool {
+    t = nd.target;
+    if not (isinstance(t, uni.AtomTrailer) and isinstance(t.target, uni.Name)) {
+        return False;
+    }
+    sym = t.target.sym;
+    if (sym is None) or (sym.decl is None) or (len(sym.defn) > 1) {
+        return False;
+    }
+    mod = nd.find_parent_of_type(uni.Module);
+    anchor = self._toplevel_archetype(nd);
+    if (mod is None) or (anchor is None) or (anchor.parent is not mod) {
+        return True;
+    }
+    top: (uni.UniNode | None) = sym.decl;
+    while (top is not None) and (top.parent is not mod) {
+        top = top.parent;
+    }
+    for k in [mod->:Kid:->] {
+        if k is top {
+            return True;
+        }
+        if k is anchor {
+            return False;
+        }
+    }
+    return False;
+}
+
 impl DeferSideEffectPass._logger_emit(nd: uni.FuncCall) -> (uni.FuncCall | None) {
     callee = nd.target;
     n = self._counter;
@@ -30,7 +88,13 @@ impl DeferSideEffectPass._logger_emit(nd: uni.FuncCall) -> (uni.FuncCall | None)
     reg = self._register_assignment(nd, slot_name, callee);
     self._pending_regs.append((self._toplevel_archetype(nd), reg));
     need_helper(nd, GraphMendHelper.LOG_EMIT);
-    (pos, kws) = split_params(nd.params);
+    (pos, kws, hoists) = self._snapshot_args(nd);
+    stmt = nd.parent;
+    if stmt is not None {
+        for h in hoists {
+            insert_before(stmt, h);
+        }
+    }
     emit = gen_name(nd, '__jac_log_emit__', False);
     slot_ref = gen_name(nd, slot_name, False);
     args_tuple = self._tuple(nd, pos);

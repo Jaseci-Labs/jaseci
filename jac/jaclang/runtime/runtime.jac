@@ -53,7 +53,6 @@ def resolve_ref(
 
 glob _gm_log_registry: list[any] = [],
      _gm_log_slots: dict[tuple[int, int], int] = {},
-     _gm_log_buffer: list[any] = [],
      _gm_se_buffer: list[any] = [],
      _gm_se_depth: list[int] = [0];
 

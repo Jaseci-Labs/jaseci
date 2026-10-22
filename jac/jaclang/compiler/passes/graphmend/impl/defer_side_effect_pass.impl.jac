@@ -24,10 +24,13 @@ impl DeferSideEffectPass.exit_func_call with uni.FuncCall exit {
     if ability is None {
         return;
     }
-    if self._has_unpack(nd) {
+    if self._has_unpack(nd) or self._decline_call(nd) {
         return;
     }
     if self._is_logger_call(nd) and (ability?.sym_name == 'forward') {
+        if not self._logger_bound_before(nd) {
+            return;
+        }
         emit_call = self._logger_emit(nd);
         if emit_call is not None {
             parent.replace_kid(nd, emit_call);
@@ -196,11 +199,21 @@ impl DeferSideEffectPass._dict_from_kws(
 impl DeferSideEffectPass._buffer_entry(
     call: uni.FuncCall
 ) -> tuple[uni.TupleVal, list[uni.UniNode]] {
+    (new_pos, new_kws, hoists) = self._snapshot_args(call);
+    args_tuple = self._tuple(call, new_pos);
+    kwargs_dict = self._dict_from_kws(call, new_kws);
+    items: list[uni.Expr] = [call.target, args_tuple, kwargs_dict];
+    return (uni.TupleVal(values=items, kid=items), hoists);
+}
+
+impl DeferSideEffectPass._snapshot_args(
+    call: uni.FuncCall
+) -> tuple[list[uni.Expr], list[uni.KWPair], list[uni.UniNode]] {
     (pos, kws) = split_params(call.params);
     hoists: list[uni.UniNode] = [];
     new_pos: list[uni.Expr] = [];
     for p in pos {
-        if isinstance(p, (uni.Literal, uni.MultiString, uni.FString)) {
+        if self._static_str(p) {
             new_pos.append(p);
         } else {
             new_pos.append(self._snapshot(call, p, hoists));
@@ -209,18 +222,29 @@ impl DeferSideEffectPass._buffer_entry(
     new_kws: list[uni.KWPair] = [];
     for kw in kws {
         v = kw.value;
-        if isinstance(v, (uni.Literal, uni.MultiString, uni.FString))
-            or (kw.key is None) {
+        if self._static_str(v) or (kw.key is None) {
             new_kws.append(kw);
         } else {
             snap = self._snapshot(call, v, hoists);
             new_kws.append(uni.KWPair(key=kw.key, value=snap, kid=[kw.key, snap]));
         }
     }
-    args_tuple = self._tuple(call, new_pos);
-    kwargs_dict = self._dict_from_kws(call, new_kws);
-    items: list[uni.Expr] = [call.target, args_tuple, kwargs_dict];
-    return (uni.TupleVal(values=items, kid=items), hoists);
+    return (new_pos, new_kws, hoists);
+}
+
+impl DeferSideEffectPass._static_str(v: uni.Expr) -> bool {
+    if isinstance(v, uni.Literal) {
+        return True;
+    }
+    if not isinstance(v, uni.MultiString) {
+        return False;
+    }
+    for s in v.strings {
+        if not isinstance(s, uni.String) {
+            return False;
+        }
+    }
+    return True;
 }
 
 impl DeferSideEffectPass._snapshot(
@@ -251,14 +275,22 @@ impl DeferSideEffectPass._clone_guard(at: uni.UniNode, tmp: str) -> uni.IfElseEx
     clone_call = uni.FuncCall(
         target=trailer, params=[], genai_call=None, kid=[trailer]
     );
-    has_nm = gen_name(at, 'hasattr', False);
+    isinst = gen_name(at, 'isinstance', False);
     test_recv = gen_name(at, tmp, False);
-    attr_name = self._str(at, 'clone');
+    torch_nm = gen_name(at, 'torch', False);
+    tensor_nm = gen_name(at, 'Tensor', False);
+    tensor_ref = uni.AtomTrailer(
+        target=torch_nm,
+        right=tensor_nm,
+        is_attr=True,
+        is_null_ok=False,
+        kid=[torch_nm, tensor_nm]
+    );
     `test = uni.FuncCall(
-        target=has_nm,
-        params=[test_recv, attr_name],
+        target=isinst,
+        params=[test_recv, tensor_ref],
         genai_call=None,
-        kid=[has_nm, test_recv, attr_name]
+        kid=[isinst, test_recv, tensor_ref]
     );
     else_recv = gen_name(at, tmp, False);
     val_cfg = uni.CfgExpr(expr=clone_call, kid=[clone_call]);

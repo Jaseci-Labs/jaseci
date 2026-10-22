@@ -31,6 +31,8 @@ walker DeferSideEffectPass(TreePass) {
     can exit_ability with uni.Ability exit;
     can exit_module with uni.Module exit;
     def _is_logger_call(nd: uni.FuncCall) -> bool;
+    def _decline_call(nd: uni.FuncCall) -> bool;
+    def _logger_bound_before(nd: uni.FuncCall) -> bool;
     def _base_binds_at_module(base: uni.Name) -> bool;
     def _logger_emit(nd: uni.FuncCall) -> (uni.FuncCall | None);
     def _register_assignment(
@@ -51,6 +53,11 @@ walker DeferSideEffectPass(TreePass) {
     def _tuple(at: uni.UniNode, values: list[uni.Expr]) -> uni.TupleVal;
     def _dict_from_kws(at: uni.UniNode, kws: list[uni.KWPair]) -> uni.DictVal;
     def _buffer_entry(call: uni.FuncCall) -> tuple[uni.TupleVal, list[uni.UniNode]];
+    def _snapshot_args(
+        call: uni.FuncCall
+    ) -> tuple[list[uni.Expr], list[uni.KWPair], list[uni.UniNode]];
+
+    def _static_str(v: uni.Expr) -> bool;
     def _snapshot(
         call: uni.FuncCall, v: uni.Expr, hoists: list[uni.UniNode]
     ) -> uni.Expr;
