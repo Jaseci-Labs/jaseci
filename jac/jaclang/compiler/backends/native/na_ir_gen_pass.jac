@@ -2551,7 +2551,13 @@ walker NaIRGenPass(CompilerPass) {
         b: ir.IRBuilder, ptr: ir.Value, name: str = "s.truthy"
     ) -> ir.Value;
 
-    def _stamp_str_len(b: ir.IRBuilder, ptr: ir.Value, len_val: ir.Value) -> None;
+    def _stamp_str_len(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        len_val: ir.Value,
+        ascii: (ir.Value | None) = None
+    ) -> None;
+
     def _emit_str_cmp_helper -> None;
     def _call_str_cmp(
         b: ir.IRBuilder, lhs: ir.Value, rhs: ir.Value, name: str = "s.cmp"
@@ -2693,7 +2699,13 @@ walker NaIRGenPass(CompilerPass) {
     def _membrane_str_out(b: ir.IRBuilder, val: ir.Value) -> ir.Value;
     def _membrane_str_in(b: ir.IRBuilder, val: ir.Value) -> ir.Value;
     def _str_alloc(b: ir.IRBuilder, size: ir.Value, name: str = "s.buf") -> ir.Value;
-    def _str_finish(b: ir.IRBuilder, buf: ir.Value, len_val: ir.Value) -> None;
+    def _str_finish(
+        b: ir.IRBuilder,
+        buf: ir.Value,
+        len_val: ir.Value,
+        ascii: (ir.Value | None) = None
+    ) -> None;
+
     def _rc_alloc(size: ir.Value, name: str = "rc.alloc") -> ir.Value;
     def _emit_rc_count_update(
         fn: ir.Function,

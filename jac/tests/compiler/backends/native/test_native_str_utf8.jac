@@ -390,3 +390,32 @@ test "string views index, slice and iterate by codepoint" {
         }
     }
 }
+
+test "concatenation keeps codepoint length and indexing right" {
+    eng = _eng();
+    flags = get_sfunc(eng, "cp_concat_flags", ctypes.c_char_p);
+    (a, e) = ("ab", "é");
+    (x, y, z, w) = (a + a, a + e, e + a, a + e + a);
+    want = f"{len(x)}|{len(y)}|{len(z)}|{len(w)}|{y[2]}|{z[0]}|{w[-1]}|" + x[::-1];
+    assert flags().decode() == want , f"concat flags: {flags().decode()!r} != {want!r}";
+    cat_len = get_sfunc(
+        eng, "cp_concat_len", ctypes.c_int64, ctypes.c_char_p, ctypes.c_char_p
+    );
+    cat_at = get_sfunc(
+        eng,
+        "cp_concat_at",
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int64
+    );
+    for s in SAMPLES {
+        for t in SAMPLES {
+            u = s + t;
+            assert cat_len(s, t) == len(u) , f"len({s!r}+{t!r})";
+            for i in range(-len(u), len(u)) {
+                assert cat_at(s, t, i).decode() == u[i] , f"({s!r}+{t!r})[{i}]";
+            }
+        }
+    }
+}

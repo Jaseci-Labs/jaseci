@@ -167,3 +167,24 @@ def cp_static_views -> str {
     w = "abcdef"[1:];
     return f"{len(v)}|{v[0]}|{v[-1]}|{len(w)}|{w[2]}|" + v[1:4] + "|" + w[::-1];
 }
+
+# Concat stamps its result from both operands' ASCII flags instead of rescanning.
+def cp_concat_flags -> str {
+    a = "ab";
+    e = "é";
+    x = a + a;
+    y = a + e;
+    z = e + a;
+    w = y + a;
+    return f"{len(x)}|{len(y)}|{len(z)}|{len(w)}|{y[2]}|{z[0]}|{w[-1]}|" + x[::-1];
+}
+
+def cp_concat_len(s: str, t: str) -> int {
+    u = s + t;
+    return len(u);
+}
+
+def cp_concat_at(s: str, t: str, i: int) -> str {
+    u = s + t;
+    return u[i];
+}

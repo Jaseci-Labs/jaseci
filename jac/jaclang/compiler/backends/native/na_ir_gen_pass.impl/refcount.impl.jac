@@ -1172,12 +1172,15 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
     i64 = ir.IntType(64);
     i64_ptr = i64.as_pointer();
     _headerless = self._nogc_headerless();
+    i1 = ir.IntType(1);
     stamp_fn = self._define_function(
-        "__jac_str_stamp", ir.FunctionType(ir.VoidType(), [i8_ptr, i64])
+        "__jac_str_stamp", ir.FunctionType(ir.VoidType(), [i8_ptr, i64, i1, i1])
     );
     stamp_fn.linkage = "private";
     stamp_fn.args[0].name = "s";
     stamp_fn.args[1].name = "n";
+    stamp_fn.args[2].name = "known";
+    stamp_fn.args[3].name = "ascii";
     _s_entry = stamp_fn.append_basic_block("entry");
     _s_done = stamp_fn.append_basic_block("done");
     b = ir.IRBuilder(_s_entry);
@@ -1194,16 +1197,25 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
         _s_mc = self._emit_magic_check(b, stamp_fn.args[0], name_prefix="ss.mc");
         b.cbranch(_s_mc, _s_store, _s_done);
         b = ir.IRBuilder(_s_store);
+        _s_scan = stamp_fn.append_basic_block("scan");
         _s_schk = stamp_fn.append_basic_block("scan.chk");
         _s_sbody = stamp_fn.append_basic_block("scan.body");
         _s_eblk = stamp_fn.append_basic_block("enc");
+        b.cbranch(stamp_fn.args[2], _s_eblk, _s_scan);
+        b = ir.IRBuilder(_s_scan);
         b.branch(_s_schk);
         b = ir.IRBuilder(_s_schk);
         _s_i = b.phi(i64, name="ss.scan.i");
-        _s_i.add_incoming(ir.Constant(i64, 0), _s_store);
+        _s_i.add_incoming(ir.Constant(i64, 0), _s_scan);
         _s_acc = b.phi(i64, name="ss.scan.acc");
-        _s_acc.add_incoming(ir.Constant(i64, 0), _s_store);
+        _s_acc.add_incoming(ir.Constant(i64, 0), _s_scan);
         _s_go = b.icmp_unsigned("<", _s_i, stamp_fn.args[1], name="ss.scan.go");
+        _s_scanned = b.icmp_unsigned(
+            "==",
+            b.and_(_s_acc, ir.Constant(i64, 0x80), name="ss.hibit"),
+            ir.Constant(i64, 0),
+            name="ss.isascii"
+        );
         b.cbranch(_s_go, _s_sbody, _s_eblk);
         b = ir.IRBuilder(_s_sbody);
         _s_bp = b.gep(stamp_fn.args[0], [_s_i], name="ss.scan.p");
@@ -1214,13 +1226,11 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
         _s_acc.add_incoming(_s_acc1, _s_sbody);
         b.branch(_s_schk);
         b = ir.IRBuilder(_s_eblk);
+        _s_isa = b.phi(i1, name="ss.isa");
+        _s_isa.add_incoming(stamp_fn.args[3], _s_store);
+        _s_isa.add_incoming(_s_scanned, _s_schk);
         _s_ascii = b.select(
-            b.icmp_unsigned(
-                "==",
-                b.and_(_s_acc, ir.Constant(i64, 0x80), name="ss.hibit"),
-                ir.Constant(i64, 0),
-                name="ss.isascii"
-            ),
+            _s_isa,
             ir.Constant(i64, STR_ASCII_TAG_BIT),
             ir.Constant(i64, 0),
             name="ss.abit"
@@ -1283,7 +1293,7 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
             );
             b.call(self.rc_set_type_fn, [_n_buf, _n_tag]);
         }
-        b.call(stamp_fn, [_n_buf, _n_len]);
+        b.call(stamp_fn, [_n_buf, _n_len, ir.Constant(i1, 0), ir.Constant(i1, 0)]);
     }
     b.ret(_n_buf);
     self.str_new_fn = new_fn;
@@ -1408,7 +1418,7 @@ impl NaIRGenPass._call_str_truthy(
 }
 
 impl NaIRGenPass._stamp_str_len(
-    b: ir.IRBuilder, ptr: ir.Value, len_val: ir.Value
+    b: ir.IRBuilder, ptr: ir.Value, len_val: ir.Value, ascii: (ir.Value | None) = None
 ) -> None {
     if self._nogc_headerless() {
         return;
@@ -1416,7 +1426,16 @@ impl NaIRGenPass._stamp_str_len(
     if self.str_stamp_fn is None {
         self._emit_str_len_helpers();
     }
-    b.call(self.str_stamp_fn, [ptr, len_val]);
+    i1 = ir.IntType(1);
+    b.call(
+        self.str_stamp_fn,
+        [
+            ptr,
+            len_val,
+            ir.Constant(i1, 0 if ascii is None else 1),
+            ir.Constant(i1, 0) if ascii is None else ascii
+        ]
+    );
 }
 
 impl NaIRGenPass._emit_str_cmp_helper -> None {
@@ -1835,11 +1854,11 @@ impl NaIRGenPass._str_alloc(
 }
 
 impl NaIRGenPass._str_finish(
-    b: ir.IRBuilder, buf: ir.Value, len_val: ir.Value
+    b: ir.IRBuilder, buf: ir.Value, len_val: ir.Value, ascii: (ir.Value | None) = None
 ) -> None {
     _end = b.gep(buf, [len_val], name="s.end");
     b.store(ir.Constant(ir.IntType(8), 0), _end);
-    self._stamp_str_len(b, buf, len_val);
+    self._stamp_str_len(b, buf, len_val, ascii);
 }
 
 impl NaIRGenPass._emit_set_type_tag(
