@@ -790,18 +790,7 @@ impl EsastGenPass._wrap_with_kwargs_temp(
     expr: es.Expression, spread_arg: es.Expression, nd: uni.FuncCall
 ) -> es.Expression {
     temp_id = self.sync_loc(es.Identifier(name='__jac_kwargs'), jac_node=nd);
-    return self.sync_loc(
-        es.CallExpression(
-            callee=self.sync_loc(
-                es.ArrowFunctionExpression(
-                    params=[temp_id], body=expr, expression=True, async_=False
-                ),
-                jac_node=nd
-            ),
-            arguments=[spread_arg]
-        ),
-        jac_node=nd
-    );
+    return self._bind_once(temp_id, expr, spread_arg, nd);
 }
 
 impl EsastGenPass._try_lower_server_rpc_call(

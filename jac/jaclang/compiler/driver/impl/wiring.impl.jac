@@ -1077,7 +1077,11 @@ impl place_wired_imports(mod: Module) -> None {
         used = False;
         for scope in scopes {
             if not scope {
-                generated.append(stmt);
+                at_top = stmt if not used else spec.wire_import(wire);
+                if at_top is not None {
+                    at_top.code_context = stmt.code_context;
+                    generated.append(at_top);
+                }
                 used = True;
                 continue;
             }

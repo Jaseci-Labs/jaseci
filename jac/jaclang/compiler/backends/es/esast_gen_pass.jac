@@ -604,6 +604,14 @@ walker EsastGenPass(TreePass) {
         new_expr: es.NewExpression, jac_node: uni.UniNode
     ) -> es.Expression;
 
+    def _bind_once(
+        param: es.Identifier,
+        body: es.Expression,
+        value: es.Expression,
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _awaits_in_place(jac_node: uni.UniNode) -> bool;
     def _strip_optional_chain(expr: (es.Node | None)) -> None;
     can exit_binary_expr with uni.BinaryExpr exit;
     can exit_cfg_expr with uni.CfgExpr exit;

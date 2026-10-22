@@ -123,3 +123,46 @@ console.log(JSON.stringify([
             True
         ] , result.stdout + "\n" + js;
 }
+
+glob AWAITED_SRC = """
+glob seen: list[int] = [];
+def recv(x: any) -> any { seen.append(1); return x; }
+async def key() -> int { return 1; }
+async def word() -> str { return ","; }
+async def num() -> int { return 3; }
+def total(a: int, b: int = 0, c: int = 0) -> int { return a + b + c; }
+async def awaited_index(x: any) -> any { return recv(x)?[await key()]; }
+async def awaited_split(s: str | None) -> any { return recv(s)?.split(await word()); }
+async def awaited_callee(x: any) -> any { return recv(x)?[await key()](await num()); }
+async def awaited_kwargs(kw: dict[str, int]) -> int {
+    return total(await num(), **kw, **kw);
+}
+""";
+
+test "awaited reads inside a null-safe guard stay in their async scope" {
+    js = compile_client(AWAITED_SRC);
+    assert "(__jac_opt =>" not in js , js;
+    assert "await (async __jac_opt =>" in js , js;
+    assert "await (async __jac_kwargs =>" in js , js;
+}
+
+test "awaited reads inside a null-safe guard evaluate the receiver once" {
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    js = compile_client(AWAITED_SRC);
+    probe = """
+const u = (v) => v === undefined;
+const out = [
+    u(await awaited_index(null)), await awaited_index([5, 6]), seen.length,
+    u(await awaited_split(null)), await awaited_split("a,b"), seen.length,
+    await awaited_callee([0, (n) => n * 2]), seen.length,
+    await awaited_kwargs({b: 1, c: 2})
+];
+console.log(JSON.stringify(out));
+""";
+    result = run_js_module(js + "\n" + probe, timeout=10.0);
+    assert result.returncode == 0 , result.stderr + "\n" + js;
+    assert json.loads(result.stdout.strip())
+        == [True, 6, 2, True, ["a", "b"], 4, 6, 5, 6] , result.stdout + "\n" + js;
+}

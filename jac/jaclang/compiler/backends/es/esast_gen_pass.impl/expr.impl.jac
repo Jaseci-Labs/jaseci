@@ -908,18 +908,50 @@ impl EsastGenPass._null_safe_guard(
     if ref is recv or not isinstance(ref, es.Identifier) {
         return guard;
     }
-    return self.sync_loc(
+    return self._bind_once(ref, guard, recv, jac_node);
+}
+
+impl EsastGenPass._bind_once(
+    param: es.Identifier,
+    body: es.Expression,
+    value: es.Expression,
+    jac_node: uni.UniNode
+) -> es.Expression {
+    awaits = self._awaits_in_place(jac_node);
+    call = self.sync_loc(
         es.CallExpression(
             callee=self.sync_loc(
                 es.ArrowFunctionExpression(
-                    params=[ref], body=guard, expression=True, async_=False
+                    params=[param], body=body, expression=True, async_=awaits
                 ),
                 jac_node=jac_node
             ),
-            arguments=[recv]
+            arguments=[value]
         ),
         jac_node=jac_node
     );
+    if not awaits {
+        return call;
+    }
+    return self.sync_loc(es.AwaitExpression(argument=call), jac_node=jac_node);
+}
+
+impl EsastGenPass._awaits_in_place(jac_node: uni.UniNode) -> bool {
+    for awaited in jac_node.get_all_sub_nodes(uni.AwaitExpr) {
+        cur: (uni.UniNode | None) = awaited.parent;
+        nested = False;
+        while cur is not None and cur is not jac_node {
+            if isinstance(cur, (uni.Ability, uni.LambdaExpr)) {
+                nested = True;
+                break;
+            }
+            cur = cur.parent;
+        }
+        if not nested {
+            return True;
+        }
+    }
+    return False;
 }
 
 impl EsastGenPass._null_safe_new(
