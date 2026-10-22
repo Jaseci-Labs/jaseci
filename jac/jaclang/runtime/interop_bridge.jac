@@ -2,7 +2,6 @@ import ctypes;
 import logging;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
-import type from jaclang.compiler.frontend.codeinfo { InteropManifest }
 class CallbackSignature(Protocol) {
     has name: str,
         ret_type: str,
@@ -23,41 +22,10 @@ obj NativeLibrary {
         callbacks: list[object] = [],
         functions: dict[str, Callable] = {};
 
-    def handle -> ctypes.CDLL {
-        if self.library is None {
-            self.library = ctypes.CDLL(self.path);
-        }
-        return self.library;
-    }
-
-    def get_function_address(name: str) -> int {
-        address = ctypes.cast(getattr(self.handle(), name), ctypes.c_void_p).value;
-        if address is None {
-            raise RuntimeError(f'Native symbol {name!r} has no address in {self.path}');
-        }
-        return address;
-    }
-
-    def register_symbol(name: str, address: int) {
-        bind_function = getattr(self.handle(), '__jac_bind_' + name);
-        bind_function.argtypes = [ctypes.c_void_p];
-        bind_function.restype = None;
-        bind_function(address);
-    }
-
-    def initialize -> None {
-        if self.initialized {
-            return;
-        }
-        register_py_callbacks(
-            self.bindings, self.functions, self.callbacks, self.register_symbol
-        );
-        initializer = getattr(self.handle(), '__jac_shared_init');
-        initializer.argtypes = [];
-        initializer.restype = None;
-        initializer();
-        self.initialized = True;
-    }
+    def handle -> ctypes.CDLL;
+    def get_function_address(name: str) -> int;
+    def register_symbol(name: str, address: int);
+    def initialize -> None;
 }
 
 glob logger = logging.getLogger(__name__),
@@ -69,86 +37,13 @@ glob logger = logging.getLogger(__name__),
      },
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
-     _pyb_module_memo: dict[(str, object)] = {},
-     _PYB_MISSING: object = object();
+     _pyb_module_memo: dict[(str, object)] = {};
 
-def _pyb_import_module(mod_path: str) -> object {
-    import os;
-    key = os.path.abspath(mod_path);
-    cached = _pyb_module_memo.get(key);
-    if cached is not None {
-        return cached;
-    }
-    import sys;
-    stem = os.path.splitext(os.path.basename(key))[0];
-    existing = sys.modules.get(stem);
-    if (
-        existing is not None
-        and os.path.abspath(getattr(existing, "__file__", "") or "") == key
-    ) {
-        _pyb_module_memo[key] = existing;
-        return existing;
-    }
-    import from jaclang.runtime.runtime { JacModule }
-    mods = JacModule.jac_import(target=stem, base_path=os.path.dirname(key));
-    mod = mods[0] if isinstance(mods, tuple) else mods;
-    _pyb_module_memo[key] = mod;
-    return mod;
-}
-
-def pyb_mirror_member(mod_path: str, name: str) -> object {
-    """Bind one member of a natively-placed module into the server codespace.
-
-    Server-side code that imports from a module pinned native cannot emit a
-    plain Python import -- the native lane owns the module -- so the JCIR
-    emitter splices calls to this helper in place of the dropped import: it
-    loads the target module's server-tier image through the ordinary Jac
-    import machinery and hands back the named member. Without it the dropped
-    import bound nothing, and constructing a native-placed obj from server
-    code died with NameError.
-
-    A member whose value is None is a member like any other: only a name the
-    module does not define at all is refused, as a plain import would.
-
-    When per-module AOT execution lands this seam upgrades to dylib-backed
-    shadows without touching consumer code.
-    """;
-    mod = _pyb_import_module(mod_path);
-    member = getattr(mod, name, _PYB_MISSING);
-    if member is _PYB_MISSING {
-        raise AttributeError(
-            f"native-placed module '{mod_path}' exposes no '{name}' "
-                + "to mirror into the server codespace"
-        );
-    }
-    return member;
-}
+def _pyb_import_module(mod_path: str) -> object;
 
 def _pyb_class_for(
     mod_path: str, base_name: str, cls_name: str, suppress_postinit: bool
-) -> type {
-    key = (mod_path, base_name, cls_name, suppress_postinit, );
-    cached = _pyb_class_memo.get(key);
-    if cached is not None {
-        return cached;
-    }
-    mod = _pyb_import_module(mod_path);
-    base = getattr(mod, base_name);
-    ns: dict[str, any] = {"__module__": getattr(base, "__module__", "jac_native")};
-    if suppress_postinit {
-        def _noop_post_init(self: object) -> None {
-            return;
-        }
-        ns["__post_init__"] = _noop_post_init;
-    }
-    cls = type(cls_name, (base, ), ns);
-    loose: any = cls;
-    if loose.__abstractmethods__ {
-        loose.__abstractmethods__ = frozenset();
-    }
-    _pyb_class_memo[key] = cls;
-    return cls;
-}
+) -> type;
 
 def _pyb_instantiate(
     mod_path: str,
@@ -157,26 +52,11 @@ def _pyb_instantiate(
     kwargs: dict[str, any],
     suppress_postinit: bool,
     owner_addr: int
-) -> object {
-    cls = _pyb_class_for(mod_path, base_name, cls_name, bool(suppress_postinit));
-    shadow = cls(**kwargs);
-    _pyb_shadows[owner_addr] = shadow;
-    return shadow;
-}
+) -> object;
 
-def _pyb_shadow_of(owner_addr: int) -> object {
-    shadow = _pyb_shadows.get(owner_addr);
-    if shadow is None {
-        raise RuntimeError(
-            f"no Python shadow registered for native object 0x{owner_addr:x}"
-        );
-    }
-    return shadow;
-}
+def _pyb_shadow_of(owner_addr: int) -> object;
 
-def _pyb_drop_owner(owner_addr: int) {
-    _pyb_shadows.pop(owner_addr, None);
-}
+def _pyb_drop_owner(owner_addr: int);
 
 def _pyb_super_call(
     shadow: object,
@@ -184,127 +64,11 @@ def _pyb_super_call(
     meth_names: tuple[str, ...],
     args: tuple[any, ...],
     kwargs: dict[str, any]
-) -> object {
-    anchor: (type | None) = None;
-    for c in type(shadow).__mro__ {
-        if c.__name__ == anchor_name {
-            anchor = c;
-            break;
-        }
-    }
-    if anchor is None {
-        raise AttributeError(
-            f"{type(shadow).__name__} has no ancestor class {anchor_name}"
-        );
-    }
-    for mn in meth_names {
-        fn = getattr(anchor, mn, None);
-        if fn is not None {
-            return fn(shadow, *args, **(kwargs or {}));
-        }
-    }
-    raise AttributeError(f"{anchor_name} defines none of {meth_names}");
-}
+) -> object;
 
 def register_py_callbacks(
     bindings: Iterable[CallbackSignature],
     py_func_table: dict[(str, Callable[(..., object)])],
     callbacks_list: list[object],
     register_symbol: Callable[[str, int], None]
-) {
-    for binding in bindings {
-        ret_ct = JAC_TO_CTYPES.get(binding.ret_type, ctypes.c_int64);
-        arg_cts = [JAC_TO_CTYPES.get(pt, ctypes.c_int64) for pt in binding.param_types];
-        cb_type = ctypes.CFUNCTYPE(ret_ct, *arg_cts);
-        def _make_callback(
-            func_name: str, table: dict[(str, Callable[(..., object)])]
-        ) -> Callable[(..., object)] {
-            warned = [False];
-            def callback(*args: object) -> object {
-                fn = table.get(func_name);
-                if (fn is not None) {
-                    return fn(*args);
-                }
-                if not warned[0] {
-                    logger.warning(
-                        f"Native code called Python function '{func_name}' butit's not registered. Returning 0. Ensure Python code defining '{func_name}'executes before native code calls it."
-                    );
-                    warned[0] = True;
-                }
-                return 0;
-            }
-            return callback;
-        }
-        cb = cb_type(_make_callback(binding.name, py_func_table));
-        callbacks_list.append(cb);
-        cb_addr = ctypes.cast(cb, ctypes.c_void_p).value;
-        if cb_addr is None {
-            raise RuntimeError(f'Cannot allocate native callback {binding.name!r}');
-        }
-        register_symbol(binding.name, cb_addr);
-    }
-}
-
-
-def ensure_py_funcs_loaded(
-    manifest: InteropManifest,
-    py_func_table: dict[(str, Callable[(..., object)])],
-    base_path: str,
-    default_module: str = ''
-) -> int {
-    """Fill the native->server callback table before native execution.
-
-    register_py_callbacks binds each `native_imports` symbol to a ctypes
-    trampoline that resolves its Python callable lazily out of
-    py_func_table. Only the importing module's Python image fills that table
-    (through the meta importer's interop setup), and a natively-executed
-    entry never runs that image -- so the callback answers 0 and the native
-    caller silently reads a wrong value. Resolve the bound server functions
-    here instead: import each binding's source module through the ordinary
-    Jac import machinery and register the named member. Returns how many
-    functions were made callable.
-
-    A binding that cannot be resolved raises ImportError naming it: nothing
-    else fills the table on this path, so running on would hand the native
-    caller 0 in place of the server function's result.
-    """;
-    loaded: int = 0;
-    unresolved: list[str] = [];
-    for binding in manifest.native_imports {
-        if binding.kind != 'function' or binding.name in py_func_table {
-            continue;
-        }
-
-        src_mod = binding.source_module or default_module;
-        if not src_mod {
-            continue;
-        }
-        try {
-            import from jaclang.runtime.runtime { JacModule }
-            mods = JacModule.jac_import(target=src_mod, base_path=base_path);
-            mod = mods[0] if isinstance(mods, tuple) else mods;
-            fn = getattr(mod, binding.name, None);
-        } except Exception as e {
-            unresolved.append(
-                f"'{binding.name}' from '{src_mod}' ({type(e).__name__}: {e})"
-            );
-            continue;
-        }
-        if fn is None {
-            unresolved.append(
-                f"'{binding.name}' from '{src_mod}' (the module defines no such name)"
-            );
-            continue;
-        }
-        py_func_table[binding.name] = fn;
-        loaded += 1;
-    }
-    if unresolved {
-        raise ImportError(
-            "native interop: cannot load the server function(s) native code "
-                + "calls: "
-                + "; ".join(unresolved)
-        );
-    }
-    return loaded;
-}
+);

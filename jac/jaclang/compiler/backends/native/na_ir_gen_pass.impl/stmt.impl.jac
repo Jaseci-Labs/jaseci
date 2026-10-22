@@ -195,8 +195,8 @@ impl NaIRGenPass._codegen_delete(nd: uni.DeleteStmt) -> None {
 }
 
 impl NaIRGenPass._codegen_destroy_target(target: uni.Expr, nd: uni.DeleteStmt) -> None {
-    _destroy_fn = self.func_symtab.get("osp_destroy");
-    _destroy_all_fn = self.func_symtab.get("osp_destroy_all");
+    _destroy_fn = self.scope.function("osp_destroy");
+    _destroy_all_fn = self.scope.function("osp_destroy_all");
     if _destroy_fn is None or _destroy_all_fn is None {
         self.emit(E5092, node_override=nd, kind="statement", name="DeleteStmt");
         return;
@@ -206,8 +206,8 @@ impl NaIRGenPass._codegen_destroy_target(target: uni.Expr, nd: uni.DeleteStmt) -
         self.emit(E5092, node_override=nd, kind="statement", name="DeleteStmt");
         return;
     }
-    _forget_fn = self.func_symtab.get("osp_forget");
-    _forget_all_fn = self.func_symtab.get("osp_forget_all");
+    _forget_fn = self.scope.function("osp_forget");
+    _forget_all_fn = self.scope.function("osp_forget_all");
     if self._infer_list_elem_type(_val) is not None {
         _all_argtys = _destroy_all_fn.function_type.args;
         _hs = self._coerce_type(_val, _all_argtys[0]);
@@ -3487,7 +3487,7 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
         }
 
         if self._pending_lambda_captures is not None {
-            self.lambda_captures[var_name] = self._pending_lambda_captures;
+            self.scope.bind_lambda(var_name, self._pending_lambda_captures);
             self._pending_lambda_captures = None;
         }
 
@@ -4023,7 +4023,7 @@ impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
     if not _par_ok {
         return False;
     }
-    if "wasm" in str(self.llvm_module.triple) {
+    if self._target_is_wasm() {
         return False;
     }
     if self._gen_ctx is not None {

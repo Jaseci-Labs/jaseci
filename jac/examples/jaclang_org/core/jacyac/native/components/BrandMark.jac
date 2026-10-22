@@ -1,6 +1,8 @@
 import from "@jac/mobui" { Image }
 
-def:pub BrandMark(size: int = 40) -> JsxElement {
+def:pub BrandMark(size: int = 40) -> JsxElement;
+
+impl BrandMark(size: int = 40) -> JsxElement {
     return
         <Image
             accessibilityLabel="JacYac"
