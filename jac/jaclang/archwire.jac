@@ -8970,6 +8970,7 @@ graph import compiler {
             Expr,
             FuncCall,
             FuncSignature,
+            KWPair,
             Module,
             UnaryExpr
         },
