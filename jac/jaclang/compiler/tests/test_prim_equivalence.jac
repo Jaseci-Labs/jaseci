@@ -657,6 +657,14 @@ glob STR_NA_GAPS: list[any] = [
          ),
          ("re bundled", "prim_re.jac", "re_py", "re_cl", "re_na", ["na"]),
          (
+             "re fuzz bundled",
+             "prim_re_fuzz.jac",
+             "re_fuzz_py",
+             "re_fuzz_cl",
+             "re_fuzz_na",
+             ["na"]
+         ),
+         (
              "reprlib bundled",
              "prim_reprlib.jac",
              "reprlib_py",

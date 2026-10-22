@@ -1,3 +1,5 @@
+import from c { def memchr(s: int, c: i32, n: u64) -> int;  }
+
 glob:pub I: int = 2,
      IGNORECASE: int = 2,
      L: int = 4,
@@ -42,36 +44,39 @@ enum _AT: int {
 }
 
 
-enum _OP: int {
-    CHAR = 1,
-    ANY = 2,
-    CLASS = 3,
-    SPLIT = 4,
-    JMP = 5,
-    MARK = 6,
-    JMPNZ = 7,
-    SAVE = 8,
-    MATCH = 9,
-    BOS = 10,
-    BEGLINE = 11,
-    END = 12,
-    ENDLINE = 13,
-    EOS = 14,
-    WB = 15,
-    BACKREF = 16,
-    FPUSH = 17,
-    FPOP = 18,
-    LOOK = 19
-}
+glob _O_MATCH: int = 0,
+     _O_CHAR: int = 1,
+     _O_CHAR2: int = 2,
+     _O_ANY: int = 3,
+     _O_ANYALL: int = 4,
+     _O_CLASS: int = 5,
+     _O_SPLIT: int = 6,
+     _O_JMP: int = 7,
+     _O_MARK: int = 8,
+     _O_JMPNZ: int = 9,
+     _O_SAVE: int = 10,
+     _O_BOS: int = 11,
+     _O_BEGLINE: int = 12,
+     _O_END: int = 13,
+     _O_ENDLINE: int = 14,
+     _O_EOS: int = 15,
+     _O_WB: int = 16,
+     _O_NWB: int = 17,
+     _O_BACKREF: int = 18,
+     _O_BACKREFI: int = 19,
+     _O_LOOK: int = 20,
+     _O_REPG: int = 21,
+     _O_REPL: int = 22;
 
-
-glob _BT_SPLIT: int = 1,
-     _BT_SAVE: int = 2,
-     _BT_MARK: int = 3,
-     _BT_FPUSH: int = 4,
-     _BT_FPOP: int = 5;
+glob _T_SPLIT: int = 1,
+     _T_SAVE: int = 2,
+     _T_MARK: int = 3,
+     _T_REPG: int = 4,
+     _T_REPL: int = 5;
 
 glob _MAXCP: int = 1114111;
+
+glob _MAXCACHE: int = 512;
 
 glob _MAXPOS: int = 9223372036854775807;
 
@@ -83,26 +88,6 @@ glob _DIGIT_PRS: list[int] = [48, 57],
      _NSPACE_PRS: list[int] = [0, 8, 14, 31, 33, 1114111],
      _WORD_PRS: list[int] = [48, 57, 65, 90, 95, 95, 97, 122],
      _NWORD_PRS: list[int] = [0, 47, 58, 64, 91, 94, 96, 96, 123, 1114111];
-
-
-obj _PS {
-    has gen: int = 0,
-        pregs: list[bytes] = [],
-        ids: list[int] = [],
-        next_id: int = 1,
-        head: int = 0;
-}
-
-
-glob _PMW: int = posix_probe(),
-     _PSX: _PS = _PS(),
-     _POSIX_MAX: int = 512;
-
-
-def _posix_register(preg: bytes) -> int;
-
-
-def _posix_subject_ok(bv: bytes) -> bool;
 
 
 def _push_prs(dst: list[int], src: list[int]);
@@ -117,7 +102,7 @@ def _name_index(names: dict[str, int], nm: str) -> int;
 def _num_esc(cps: list[int], i: int, e: int, bp: int) -> tuple[(int, int)];
 
 
-def _bounds(n: int, pos: int, endpos: int) -> tuple[(int, int)];
+def _clamp(v: int, n: int) -> int;
 
 
 obj _Node {
@@ -134,16 +119,13 @@ obj _Node {
 }
 
 
-obj _Ins {
-    has op: _OP = _OP.CHAR,
-        a: int = 0,
-        b: int = 0;
-}
+def _cat(base: int, wide: bool, pos: int) -> int;
 
 
 obj _Cls {
     has pairs: list[int] = [],
-        neg: bool = False;
+        neg: bool = False,
+        wide: bool = False;
 }
 
 
@@ -176,64 +158,132 @@ obj _P {
 }
 
 
-obj _C {
-    has prog: list[_Ins] = [],
-        classes: list[_Cls] = [],
-        nmarks: int = 0;
-}
-
-
-def _emit(c: _C, op: _OP, a: int, b: int) -> int;
-
-
-def _compile_node(nd: _Node, c: _C);
-
-
 obj _Re {
-    has prog: list[_Ins] = [],
+    has prog: list[int] = [],
+        cbits: list[int] = [],
         classes: list[_Cls] = [],
         ngroups: int = 0,
         names: dict[str, int] = {},
         nmarks: int = 0,
         flags: int = 0,
-        pattern: str = "";
+        pattern: str = "",
+        anchored: bool = False,
+        prefix: str = "",
+        plen: int = 0,
+        pcps: list[int] = [],
+        has_fs: bool = False,
+        fs: list[int] = [],
+        fs_wide: bool = False,
+        empty: list[int] = [];
 }
+
+
+obj _FS {
+    has bits: list[int] = [],
+        wide: bool = False,
+        all: bool = False;
+}
+
+
+def _cls_bits(pairs: list[int], neg: bool, icase: bool) -> list[int];
+
+
+def _cls_wide(pairs: list[int], neg: bool) -> bool;
+
+
+def _cls_build(pairs: list[int], neg: bool, icase: bool, re: _Re) -> int;
+
+
+def _cls_wide_has(re: _Re, k: int, c: int) -> bool;
+
+
+def _item_ok(re: _Re, kind: int, arg: int, c: int) -> bool;
+
+
+def _emit(re: _Re, op: int, a: int, b: int, c: int, d: int) -> int;
+
+
+def _single_item(nd: _Node, flags: int, re: _Re) -> tuple[(int, int)];
+
+
+def _compile_node(nd: _Node, re: _Re, flags: int);
+
+
+def _fs_add(fs: _FS, c: int);
+
+
+def _first(nd: _Node, flags: int, fs: _FS) -> bool;
+
+
+def _analyze(tree: _Node, re: _Re);
 
 
 obj _St {
     has cps: list[int] = [],
+        base: int = 0,
+        wide: bool = False,
         n: int = 0,
         slots: list[int] = [],
         marks: list[int] = [],
-        fstack: list[int] = [],
-        flags: int = 0;
+        stk: list[int] = [],
+        sp: int = 0,
+        adv_pos: int = -1,
+        match_all: bool = False;
 }
 
 
-def _bt3(stk: list[int], tag: int, x: int, y: int);
+def _new_st(re: _Re) -> _St;
 
 
-def _run(re: _Re, st: _St, pc0: int, pos0: int) -> int;
+def _prep(st: _St, string: str, endpos: int);
 
 
-def _new_st(cps: list[int], n: int, re: _Re) -> _St;
+def _grow(st: _St, need: int) -> int;
 
 
-def _reset_slots(st: _St);
+def _unwind(st: _St, sp0: int, keep_undo: bool);
+
+
+def _exec(re: _Re, st: _St, pc0: int, start: int, mode: int) -> int;
+
+
+def _hit(re: _Re, st: _St, string: str, b0: int, b1: int) -> Match;
+
+
+def _one(
+    re: _Re, st: _St, string: str, pos: int, endpos: int, mode: int
+) -> (Match | None);
+
+
+def _iter(re: _Re, st: _St, string: str, pos: int, endpos: int) -> list[Match];
+
+
+def _all(re: _Re, st: _St, string: str, pos: int, endpos: int) -> list[str];
+
+
+def _split(re: _Re, st: _St, string: str, maxsplit: int) -> list[any];
+
+
+def _subn_core(
+    re: _Re, st: _St, rp: _Repl, string: str, count: int
+) -> tuple[(str, int)];
 
 
 obj:pub Match {
     has _re: _Re,
-        string: str = "",
-        _bv: bytes = b"",
-        pos: int = 0,
-        endpos: int = 0,
-        _slots: list[int] = [];
+        string: str,
+        pos: int,
+        endpos: int,
+        _s0: int,
+        _e0: int,
+        _slots: list[int];
 
     def init(
-        _re: _Re, string: str, bv: bytes, pos: int, endpos: int, slots: list[int]
+        _re: _Re, string: str, pos: int, endpos: int, s0: int, e0: int, slots: list[int]
     );
 
+    def _lo(g: int) -> int;
+    def _hi(g: int) -> int;
     def _gtext(num: int) -> str;
     def _gnum(i: (int | str)) -> int;
     def group(i: (int | str) = 0) -> any;
@@ -246,35 +296,32 @@ obj:pub Match {
 }
 
 
-def _push_str(out: list[int], s: str);
+obj _Repl {
+    has lits: list[str] = [],
+        grps: list[int] = [],
+        literal: bool = True;
+}
 
 
-def _push_range(out: list[int], pb: bytes, a: int, b: int);
+def _compile_repl(template: str, re: _Re) -> _Repl;
 
 
-def _posix_translate(pat: str, flags: int) -> (str | None);
+def _apply_repl(rp: _Repl, string: str, s0: int, e0: int, slots: list[int]) -> str;
 
 
 obj:pub Pattern {
     has _re: _Re,
+        _st: _St,
         pattern: str = "",
         flags: int = 0,
         groups: int = 0,
         groupindex: dict[str, int] = {},
-        _preg: bytes = b"",
-        _pgen: int = -1,
-        _pslot: int = -1,
-        _pid: int = 0,
-        _posix: bool = False;
+        _lk: list[int] = [],
+        _lock: int = 0;
 
     def init(pattern: str, flags: int = 0);
-    def _use_posix(bv: bytes) -> bool;
-    def _posix_miss(bv: bytes, lo: int, hi: int) -> bool;
-    def _scan_from(st: _St, start: int) -> int;
-    def _search_from(
-        string: str, bv: bytes, start: int, endpos: int
-    ) -> (Match | None);
-
+    def _acquire -> bool;
+    def _release;
     def search(string: str, pos: int = 0, endpos: int = _MAXPOS) -> (Match | None);
     def `match(string: str, pos: int = 0, endpos: int = _MAXPOS) -> (Match | None);
     def fullmatch(string: str, pos: int = 0, endpos: int = _MAXPOS) -> (Match | None);
@@ -287,10 +334,14 @@ obj:pub Pattern {
 }
 
 
+glob _CACHE: dict[str, Pattern] = {},
+     _CACHEF: dict[str, Pattern] = {};
+
+
+def _cached(pattern: str, flags: int) -> Pattern;
+
+
 def _compile_re(pattern: str, flags: int) -> _Re;
-
-
-def _expand_repl(template: str, m: Match, re: _Re) -> str;
 
 
 def:pub compile(pattern: str, flags: int = 0) -> Pattern;

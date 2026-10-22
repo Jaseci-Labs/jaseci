@@ -250,9 +250,34 @@ native layout records the emitted name separately from its source-level key.
   (native dicts are layout-specialized, so a `dict[str, str]` literal is
   not interchangeable); `Formatter`/brace-style templates not provided.
 - **`re.jac`** (#6978 Phase 3) -- a pure-Jac regex engine: explicit parser
-  (`_P`) producing a `_Node` AST, an instruction compiler, and a
-  backtracking VM (`_run`) driven by an explicit heap-allocated
-  retry/undo stack, so match depth is bounded by heap, not the C stack.
+  (`_P`) producing a `_Node` AST, a compiler to a flat instruction array
+  (six ints per instruction), and one backtracking VM (`_exec`) that also
+  drives the search loop. The VM reads the program, class bitmaps, capture
+  slots and its retry/undo stack through raw buffer addresses
+  (`__list_data_ptr`/`__mem_load_i64`) rather than per-step list objects,
+  and its stack lives on the heap, so match depth is bounded by heap, not
+  the C stack. Single-item repeats (a literal, `.`, or a class under
+  `*`/`+`/`?`/`{m,n}`, greedy or lazy) are fused instructions that loop in
+  place and push one backtrack entry, not one per iteration, and when the
+  next consuming instruction is a literal they skip the positions where it
+  cannot match (CPython's REPEAT_ONE/MIN_REPEAT_ONE optimizations); `.`
+  repeats over ASCII text scan with `memchr`. Search skips impossible
+  starts with a literal-prefix scan (`memchr` plus a compare), a 128-bit
+  first-character set, or a single attempt for `\A`/`^`-anchored patterns.
+  None of this changes which match wins: the VM explores alternatives in
+  CPython's order, applies CPython's empty-match rules (an empty match may
+  not end where the previous match ended, `fullmatch` backtracks until the
+  match reaches `endpos`), and a seeded differential fuzz fixture
+  (`prim_re_fuzz.jac`) pins spans and groups against CPython across
+  `search`/`match`/`fullmatch`/`finditer`/`findall`/`sub`/`subn`/`split`.
+  ASCII subjects are matched in place through the string's own bytes
+  (`__str_data`); other subjects are decoded once into a codepoint array
+  (`_utf8.jac`), so positions are codepoint indices either way. Each
+  `Pattern` owns reusable scratch state (slots, stack) taken with an atomic
+  try-lock, so a call allocates only its results, and a concurrent or
+  reentrant call on the same `Pattern` falls back to fresh state. The
+  module-level functions and `compile` share a 512-entry compiled-pattern
+  cache, as CPython's do; `purge()` clears it.
   Covers literals, character classes and ranges (incl. negation and class
   escapes `\d`/`\w`/`\s`), anchors (`^`/`$`/`\A`/
   `\Z`/`\b`/`\B`), greedy and lazy `*`/`+`/`?`/`{m,n}` repeats, alternation,
@@ -265,36 +290,12 @@ native layout records the emitted name separately from its source-level key.
   `groupdict`/`start`/`end`/`span`/`expand`, `groups`/`groupindex`/`pattern`/
   `flags` on `Pattern`). Parse errors raise `ValueError` with CPython's
   message text and position suffix ("... at position N"), covering
-  unterminated groups/classes, bad ranges, multiple/nothing-to-repeat,
-  unknown/duplicate/open group references, and non-leading global flags.
-  Patterns and subjects are decoded once into codepoint arrays
-  (`_utf8.jac`), so matching is codepoint-indexed independent of the native
-  `str` indexing model, and `Match` slices decode back through the encoded
-  bytes -- non-ASCII literals like `é` match whole characters, while the
-  character-class semantics stay ASCII (`\w`/`\d`/`\s`, IGNORECASE fold).
-  **POSIX no-match prefilter**: patterns `_posix_translate` can express as a
-  portable POSIX ERE (no alternation, anchors, `(?` constructs, lazy
-  quantifiers, non-ASCII or NUL bytes, or backslashes it cannot desugar;
-  `\d`/`\w`/`\s` and their negations become explicit bracket classes, since
-  libc spells those escapes differently per platform) are additionally
-  compiled through libc `regcomp` via `_re_posix_native.jac` (Mechanism F).
-  libc is asked one question only, on ASCII NUL-free subjects: does the
-  pattern match anywhere in the window? A "no" answers the call at libc
-  speed; any "yes" is matched by the Jac VM, which alone decides spans and
-  groups. POSIX picks the leftmost-longest match and Python the first one a
-  backtracking search finds, so the two disagree on which span wins
-  (`x*(xy)?` on `xxy`) and on what a repeated group last captured, and
-  macOS libc does not even return the leftmost match for some patterns;
-  whether a match exists is the one thing every matcher agrees on. Because
-  `regex_t` owns heap state the Jac GC cannot see, compiled programs live in
-  a bounded registry (`_POSIX_MAX` = 512, CPython's own pattern-cache size):
-  compiling past it releases the oldest program with `regfree`, and its
-  `Pattern` simply stops consulting libc. `purge()` releases all of them and
-  bumps a generation counter with the same effect. The `regmatch_t` stride
-  probe (`posix_probe`) still gates the path, so a libc whose layout it does
-  not recognize is never consulted. `Pattern.flags` reports
-  what CPython reports: the explicit flags, any global inline flags, and
-  `UNICODE` unless `ASCII` is set.
+  unterminated groups/classes, bad ranges, multiple/nothing-to-repeat
+  (including a quantified anchor), unknown/duplicate/open group
+  references, and non-leading global flags. Replacement templates are
+  compiled once per `sub`/`subn` call, before matching, as CPython does.
+  `Pattern.flags` reports what CPython reports: the explicit flags, any
+  global inline flags, and `UNICODE` unless `ASCII` is set.
   SCOPE/divergences: ASCII semantics only (`\w`/`\d`/`\s` and IGNORECASE
   fold ASCII; no unicode categories or full casefold); no lookbehind,
   conditional `(?(id)y|n)`, atomic `(?>...)`, possessive quantifiers, `\N{}`,

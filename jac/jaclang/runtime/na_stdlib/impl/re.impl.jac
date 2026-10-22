@@ -1,35 +1,3 @@
-impl _posix_register(preg: bytes) -> int {
-    pid: int = _PSX.next_id;
-    _PSX.next_id += 1;
-    slot: int = len(_PSX.pregs);
-    if slot < _POSIX_MAX {
-        _PSX.pregs.append(preg);
-        _PSX.ids.append(pid);
-        return slot;
-    }
-    slot = _PSX.head;
-    posix_free(_PSX.pregs[slot]);
-    _PSX.pregs[slot] = preg;
-    _PSX.ids[slot] = pid;
-    _PSX.head = (slot + 1) % _POSIX_MAX;
-    return slot;
-}
-
-
-impl _posix_subject_ok(bv: bytes) -> bool {
-    i: int = 0;
-    n: int = len(bv);
-    while i < n {
-        c: int = bv[i];
-        if c == 0 or c >= 128 {
-            return False;
-        }
-        i += 1;
-    }
-    return True;
-}
-
-
 impl _push_prs(dst: list[int], src: list[int]) {
     k: int = 0;
     while k < len(src) {
@@ -142,23 +110,14 @@ impl _num_esc(cps: list[int], i: int, e: int, bp: int) -> tuple[(int, int)] {
 }
 
 
-impl _bounds(n: int, pos: int, endpos: int) -> tuple[(int, int)] {
-    if endpos < 0 {
-        endpos = 0;
+impl _clamp(v: int, n: int) -> int {
+    if v < 0 {
+        return 0;
     }
-    if endpos > n {
-        endpos = n;
+    if v > n {
+        return n;
     }
-    if pos < 0 {
-        pos += n;
-        if pos < 0 {
-            pos = 0;
-        }
-    }
-    if pos > n {
-        pos = n;
-    }
-    return (pos, endpos);
+    return v;
 }
 
 
@@ -284,6 +243,7 @@ impl _P._atom -> (_Node | None) {
 }
 
 impl _P._piece -> (_Node | None) {
+    a0: int = self.i;
     atom: (_Node | None) = self._atom();
     if atom is None {
         return None;
@@ -295,6 +255,12 @@ impl _P._piece -> (_Node | None) {
     c: int = self.cps[self.i];
     if c != 42 and c != 43 and c != 63 and c != 123 {
         return atom;
+    }
+    if c == 123 and not self._is_repeat_spec(self.i) {
+        return atom;
+    }
+    if atom.kind == _K.AT and self.cps[a0] != 40 {
+        self._err("nothing to repeat", self.i);
     }
     lo: int = 0;
     hi: int = -1;
@@ -954,23 +920,127 @@ impl _P._parse -> _Node {
 }
 
 
-impl _emit(c: _C, op: _OP, a: int, b: int) -> int {
-    ins: _Ins = _Ins();
-    ins.op = op;
-    ins.a = a;
-    ins.b = b;
-    c.prog.append(ins);
-    return len(c.prog) - 1;
+impl _cat(base: int, wide: bool, pos: int) -> int {
+    if wide {
+        return int(__mem_load_i64(base + pos * 8));
+    }
+    return int(__mem_load_i8(base + pos));
 }
 
 
-impl _compile_node(nd: _Node, c: _C) {
+impl _cls_bits(pairs: list[int], neg: bool, icase: bool) -> list[int] {
+    bits: list[int] = [0, 0, 0, 0];
+    c: int = 0;
+    while c < 128 {
+        hit: bool = _in_pairs(pairs, c);
+        if not hit and icase {
+            hit = _in_pairs(pairs, swapcase(c));
+        }
+        if hit != neg {
+            bits[c >> 5] = bits[c >> 5] | (1 << (c & 31));
+        }
+        c += 1;
+    }
+    return bits;
+}
+
+
+impl _cls_wide(pairs: list[int], neg: bool) -> bool {
+    if neg {
+        return True;
+    }
+    k: int = 1;
+    while k < len(pairs) {
+        if pairs[k] >= 128 {
+            return True;
+        }
+        k += 2;
+    }
+    return False;
+}
+
+
+impl _cls_build(pairs: list[int], neg: bool, icase: bool, re: _Re) -> int {
+    bits: list[int] = _cls_bits(pairs, neg, icase);
+    for w in bits {
+        re.cbits.append(w);
+    }
+    cl: _Cls = _Cls();
+    cl.pairs = pairs;
+    cl.neg = neg;
+    cl.wide = _cls_wide(pairs, neg);
+    re.classes.append(cl);
+    return len(re.classes) - 1;
+}
+
+
+impl _cls_wide_has(re: _Re, k: int, c: int) -> bool {
+    cl: _Cls = re.classes[k];
+    if not cl.wide {
+        return False;
+    }
+    return _in_pairs(cl.pairs, c) != cl.neg;
+}
+
+
+impl _item_ok(re: _Re, kind: int, arg: int, c: int) -> bool {
+    if kind == _O_CLASS {
+        if c < 128 {
+            return ((re.cbits[arg * 4 + (c >> 5)] >> (c & 31)) & 1) != 0;
+        }
+        return _cls_wide_has(re, arg, c);
+    }
+    if kind == _O_CHAR {
+        return c == arg;
+    }
+    if kind == _O_ANY {
+        return c != 10;
+    }
+    if kind == _O_ANYALL {
+        return True;
+    }
+    return c == (arg & 2097151) or c == (arg >> 21);
+}
+
+
+impl _emit(re: _Re, op: int, a: int, b: int, c: int, d: int) -> int {
+    k: int = len(re.prog) // 6;
+    re.prog.append(op);
+    re.prog.append(a);
+    re.prog.append(b);
+    re.prog.append(c);
+    re.prog.append(d);
+    re.prog.append(-1);
+    return k;
+}
+
+
+impl _single_item(nd: _Node, flags: int, re: _Re) -> tuple[(int, int)] {
+    icase: bool = (flags & 2) != 0;
+    if nd.kind == _K.CHAR {
+        if icase and is_alpha(nd.ch) {
+            return (_O_CHAR2, nd.ch | (swapcase(nd.ch) << 21));
+        }
+        return (_O_CHAR, nd.ch);
+    }
+    if nd.kind == _K.ANY {
+        if (flags & 16) != 0 {
+            return (_O_ANYALL, 0);
+        }
+        return (_O_ANY, 0);
+    }
+    if nd.kind == _K.CLASS {
+        return (_O_CLASS, _cls_build(nd.pairs, nd.neg, icase, re));
+    }
+    return (0, 0);
+}
+
+
+impl _compile_node(nd: _Node, re: _Re, flags: int) {
     kind: _K = nd.kind;
     if kind == _K.SEQ {
-        i: int = 0;
-        while i < len(nd.kids) {
-            _compile_node(nd.kids[i], c);
-            i += 1;
+        for kid in nd.kids {
+            _compile_node(kid, re, flags);
         }
         return;
     }
@@ -980,358 +1050,252 @@ impl _compile_node(nd: _Node, c: _C) {
         last: int = len(nd.kids) - 1;
         j: int = 0;
         while j < last {
-            si: int = _emit(c, _OP.SPLIT, len(c.prog) + 1, 0);
-            splits.append(si);
-            _compile_node(nd.kids[j], c);
-            ji: int = _emit(c, _OP.JMP, 0, 0);
-            jmps.append(ji);
+            splits.append(_emit(re, _O_SPLIT, len(re.prog) // 6 + 1, 0, 0, 0));
+            _compile_node(nd.kids[j], re, flags);
+            jmps.append(_emit(re, _O_JMP, 0, 0, 0, 0));
             j += 1;
         }
-        last_start: int = len(c.prog);
-        _compile_node(nd.kids[last], c);
-        e: int = len(c.prog);
+        last_start: int = len(re.prog) // 6;
+        _compile_node(nd.kids[last], re, flags);
+        e: int = len(re.prog) // 6;
         k: int = 0;
         while k < len(splits) {
-            sins: _Ins = c.prog[splits[k]];
             if k + 1 < len(splits) {
-                sins.b = splits[k + 1];
+                re.prog[splits[k] * 6 + 2] = splits[k + 1];
             } else {
-                sins.b = last_start;
+                re.prog[splits[k] * 6 + 2] = last_start;
             }
             k += 1;
         }
-        k = 0;
-        while k < len(jmps) {
-            jins: _Ins = c.prog[jmps[k]];
-            jins.a = e;
-            k += 1;
+        for ji in jmps {
+            re.prog[ji * 6 + 1] = e;
         }
         return;
     }
-    if kind == _K.CHAR {
-        _emit(c, _OP.CHAR, nd.ch, 0);
-        return;
-    }
-    if kind == _K.ANY {
-        _emit(c, _OP.ANY, 0, 0);
-        return;
-    }
-    if kind == _K.CLASS {
-        cl: _Cls = _Cls();
-        cl.pairs = nd.pairs;
-        cl.neg = nd.neg;
-        c.classes.append(cl);
-        _emit(c, _OP.CLASS, len(c.classes) - 1, 0);
+    if kind == _K.CHAR or kind == _K.ANY or kind == _K.CLASS {
+        it: tuple[(int, int)] = _single_item(nd, flags, re);
+        if it[0] == _O_CHAR2 {
+            _emit(re, _O_CHAR2, it[1] & 2097151, it[1] >> 21, 0, 0);
+        } else {
+            _emit(re, it[0], it[1], 0, 0, 0);
+        }
         return;
     }
     if kind == _K.AT {
-        op: _OP = _OP.BOS;
+        op: int = _O_BOS;
         if nd.at == _AT.BEGLINE {
-            op = _OP.BEGLINE;
+            op = _O_BEGLINE;
         } elif nd.at == _AT.END {
-            op = _OP.END;
+            op = _O_END;
         } elif nd.at == _AT.ENDLINE {
-            op = _OP.ENDLINE;
+            op = _O_ENDLINE;
         } elif nd.at == _AT.EOS {
-            op = _OP.EOS;
+            op = _O_EOS;
         } elif nd.at == _AT.WB {
-            _emit(c, _OP.WB, 0, 0);
-            return;
+            op = _O_WB;
         } elif nd.at == _AT.WNB {
-            _emit(c, _OP.WB, 1, 0);
-            return;
+            op = _O_NWB;
         }
-        _emit(c, op, 0, 0);
+        _emit(re, op, 0, 0, 0, 0);
         return;
     }
     if kind == _K.GROUP {
-        _emit(c, _OP.SAVE, nd.lo * 2, 0);
-        _compile_node(nd.kids[0], c);
-        _emit(c, _OP.SAVE, nd.lo * 2 + 1, 0);
+        _emit(re, _O_SAVE, nd.lo * 2, 0, 0, 0);
+        _compile_node(nd.kids[0], re, flags);
+        _emit(re, _O_SAVE, nd.lo * 2 + 1, 0, 0, 0);
         return;
     }
     if kind == _K.REP {
         kid: _Node = nd.kids[0];
+        if kid.kind == _K.CHAR or kid.kind == _K.ANY or kid.kind == _K.CLASS {
+            item: tuple[(int, int)] = _single_item(kid, flags, re);
+            _emit(
+                re, _O_REPG if nd.greedy else _O_REPL, item[0], item[1], nd.lo, nd.hi
+            );
+            return;
+        }
         m: int = 0;
         while m < nd.lo {
-            _compile_node(kid, c);
+            _compile_node(kid, re, flags);
             m += 1;
         }
         if nd.hi < 0 {
-            lpos: int = len(c.prog);
+            lpos: int = len(re.prog) // 6;
             si: int = 0;
             if nd.greedy {
-                si = _emit(c, _OP.SPLIT, lpos + 1, 0);
+                si = _emit(re, _O_SPLIT, lpos + 1, 0, 0, 0);
             } else {
-                si = _emit(c, _OP.SPLIT, 0, lpos + 1);
+                si = _emit(re, _O_SPLIT, 0, lpos + 1, 0, 0);
             }
-            mark: int = c.nmarks;
-            c.nmarks += 1;
-            _emit(c, _OP.MARK, mark, 0);
-            _compile_node(kid, c);
-            _emit(c, _OP.JMPNZ, mark, lpos);
-            epos: int = len(c.prog);
-            tins: _Ins = c.prog[si];
+            mark: int = re.nmarks;
+            re.nmarks += 1;
+            _emit(re, _O_MARK, mark, 0, 0, 0);
+            _compile_node(kid, re, flags);
+            _emit(re, _O_JMPNZ, mark, lpos, 0, 0);
+            epos: int = len(re.prog) // 6;
             if nd.greedy {
-                tins.b = epos;
+                re.prog[si * 6 + 2] = epos;
             } else {
-                tins.a = epos;
+                re.prog[si * 6 + 1] = epos;
             }
             return;
         }
-        splits: list[int] = [];
-        j: int = nd.lo;
-        while j < nd.hi {
-            si2: int = 0;
+        splits2: list[int] = [];
+        j2: int = nd.lo;
+        while j2 < nd.hi {
+            nxt: int = len(re.prog) // 6 + 1;
             if nd.greedy {
-                si2 = _emit(c, _OP.SPLIT, len(c.prog) + 1, 0);
+                splits2.append(_emit(re, _O_SPLIT, nxt, 0, 0, 0));
             } else {
-                si2 = _emit(c, _OP.SPLIT, 0, len(c.prog) + 1);
+                splits2.append(_emit(re, _O_SPLIT, 0, nxt, 0, 0));
             }
-            splits.append(si2);
-            _compile_node(kid, c);
-            j += 1;
+            _compile_node(kid, re, flags);
+            j2 += 1;
         }
-        epos = len(c.prog);
-        k = 0;
-        while k < len(splits) {
-            tins = c.prog[splits[k]];
+        epos2: int = len(re.prog) // 6;
+        for s2 in splits2 {
             if nd.greedy {
-                tins.b = epos;
+                re.prog[s2 * 6 + 2] = epos2;
             } else {
-                tins.a = epos;
+                re.prog[s2 * 6 + 1] = epos2;
             }
-            k += 1;
         }
         return;
     }
     if kind == _K.BACKREF {
-        _emit(c, _OP.BACKREF, nd.lo, 0);
+        _emit(re, _O_BACKREFI if (flags & 2) != 0 else _O_BACKREF, nd.lo, 0, 0, 0);
         return;
     }
     if kind == _K.LOOK {
-        li: int = _emit(c, _OP.LOOK, 0, nd.lo);
-        ji: int = _emit(c, _OP.JMP, 0, 0);
-        lins: _Ins = c.prog[li];
-        lins.a = len(c.prog);
-        _compile_node(nd.kids[0], c);
-        _emit(c, _OP.MATCH, 0, 0);
-        jins: _Ins = c.prog[ji];
-        jins.a = len(c.prog);
+        li: int = _emit(re, _O_LOOK, 0, nd.lo, 0, 0);
+        ji2: int = _emit(re, _O_JMP, 0, 0, 0, 0);
+        re.prog[li * 6 + 1] = len(re.prog) // 6;
+        _compile_node(nd.kids[0], re, flags);
+        _emit(re, _O_MATCH, 0, 0, 0, 0);
+        re.prog[ji2 * 6 + 1] = len(re.prog) // 6;
         return;
     }
     if kind == _K.FLAGS {
-        _emit(c, _OP.FPUSH, nd.lo, 0);
-        _compile_node(nd.kids[0], c);
-        _emit(c, _OP.FPOP, 0, 0);
+        _compile_node(nd.kids[0], re, nd.lo);
         return;
     }
 }
 
 
-impl _bt3(stk: list[int], tag: int, x: int, y: int) {
-    stk.append(tag);
-    stk.append(x);
-    stk.append(y);
+impl _fs_add(fs: _FS, c: int) {
+    if c >= 128 {
+        fs.wide = True;
+        return;
+    }
+    fs.bits[c >> 5] = fs.bits[c >> 5] | (1 << (c & 31));
 }
 
 
-impl _run(re: _Re, st: _St, pc0: int, pos0: int) -> int {
-    pc: int = pc0;
-    pos: int = pos0;
-    cps: list[int] = st.cps;
-    n: int = st.n;
-    prog: list[_Ins] = re.prog;
-    stk: list[int] = [];
-    while True {
-        ins: _Ins = prog[pc];
-        op: _OP = ins.op;
-        if op == _OP.CHAR {
-            if pos < n {
-                c0: int = cps[pos];
-                if c0 == ins.a or ((st.flags & 2) != 0 and swapcase(c0) == ins.a) {
-                    pos += 1;
-                    pc += 1;
-                    continue;
-                }
+impl _first(nd: _Node, flags: int, fs: _FS) -> bool {
+    kind: _K = nd.kind;
+    if kind == _K.CHAR {
+        _fs_add(fs, nd.ch);
+        if (flags & 2) != 0 and is_alpha(nd.ch) {
+            _fs_add(fs, swapcase(nd.ch));
+        }
+        return False;
+    }
+    if kind == _K.ANY {
+        c: int = 0;
+        while c < 128 {
+            if c != 10 or (flags & 16) != 0 {
+                _fs_add(fs, c);
             }
-        } elif op == _OP.ANY {
-            if pos < n and ((st.flags & 16) != 0 or cps[pos] != 10) {
-                pos += 1;
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.CLASS {
-            if pos < n {
-                cl: _Cls = re.classes[ins.a];
-                c1: int = cps[pos];
-                hit: bool = _in_pairs(cl.pairs, c1);
-                if not hit and (st.flags & 2) != 0 {
-                    hit = _in_pairs(cl.pairs, swapcase(c1));
-                }
-                if hit != cl.neg {
-                    pos += 1;
-                    pc += 1;
-                    continue;
-                }
-            }
-        } elif op == _OP.SPLIT {
-            _bt3(stk, _BT_SPLIT, ins.b, pos);
-            pc = ins.a;
-            continue;
-        } elif op == _OP.JMP {
-            pc = ins.a;
-            continue;
-        } elif op == _OP.MARK {
-            _bt3(stk, _BT_MARK, ins.a, st.marks[ins.a]);
-            st.marks[ins.a] = pos;
-            pc += 1;
-            continue;
-        } elif op == _OP.JMPNZ {
-            if st.marks[ins.a] != pos {
-                pc = ins.b;
-            } else {
-                pc += 1;
-            }
-            continue;
-        } elif op == _OP.SAVE {
-            _bt3(stk, _BT_SAVE, ins.a, st.slots[ins.a]);
-            st.slots[ins.a] = pos;
-            pc += 1;
-            continue;
-        } elif op == _OP.MATCH {
-            return pos;
-        } elif op == _OP.BOS {
-            if pos == 0 {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.BEGLINE {
-            if pos == 0 or cps[pos - 1] == 10 {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.END {
-            if pos == n or (pos == n - 1 and cps[pos] == 10) {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.ENDLINE {
-            if pos == n or (pos < n and cps[pos] == 10) {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.EOS {
-            if pos == n {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.WB {
-            lft: bool = pos > 0 and is_word(cps[pos - 1]);
-            rgt: bool = pos < n and is_word(cps[pos]);
-            if (lft != rgt) == (ins.a == 0) {
-                pc += 1;
-                continue;
-            }
-        } elif op == _OP.BACKREF {
-            g: int = ins.a * 2;
-            lo: int = st.slots[g];
-            hi: int = st.slots[g + 1];
-            if lo >= 0 and hi >= lo {
-                ln: int = hi - lo;
-                if pos + ln <= n {
-                    k2: int = 0;
-                    ok: bool = True;
-                    while k2 < ln {
-                        ca: int = cps[lo + k2];
-                        cb: int = cps[pos + k2];
-                        if ca != cb and ((st.flags & 2) == 0 or swapcase(ca) != cb) {
-                            ok = False;
-                            break;
-                        }
-                        k2 += 1;
-                    }
-                    if ok {
-                        pos += ln;
-                        pc += 1;
-                        continue;
-                    }
-                }
-            }
-        } elif op == _OP.FPUSH {
-            _bt3(stk, _BT_FPUSH, st.flags, 0);
-            st.fstack.append(st.flags);
-            st.flags = ins.a;
-            pc += 1;
-            continue;
-        } elif op == _OP.FPOP {
-            if len(st.fstack) > 0 {
-                _bt3(stk, _BT_FPOP, st.fstack[len(st.fstack) - 1], st.flags);
-                st.flags = st.fstack.pop();
-            }
-            pc += 1;
-            continue;
-        } elif op == _OP.LOOK {
-            if ins.b == 0 {
-                r4: int = _run(re, st, ins.a, pos);
-                if r4 >= 0 {
-                    pc += 1;
-                    continue;
-                }
-            } else {
-                saved: list[int] = st.slots[:];
-                r5: int = _run(re, st, ins.a, pos);
-                st.slots = saved;
-                if r5 < 0 {
-                    pc += 1;
-                    continue;
-                }
+            c += 1;
+        }
+        fs.wide = True;
+        return False;
+    }
+    if kind == _K.CLASS {
+        bits: list[int] = _cls_bits(nd.pairs, nd.neg, (flags & 2) != 0);
+        w: int = 0;
+        while w < 4 {
+            fs.bits[w] = fs.bits[w] | bits[w];
+            w += 1;
+        }
+        if _cls_wide(nd.pairs, nd.neg) {
+            fs.wide = True;
+        }
+        return False;
+    }
+    if kind == _K.GROUP {
+        return _first(nd.kids[0], flags, fs);
+    }
+    if kind == _K.FLAGS {
+        return _first(nd.kids[0], nd.lo, fs);
+    }
+    if kind == _K.SEQ {
+        for kid in nd.kids {
+            if not _first(kid, flags, fs) {
+                return False;
             }
         }
-        retry: bool = False;
-        while len(stk) > 0 {
-            y: int = stk.pop();
-            x: int = stk.pop();
-            tag: int = stk.pop();
-            if tag == _BT_SPLIT {
-                pc = x;
-                pos = y;
-                retry = True;
-                break;
+        return True;
+    }
+    if kind == _K.ALT {
+        nl: bool = False;
+        for kid2 in nd.kids {
+            if _first(kid2, flags, fs) {
+                nl = True;
             }
-            if tag == _BT_SAVE {
-                st.slots[x] = y;
-                continue;
-            }
-            if tag == _BT_MARK {
-                st.marks[x] = y;
-                continue;
-            }
-            if tag == _BT_FPUSH {
-                st.fstack.pop();
-                st.flags = x;
-                continue;
-            }
-            if tag == _BT_FPOP {
-                if x >= 0 {
-                    st.fstack.append(x);
+        }
+        return nl;
+    }
+    if kind == _K.REP {
+        r: bool = _first(nd.kids[0], flags, fs);
+        return r or nd.lo == 0;
+    }
+    if kind == _K.BACKREF {
+        fs.all = True;
+        return True;
+    }
+    return True;
+}
+
+
+impl _analyze(tree: _Node, re: _Re) {
+    flags: int = re.flags;
+    head: _Node = tree;
+    if tree.kind == _K.SEQ and len(tree.kids) > 0 {
+        head = tree.kids[0];
+    }
+    if head.kind == _K.AT and (head.at == _AT.BOS or head.at == _AT.BEG) {
+        re.anchored = True;
+    }
+    if (flags & 2) == 0 {
+        pre: str = "";
+        if tree.kind == _K.CHAR {
+            pre = chr(tree.ch);
+        } elif tree.kind == _K.SEQ {
+            for kid in tree.kids {
+                if kid.kind != _K.CHAR {
+                    break;
                 }
-                st.flags = y;
-                continue;
+                pre += chr(kid.ch);
             }
         }
-        if not retry {
-            return -1;
-        }
+        re.prefix = pre;
+        re.plen = len(pre);
+        re.pcps = utf8_cps(pre.encode());
+    }
+    fs: _FS = _FS();
+    fs.bits = [0, 0, 0, 0];
+    nullable: bool = _first(tree, flags, fs);
+    if not nullable and not fs.all {
+        re.has_fs = True;
+        re.fs = fs.bits;
+        re.fs_wide = fs.wide;
     }
 }
 
 
-impl _new_st(cps: list[int], n: int, re: _Re) -> _St {
+impl _new_st(re: _Re) -> _St {
     st: _St = _St();
-    st.cps = cps;
-    st.n = n;
-    st.flags = re.flags;
     st.slots = [];
     i: int = 0;
     while i < (re.ngroups + 1) * 2 {
@@ -1344,39 +1308,642 @@ impl _new_st(cps: list[int], n: int, re: _Re) -> _St {
         st.marks.append(-1);
         i += 1;
     }
-    st.fstack = [];
+    st.stk = [];
     return st;
 }
 
 
-impl _reset_slots(st: _St) {
-    i: int = 0;
-    while i < len(st.slots) {
-        st.slots[i] = -1;
-        i += 1;
+impl _prep(st: _St, string: str, endpos: int) {
+    if string.isascii() {
+        st.wide = False;
+        st.base = __str_data(string);
+    } else {
+        cps: list[int] = utf8_cps(string.encode());
+        st.cps = cps;
+        st.base = __list_data_ptr(cps);
+        st.wide = True;
     }
-    st.fstack = [];
+    st.n = endpos;
+    st.adv_pos = -1;
+    st.match_all = False;
+}
+
+
+impl _grow(st: _St, need: int) -> int {
+    add: int = len(st.stk);
+    if add < 64 {
+        add = 64;
+    }
+    while len(st.stk) < need {
+        i: int = 0;
+        while i < add {
+            st.stk.append(0);
+            i += 1;
+        }
+    }
+    return __list_data_ptr(st.stk);
+}
+
+
+impl _unwind(st: _St, sp0: int, keep_undo: bool) {
+    sb: int = __list_data_ptr(st.stk);
+    top: int = st.sp;
+    if keep_undo {
+        r: int = sp0;
+        w: int = sp0;
+        while r < top {
+            tag: int = int(__mem_load_i64(sb + (r + 3) * 8));
+            if tag == _T_SAVE or tag == _T_MARK {
+                if w != r {
+                    __mem_store_i64(sb + w * 8, __mem_load_i64(sb + r * 8));
+                    __mem_store_i64(sb + (w + 1) * 8, __mem_load_i64(sb + (r + 1) * 8));
+                    __mem_store_i64(sb + (w + 2) * 8, __mem_load_i64(sb + (r + 2) * 8));
+                    __mem_store_i64(sb + (w + 3) * 8, tag);
+                }
+                w += 4;
+            }
+            r += 4;
+        }
+        st.sp = w;
+        return;
+    }
+    slp: int = __list_data_ptr(st.slots);
+    sp: int = top;
+    while sp > sp0 {
+        sp -= 4;
+        tag2: int = int(__mem_load_i64(sb + (sp + 3) * 8));
+        x: int = int(__mem_load_i64(sb + sp * 8));
+        y: int = int(__mem_load_i64(sb + (sp + 1) * 8));
+        if tag2 == _T_SAVE {
+            __mem_store_i64(slp + x * 8, y);
+        } elif tag2 == _T_MARK {
+            st.marks[x] = y;
+        }
+    }
+    st.sp = sp0;
+}
+
+
+impl _exec(re: _Re, st: _St, pc0: int, start: int, mode: int) -> int {
+    pb: int = __list_data_ptr(re.prog);
+    cbp: int = __list_data_ptr(re.cbits);
+    slp: int = __list_data_ptr(st.slots);
+    mkp: int = __list_data_ptr(st.marks);
+    sb: int = __list_data_ptr(st.stk);
+    cap: int = len(st.stk);
+    sp0: int = st.sp;
+    sp: int = sp0;
+    base: int = st.base;
+    wide: bool = st.wide;
+    n: int = st.n;
+    pc: int = pc0;
+    pos: int = start;
+    top: bool = mode != 0;
+    p: int = start;
+    if mode == 2 {
+        if start > n {
+            return -1;
+        }
+        if re.anchored {
+            if start != 0 {
+                return -1;
+            }
+            mode = 1;
+        }
+    }
+    if mode == 1 and re.has_fs {
+        if p >= n {
+            return -1;
+        }
+        c0: int = _cat(base, wide, p);
+        if c0 >= 128 {
+            if not re.fs_wide {
+                return -1;
+            }
+        } elif ((re.fs[c0 >> 5] >> (c0 & 31)) & 1) == 0 {
+            return -1;
+        }
+    }
+    while True {
+        if mode == 2 {
+            if re.plen > 0 {
+                m: int = re.plen;
+                first: int = re.pcps[0];
+                last: int = n - m;
+                got: bool = False;
+                while p <= last {
+                    if wide {
+                        while p <= last
+                            and int(__mem_load_i64(base + p * 8)) != first {
+                            p += 1;
+                        }
+                        if p > last {
+                            return -1;
+                        }
+                    } else {
+                        hit0: int = memchr(base + p, i32(first), u64(last - p + 1));
+                        if hit0 == 0 {
+                            return -1;
+                        }
+                        p = hit0 - base;
+                    }
+                    j0: int = 1;
+                    while j0 < m and _cat(base, wide, p + j0) == re.pcps[j0] {
+                        j0 += 1;
+                    }
+                    if j0 == m {
+                        got = True;
+                        break;
+                    }
+                    p += 1;
+                }
+                if not got {
+                    return -1;
+                }
+            } elif re.has_fs {
+                fsw: bool = re.fs_wide;
+                while p < n {
+                    c1: int = _cat(base, wide, p);
+                    if c1 < 128 {
+                        if ((re.fs[c1 >> 5] >> (c1 & 31)) & 1) != 0 {
+                            break;
+                        }
+                    } elif fsw {
+                        break;
+                    }
+                    p += 1;
+                }
+                if p >= n {
+                    return -1;
+                }
+            } elif p > n {
+                return -1;
+            }
+        }
+        pc = pc0;
+        pos = p;
+        res: int = -1;
+        while True {
+            k: int = pb + pc * 48;
+            op: int = int(__mem_load_i64(k));
+            if op == _O_CHAR {
+                if pos < n and _cat(base, wide, pos) == int(__mem_load_i64(k + 8)) {
+                    pos += 1;
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_CLASS {
+                if pos < n {
+                    c: int = _cat(base, wide, pos);
+                    ca: int = int(__mem_load_i64(k + 8));
+                    hit: bool = False;
+                    if c < 128 {
+                        hit = (
+                            (
+                                int(__mem_load_i64(cbp + (ca * 4 + (c >> 5)) * 8))
+                                >> (c & 31)
+                            )
+                            & 1
+                        )
+                            != 0;
+                    } else {
+                        hit = _cls_wide_has(re, ca, c);
+                    }
+                    if hit {
+                        pos += 1;
+                        pc += 1;
+                        continue;
+                    }
+                }
+            } elif op == _O_REPG {
+                kind: int = int(__mem_load_i64(k + 8));
+                arg: int = int(__mem_load_i64(k + 16));
+                mn: int = int(__mem_load_i64(k + 24));
+                mx: int = int(__mem_load_i64(k + 32));
+                lim: int = n;
+                if mx >= 0 and pos + mx < n {
+                    lim = pos + mx;
+                }
+                rp: int = pos;
+                if kind == _O_CLASS {
+                    cw: int = cbp + arg * 32;
+                    while rp < lim {
+                        c2: int = _cat(base, wide, rp);
+                        if c2 < 128 {
+                            if (
+                                (int(__mem_load_i64(cw + (c2 >> 5) * 8)) >> (c2 & 31))
+                                & 1
+                            )
+                                == 0 {
+                                break;
+                            }
+                        } elif not _cls_wide_has(re, arg, c2) {
+                            break;
+                        }
+                        rp += 1;
+                    }
+                } elif kind == _O_ANYALL {
+                    rp = lim;
+                } elif kind == _O_ANY {
+                    if wide {
+                        while rp < lim and _cat(base, wide, rp) != 10 {
+                            rp += 1;
+                        }
+                    } elif rp < lim {
+                        nl: int = memchr(base + rp, i32(10), u64(lim - rp));
+                        rp = lim if nl == 0 else nl - base;
+                    }
+                } elif kind == _O_CHAR {
+                    while rp < lim and _cat(base, wide, rp) == arg {
+                        rp += 1;
+                    }
+                } else {
+                    lc: int = arg & 2097151;
+                    uc: int = arg >> 21;
+                    while rp < lim {
+                        c3: int = _cat(base, wide, rp);
+                        if c3 != lc and c3 != uc {
+                            break;
+                        }
+                        rp += 1;
+                    }
+                }
+                if rp - pos >= mn {
+                    if rp - pos > mn {
+                        if sp + 4 > cap {
+                            st.sp = sp;
+                            sb = _grow(st, sp + 4);
+                            cap = len(st.stk);
+                        }
+                        __mem_store_i64(sb + sp * 8, pc);
+                        __mem_store_i64(sb + (sp + 1) * 8, rp);
+                        __mem_store_i64(sb + (sp + 2) * 8, pos + mn);
+                        __mem_store_i64(sb + (sp + 3) * 8, _T_REPG);
+                        sp += 4;
+                    }
+                    pos = rp;
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_SPLIT {
+                if sp + 4 > cap {
+                    st.sp = sp;
+                    sb = _grow(st, sp + 4);
+                    cap = len(st.stk);
+                }
+                __mem_store_i64(sb + sp * 8, __mem_load_i64(k + 16));
+                __mem_store_i64(sb + (sp + 1) * 8, pos);
+                __mem_store_i64(sb + (sp + 3) * 8, _T_SPLIT);
+                sp += 4;
+                pc = int(__mem_load_i64(k + 8));
+                continue;
+            } elif op == _O_JMP {
+                pc = int(__mem_load_i64(k + 8));
+                continue;
+            } elif op == _O_SAVE {
+                sl: int = int(__mem_load_i64(k + 8));
+                if sp + 4 > cap {
+                    st.sp = sp;
+                    sb = _grow(st, sp + 4);
+                    cap = len(st.stk);
+                }
+                __mem_store_i64(sb + sp * 8, sl);
+                __mem_store_i64(sb + (sp + 1) * 8, __mem_load_i64(slp + sl * 8));
+                __mem_store_i64(sb + (sp + 3) * 8, _T_SAVE);
+                sp += 4;
+                __mem_store_i64(slp + sl * 8, pos);
+                pc += 1;
+                continue;
+            } elif op == _O_MATCH {
+                if not top {
+                    st.sp = sp;
+                    return pos;
+                }
+                if pos != st.adv_pos and (not st.match_all or pos == n) {
+                    res = pos;
+                    sp = sp0;
+                    break;
+                }
+            } elif op == _O_MARK {
+                mk: int = int(__mem_load_i64(k + 8));
+                if sp + 4 > cap {
+                    st.sp = sp;
+                    sb = _grow(st, sp + 4);
+                    cap = len(st.stk);
+                }
+                __mem_store_i64(sb + sp * 8, mk);
+                __mem_store_i64(sb + (sp + 1) * 8, __mem_load_i64(mkp + mk * 8));
+                __mem_store_i64(sb + (sp + 3) * 8, _T_MARK);
+                sp += 4;
+                __mem_store_i64(mkp + mk * 8, pos);
+                pc += 1;
+                continue;
+            } elif op == _O_JMPNZ {
+                if int(__mem_load_i64(mkp + int(__mem_load_i64(k + 8)) * 8)) != pos {
+                    pc = int(__mem_load_i64(k + 16));
+                } else {
+                    pc += 1;
+                }
+                continue;
+            } elif op == _O_ANY {
+                if pos < n and _cat(base, wide, pos) != 10 {
+                    pos += 1;
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_ANYALL {
+                if pos < n {
+                    pos += 1;
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_CHAR2 {
+                if pos < n {
+                    c4: int = _cat(base, wide, pos);
+                    if c4 == int(__mem_load_i64(k + 8))
+                        or c4 == int(__mem_load_i64(k + 16)) {
+                        pos += 1;
+                        pc += 1;
+                        continue;
+                    }
+                }
+            } elif op == _O_REPL {
+                kind2: int = int(__mem_load_i64(k + 8));
+                arg2: int = int(__mem_load_i64(k + 16));
+                mn2: int = int(__mem_load_i64(k + 24));
+                mx2: int = int(__mem_load_i64(k + 32));
+                q: int = pos;
+                ok: bool = True;
+                cnt: int = 0;
+                while cnt < mn2 {
+                    if q < n and _item_ok(re, kind2, arg2, _cat(base, wide, q)) {
+                        q += 1;
+                        cnt += 1;
+                    } else {
+                        ok = False;
+                        break;
+                    }
+                }
+                if ok {
+                    zmax: int = n;
+                    if mx2 >= 0 and pos + mx2 < n {
+                        zmax = pos + mx2;
+                    }
+                    lit: int = int(__mem_load_i64(k + 40));
+                    if lit >= 0
+                        and not wide
+                        and lit < 128
+                        and kind2 == _O_ANY
+                        and q < zmax {
+                        hl: int = memchr(base + q, i32(lit), u64(zmax - q));
+                        if hl == 0 {
+                            hl = base + zmax;
+                        }
+                        nl2: int = 0;
+                        if hl > base + q {
+                            nl2 = memchr(base + q, i32(10), u64(hl - base - q));
+                        }
+                        if nl2 != 0 {
+                            ok = False;
+                        } else {
+                            q = hl - base;
+                        }
+                    } elif lit >= 0 {
+                        while q < zmax {
+                            c5: int = _cat(base, wide, q);
+                            if c5 == lit {
+                                break;
+                            }
+                            if not _item_ok(re, kind2, arg2, c5) {
+                                ok = False;
+                                break;
+                            }
+                            q += 1;
+                        }
+                    }
+                    if ok {
+                        if q < zmax {
+                            if sp + 4 > cap {
+                                st.sp = sp;
+                                sb = _grow(st, sp + 4);
+                                cap = len(st.stk);
+                            }
+                            __mem_store_i64(sb + sp * 8, pc);
+                            __mem_store_i64(sb + (sp + 1) * 8, q);
+                            __mem_store_i64(sb + (sp + 2) * 8, zmax);
+                            __mem_store_i64(sb + (sp + 3) * 8, _T_REPL);
+                            sp += 4;
+                        }
+                        pos = q;
+                        pc += 1;
+                        continue;
+                    }
+                }
+            } elif op == _O_BOS {
+                if pos == 0 {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_BEGLINE {
+                if pos == 0 or _cat(base, wide, pos - 1) == 10 {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_END {
+                if pos == n or (pos == n - 1 and _cat(base, wide, pos) == 10) {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_ENDLINE {
+                if pos == n or (pos < n and _cat(base, wide, pos) == 10) {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_EOS {
+                if pos == n {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_WB or op == _O_NWB {
+                lft: bool = pos > 0 and is_word(_cat(base, wide, pos - 1));
+                rgt: bool = pos < n and is_word(_cat(base, wide, pos));
+                if (lft != rgt) == (op == _O_WB) {
+                    pc += 1;
+                    continue;
+                }
+            } elif op == _O_BACKREF or op == _O_BACKREFI {
+                g: int = int(__mem_load_i64(k + 8)) * 2;
+                glo: int = int(__mem_load_i64(slp + g * 8));
+                ghi: int = int(__mem_load_i64(slp + (g + 1) * 8));
+                if glo >= 0 and ghi >= glo {
+                    ln: int = ghi - glo;
+                    if pos + ln <= n {
+                        j: int = 0;
+                        same: bool = True;
+                        while j < ln {
+                            ga: int = _cat(base, wide, glo + j);
+                            gb: int = _cat(base, wide, pos + j);
+                            if ga != gb and (op == _O_BACKREF or swapcase(ga) != gb) {
+                                same = False;
+                                break;
+                            }
+                            j += 1;
+                        }
+                        if same {
+                            pos += ln;
+                            pc += 1;
+                            continue;
+                        }
+                    }
+                }
+            } elif op == _O_LOOK {
+                st.sp = sp;
+                r4: int = _exec(re, st, int(__mem_load_i64(k + 8)), pos, 0);
+                neg: bool = int(__mem_load_i64(k + 16)) != 0;
+                if r4 >= 0 {
+                    _unwind(st, sp, not neg);
+                }
+                sp = st.sp;
+                sb = __list_data_ptr(st.stk);
+                cap = len(st.stk);
+                if (r4 >= 0) != neg {
+                    pc += 1;
+                    continue;
+                }
+            }
+            found: bool = False;
+            while sp > sp0 {
+                sp -= 4;
+                tag: int = int(__mem_load_i64(sb + (sp + 3) * 8));
+                x: int = int(__mem_load_i64(sb + sp * 8));
+                y: int = int(__mem_load_i64(sb + (sp + 1) * 8));
+                if tag == _T_SPLIT {
+                    pc = x;
+                    pos = y;
+                    found = True;
+                    break;
+                }
+                if tag == _T_SAVE {
+                    __mem_store_i64(slp + x * 8, y);
+                    continue;
+                }
+                z: int = int(__mem_load_i64(sb + (sp + 2) * 8));
+                if tag == _T_REPG {
+                    b: int = y - 1;
+                    flit: int = int(__mem_load_i64(pb + x * 48 + 40));
+                    if flit >= 0 {
+                        while b >= z and _cat(base, wide, b) != flit {
+                            b -= 1;
+                        }
+                    }
+                    if b < z {
+                        continue;
+                    }
+                    if b > z {
+                        __mem_store_i64(sb + (sp + 1) * 8, b);
+                        sp += 4;
+                    }
+                    pc = x + 1;
+                    pos = b;
+                    found = True;
+                    break;
+                }
+                if tag == _T_MARK {
+                    __mem_store_i64(mkp + x * 8, y);
+                    continue;
+                }
+                if tag == _T_REPL {
+                    rk: int = pb + x * 48;
+                    rkind: int = int(__mem_load_i64(rk + 8));
+                    rarg: int = int(__mem_load_i64(rk + 16));
+                    e: int = y;
+                    if e < z and _item_ok(re, rkind, rarg, _cat(base, wide, e)) {
+                        e += 1;
+                        good: bool = True;
+                        llit: int = int(__mem_load_i64(rk + 40));
+                        if llit >= 0 {
+                            while e < z {
+                                c6: int = _cat(base, wide, e);
+                                if c6 == llit {
+                                    break;
+                                }
+                                if not _item_ok(re, rkind, rarg, c6) {
+                                    good = False;
+                                    break;
+                                }
+                                e += 1;
+                            }
+                        }
+                        if good {
+                            if e < z {
+                                __mem_store_i64(sb + (sp + 1) * 8, e);
+                                sp += 4;
+                            }
+                            pc = x + 1;
+                            pos = e;
+                            found = True;
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+            if not found {
+                sp = sp0;
+                break;
+            }
+        }
+        if res >= 0 {
+            if top {
+                __mem_store_i64(slp, p);
+                __mem_store_i64(slp + 8, res);
+            }
+            st.sp = sp0;
+            return res;
+        }
+        if mode != 2 {
+            st.sp = sp0;
+            return -1;
+        }
+        p += 1;
+    }
+    return -1;
 }
 
 
 impl Match.init(
-    _re: _Re, string: str, bv: bytes, pos: int, endpos: int, slots: list[int]
+    _re: _Re, string: str, pos: int, endpos: int, s0: int, e0: int, slots: list[int]
 ) {
     self._re = _re;
     self.string = string;
-    self._bv = bv;
     self.pos = pos;
     self.endpos = endpos;
+    self._s0 = s0;
+    self._e0 = e0;
     self._slots = slots;
 }
 
+impl Match._lo(g: int) -> int {
+    if g == 0 {
+        return self._s0;
+    }
+    return self._slots[g * 2];
+}
+
+impl Match._hi(g: int) -> int {
+    if g == 0 {
+        return self._e0;
+    }
+    return self._slots[g * 2 + 1];
+}
+
 impl Match._gtext(num: int) -> str {
-    lo: int = self._slots[num * 2];
-    hi: int = self._slots[num * 2 + 1];
+    lo: int = self._lo(num);
+    hi: int = self._hi(num);
     if lo < 0 or hi < lo {
         return "";
     }
-    return cpslice_str(self._bv, lo, hi);
+    return self.string[lo:hi];
 }
 
 impl Match._gnum(i: (int | str)) -> int {
@@ -1397,12 +1964,12 @@ impl Match._gnum(i: (int | str)) -> int {
 
 impl Match.group(i: (int | str) = 0) -> any {
     g: int = self._gnum(i);
-    lo: int = self._slots[g * 2];
-    hi: int = self._slots[g * 2 + 1];
+    lo: int = self._lo(g);
+    hi: int = self._hi(g);
     if lo < 0 or hi < lo {
         return None;
     }
-    return self._gtext(g);
+    return self.string[lo:hi];
 }
 
 impl Match.groups(`default: any = None) -> list[any] {
@@ -1414,7 +1981,7 @@ impl Match.groups(`default: any = None) -> list[any] {
         if lo < 0 or hi < lo {
             out.append(`default);
         } else {
-            out.append(self._gtext(g));
+            out.append(self.string[lo:hi]);
         }
         g += 1;
     }
@@ -1430,7 +1997,7 @@ impl Match.groupdict(`default: any = None) -> dict[str, any] {
         if lo < 0 or hi < lo {
             out[nm] = `default;
         } else {
-            out[nm] = self._gtext(g);
+            out[nm] = self.string[lo:hi];
         }
     }
     return out;
@@ -1438,212 +2005,28 @@ impl Match.groupdict(`default: any = None) -> dict[str, any] {
 
 impl Match.start(i: (int | str) = 0) -> int {
     g: int = self._gnum(i);
+    if g == 0 {
+        return self._s0;
+    }
     return self._slots[g * 2];
 }
 
 impl Match.end(i: (int | str) = 0) -> int {
     g: int = self._gnum(i);
+    if g == 0 {
+        return self._e0;
+    }
     return self._slots[g * 2 + 1];
 }
 
 impl Match.span(i: (int | str) = 0) -> tuple[(int, int)] {
     g: int = self._gnum(i);
-    return (self._slots[g * 2], self._slots[g * 2 + 1]);
+    return (self._lo(g), self._hi(g));
 }
 
 impl Match.expand(template: str) -> str {
-    return _expand_repl(template, self, self._re);
-}
-
-
-impl _push_str(out: list[int], s: str) {
-    k: int = 0;
-    while k < len(s) {
-        out.append(ord(s[k]));
-        k += 1;
-    }
-}
-
-
-impl _push_range(out: list[int], pb: bytes, a: int, b: int) {
-    k: int = a;
-    while k < b {
-        out.append(pb[k]);
-        k += 1;
-    }
-}
-
-
-impl _posix_translate(pat: str, flags: int) -> (str | None) {
-    if flags & (TEMPLATE | LOCALE | MULTILINE | DOTALL | VERBOSE) {
-        return None;
-    }
-    pb: bytes = pat.encode();
-    n: int = len(pb);
-    out: list[int] = [];
-    i: int = 0;
-    inclass: bool = False;
-    class_first: bool = False;
-    prev_quant: bool = False;
-    while i < n {
-        c: int = pb[i];
-        if c == 0 or c >= 128 {
-            return None;
-        }
-        if inclass {
-            if c == 92 or c == 91 {
-                return None;
-            }
-            if c == 93 and not class_first {
-                inclass = False;
-            }
-            out.append(c);
-            class_first = False;
-            i += 1;
-            continue;
-        }
-        if c == 92 {
-            if i + 1 >= n {
-                return None;
-            }
-            e: int = pb[i + 1];
-            if e == 100 {
-                _push_str(out, "[0-9]");
-            } elif e == 68 {
-                _push_str(out, "[^0-9]");
-            } elif e == 119 {
-                _push_str(out, "[A-Za-z0-9_]");
-            } elif e == 87 {
-                _push_str(out, "[^A-Za-z0-9_]");
-            } elif e == 115 {
-                _push_str(out, "[ \t\n\x0b\x0c\r]");
-            } elif e == 83 {
-                _push_str(out, "[^ \t\n\x0b\x0c\r]");
-            } elif e == 110 {
-                out.append(10);
-            } elif e == 116 {
-                out.append(9);
-            } elif e == 114 {
-                out.append(13);
-            } elif e == 102 {
-                out.append(12);
-            } elif e == 118 {
-                out.append(11);
-            } elif e == 97 {
-                out.append(7);
-            } elif e == 94 {
-                out.append(92);
-                out.append(94);
-            } elif (e >= 33 and e <= 47)
-                or (e >= 58 and e <= 64)
-                or (e >= 91 and e <= 96)
-                or (e >= 123 and e <= 126) {
-                out.append(91);
-                out.append(e);
-                out.append(93);
-            } else {
-                return None;
-            }
-            i += 2;
-            prev_quant = False;
-            continue;
-        }
-        if c == 124 or c == 94 or c == 36 {
-            return None;
-        }
-        if c == 46 {
-            _push_str(out, "[^\n]");
-            i += 1;
-            prev_quant = False;
-            continue;
-        }
-        if c == 40 {
-            if i + 1 < n and pb[i + 1] == 63 {
-                return None;
-            }
-            out.append(40);
-            i += 1;
-            prev_quant = False;
-            continue;
-        }
-        if c == 123 {
-            j: int = i + 1;
-            if j < n and pb[j] == 44 {
-                k: int = j + 1;
-                ok: bool = True;
-                while k < n and pb[k] != 125 {
-                    if not is_digit(pb[k]) {
-                        ok = False;
-                        break;
-                    }
-                    k += 1;
-                }
-                if not ok or k >= n or k == j + 1 {
-                    return None;
-                }
-                _push_str(out, "{0");
-                _push_range(out, pb, j, k + 1);
-                i = k + 1;
-                prev_quant = True;
-                continue;
-            }
-            k2: int = j;
-            ndig: int = 0;
-            ncomma: int = 0;
-            ok2: bool = True;
-            while k2 < n and pb[k2] != 125 {
-                ch2: int = pb[k2];
-                if is_digit(ch2) {
-                    ndig += 1;
-                } elif ch2 == 44 {
-                    ncomma += 1;
-                    if ncomma > 1 {
-                        ok2 = False;
-                        break;
-                    }
-                } else {
-                    ok2 = False;
-                    break;
-                }
-                k2 += 1;
-            }
-            if not ok2 or k2 >= n or ndig == 0 {
-                return None;
-            }
-            _push_range(out, pb, i, k2 + 1);
-            i = k2 + 1;
-            prev_quant = True;
-            continue;
-        }
-        if c == 42 or c == 43 or c == 63 {
-            if prev_quant {
-                return None;
-            }
-            out.append(c);
-            i += 1;
-            prev_quant = True;
-            continue;
-        }
-        if c == 91 {
-            inclass = True;
-            class_first = True;
-            out.append(91);
-            i += 1;
-            if i < n and pb[i] == 94 {
-                out.append(94);
-                i += 1;
-            }
-            prev_quant = False;
-            continue;
-        }
-        out.append(c);
-        i += 1;
-        prev_quant = False;
-    }
-    if inclass {
-        return None;
-    }
-    return bytes(out).decode();
+    rp: _Repl = _compile_repl(template, self._re);
+    return _apply_repl(rp, self.string, self._s0, self._e0, self._slots);
 }
 
 
@@ -1657,142 +2040,296 @@ impl Pattern.init(pattern: str, flags: int = 0) {
     self.flags = pf;
     self.groups = self._re.ngroups;
     self.groupindex = self._re.names;
-    if _PMW > 0 {
-        ep: (str | None) = _posix_translate(pattern, flags);
-        if ep is not None {
-            preg: bytes = posix_compile(ep, (flags & IGNORECASE) != 0);
-            if len(preg) > 0 {
-                slot: int = _posix_register(preg);
-                self._preg = preg;
-                self._pgen = _PSX.gen;
-                self._pslot = slot;
-                self._pid = _PSX.ids[slot];
-                self._posix = True;
-            }
-        }
+    self._st = _new_st(self._re);
+    self._lk = [0];
+    self._lock = __list_data_ptr(self._lk);
+}
+
+impl _hit(re: _Re, st: _St, string: str, b0: int, b1: int) -> Match {
+    if re.ngroups == 0 {
+        return Match(re, string, b0, b1, st.slots[0], st.slots[1], re.empty);
     }
-}
-
-impl Pattern._use_posix(bv: bytes) -> bool {
-    return self._posix
-        and self._pgen == _PSX.gen
-        and _PSX.ids[self._pslot] == self._pid
-        and _posix_subject_ok(bv);
-}
-
-impl Pattern._posix_miss(bv: bytes, lo: int, hi: int) -> bool {
-    if not self._use_posix(bv) {
-        return False;
+    m: Match = Match(re, string, b0, b1, st.slots[0], st.slots[1], st.slots[:]);
+    i: int = 0;
+    n: int = len(st.slots);
+    while i < n {
+        st.slots[i] = -1;
+        i += 1;
     }
-    pm: bytes = posix_exec(self._preg, bv[lo:hi].decode(), 1, _PMW);
-    return len(pm) == 0;
+    return m;
 }
 
-impl Pattern._scan_from(st: _St, start: int) -> int {
-    p: int = start;
-    while p <= st.n {
-        _reset_slots(st);
-        st.flags = self._re.flags;
-        r: int = _run(self._re, st, 0, p);
-        if r >= 0 {
-            st.slots[0] = p;
-            st.slots[1] = r;
-            return r;
-        }
-        p += 1;
-    }
-    return -1;
-}
 
-impl Pattern._search_from(
-    string: str, bv: bytes, start: int, endpos: int
+impl _one(
+    re: _Re, st: _St, string: str, pos: int, endpos: int, mode: int
 ) -> (Match | None) {
-    if self._posix_miss(bv, cp_off(bv, start), cp_off(bv, endpos)) {
+    sn: int = len(string);
+    b0: int = pos;
+    if b0 < 0 {
+        b0 = 0;
+    } elif b0 > sn {
+        b0 = sn;
+    }
+    b1: int = endpos;
+    if b1 < 0 {
+        b1 = 0;
+    } elif b1 > sn {
+        b1 = sn;
+    }
+    if b0 > b1 {
         return None;
     }
-    st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-    r: int = self._scan_from(st, start);
+    if string.isascii() {
+        st.wide = False;
+        st.base = __str_data(string);
+    } else {
+        _prep(st, string, b1);
+    }
+    st.n = b1;
+    st.adv_pos = -1;
+    st.match_all = mode == 2;
+    r: int = -1;
+    if mode == 0 {
+        r = _exec(re, st, 0, b0, 2);
+    } else {
+        r = _exec(re, st, 0, b0, 1);
+    }
+    st.match_all = False;
     if r < 0 {
         return None;
     }
-    return Match(self._re, string, bv, start, endpos, st.slots);
+    if re.ngroups == 0 {
+        return Match(re, string, b0, b1, st.slots[0], r, re.empty);
+    }
+    return _hit(re, st, string, b0, b1);
+}
+
+
+impl _iter(re: _Re, st: _St, string: str, pos: int, endpos: int) -> list[Match] {
+    out: list[Match] = [];
+    sn: int = len(string);
+    b0: int = _clamp(pos, sn);
+    b1: int = _clamp(endpos, sn);
+    if b0 > b1 {
+        return out;
+    }
+    _prep(st, string, b1);
+    p: int = b0;
+    while True {
+        r: int = _exec(re, st, 0, p, 2);
+        if r < 0 {
+            break;
+        }
+        s0: int = st.slots[0];
+        out.append(_hit(re, st, string, b0, b1));
+        st.adv_pos = r if r == s0 else -1;
+        p = r;
+    }
+    return out;
+}
+
+
+impl _all(re: _Re, st: _St, string: str, pos: int, endpos: int) -> list[str] {
+    out: list[str] = [];
+    sn: int = len(string);
+    b0: int = _clamp(pos, sn);
+    b1: int = _clamp(endpos, sn);
+    if b0 > b1 {
+        return out;
+    }
+    _prep(st, string, b1);
+    p: int = b0;
+    while True {
+        r: int = _exec(re, st, 0, p, 2);
+        if r < 0 {
+            break;
+        }
+        s0: int = st.slots[0];
+        if re.ngroups == 0 {
+            out.append(string[s0:r]);
+        } else {
+            lo: int = st.slots[2];
+            hi: int = st.slots[3];
+            if lo < 0 or hi < lo {
+                out.append("");
+            } else {
+                out.append(string[lo:hi]);
+            }
+            st.slots[2] = -1;
+            st.slots[3] = -1;
+        }
+        st.adv_pos = r if r == s0 else -1;
+        p = r;
+    }
+    return out;
+}
+
+
+impl _split(re: _Re, st: _St, string: str, maxsplit: int) -> list[any] {
+    n: int = len(string);
+    out: list[any] = [];
+    _prep(st, string, n);
+    ng: int = re.ngroups;
+    last: int = 0;
+    count: int = 0;
+    p: int = 0;
+    while maxsplit == 0 or count < maxsplit {
+        r: int = _exec(re, st, 0, p, 2);
+        if r < 0 {
+            break;
+        }
+        s0: int = st.slots[0];
+        out.append(string[last:s0]);
+        g: int = 1;
+        while g <= ng {
+            lo: int = st.slots[g * 2];
+            hi: int = st.slots[g * 2 + 1];
+            if lo < 0 or hi < lo {
+                out.append(None);
+            } else {
+                out.append(string[lo:hi]);
+            }
+            st.slots[g * 2] = -1;
+            st.slots[g * 2 + 1] = -1;
+            g += 1;
+        }
+        count += 1;
+        st.adv_pos = r if r == s0 else -1;
+        last = r;
+        p = r;
+    }
+    out.append(string[last:n]);
+    return out;
+}
+
+
+impl _subn_core(
+    re: _Re, st: _St, rp: _Repl, string: str, count: int
+) -> tuple[(str, int)] {
+    n: int = len(string);
+    _prep(st, string, n);
+    ng: int = re.ngroups;
+    out: str = "";
+    last: int = 0;
+    nsub: int = 0;
+    p: int = 0;
+    while count == 0 or nsub < count {
+        r: int = _exec(re, st, 0, p, 2);
+        if r < 0 {
+            break;
+        }
+        s0: int = st.slots[0];
+        if last < s0 {
+            out += string[last:s0];
+        }
+        if rp.literal {
+            out += rp.lits[0];
+        } else {
+            out += _apply_repl(rp, string, s0, r, st.slots);
+        }
+        if ng > 0 {
+            g: int = 2;
+            while g < (ng + 1) * 2 {
+                st.slots[g] = -1;
+                g += 1;
+            }
+        }
+        nsub += 1;
+        st.adv_pos = r if r == s0 else -1;
+        last = r;
+        p = r;
+    }
+    if nsub == 0 {
+        return (string, 0);
+    }
+    if last < n {
+        out += string[last:n];
+    }
+    return (out, nsub);
+}
+
+
+impl Pattern._acquire -> bool {
+    return __atomic_xchg_i64(self._lock, 1) == 0;
+}
+
+impl Pattern._release {
+    __atomic_xchg_i64(self._lock, 0);
 }
 
 impl Pattern.search(
     string: str, pos: int = 0, endpos: int = _MAXPOS
 ) -> (Match | None) {
-    bv: bytes = string.encode();
-    b: tuple[(int, int)] = _bounds(cp_len(bv, len(bv)), pos, endpos);
-    pos = b[0];
-    endpos = b[1];
-    if pos > endpos {
+    if __atomic_xchg_i64(self._lock, 1) != 0 {
+        return _one(self._re, _new_st(self._re), string, pos, endpos, 0);
+    }
+    sn: int = len(string);
+    b0: int = pos;
+    if b0 < 0 {
+        b0 = 0;
+    } elif b0 > sn {
+        b0 = sn;
+    }
+    b1: int = endpos;
+    if b1 < 0 {
+        b1 = 0;
+    } elif b1 > sn {
+        b1 = sn;
+    }
+    if b0 > b1 {
+        __atomic_xchg_i64(self._lock, 0);
         return None;
     }
-    return self._search_from(string, bv, pos, endpos);
+    if string.isascii() {
+        self._st.wide = False;
+        self._st.base = __str_data(string);
+    } else {
+        _prep(self._st, string, b1);
+    }
+    self._st.n = b1;
+    self._st.adv_pos = -1;
+    r: int = _exec(self._re, self._st, 0, b0, 2);
+    m: (Match | None) = None;
+    if r >= 0 {
+        if self._re.ngroups == 0 {
+            m = Match(self._re, string, b0, b1, self._st.slots[0], r, self._re.empty);
+        } else {
+            m = _hit(self._re, self._st, string, b0, b1);
+        }
+    }
+    __atomic_xchg_i64(self._lock, 0);
+    return m;
 }
 
 impl Pattern.`match(
     string: str, pos: int = 0, endpos: int = _MAXPOS
 ) -> (Match | None) {
-    bv: bytes = string.encode();
-    b: tuple[(int, int)] = _bounds(cp_len(bv, len(bv)), pos, endpos);
-    pos = b[0];
-    endpos = b[1];
-    if pos > endpos {
-        return None;
+    if __atomic_xchg_i64(self._lock, 1) == 0 {
+        m: (Match | None) = _one(self._re, self._st, string, pos, endpos, 1);
+        __atomic_xchg_i64(self._lock, 0);
+        return m;
     }
-    if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
-        return None;
-    }
-    st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-    r: int = _run(self._re, st, 0, pos);
-    if r < 0 {
-        return None;
-    }
-    st.slots[0] = pos;
-    st.slots[1] = r;
-    return Match(self._re, string, bv, pos, endpos, st.slots);
+    return _one(self._re, _new_st(self._re), string, pos, endpos, 1);
 }
 
 impl Pattern.fullmatch(
     string: str, pos: int = 0, endpos: int = _MAXPOS
 ) -> (Match | None) {
-    m: (Match | None) = self.match(string, pos, endpos);
-    if m is None {
-        return None;
+    if __atomic_xchg_i64(self._lock, 1) == 0 {
+        m: (Match | None) = _one(self._re, self._st, string, pos, endpos, 2);
+        __atomic_xchg_i64(self._lock, 0);
+        return m;
     }
-    m2: Match = m;
-    if m2._slots[1] != m2.endpos {
-        return None;
-    }
-    return m2;
+    return _one(self._re, _new_st(self._re), string, pos, endpos, 2);
 }
 
 impl Pattern.finditer(string: str, pos: int = 0, endpos: int = _MAXPOS) -> list[Match] {
-    bv: bytes = string.encode();
-    b: tuple[(int, int)] = _bounds(cp_len(bv, len(bv)), pos, endpos);
-    pos = b[0];
-    endpos = b[1];
-    out: list[Match] = [];
-    if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
+    if self._acquire() {
+        out: list[Match] = _iter(self._re, self._st, string, pos, endpos);
+        self._release();
         return out;
     }
-    st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-    p: int = pos;
-    while p <= endpos {
-        r: int = self._scan_from(st, p);
-        if r < 0 {
-            break;
-        }
-        m2: Match = Match(self._re, string, bv, pos, endpos, st.slots[:]);
-        out.append(m2);
-        if r > p {
-            p = r;
-        } else {
-            p = r + 1;
-        }
-    }
-    return out;
+    return _iter(self._re, _new_st(self._re), string, pos, endpos);
 }
 
 impl Pattern.findall(string: str, pos: int = 0, endpos: int = _MAXPOS) -> list[str] {
@@ -1801,117 +2338,31 @@ impl Pattern.findall(string: str, pos: int = 0, endpos: int = _MAXPOS) -> list[s
             "findall: patterns with more than one group are not supported on native"
         );
     }
-    bv: bytes = string.encode();
-    b: tuple[(int, int)] = _bounds(cp_len(bv, len(bv)), pos, endpos);
-    pos = b[0];
-    endpos = b[1];
-    out: list[str] = [];
-    if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
+    if self._acquire() {
+        out: list[str] = _all(self._re, self._st, string, pos, endpos);
+        self._release();
         return out;
     }
-    st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-    p: int = pos;
-    while p <= endpos {
-        r: int = self._scan_from(st, p);
-        if r < 0 {
-            break;
-        }
-        if self._re.ngroups == 0 {
-            out.append(cpslice_str(bv, st.slots[0], r));
-        } else {
-            lo: int = st.slots[2];
-            hi: int = st.slots[3];
-            if lo < 0 or hi < lo {
-                out.append("");
-            } else {
-                out.append(cpslice_str(bv, lo, hi));
-            }
-        }
-        if r > p {
-            p = r;
-        } else {
-            p = r + 1;
-        }
-    }
-    return out;
+    return _all(self._re, _new_st(self._re), string, pos, endpos);
 }
 
 impl Pattern.split(string: str, maxsplit: int = 0) -> list[any] {
-    bv: bytes = string.encode();
-    n: int = cp_len(bv, len(bv));
-    out: list[any] = [];
-    last: int = 0;
-    count: int = 0;
-    if self._posix_miss(bv, 0, len(bv)) {
-        out.append(cpslice_str(bv, 0, n));
+    if self._acquire() {
+        out: list[any] = _split(self._re, self._st, string, maxsplit);
+        self._release();
         return out;
     }
-    st: _St = _new_st(utf8_cps(bv), n, self._re);
-    p: int = 0;
-    while p <= n {
-        r: int = self._scan_from(st, p);
-        if r < 0 {
-            break;
-        }
-        if maxsplit > 0 and count >= maxsplit {
-            break;
-        }
-        out.append(cpslice_str(bv, last, st.slots[0]));
-        g: int = 1;
-        while g <= self._re.ngroups {
-            lo: int = st.slots[g * 2];
-            hi: int = st.slots[g * 2 + 1];
-            if lo < 0 or hi < lo {
-                out.append(None);
-            } else {
-                out.append(cpslice_str(bv, lo, hi));
-            }
-            g += 1;
-        }
-        last = r;
-        count += 1;
-        if r > p {
-            p = r;
-        } else {
-            p = r + 1;
-        }
-    }
-    out.append(cpslice_str(bv, last, n));
-    return out;
+    return _split(self._re, _new_st(self._re), string, maxsplit);
 }
 
 impl Pattern._subn(repl: str, string: str, count: int) -> tuple[(str, int)] {
-    bv: bytes = string.encode();
-    n: int = cp_len(bv, len(bv));
-    out: str = "";
-    last: int = 0;
-    nsub: int = 0;
-    if self._posix_miss(bv, 0, len(bv)) {
-        return (cpslice_str(bv, 0, n), 0);
+    rp: _Repl = _compile_repl(repl, self._re);
+    if self._acquire() {
+        res: tuple[(str, int)] = _subn_core(self._re, self._st, rp, string, count);
+        self._release();
+        return res;
     }
-    st: _St = _new_st(utf8_cps(bv), n, self._re);
-    p: int = 0;
-    while p <= n {
-        if count != 0 and nsub >= count {
-            break;
-        }
-        r: int = self._scan_from(st, p);
-        if r < 0 {
-            break;
-        }
-        m2: Match = Match(self._re, string, bv, p, n, st.slots[:]);
-        out += cpslice_str(bv, last, st.slots[0]);
-        out += _expand_repl(repl, m2, self._re);
-        nsub += 1;
-        last = r;
-        if r > p {
-            p = r;
-        } else {
-            p = r + 1;
-        }
-    }
-    out += cpslice_str(bv, last, n);
-    return (out, nsub);
+    return _subn_core(self._re, _new_st(self._re), rp, string, count);
 }
 
 impl Pattern.sub(repl: str, string: str, count: int = 0) -> str {
@@ -1930,22 +2381,70 @@ impl _compile_re(pattern: str, flags: int) -> _Re {
     p.n = len(p.cps);
     p.flags = flags;
     tree: _Node = p._parse();
-    c: _C = _C();
-    _compile_node(tree, c);
-    _emit(c, _OP.MATCH, 0, 0);
     re: _Re = _Re();
-    re.prog = c.prog;
-    re.classes = c.classes;
     re.ngroups = p.ngroups;
     re.names = p.names;
-    re.nmarks = c.nmarks;
     re.flags = p.flags;
     re.pattern = pattern;
+    re.prog = [];
+    re.cbits = [];
+    re.classes = [];
+    re.empty = [];
+    _compile_node(tree, re, p.flags);
+    _emit(re, _O_MATCH, 0, 0, 0, 0);
+    ni: int = len(re.prog) // 6;
+    i: int = 0;
+    while i < ni {
+        if re.prog[i * 6] == _O_REPG or re.prog[i * 6] == _O_REPL {
+            j: int = i + 1;
+            while j < ni and re.prog[j * 6] == _O_SAVE {
+                j += 1;
+            }
+            if j < ni and re.prog[j * 6] == _O_CHAR {
+                re.prog[i * 6 + 5] = re.prog[j * 6 + 1];
+            }
+        }
+        i += 1;
+    }
+    _analyze(tree, re);
     return re;
 }
 
 
-impl _expand_repl(template: str, m: Match, re: _Re) -> str {
+impl _cached(pattern: str, flags: int) -> Pattern {
+    if flags == 0 {
+        if pattern in _CACHE {
+            return _CACHE[pattern];
+        }
+        p: Pattern = Pattern(pattern, 0);
+        if len(_CACHE) >= _MAXCACHE {
+            _CACHE.clear();
+        }
+        _CACHE[pattern] = p;
+        return p;
+    }
+    key: str = str(flags) + "\x00" + pattern;
+    if key in _CACHEF {
+        return _CACHEF[key];
+    }
+    pf: Pattern = Pattern(pattern, flags);
+    if len(_CACHEF) >= _MAXCACHE {
+        _CACHEF.clear();
+    }
+    _CACHEF[key] = pf;
+    return pf;
+}
+
+
+impl _compile_repl(template: str, re: _Re) -> _Repl {
+    rp: _Repl = _Repl();
+    rp.lits = [];
+    rp.grps = [];
+    if "\\" not in template {
+        rp.lits.append(template);
+        return rp;
+    }
+    rp.literal = False;
     tps: list[int] = utf8_cps(template.encode());
     out: str = "";
     i: int = 0;
@@ -2021,7 +2520,9 @@ impl _expand_repl(template: str, m: Match, re: _Re) -> str {
                         + str(j - len(nm))
                 );
             }
-            out += m._gtext(num);
+            rp.lits.append(out);
+            rp.grps.append(num);
+            out = "";
             continue;
         }
         if e >= 49 and e <= 57 {
@@ -2038,7 +2539,9 @@ impl _expand_repl(template: str, m: Match, re: _Re) -> str {
                         + str(bp + 1)
                 );
             }
-            out += m._gtext(num);
+            rp.lits.append(out);
+            rp.grps.append(num);
+            out = "";
             continue;
         }
         if e == 48 or e == 120 {
@@ -2076,62 +2579,77 @@ impl _expand_repl(template: str, m: Match, re: _Re) -> str {
         }
         out += chr(e);
     }
+    rp.lits.append(out);
+    return rp;
+}
+
+
+impl _apply_repl(rp: _Repl, string: str, s0: int, e0: int, slots: list[int]) -> str {
+    out: str = rp.lits[0];
+    i: int = 0;
+    n: int = len(rp.grps);
+    while i < n {
+        g: int = rp.grps[i];
+        lo: int = s0;
+        hi: int = e0;
+        if g > 0 {
+            lo = slots[g * 2];
+            hi = slots[g * 2 + 1];
+        }
+        if lo >= 0 and hi >= lo {
+            out += string[lo:hi];
+        }
+        out += rp.lits[i + 1];
+        i += 1;
+    }
     return out;
 }
 
 
 impl compile(pattern: str, flags: int = 0) -> Pattern {
-    return Pattern(pattern, flags);
+    return _cached(pattern, flags);
 }
 
 
 impl search(pattern: str, string: str, flags: int = 0) -> (Match | None) {
-    p: Pattern = Pattern(pattern, flags);
-    return p.search(string);
+    return _cached(pattern, flags).search(string);
 }
 
 
 impl `match(pattern: str, string: str, flags: int = 0) -> (Match | None) {
-    p: Pattern = Pattern(pattern, flags);
-    return p.`match(string);
+    return _cached(pattern, flags).`match(string);
 }
 
 
 impl fullmatch(pattern: str, string: str, flags: int = 0) -> (Match | None) {
-    p: Pattern = Pattern(pattern, flags);
-    return p.fullmatch(string);
+    return _cached(pattern, flags).fullmatch(string);
 }
 
 
 impl findall(pattern: str, string: str, flags: int = 0) -> list[str] {
-    p: Pattern = Pattern(pattern, flags);
-    return p.findall(string);
+    return _cached(pattern, flags).findall(string);
 }
 
 
 impl finditer(pattern: str, string: str, flags: int = 0) -> list[Match] {
-    p: Pattern = Pattern(pattern, flags);
-    return p.finditer(string);
+    return _cached(pattern, flags).finditer(string);
 }
 
 
 impl split(pattern: str, string: str, maxsplit: int = 0, flags: int = 0) -> list[any] {
-    p: Pattern = Pattern(pattern, flags);
-    return p.split(string, maxsplit);
+    return _cached(pattern, flags).split(string, maxsplit);
 }
 
 
 impl sub(pattern: str, repl: str, string: str, count: int = 0, flags: int = 0) -> str {
-    p: Pattern = Pattern(pattern, flags);
-    return p.sub(repl, string, count);
+    return _cached(pattern, flags).sub(repl, string, count);
 }
 
 
 impl subn(
     pattern: str, repl: str, string: str, count: int = 0, flags: int = 0
 ) -> tuple[(str, int)] {
-    p: Pattern = Pattern(pattern, flags);
-    return p.subn(repl, string, count);
+    return _cached(pattern, flags).subn(repl, string, count);
 }
 
 
@@ -2152,10 +2670,6 @@ impl escape(pattern: str) -> str {
 
 
 impl purge {
-    while len(_PSX.pregs) > 0 {
-        posix_free(_PSX.pregs.pop());
-    }
-    _PSX.ids = [];
-    _PSX.head = 0;
-    _PSX.gen += 1;
+    _CACHE.clear();
+    _CACHEF.clear();
 }

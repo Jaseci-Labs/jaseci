@@ -15476,7 +15476,6 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
-    _re_posix_native ++> re { posix_compile, posix_exec, posix_free, posix_probe }
     _replace_native ++> _os_native { replace_file }
     _repr ++> [
         difflib { str_gt },
@@ -15653,7 +15652,7 @@ graph import runtime.na_stdlib {
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
     _utf8 ++> [
-        re { cp_len, cp_off, cps_str, cpslice_str, utf8_cps },
+        re { cps_str, utf8_cps },
         reprlib { cp_len, cpslice_str },
     ]
     _zlib_native ++> [

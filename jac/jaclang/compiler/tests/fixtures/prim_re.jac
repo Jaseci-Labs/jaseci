@@ -11,12 +11,12 @@ module's scope and are not probed.
 
 Match objects, lists, dicts, and tuples marshal as raw i64 across the harness,
 so all results are probed through scalar reads (`group`, `start`/`end`/`span`
-elements, `len`, element indexing). `sem*` pin the cases where a POSIX
+elements, `len`, element indexing). `sem*` pin the cases where a
 leftmost-longest matcher and Python's backtracking matcher disagree (which
 span wins, what a repeated group last captured), `cls_*` and `esc_caret` pin
-the class escapes libc spells differently per platform, and `many`/`old_ok`
-compile more distinct patterns than the libc program registry holds, so the
-oldest programs are released while their `Pattern` objects keep answering.
+the class escapes, and `many`/`old_ok` compile more distinct patterns than
+the compiled-pattern cache holds, so older `Pattern` objects must keep
+answering after the cache is cleared.
 `flags*` pin `Pattern.flags` as CPython reports it. `err*` pin the
 pattern-compile error paths
 (`except Exception` covers CPython's `re.error`/`PatternError` and the native
