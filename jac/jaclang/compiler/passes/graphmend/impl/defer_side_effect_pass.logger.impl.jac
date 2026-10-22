@@ -22,6 +22,18 @@ impl DeferSideEffectPass._base_binds_at_module(base: uni.Name) -> bool {
     return (decl is not None) and (decl.enclosing_decl(uni.Ability) is None);
 }
 
+impl DeferSideEffectPass._stays_eager(nd: uni.FuncCall, ability: uni.Ability) -> bool {
+    if (not isinstance(nd.parent, uni.ExprStmt)) or self._has_unpack(nd) {
+        return True;
+    }
+    if self._decline_call(nd) {
+        return True;
+    }
+    return self._is_logger_call(nd)
+        and (ability.sym_name == 'forward')
+        and (not self._logger_bound_before(nd));
+}
+
 impl DeferSideEffectPass._decline_call(nd: uni.FuncCall) -> bool {
     if not torch_binds_name(nd) {
         return True;
@@ -134,7 +146,7 @@ impl DeferSideEffectPass._toplevel_archetype(
 
 impl DeferSideEffectPass.exit_assignment with uni.Assignment exit {
     nd = here;
-    if not self._enabled {
+    if (not self._enabled) or (not torch_binds_name(nd)) {
         return;
     }
     value = nd.value;

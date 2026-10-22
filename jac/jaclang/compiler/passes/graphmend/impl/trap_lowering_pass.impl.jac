@@ -2,7 +2,7 @@ import builtins;
 
 impl TrapLoweringPass.exit_assignment with uni.Assignment exit {
     nd = here;
-    if not self._enabled {
+    if (not self._enabled) or (not torch_binds_name(nd)) {
         return;
     }
     value = nd.value;
@@ -54,7 +54,7 @@ impl TrapLoweringPass.exit_if_stmt with uni.IfStmt exit {
     if facts_for(nd).breaks.get(nd) != GraphBreakKind.VAL_GUARD {
         return;
     }
-    if self._inside_try(nd) {
+    if self._inside_try(nd) or self._caught_before_boundary(nd) {
         return;
     }
     if (not nd.body) or (len(nd.body) != 1) or (nd.else_body is not None) {
@@ -106,6 +106,37 @@ impl TrapLoweringPass.exit_if_stmt with uni.IfStmt exit {
         replace_stmt(nd, [self._assert_async_stmt(nd, x, marked)]);
         self._mark_guard(wrap);
     }
+}
+
+impl TrapLoweringPass._caught_before_boundary(nd: uni.UniNode) -> bool {
+    ab = nd.enclosing_decl(uni.Ability);
+    if ab is None {
+        return False;
+    }
+    wrap = self._boundary_ability(nd);
+    callers = facts_for(self.module).callers;
+    stack: list[uni.Ability] = [ab];
+    visited: set[int] = set();
+    while stack {
+        cur = stack.pop();
+        if id(cur) in visited {
+            continue;
+        }
+        visited.add(id(cur));
+        if has_torch_compile_decorator(cur) {
+            if (cur is not ab) and (cur is not wrap) {
+                return True;
+            }
+            continue;
+        }
+        for (caller, in_try) in callers.get(id(cur), []) {
+            if in_try {
+                return True;
+            }
+            stack.append(caller);
+        }
+    }
+    return False;
 }
 
 impl TrapLoweringPass._inside_try(nd: uni.UniNode) -> bool {

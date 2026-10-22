@@ -15,8 +15,13 @@ impl GraphBreakDetectPass.prepare with entry {
             self._entry_ids.add(id(e));
         }
     }
+    facts_for(self.module).callers.clear();
     self._entry_ids |= compiled_region_ids(
-        self.prog, self.module, self._mat_seen, wrapped
+        self.prog,
+        self.module,
+        self._mat_seen,
+        wrapped,
+        callers=facts_for(self.module).callers
     );
     members: list[uni.UniNode] = [];
     members.extend(self.module.get_all_sub_nodes(uni.Ability));

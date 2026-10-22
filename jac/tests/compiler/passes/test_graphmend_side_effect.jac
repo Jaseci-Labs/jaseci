@@ -224,6 +224,12 @@ test "a logger call reading the handled exception stays eager" {
     assert "__jac_se_emit__" not in src;
 }
 
+test "a function whose output cannot all be deferred keeps it all eager" {
+    src = _pysrc("side_effect_declined_order.jac", True);
+    assert "__jac_se_emit__" not in src;
+    assert "logger.warning('first')" in src;
+}
+
 test "a logger slot call snapshots its arguments like a print" {
     src = _pysrc("side_effect_logger_snapshot.jac", True);
     assert "__gm_se_arg_0 = y" in src;

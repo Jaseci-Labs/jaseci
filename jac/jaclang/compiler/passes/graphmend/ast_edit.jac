@@ -4,7 +4,8 @@ obj GraphMendFacts {
         helpers: set[GraphMendHelper] = set(),
         noop: bool = False,
         wrapped_keys: set[str] = set(),
-        covered_by: dict[(str, str)] = {};
+        covered_by: dict[(str, str)] = {},
+        callers: dict[(int, list[tuple[(Ability, bool)]])] = {};
 }
 
 def facts_for(nd: uni.UniNode) -> GraphMendFacts;

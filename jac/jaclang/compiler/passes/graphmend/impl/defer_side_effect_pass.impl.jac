@@ -8,6 +8,21 @@ impl DeferSideEffectPass.prepare with entry {
     }
 }
 
+impl DeferSideEffectPass.enter_ability with uni.Ability entry {
+    nd = here;
+    if not self._enabled {
+        return;
+    }
+    for c in nd.get_all_sub_nodes(uni.FuncCall) {
+        if (c.enclosing_decl(uni.Ability) is nd)
+            and (facts_for(c).breaks.get(c) == GraphBreakKind.SIDE_EFFECT)
+            and self._stays_eager(c, nd) {
+            self._eager_abilities.add(id(nd));
+            return;
+        }
+    }
+}
+
 impl DeferSideEffectPass.exit_func_call with uni.FuncCall exit {
     nd = here;
     if not self._enabled {
@@ -24,13 +39,10 @@ impl DeferSideEffectPass.exit_func_call with uni.FuncCall exit {
     if ability is None {
         return;
     }
-    if self._has_unpack(nd) or self._decline_call(nd) {
+    if (id(ability) in self._eager_abilities) or self._stays_eager(nd, ability) {
         return;
     }
-    if self._is_logger_call(nd) and (ability?.sym_name == 'forward') {
-        if not self._logger_bound_before(nd) {
-            return;
-        }
+    if self._is_logger_call(nd) and (ability.sym_name == 'forward') {
         emit_call = self._logger_emit(nd);
         if emit_call is not None {
             parent.replace_kid(nd, emit_call);

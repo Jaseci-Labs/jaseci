@@ -8,7 +8,8 @@ def compiled_region_ids(
     seen: set[str],
     wrapped: (list[uni.UniNode] | None) = None,
     walked: (set[str] | None) = None,
-    sites: (dict[int, set[str]] | None) = None
+    sites: (dict[int, set[str]] | None) = None,
+    callers: (dict[int, list[tuple[(uni.Ability, bool)]]] | None) = None
 ) -> set[int];
 
 def _seed(work: list[uni.Ability], ab: uni.Ability);
@@ -193,7 +194,8 @@ impl compiled_region_ids(
     seen: set[str],
     wrapped: (list[uni.UniNode] | None) = None,
     walked: (set[str] | None) = None,
-    sites: (dict[int, set[str]] | None) = None
+    sites: (dict[int, set[str]] | None) = None,
+    callers: (dict[int, list[tuple[(uni.Ability, bool)]]] | None) = None
 ) -> set[int] {
     mods: list[uni.Module] = [current];
     for m in prog.mod.hub.values() {
@@ -266,6 +268,12 @@ impl compiled_region_ids(
             callee = _resolve_callee(ab, call, prog, seen);
             if callee is not None {
                 outs.append(callee);
+                if callers is not None {
+                    tp = call.find_parent_of_type(uni.TryStmt);
+                    in_try = (tp is not None)
+                        and (tp.enclosing_decl(uni.Ability) is ab);
+                    callers.setdefault(id(callee), []).append((ab, in_try));
+                }
             }
             if (callee is not None) and (id(callee) not in ids) {
                 facts_for(callee).boundary.setdefault(callee, owner);

@@ -146,6 +146,24 @@ test "an allclose guard declines because allclose returns a Python bool" {
     assert "if not x.allclose(ref):" in src;
 }
 
+test "a guard in a helper whose caller catches its exception declines" {
+    src = _pysrc("guard_helper_in_caller_try.jac", True);
+    assert "torch._assert_async(" not in src;
+    assert "raise ValueError('mask must be all true')" in src;
+}
+
+test "a guard in a helper two compiled entries reach declines" {
+    src = _pysrc("guard_helper_two_entries.jac", True);
+    assert "torch._assert_async(" not in src;
+    assert "raise ValueError('mask must be all true')" in src;
+}
+
+test "a compile spelling on a name that is not torch is left alone" {
+    src = _pysrc("compile_shadowed_torch.jac", True);
+    assert "__jac_trap_guard__" not in src;
+    assert "register_forward_pre_hook" not in src;
+}
+
 test "a comparison on a scalar tensor method declines" {
     src = _pysrc("guard_scalar_compare.jac", True);
     assert "torch._assert_async(" not in src;

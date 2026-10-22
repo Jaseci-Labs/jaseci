@@ -14,6 +14,7 @@ walker TrapLoweringPass(TreePass) {
     can exit_assignment with uni.Assignment exit;
     def _boundary_attach_stmt(at: uni.UniNode, name: str) -> uni.Assignment;
     def _inside_try(nd: uni.UniNode) -> bool;
+    def _caught_before_boundary(nd: uni.UniNode) -> bool;
     def _boundary_ability(nd: uni.UniNode) -> (uni.Ability | None);
     def _call_site_covered(nd: uni.UniNode) -> bool;
     def _covering_entry(nd: uni.UniNode) -> (str | None);
