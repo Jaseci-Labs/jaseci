@@ -1,6 +1,44 @@
 import from "@jac/runtime" { Link }
 
-def matches(p: PackageSummary, q: str) -> bool {
+glob _ECOSYSTEMS: list[dict[str, str]] = [
+         {
+             "name": "PyPI",
+             "href": "https://pypi.org",
+             "link": "pypi.org",
+             "body": "Every Python package works unmodified in server code.",
+             "code": "import numpy as np;",
+             "cmd": "jac install numpy"
+         },
+         {
+             "name": "npm",
+             "href": "https://www.npmjs.com",
+             "link": "npmjs.com",
+             "body": "Every npm package works in client code, React components included.",
+             "code": "import from \"date-fns\" { format }",
+             "cmd": "jac install --npm date-fns"
+         },
+         {
+             "name": "Native libraries",
+             "href": "https://www.raylib.com",
+             "link": "raylib.com",
+             "body": "Link any C-ABI shared library, like raylib, by declaring the functions you call.",
+             "code": "import from raylib { def InitWindow(w: i32, h: i32, title: str) -> None; }",
+             "cmd": ""
+         },
+
+     ];
+
+def matches(p: PackageSummary, q: str) -> bool;
+
+def:pub Ecosystems -> JsxElement;
+
+def:pub PackageCard(pkg: PackageSummary) -> JsxElement;
+
+def:pub PackagesIndex(
+    catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
+) -> JsxElement;
+
+impl matches(p: PackageSummary, q: str) -> bool {
     needle = q.strip().lower();
     if needle == "" {
         return True;
@@ -14,7 +52,60 @@ def matches(p: PackageSummary, q: str) -> bool {
     return False;
 }
 
-def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
+impl Ecosystems -> JsxElement {
+    return
+        <section className="mb-10" aria-labelledby="ecosystems-heading">
+            <h2
+                id="ecosystems-heading"
+                className="text-lg font-semibold tracking-tight"
+            >
+                Beyond the jac-index
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Jac imports straight from the ecosystems you already use, with no wrappers or bindings.
+            </p>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {for e in _ECOSYSTEMS {
+                    <div
+                        key={e["name"]}
+                        className="flex min-w-0 flex-col gap-2 rounded-xl border border-border/60 bg-card/60 p-4"
+                    >
+                        <div className="flex items-baseline justify-between gap-2">
+                            <span className="font-semibold">{e["name"]}</span>
+                            <a
+                                href={e["href"]}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-primary hover:underline"
+                            >
+                                {e["link"] + " ↗"}
+                            </a>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{e["body"]}</p>
+                        <code
+                            className="mt-auto block whitespace-pre-wrap break-words rounded-md bg-muted/60 px-2.5 py-1.5 font-mono text-xs text-foreground"
+                        >
+                            {e["code"]}
+                        </code>
+                        {if e["cmd"] != "" {
+                            <CopyCommand command={e["cmd"]} className="w-full text-xs"/>
+                        } else {
+                            <a
+                                href="https://github.com/jaseci-labs/jac/tree/main/jac/examples/raylib_shooter"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-primary hover:underline"
+                            >
+                                See a raylib game in Jac ↗
+                            </a>
+                        } }
+                    </div>
+                }}
+            </div>
+        </section>;
+}
+
+impl PackageCard(pkg: PackageSummary) -> JsxElement {
     return
         <li
             className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/60 p-5 transition-colors hover:border-primary/40"
@@ -36,7 +127,7 @@ def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
         </li>;
 }
 
-def:pub PackagesIndex(
+impl PackagesIndex(
     catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
 ) -> JsxElement {
     shown = [
@@ -54,6 +145,8 @@ def:pub PackagesIndex(
                     Jac libraries and project templates published to the jac-index. Libraries install with jac install org/name; templates start a project with jac create --use org/name.
                 </p>
             </header>
+            <Ecosystems/>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight">The jac-index</h2>
             <Input
                 className="mb-6"
                 aria-label="Search packages"

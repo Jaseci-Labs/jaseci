@@ -576,32 +576,13 @@ test "dev section parsing" {
     assert as_int.dev.test_jobs == "0";
 }
 
-test "parse build native_closure_cap" {
+test "a retired [build] native_closure_cap leaves the rest of [build] read" {
     config_mod._config = None;
-    cfg = JacConfig.from_toml_str("\n[build]\nnative_closure_cap = 8\n");
-    assert cfg.build.native_closure_cap == 8;
-
-    config_mod._config = None;
-    base = JacConfig.from_toml_str("\n[build]\ndir = \".jac\"\n");
-    assert base.build.native_closure_cap == 256;
-
-    config_mod._config = None;
-    bad = JacConfig.from_toml_str("\n[build]\nnative_closure_cap = 0\n");
-    assert bad.build.native_closure_cap == 256 , "invalid cap falls back to default";
-}
-
-test "closure cap override resolves through effective_native_closure_cap" {
-    import from jaclang.compiler.frontend.codeinfo {
-        set_native_closure_cap,
-        effective_native_closure_cap
-    }
-    set_native_closure_cap(3);
-    try {
-        assert effective_native_closure_cap() == 3;
-    } finally {
-        set_native_closure_cap(0);
-    }
-    assert effective_native_closure_cap() == 256;
+    cfg = JacConfig.from_toml_str(
+        "\n[build]\ndir = \".out\"\nnative_closure_cap = 8\n"
+    );
+    assert cfg.build.dir == ".out";
+    assert not hasattr(cfg.build, "native_closure_cap");
 }
 
 test "parse full config" {

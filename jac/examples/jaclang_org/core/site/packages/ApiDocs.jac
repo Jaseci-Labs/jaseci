@@ -1,4 +1,18 @@
-def param_text(p: ApiParam) -> str {
+def param_text(p: ApiParam) -> str;
+
+def call_text(name: str, params: list[ApiParam], returns: str) -> str;
+
+def symbol_text(sym: ApiSymbol) -> str;
+
+def member_text(m: ApiMember) -> str;
+
+def:pub DocText(text: str) -> JsxElement;
+
+def:pub ApiSymbolCard(sym: ApiSymbol, anchor: str) -> JsxElement;
+
+def:pub ApiDocs(modules: list[ApiModule]) -> JsxElement;
+
+impl param_text(p: ApiParam) -> str {
     lead = "*" if p.kind == "varargs" else ("**" if p.kind == "kwargs" else "");
     text = lead + p.name;
     if p.type and p.type != "any" {
@@ -10,7 +24,7 @@ def param_text(p: ApiParam) -> str {
     return text;
 }
 
-def call_text(name: str, params: list[ApiParam], returns: str) -> str {
+impl call_text(name: str, params: list[ApiParam], returns: str) -> str {
     args = ", ".join([param_text(p) for p in params]);
     text = "def " + name + "(" + args + ")";
     if returns and returns != "None" {
@@ -19,7 +33,7 @@ def call_text(name: str, params: list[ApiParam], returns: str) -> str {
     return text;
 }
 
-def symbol_text(sym: ApiSymbol) -> str {
+impl symbol_text(sym: ApiSymbol) -> str {
     if sym.kind == "function" {
         return call_text(sym.name, sym.params, sym.returns);
     }
@@ -33,7 +47,7 @@ def symbol_text(sym: ApiSymbol) -> str {
     return sym.kind + " " + sym.name + bases;
 }
 
-def member_text(m: ApiMember) -> str {
+impl member_text(m: ApiMember) -> str {
     if m.kind == "field" {
         text = "has " + m.name + ": " + m.type;
         if m.value {
@@ -47,14 +61,14 @@ def member_text(m: ApiMember) -> str {
     return m.name;
 }
 
-def:pub DocText(text: str) -> JsxElement {
+impl DocText(text: str) -> JsxElement {
     return
         <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
             {text}
         </p>;
 }
 
-def:pub ApiSymbolCard(sym: ApiSymbol, anchor: str) -> JsxElement {
+impl ApiSymbolCard(sym: ApiSymbol, anchor: str) -> JsxElement {
     return
         <div
             id={anchor}
@@ -85,7 +99,7 @@ def:pub ApiSymbolCard(sym: ApiSymbol, anchor: str) -> JsxElement {
         </div>;
 }
 
-def:pub ApiDocs(modules: list[ApiModule]) -> JsxElement {
+impl ApiDocs(modules: list[ApiModule]) -> JsxElement {
     if len(modules) == 0 {
         return
             <p className="text-muted-foreground">

@@ -28,8 +28,6 @@ impl EsastGenPass._register_jac_runtime_import -> None {
 impl EsastGenPass._inject_runtime_import(
     name: str, nd: uni.UniNode, src: str = ""
 ) -> None {
-    import from jaclang.client.client_surface { runtime_import_source }
-    import from jaclang.compiler.backends.es.jac_runtime_js { JAC_PRELUDE_MODULE }
     if name in self.injected_imports or self._has_import(name) {
         return;
     }
@@ -199,16 +197,10 @@ impl EsastGenPass._partition_client_import_items(
     tuple[list[uni.ModuleItem | uni.ModulePath], list[uni.ModuleItem | uni.ModulePath]]
     | None
 ) {
-    import from jaclang.compiler.symbol_utils {
-        ClientImportVerdict,
-        classify_client_import_item,
-        is_client_boundary_import,
-        report_dead_client_import
-    }
     if not is_client_boundary_import(nd) {
         return None;
     }
-    import from jaclang.compiler.driver.boundary_classify { import_crosses_apps }
+
     cross_app = import_crosses_apps(nd);
     source_mod = self._resolve_source_module(nd);
     if source_mod is None {
@@ -377,12 +369,10 @@ impl EsastGenPass._generate_sv_import_stubs(
 }
 
 impl EsastGenPass._is_client_native_import(nd: uni.Import) -> bool {
-    import from jaclang.compiler.driver.boundary_classify { import_binds_client_native }
     return import_binds_client_native(nd, self.module.gen.interop_manifest);
 }
 
 impl EsastGenPass._generate_na_import_binding(nd: uni.Import) -> None {
-    import from jaclang.compiler.frontend.codeinfo { native_wasm_stem }
     import json;
     contracts: dict[str, dict[str, any]] = {};
     host_imports: dict[str, any] = {};
@@ -396,7 +386,7 @@ impl EsastGenPass._generate_na_import_binding(nd: uni.Import) -> None {
 
     bind_local = '__jac_na_bind';
     if bind_local not in self.injected_imports {
-        host_module = '@jac/wasm_host';
+        host_module = WASM_HOST_MODULE;
         specifier = self.sync_loc(
             es.ImportSpecifier(
                 imported=es.Identifier(name='__na_bind'),
@@ -448,19 +438,13 @@ impl EsastGenPass._generate_na_import_binding(nd: uni.Import) -> None {
         return;
     }
 
+    bind_payload: dict[str, any] = {"exports": contracts, "imports": host_imports};
     bind_call = self.sync_loc(
         es.CallExpression(
             callee=es.Identifier(name=bind_local),
             arguments=[
                 self.sync_loc(es.Literal(value=stem, raw=f'"{stem}"'), jac_node=nd),
-                self.sync_loc(
-                    es.Literal(
-                        value=json.dumps(
-                            {"exports": contracts, "imports": host_imports}
-                        )
-                    ),
-                    jac_node=nd
-                ),
+                self.sync_loc(es.Literal(value=json.dumps(bind_payload)), jac_node=nd),
 
             ]
         ),
@@ -500,8 +484,9 @@ impl EsastGenPass._sv_import_item_is_type(
 }
 
 impl EsastGenPass.exit_sub_tag with uni.SubTag exit {
-    if here.tag.gen.es_ast {
-        here.gen.es_ast = here.tag.gen.es_ast;
+    tag = here.tag;
+    if isinstance(tag, uni.UniNode) and tag.gen.es_ast {
+        here.gen.es_ast = tag.gen.es_ast;
     }
 }
 
@@ -537,23 +522,24 @@ impl EsastGenPass._finalize_runtime_imports(program: es.Program) -> None {
         ]
     );
 
-    import re;
     referenced: set[str] = set();
-    pending: list[object] = [value_body];
+    pending: list[any] = [value_body];
     while pending {
         value = pending.pop();
-        if isinstance(value, (es.Identifier, es.JsxIdentifier)) {
-            referenced.update(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*", value.name));
+        if isinstance(value, es.Identifier) {
+            referenced.update(js_identifiers(value.name));
+        } elif isinstance(value, es.JsxIdentifier) {
+            referenced.update(js_identifiers(value.name));
         } elif isinstance(value, es.RawCode) {
-            referenced.update(re.findall(r"[A-Za-z_$][A-Za-z0-9_$]*", value.code));
+            referenced.update(js_identifiers(value.code));
         } elif isinstance(value, es.Node) {
-            pending.extend(
-                child
-                for (key, child) in vars(value).items()
-                if key not in ("loc", "type")
-            );
-        } elif isinstance(value, (list, tuple)) {
-            pending.extend(value);
+            for (_field, child) in es.es_children(value).items() {
+                pending.append(child);
+            }
+        } elif isinstance(value, list) {
+            for item in value {
+                pending.append(item);
+            }
         }
     }
     for stmt in program.body {

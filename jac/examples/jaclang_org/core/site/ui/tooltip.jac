@@ -1,6 +1,14 @@
 import from "radix-ui" { Tooltip as TooltipPrimitive }
 
-def:pub TooltipProvider(props: any) -> JsxElement {
+def:pub TooltipProvider(props: any) -> JsxElement;
+
+def:pub Tooltip(props: any) -> JsxElement;
+
+def:pub TooltipTrigger(props: any) -> JsxElement;
+
+def:pub TooltipContent(props: any) -> JsxElement;
+
+impl TooltipProvider(props: any) -> JsxElement {
     delayDuration = props["delayDuration"] or 0;
     return
         <TooltipPrimitive.Provider
@@ -10,15 +18,15 @@ def:pub TooltipProvider(props: any) -> JsxElement {
         />;
 }
 
-def:pub Tooltip(props: any) -> JsxElement {
+impl Tooltip(props: any) -> JsxElement {
     return <TooltipPrimitive.Root data-slot="tooltip" {**props}/>;
 }
 
-def:pub TooltipTrigger(props: any) -> JsxElement {
+impl TooltipTrigger(props: any) -> JsxElement {
     return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {**props}/>;
 }
 
-def:pub TooltipContent(props: any) -> JsxElement {
+impl TooltipContent(props: any) -> JsxElement {
     sideOffset = props["sideOffset"] or 0;
     return
         <TooltipPrimitive.Portal>

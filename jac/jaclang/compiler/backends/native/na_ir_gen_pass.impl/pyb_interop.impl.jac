@@ -26,7 +26,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
     stayed the same. Resolving one is not the same as inheriting one.
     """;
     import os;
-    import from jaclang.compiler.frontend.codeinfo { NATIVE_ERASED_BASES }
+
     if arch_name in self._pyb_base_memo {
         cached = self._pyb_base_memo[arch_name];
         return cached;
@@ -39,7 +39,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
     if arch.arch_kind is not None or self._arch_is_osp_name(arch_name) {
         return None;
     }
-    _own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else "";
+    _own_path = real_path(self.module.loc.mod_path) if self.module?.loc else "";
     for base_expr in (arch.base_classes or []) {
         if isinstance(base_expr, uni.AtomTrailer)
             and isinstance(base_expr.right, uni.IndexSlice) {
@@ -69,7 +69,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
         if decl is None {
             continue;
         }
-        base_arch = decl.find_parent_of_type(uni.Archetype);
+        base_arch = decl.enclosing_decl(uni.Archetype);
         if base_arch is None {
             continue;
         }
@@ -78,7 +78,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
         if not path or not path.endswith(".jac") {
             continue;
         }
-        if os.path.realpath(path) == _own_path {
+        if real_path(path) == _own_path {
             continue;
         }
         found = (bname, os.path.abspath(path), );
@@ -107,7 +107,7 @@ impl NaIRGenPass._pyb_shadow_postinit_owner(arch_name: str) -> (str | None) {
     if not isinstance(arch, uni.Archetype) {
         return None;
     }
-    seen: set = {arch_name};
+    seen: set[str] = {arch_name};
     queue: list[uni.Expr] = list(arch.base_classes or []);
     while queue {
         base_expr = queue.pop(0);
@@ -125,14 +125,12 @@ impl NaIRGenPass._pyb_shadow_postinit_owner(arch_name: str) -> (str | None) {
         }
         sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
         decl = sym.decl if sym is not None else None;
-        base_arch = decl.find_parent_of_type(uni.Archetype)
-            if decl is not None
-            else None;
+        base_arch = decl.enclosing_decl(uni.Archetype) if decl is not None else None;
         if base_arch is None {
             continue;
         }
         if (self._arch_ref_key(base_expr) or bname) not in self.arch_ast_map {
-            for stmt in (base_arch.body or []) {
+            for stmt in (ModuleFacts.unwrap_body(base_arch) or []) {
                 if isinstance(stmt, uni.Ability)
                     and stmt.name_ref is not None
                     and stmt.name_ref.sym_name in ("postinit", "__post_init__") {
@@ -187,7 +185,7 @@ impl NaIRGenPass._pyb_shadowed_dispatch(
     if not isinstance(arch, uni.Archetype) {
         return None;
     }
-    seen: set = {arch_name};
+    seen: set[str] = {arch_name};
     queue: list[uni.Expr] = list(arch.base_classes or []);
     while queue {
         base_expr = queue.pop(0);
@@ -205,15 +203,13 @@ impl NaIRGenPass._pyb_shadowed_dispatch(
         }
         sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
         decl = sym.decl if sym is not None else None;
-        base_arch = decl.find_parent_of_type(uni.Archetype)
-            if decl is not None
-            else None;
+        base_arch = decl.enclosing_decl(uni.Archetype) if decl is not None else None;
         if base_arch is None {
             continue;
         }
 
         if (self._arch_ref_key(base_expr) or bname) not in self.arch_ast_map {
-            for stmt in (base_arch.body or []) {
+            for stmt in (ModuleFacts.unwrap_body(base_arch) or []) {
                 if not isinstance(stmt, uni.Ability) {
                     continue;
                 }
@@ -802,7 +798,7 @@ impl NaIRGenPass._pyb_build_args(
     i64 = ir.IntType(64);
     i8p = ir.IntType(8).as_pointer();
     pos: list[uni.Expr] = [];
-    kwp: list[any] = [];
+    kwp: list[uni.KWPair] = [];
     for p in (params or []) {
         if isinstance(p, uni.KWPair) {
             if p.key is None {
@@ -829,16 +825,18 @@ impl NaIRGenPass._pyb_build_args(
         marshalled.append(o);
     }
     kw_pairs: list[tuple[str, ir.Value]] = [];
-    for p in kwp {
-        v = self._codegen_expr(p.value);
+    for kw in kwp {
+        v = self._codegen_expr(kw.value);
         if v is None {
             return None;
         }
-        o = self._pyb_to_py(p.value, v);
+        o = self._pyb_to_py(kw.value, v);
         if o is None {
             return None;
         }
-        kw_pairs.append((p.key.sym_name, o, ));
+        _kw_key = kw.key;
+        assert _kw_key is not None;
+        kw_pairs.append((_kw_key.sym_name, o, ));
     }
     t = self.builder.call(
         self._pyb_helper("tuple_new"),

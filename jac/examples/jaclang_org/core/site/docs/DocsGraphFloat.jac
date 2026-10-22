@@ -5,14 +5,28 @@ glob ROW_H: float = 16.0,
      LABEL_W: float = 150.0,
      JOURNEY_MS: float = 1400.0;
 
-def _short(t: str) -> str {
+def _short(t: str) -> str;
+
+def _edge_d(e: dict[str, any]) -> str;
+
+def _push(n: TreeNode, depth: int, acc: dict[str, any], px: float, py: float);
+
+def _model(tree: list[TreeNode], version: str) -> dict[str, any];
+
+def _chain(index: dict[str, any], cur_path: str) -> list[int];
+
+def:pub DocsGraphFloat(
+    tree: list[TreeNode], version: str, cur_path: str, on_go: any = None
+) -> JsxElement;
+
+impl _short(t: str) -> str {
     if len(t) > 24 {
         return t[:23] + "…";
     }
     return t;
 }
 
-def _edge_d(e: dict[str, any]) -> str {
+impl _edge_d(e: dict[str, any]) -> str {
     x1 = e["x1"] as float;
     y1 = e["y1"] as float;
     x2 = e["x2"] as float;
@@ -36,7 +50,7 @@ def _edge_d(e: dict[str, any]) -> str {
         + str(y2);
 }
 
-def _push(n: TreeNode, depth: int, acc: dict[str, any], px: float, py: float) {
+impl _push(n: TreeNode, depth: int, acc: dict[str, any], px: float, py: float) {
     nodes: list[dict[str, any]] = acc["nodes"] as list[dict[str, any]];
     edges: list[dict[str, any]] = acc["edges"] as list[dict[str, any]];
     index: dict[str, any] = acc["index"] as dict[str, any];
@@ -64,7 +78,7 @@ def _push(n: TreeNode, depth: int, acc: dict[str, any], px: float, py: float) {
     }
 }
 
-def _model(tree: list[TreeNode], version: str) -> dict[str, any] {
+impl _model(tree: list[TreeNode], version: str) -> dict[str, any] {
     acc: dict[str, any] = {
         "row": 1.0,
         "nodes": [],
@@ -82,7 +96,7 @@ def _model(tree: list[TreeNode], version: str) -> dict[str, any] {
     return acc;
 }
 
-def _chain(index: dict[str, any], cur_path: str) -> list[int] {
+impl _chain(index: dict[str, any], cur_path: str) -> list[int] {
     chain: list[int] = [0];
     walk = "";
     for seg in cur_path.split("/") {
@@ -101,7 +115,7 @@ def _chain(index: dict[str, any], cur_path: str) -> list[int] {
     return chain;
 }
 
-def:pub DocsGraphFloat(
+impl DocsGraphFloat(
     tree: list[TreeNode], version: str, cur_path: str, on_go: any = None
 ) -> JsxElement {
     has boxRef: Ref[any] = Ref(),

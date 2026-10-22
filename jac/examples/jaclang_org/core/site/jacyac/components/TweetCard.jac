@@ -9,6 +9,17 @@ def:pub TweetCard(
     onComment: Callable[[str, str], bool],
     onDelete: Callable[[str], None],
     onRepost: Callable[[str, str, str], None],
+) -> JsxElement;
+
+impl TweetCard(
+    tweet: Tweet,
+    myUsername: str,
+    avatars: dict[str, str],
+    onViewProfile: Callable[[str], None],
+    onLike: Callable[[str], None],
+    onComment: Callable[[str, str], bool],
+    onDelete: Callable[[str], None],
+    onRepost: Callable[[str, str, str], None],
 ) -> JsxElement {
     has showComments: bool = False,
         commentText: str = "",

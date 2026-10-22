@@ -12,6 +12,20 @@ def:pub ExploreTab(
     onFollow: Callable[[str], None],
     onUnfollow: Callable[[str], None],
     onViewProfile: Callable[[str], None],
+) -> JsxElement;
+
+impl ExploreTab(
+    mode: str,
+    onModeChange: Callable[[str], None],
+    allProfiles: list[Profile],
+    followingIds: list[str],
+    myProfileId: str,
+    avatars: dict[str, str],
+    projects: list[Project],
+    projectsLoading: bool,
+    onFollow: Callable[[str], None],
+    onUnfollow: Callable[[str], None],
+    onViewProfile: Callable[[str], None],
 ) -> JsxElement {
     tab_base = "flex flex-1 items-center justify-center gap-2 border-b-2 py-3 text-sm font-semibold transition-colors";
 

@@ -7,20 +7,6 @@ down for its whole boot window. These drive the real manifest builder and the
 real plan validator.
 """
 
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.manifest_builder {
-    ManifestBuilder,
-    pdb_spec,
-    ScalingMode
-}
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.runtime.cli.diagnostics { PlanValidator }
-
-import from jaclang.scale.runtime.fleet { fleet_of }
-
-
 def _bundle(
     services: dict[str, any],
     autoscaler_engine: str = "hpa",
