@@ -9989,6 +9989,10 @@ graph import compiler {
             refresh_placement_module,
             solve_module_placement
         },
+        passes.placement_pass._demote_unreached_imports {
+            placement_work,
+            refresh_placement_module
+        },
         passes.placement_pass.build_native_legality { native_closure_blocker },
         passes.placement_pass.settle_native_module { invalidate_importers_es },
         passes.placement_pass.uncrossable_native {
@@ -15346,6 +15350,11 @@ graph import runtime {
 }
 
 graph import runtime.na_stdlib {
+    _ascii ++> [
+        datetime { is_digit, is_space },
+        re { hexv, is_alpha, is_digit, is_space, is_word, swapcase },
+        string { is_id_start, is_word },
+    ]
     _bz2_native ++> bz2 { bz2_compress, bz2_decompress }
     _csprng_native ++> secrets | uuid { csprng_bytes }
     _datetime_native ++> datetime {
@@ -15472,6 +15481,10 @@ graph import runtime.na_stdlib {
         _default_types_val
     }
     _replace_native ++> _os_native { replace_file }
+    _repr ++> [
+        difflib { str_gt },
+        pprint | reprlib { repr_str, sorted_str_keys },
+    ]
     _select_native ++> select {
         _FD_SETSIZE,
         _POLLERR,
@@ -15642,6 +15655,10 @@ graph import runtime.na_stdlib {
     ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
+    _utf8 ++> [
+        re { cps_str, utf8_cps },
+        reprlib { cp_len, cpslice_str },
+    ]
     _zlib_native ++> [
         gzip {
             ZInflateResult,

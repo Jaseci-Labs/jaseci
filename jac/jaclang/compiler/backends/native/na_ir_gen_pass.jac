@@ -386,6 +386,7 @@ walker NaIRGenPass(CompilerPass) {
         utf8_unit_in_fn: (ir.Function | None) = None,
         utf8_gather_fn: (ir.Function | None) = None,
         _str_desc_ty: (ir.IdentifiedStructType | None) = None,
+        _last_inplace_handled: bool = False,
         rc_roots_buf_gv: (ir.GlobalVariable | None) = None,
         rc_roots_cap_gv: (ir.GlobalVariable | None) = None,
         rc_roots_count_gv: (ir.GlobalVariable | None) = None,
@@ -762,6 +763,18 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Value | None);
 
     def _emit_intrinsic_region_tls(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
+
+    def _emit_intrinsic_buffer_data(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
+
+    def _emit_intrinsic_str_data(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
+
+    def _emit_intrinsic_ref_addr(
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
 
@@ -3252,7 +3265,16 @@ walker NaIRGenPass(CompilerPass) {
         left: ir.Value,
         right: ir.Value,
         unsigned: bool = False,
-        checked: bool = False
+        checked: bool = False,
+        inplace_slot: (ir.Value | None) = None
+    ) -> (ir.Value | None);
+
+    def _str_concat_fresh(
+        left: ir.Value, right: ir.Value, len1: ir.Value, len2: ir.Value, total: ir.Value
+    ) -> ir.Value;
+
+    def _emit_str_concat_inplace(
+        left: ir.Value, right: ir.Value, slot: ir.Value
     ) -> (ir.Value | None);
 
     def _unify_int_widths(
