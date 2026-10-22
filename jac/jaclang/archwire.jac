@@ -3726,8 +3726,9 @@ graph import {
             sealed_root_for,
             unlisted_image_root
         },
-        scale.injector.bundle.pack_jab
-            | scale.tests.microservices.test_app_precompile { SERVE_MANIFEST_REL },
+        scale.injector.bundle.pack_jab | scale.tests.microservices.test_app_precompile {
+            SERVE_MANIFEST_REL
+        },
     ]
     server.server ++> [
         client.targets.desktop.native.broker_extension
