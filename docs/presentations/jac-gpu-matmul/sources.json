@@ -1,0 +1,29 @@
+{
+  "measurement_commit": "e476272e42fd71c1a15319da42d4d38d23c2795a",
+  "files": [
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/primary/comparison.json",
+      "sha256": "3a12f9d20c0b3619239f743b40fc06889eced4eb209c49703045b88bcff3b78c"
+    },
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/codegen.json",
+      "sha256": "637c1b3ee451c6236a06fa045e43e2c9795ce14cee3cc22765165c3e96c173c6"
+    },
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/paired-profile/verified-kernels.json",
+      "sha256": "983a070316499f567df9d0869c417a23d32a887dfc11d13f924c2fc88de650a7"
+    },
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/status-validation.json",
+      "sha256": "bea7ec93a379cfd9913cf2fb6728867efa3710d8fe1d527ef85e0ff530f11d05"
+    },
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/ABLATIONS.md",
+      "sha256": "cc29fd11899cf335f84d1dc71b0e9d30532fa523aa532bcdc18a6e3f6bb77678"
+    },
+    {
+      "path": "scripts/gpu_walker/handwritten_matmul/validation/20261021/REPORT.md",
+      "sha256": "daa6f90ba5f5e8132bac5190a58b1c85420bef863f5139717d9056411fc47d95"
+    }
+  ]
+}
