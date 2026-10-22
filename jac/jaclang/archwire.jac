@@ -3840,10 +3840,12 @@ graph import {
         scale.admin.ops._loki_recent_count { arequest },
         scale.admin.ops._tempo_recent_count { arequest },
         scale.runtime.gateway.microservice_gateway.MicroserviceGateway.forward_to {
-            ClientReadTimeout
+            ClientReadTimeout,
+            ClientRequestNotSent
         },
         scale.runtime.gateway.microservice_gateway.MicroserviceGateway.probe_services {
-            ClientReadTimeout
+            ClientReadTimeout,
+            ClientRequestNotSent
         },
         scale.runtime.middleware.ws_forward { ClientConnectionError, aws_connect },
         scale.runtime.rpc.rpc._rpc_with_retries {
@@ -3855,10 +3857,12 @@ graph import {
         scale.runtime.transport.http_forward {
             ClientConnectionError,
             ClientReadTimeout,
+            ClientRequestNotSent,
             arequest
         },
         scale.tests.server.test_serve | testing.testing { run_blocking },
-        scale.tests.server.test_sv_auth_forward._install_unreachable_transport {
+        scale.tests.server.test_stream_ws
+            | scale.tests.server.test_sv_auth_forward._install_unreachable_transport {
             ClientRequestNotSent
         },
         scale.tests.server.test_sv_auth_forward._install_unreachable_walker_transport {
