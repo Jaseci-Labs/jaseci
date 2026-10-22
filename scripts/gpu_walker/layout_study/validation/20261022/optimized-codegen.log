@@ -1,0 +1,2 @@
+[[58, 64], [139, 154]]
+Checked O2 emitted; production baseline identical; optimized PTX matches status-validated artifact: c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81

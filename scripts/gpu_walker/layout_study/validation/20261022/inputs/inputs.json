@@ -1,0 +1,2449 @@
+{
+  "generator_sha256": "f7626d4875fa8f57a5759bab909321d2a50a382ab9e6e5efee334817532749dd",
+  "source_manifest": "scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+  "source_manifest_sha256": "8c91348cf62ce5d9d115bd3b3866dd1fcd0316882b77df9d70af10ab8d929591",
+  "source_jac_sha256": "f5744760426b0f9a3da3db6fadd7dc884824999288eef99f950ecdd9f4939856",
+  "ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "seeds": [
+    928,
+    929,
+    930
+  ],
+  "cases": [
+    {
+      "id": "matmul-3x5x2",
+      "shape": [
+        3,
+        5,
+        2
+      ],
+      "nodes": 25,
+      "lanes": 6,
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          6
+        ],
+        "sha256": "28027377a5cf14c2e6a14d8f2147d099c9c9b65880c9614b97c7708eb180f40c",
+        "bytes": 48
+      },
+      "layouts": [
+        {
+          "name": "after",
+          "seed": null,
+          "files": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "9396538b85af0613d82187dffe5977f285af816d71b3516f100eb1b465757735",
+              "bytes": 200
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "9060d7baa74e0778cf6c0a534a56f8e914c6e6118c28b9328dfbc42962fa69c5",
+              "bytes": 200
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                52
+              ],
+              "sha256": "4818bcb7964a351669c5fe84e7e4f14aae43c14aaa18f15ca5e515786aaa3912",
+              "bytes": 416
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                20
+              ],
+              "sha256": "e0969268af3860bc8dbfc3422ce563c9b0c065c2a8573ac2ecbeb6cc78b6269b",
+              "bytes": 160
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "a25bea0b254074d8ba90290152d3255cde2ffdecf5da6ad47294cf1ca7705b44",
+              "bytes": 96
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "99bb8dface617aff037e050e6c51d0f8c4adb7bad06498d69e24f9d58c2adfc5",
+              "bytes": 96
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                6
+              ],
+              "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+              "bytes": 24
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "a25bea0b254074d8ba90290152d3255cde2ffdecf5da6ad47294cf1ca7705b44",
+              "bytes": 96
+            }
+          ],
+          "identity_order": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              25
+            ],
+            "sha256": "860683d08c5e487f7fb5f350d2a6e3d093d0524fa383f9e42a4d5cfe26e89621",
+            "bytes": 200
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 5,
+            "lanes": 6
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "before",
+          "seed": 928,
+          "files": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "cb82a353e0c93abf5856e66837f3cd314dc1179b3cc74e5adfbfa811181ccaf6",
+              "bytes": 200
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "9060d7baa74e0778cf6c0a534a56f8e914c6e6118c28b9328dfbc42962fa69c5",
+              "bytes": 200
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                52
+              ],
+              "sha256": "662778df058ede3eb88bcb9b3581670069f029f451c8f45352675fc4ed6f7538",
+              "bytes": 416
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                20
+              ],
+              "sha256": "ea8847a898fb1cdf2dbe23f42e891233607e0beb1e1c6c59b840cdc36cee5157",
+              "bytes": 160
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "bfaaab1c168db83ab6fc281a219e15604f58c151f54bd0e49655700318e40714",
+              "bytes": 96
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "99bb8dface617aff037e050e6c51d0f8c4adb7bad06498d69e24f9d58c2adfc5",
+              "bytes": 96
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                6
+              ],
+              "sha256": "44a5f7891570e5631e8c91c85186e6633f4ab5364f644040b2a00126a07985b6",
+              "bytes": 24
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "bfaaab1c168db83ab6fc281a219e15604f58c151f54bd0e49655700318e40714",
+              "bytes": 96
+            }
+          ],
+          "identity_order": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              25
+            ],
+            "sha256": "ba7981746264a61c44ab87b03c0c10ad338f97173539138b9a6394e080a92dbc",
+            "bytes": 200
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 5,
+            "lanes": 6
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random929",
+          "seed": 929,
+          "files": [
+            {
+              "file": "random929-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "d4f8d5d89dd583dff0df6eda15dbc5a1ee28458e56720566139095a088fa0ff0",
+              "bytes": 200
+            },
+            {
+              "file": "random929-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "9060d7baa74e0778cf6c0a534a56f8e914c6e6118c28b9328dfbc42962fa69c5",
+              "bytes": 200
+            },
+            {
+              "file": "random929-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                52
+              ],
+              "sha256": "2de84f6c359c52a15ad755bd0c54fac0856293a881a733c16f78036e4426c56e",
+              "bytes": 416
+            },
+            {
+              "file": "random929-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                20
+              ],
+              "sha256": "3e307eec8fe1adda0580da747d18c02e6a354fff52997d7707c0b1b46080732e",
+              "bytes": 160
+            },
+            {
+              "file": "random929-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "42a6824ee8f8a0d9194cff82629ec5e929ee790d11860c27a4b47d7131860dfa",
+              "bytes": 96
+            },
+            {
+              "file": "random929-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "99bb8dface617aff037e050e6c51d0f8c4adb7bad06498d69e24f9d58c2adfc5",
+              "bytes": 96
+            },
+            {
+              "file": "random929-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "random929-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "random929-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                6
+              ],
+              "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+              "bytes": 24
+            },
+            {
+              "file": "random929-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "42a6824ee8f8a0d9194cff82629ec5e929ee790d11860c27a4b47d7131860dfa",
+              "bytes": 96
+            }
+          ],
+          "identity_order": {
+            "file": "random929-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              25
+            ],
+            "sha256": "04b16c79e118b9530b6c3c52427d9ce41e2ea3fa8129c936884f1d9df1c8cc2c",
+            "bytes": 200
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 5,
+            "lanes": 6
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random930",
+          "seed": 930,
+          "files": [
+            {
+              "file": "random930-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "dc902dc11ccb6d7bbc6a5d954f9be548dd43e90f048c303de49ebbd06ce01405",
+              "bytes": 200
+            },
+            {
+              "file": "random930-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                25
+              ],
+              "sha256": "9060d7baa74e0778cf6c0a534a56f8e914c6e6118c28b9328dfbc42962fa69c5",
+              "bytes": 200
+            },
+            {
+              "file": "random930-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                52
+              ],
+              "sha256": "bdced63c3ab23fbade7181e33328bd84e0183d29e70878ff524a37ff7dcb8e1a",
+              "bytes": 416
+            },
+            {
+              "file": "random930-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                20
+              ],
+              "sha256": "0faad2bfd557fed68085d3c22a79fc7007f20eb8a28962dbba1a69f547fc985f",
+              "bytes": 160
+            },
+            {
+              "file": "random930-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "e07e76b050fb5369cd7e313e2b929369b9b07f25f7c77b3ac1cd854dd515112b",
+              "bytes": 96
+            },
+            {
+              "file": "random930-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "99bb8dface617aff037e050e6c51d0f8c4adb7bad06498d69e24f9d58c2adfc5",
+              "bytes": 96
+            },
+            {
+              "file": "random930-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "random930-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                6
+              ],
+              "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+              "bytes": 48
+            },
+            {
+              "file": "random930-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                6
+              ],
+              "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+              "bytes": 24
+            },
+            {
+              "file": "random930-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                12
+              ],
+              "sha256": "e07e76b050fb5369cd7e313e2b929369b9b07f25f7c77b3ac1cd854dd515112b",
+              "bytes": 96
+            }
+          ],
+          "identity_order": {
+            "file": "random930-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              25
+            ],
+            "sha256": "df5d53e1266a4b977d733d4b02122105680027f0c04a61d45f3b84d2bbecaa39",
+            "bytes": 200
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 5,
+            "lanes": 6
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        }
+      ],
+      "predicted_strategy": "complete cursor-a BFS then complete cursor-b BFS; all A then all B",
+      "canonical_discovery_source": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+      "source_current_hashes": [
+        "0fb4288e266fa936751d149b6508a68f5a5969ef7e269b4195018b3a5bc78e04",
+        "9060d7baa74e0778cf6c0a534a56f8e914c6e6118c28b9328dfbc42962fa69c5",
+        "e3f9982b752cd04f6cee274738667f6dc3a95e0bd488ed26d59745bae0433d6e",
+        "6a3353780779fd42bc62e191d99e83d2ef51ddd9a14f4f804ed6f76b7cdd9c5e",
+        "91446cac3209f6a3caac944d3de4cd99d5bdf5b465986932bc1940a760b37377",
+        "99bb8dface617aff037e050e6c51d0f8c4adb7bad06498d69e24f9d58c2adfc5",
+        "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+        "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1",
+        "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "91446cac3209f6a3caac944d3de4cd99d5bdf5b465986932bc1940a760b37377"
+      ]
+    },
+    {
+      "id": "matmul-17x31x19",
+      "shape": [
+        17,
+        31,
+        19
+      ],
+      "nodes": 1116,
+      "lanes": 323,
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          323
+        ],
+        "sha256": "14aae05b9b391da860f6db9b697e222c957edbe4112aa383e8f7be5dc088983a",
+        "bytes": 2584
+      },
+      "layouts": [
+        {
+          "name": "after",
+          "seed": null,
+          "files": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "ab428e1b3694538ffaa52a7a83ec69af7e2a960e03689d2c3a2a07135e09a186",
+              "bytes": 8928
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "4baf849b5d1f0e2f20ef1c50f0609149a3e8d15153605183e648d95ba134980a",
+              "bytes": 8928
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2234
+              ],
+              "sha256": "b94c111ebc5c18168b0f97c1adc03e9a57071140a86bd96f8c16f7ed9d423766",
+              "bytes": 17872
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                1080
+              ],
+              "sha256": "09a0843058bf03eaa678eccb629dee3f827ec4aefaa1a92b3a174a86a2efef86",
+              "bytes": 8640
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "84d8404d38eccee6ccd106169cf436035050baa56e1690a06702fa665b67d249",
+              "bytes": 5168
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "6135f3d2a362e521f6e6920474326f6bdf71ceb5a8acc0754da621067db33cfa",
+              "bytes": 5168
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                323
+              ],
+              "sha256": "8088ec78201a300dce10aa439cedc32150ab59d13b01361f6ccbeb0c9336d9f5",
+              "bytes": 1292
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "84d8404d38eccee6ccd106169cf436035050baa56e1690a06702fa665b67d249",
+              "bytes": 5168
+            }
+          ],
+          "identity_order": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              1116
+            ],
+            "sha256": "6f943bde5e6897d87041efad7ad3778299d8362397479613ee8dadb4c4020288",
+            "bytes": 8928
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 31,
+            "lanes": 323
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "before",
+          "seed": 928,
+          "files": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "4b2ff776c0dae42e1bcdd5c15a8953e2e260f98a5bb6a8f30fa12ee889f7175c",
+              "bytes": 8928
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "4baf849b5d1f0e2f20ef1c50f0609149a3e8d15153605183e648d95ba134980a",
+              "bytes": 8928
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2234
+              ],
+              "sha256": "c0152300d7af5d5b1ef0e46ecc3be89f5e55c244417e275e86b1c9fe8effc227",
+              "bytes": 17872
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                1080
+              ],
+              "sha256": "8bcee832a5ef56da5f1d10bce83b560889eb9ad03267c33b998bb50bd2558c65",
+              "bytes": 8640
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "3da652cd8232665d5ebee87ab5e7d5f3d40708b068af7b1bc0bc23ddbb078346",
+              "bytes": 5168
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "6135f3d2a362e521f6e6920474326f6bdf71ceb5a8acc0754da621067db33cfa",
+              "bytes": 5168
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                323
+              ],
+              "sha256": "2744d3f9bf7f7638f30e5b35c8f647ed561f31de36e00d7223253000d7a79249",
+              "bytes": 1292
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "3da652cd8232665d5ebee87ab5e7d5f3d40708b068af7b1bc0bc23ddbb078346",
+              "bytes": 5168
+            }
+          ],
+          "identity_order": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              1116
+            ],
+            "sha256": "ae21ab097892bafe3fbe213bfa320d601a71af06c23a4696a82e67bc62ca8796",
+            "bytes": 8928
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 31,
+            "lanes": 323
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random929",
+          "seed": 929,
+          "files": [
+            {
+              "file": "random929-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "d0104a47d1efe70afda94809e3ee416d23de97705313f4fcb57c3125dcebff46",
+              "bytes": 8928
+            },
+            {
+              "file": "random929-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "4baf849b5d1f0e2f20ef1c50f0609149a3e8d15153605183e648d95ba134980a",
+              "bytes": 8928
+            },
+            {
+              "file": "random929-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2234
+              ],
+              "sha256": "d96ccd450be738d7cdab16350ac73ceadea3f98ba3cf7a12a49cf871eac7b328",
+              "bytes": 17872
+            },
+            {
+              "file": "random929-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                1080
+              ],
+              "sha256": "aa4f64b994b86741278a2abc2d95ecd7a53d973d846d5ef9223ffbcb79bb26b4",
+              "bytes": 8640
+            },
+            {
+              "file": "random929-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "202e75f3f37348cf06210c7abd2689fddfce5896241321a98ff4aea11de20492",
+              "bytes": 5168
+            },
+            {
+              "file": "random929-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "6135f3d2a362e521f6e6920474326f6bdf71ceb5a8acc0754da621067db33cfa",
+              "bytes": 5168
+            },
+            {
+              "file": "random929-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "random929-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "random929-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                323
+              ],
+              "sha256": "8088ec78201a300dce10aa439cedc32150ab59d13b01361f6ccbeb0c9336d9f5",
+              "bytes": 1292
+            },
+            {
+              "file": "random929-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "202e75f3f37348cf06210c7abd2689fddfce5896241321a98ff4aea11de20492",
+              "bytes": 5168
+            }
+          ],
+          "identity_order": {
+            "file": "random929-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              1116
+            ],
+            "sha256": "ebd7cd4bcf0399eea8a59a2a36ae3c2f33fa84d95ccbfd71df613fff7d60f458",
+            "bytes": 8928
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 31,
+            "lanes": 323
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random930",
+          "seed": 930,
+          "files": [
+            {
+              "file": "random930-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "955d5738b3c2ef56b810682cc0be45848ca162ca4b5073dbebca5c752eaa9456",
+              "bytes": 8928
+            },
+            {
+              "file": "random930-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                1116
+              ],
+              "sha256": "4baf849b5d1f0e2f20ef1c50f0609149a3e8d15153605183e648d95ba134980a",
+              "bytes": 8928
+            },
+            {
+              "file": "random930-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2234
+              ],
+              "sha256": "15d60442a090f2df23ece8f79e5459af58005e3fa3ea2d4cdc9e4cbcc714a48b",
+              "bytes": 17872
+            },
+            {
+              "file": "random930-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                1080
+              ],
+              "sha256": "fee205cde29e04a2c509d4d3243e84dd83334609b50630ecfa0997fe30b3480e",
+              "bytes": 8640
+            },
+            {
+              "file": "random930-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "3501328e4935c0e0b4905f6cfe9fb9c4137fbb8597c1643f9124b13a8e2c87b8",
+              "bytes": 5168
+            },
+            {
+              "file": "random930-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "6135f3d2a362e521f6e6920474326f6bdf71ceb5a8acc0754da621067db33cfa",
+              "bytes": 5168
+            },
+            {
+              "file": "random930-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "random930-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                323
+              ],
+              "sha256": "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+              "bytes": 2584
+            },
+            {
+              "file": "random930-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                323
+              ],
+              "sha256": "8088ec78201a300dce10aa439cedc32150ab59d13b01361f6ccbeb0c9336d9f5",
+              "bytes": 1292
+            },
+            {
+              "file": "random930-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                646
+              ],
+              "sha256": "3501328e4935c0e0b4905f6cfe9fb9c4137fbb8597c1643f9124b13a8e2c87b8",
+              "bytes": 5168
+            }
+          ],
+          "identity_order": {
+            "file": "random930-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              1116
+            ],
+            "sha256": "02ffe3c3fa8ec056324d862b9ccd0d729cd4eee4ff86b34ec03054bca0608b14",
+            "bytes": 8928
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 31,
+            "lanes": 323
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        }
+      ],
+      "predicted_strategy": "complete cursor-a BFS then complete cursor-b BFS; all A then all B",
+      "canonical_discovery_source": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+      "source_current_hashes": [
+        "c8c1efe35028f868bac6697f99218981a37564c3e19b319ef2a7d3a52ae7297f",
+        "4baf849b5d1f0e2f20ef1c50f0609149a3e8d15153605183e648d95ba134980a",
+        "6ddf8e7abd90b613392d3be1ad0cc1f94a0f450e341f983dce84a94c60a203e5",
+        "a1833ef9daece786e959a313267c9f35f74930a6f38ba57ef4f3bb457b37cea5",
+        "5f6e6ee39ac5a856ebc407fc02059f1fa04e875d8115c93e9099197e384caab0",
+        "6135f3d2a362e521f6e6920474326f6bdf71ceb5a8acc0754da621067db33cfa",
+        "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+        "afd5ebbd6e82f40c7cde3f20dd04836c9d340454eae61d68a2c38673b94a37d8",
+        "8088ec78201a300dce10aa439cedc32150ab59d13b01361f6ccbeb0c9336d9f5",
+        "5f6e6ee39ac5a856ebc407fc02059f1fa04e875d8115c93e9099197e384caab0"
+      ]
+    },
+    {
+      "id": "matmul-64x128x64",
+      "shape": [
+        64,
+        128,
+        64
+      ],
+      "nodes": 16384,
+      "lanes": 4096,
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          4096
+        ],
+        "sha256": "b038c4fde672b5b6f7b1eb7db415b2a841fa12026177d7029deb41ece86f35a9",
+        "bytes": 32768
+      },
+      "layouts": [
+        {
+          "name": "after",
+          "seed": null,
+          "files": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "68c2f8862f45702c3feca83112a93936d0ea3e90f0f61f7b56535a9ebdcf232e",
+              "bytes": 131072
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "065a8097a91d770019bc0bc61a41aab31f29f1e430bc7d44eee0c3c38b018f40",
+              "bytes": 131072
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                32770
+              ],
+              "sha256": "5ee4732b5df05d9b4e9fd62708933025206a7a41c233789583a66ece9fb99dd9",
+              "bytes": 262160
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16256
+              ],
+              "sha256": "3b2a2b24a2318c1aea8824f9faf282edcd38809b9b248f0ac42b21fe70e0c3e8",
+              "bytes": 130048
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "b7e233c58b192e133201ad26e1c36a3bb84c7e8647a4ee7240241e4a2a14cc65",
+              "bytes": 65536
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "648e196c2563cffdaa2931758a989986cade3a78b4669f7ed4b2a319da5d29d2",
+              "bytes": 65536
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                4096
+              ],
+              "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+              "bytes": 16384
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "b7e233c58b192e133201ad26e1c36a3bb84c7e8647a4ee7240241e4a2a14cc65",
+              "bytes": 65536
+            }
+          ],
+          "identity_order": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16384
+            ],
+            "sha256": "30cb0f2e7e3f440487527f377017ac87e103bfd59cb9b20e49685f999ad2454c",
+            "bytes": 131072
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 4096
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "before",
+          "seed": 928,
+          "files": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "ae6e358cc83e40070fb0af231adad2121dbe0c84eb80235df30cbd87b68f4af2",
+              "bytes": 131072
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "065a8097a91d770019bc0bc61a41aab31f29f1e430bc7d44eee0c3c38b018f40",
+              "bytes": 131072
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                32770
+              ],
+              "sha256": "d44154cebaf3ab91180db500959535e5d3f3719aaa248d3713f8925e5f3ab3ec",
+              "bytes": 262160
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16256
+              ],
+              "sha256": "e4caf26ce7c8353e20ae13c3844dba707b7501bf87e810355cbcadf04f5d7cd8",
+              "bytes": 130048
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "2a71b9125c977f8f05a07714d6762dd2b5c966dde9c7b9fbf140df647f748aaa",
+              "bytes": 65536
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "648e196c2563cffdaa2931758a989986cade3a78b4669f7ed4b2a319da5d29d2",
+              "bytes": 65536
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                4096
+              ],
+              "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee",
+              "bytes": 16384
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "2a71b9125c977f8f05a07714d6762dd2b5c966dde9c7b9fbf140df647f748aaa",
+              "bytes": 65536
+            }
+          ],
+          "identity_order": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16384
+            ],
+            "sha256": "f10b1e4069d4d49500d789a29e94b270291511bd2cc8da11448d507dd28e785a",
+            "bytes": 131072
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 4096
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random929",
+          "seed": 929,
+          "files": [
+            {
+              "file": "random929-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "694c48ee7c353fefca6e14fdb267882d62cb69a3558327e5478f782bac7ba601",
+              "bytes": 131072
+            },
+            {
+              "file": "random929-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "065a8097a91d770019bc0bc61a41aab31f29f1e430bc7d44eee0c3c38b018f40",
+              "bytes": 131072
+            },
+            {
+              "file": "random929-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                32770
+              ],
+              "sha256": "ce82256561680f1bb799c4c62ff8c23a7d0cab715938eb71eb0513a37a70abf8",
+              "bytes": 262160
+            },
+            {
+              "file": "random929-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16256
+              ],
+              "sha256": "e746e0e30e2b39eb24972365e347e014a81f3d4ddc23ac027c8fa8645b6e1bda",
+              "bytes": 130048
+            },
+            {
+              "file": "random929-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "196185f5bbd607024f1f136cbb5c121a563cfaebac15ef423bc185b54250dda0",
+              "bytes": 65536
+            },
+            {
+              "file": "random929-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "648e196c2563cffdaa2931758a989986cade3a78b4669f7ed4b2a319da5d29d2",
+              "bytes": 65536
+            },
+            {
+              "file": "random929-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "random929-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "random929-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                4096
+              ],
+              "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+              "bytes": 16384
+            },
+            {
+              "file": "random929-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "196185f5bbd607024f1f136cbb5c121a563cfaebac15ef423bc185b54250dda0",
+              "bytes": 65536
+            }
+          ],
+          "identity_order": {
+            "file": "random929-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16384
+            ],
+            "sha256": "a0a634ed20fd56815a183cb727e817bf1f76da017d200a5b16724d07c8eb21f3",
+            "bytes": 131072
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 4096
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random930",
+          "seed": 930,
+          "files": [
+            {
+              "file": "random930-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "89892c2beef19af8da9443f0df273d320dec54b801ab3da6c6132d47f0548779",
+              "bytes": 131072
+            },
+            {
+              "file": "random930-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "065a8097a91d770019bc0bc61a41aab31f29f1e430bc7d44eee0c3c38b018f40",
+              "bytes": 131072
+            },
+            {
+              "file": "random930-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                32770
+              ],
+              "sha256": "468cc31798b1fc81a7700a3b10fc21dee07c9677d52f0710f15f85771f43b8c5",
+              "bytes": 262160
+            },
+            {
+              "file": "random930-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16256
+              ],
+              "sha256": "2411c9704f4e79bc5a357ce26da9c7f47e95c8b17269788067a99cf23688ea19",
+              "bytes": 130048
+            },
+            {
+              "file": "random930-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "cee582ea91607a1e9e8d7750fdf02ad61d929f18aff08c889b2be5fbd15dc922",
+              "bytes": 65536
+            },
+            {
+              "file": "random930-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "648e196c2563cffdaa2931758a989986cade3a78b4669f7ed4b2a319da5d29d2",
+              "bytes": 65536
+            },
+            {
+              "file": "random930-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "random930-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+              "bytes": 32768
+            },
+            {
+              "file": "random930-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                4096
+              ],
+              "sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+              "bytes": 16384
+            },
+            {
+              "file": "random930-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                8192
+              ],
+              "sha256": "cee582ea91607a1e9e8d7750fdf02ad61d929f18aff08c889b2be5fbd15dc922",
+              "bytes": 65536
+            }
+          ],
+          "identity_order": {
+            "file": "random930-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16384
+            ],
+            "sha256": "d7daaa3b53d12f29d5f35c017886443fd3700a248d107ec76fee7a76162fcd39",
+            "bytes": 131072
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 4096
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        }
+      ],
+      "predicted_strategy": "complete cursor-a BFS then complete cursor-b BFS; all A then all B",
+      "canonical_discovery_source": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+      "source_current_hashes": [
+        "49c68d8029017e1f0fd7358acd170ddb1e0b57f0dfb836251332e003af206de3",
+        "065a8097a91d770019bc0bc61a41aab31f29f1e430bc7d44eee0c3c38b018f40",
+        "fd30c623676620e26eaa31cc9855bc531b96524aa5239bf5efbcdda870579b76",
+        "2241b7d296aeb453de6bc18241ba0eb8e593e5b9e049f247abda016b2cf417aa",
+        "d5f0a597546150845e94e342608eadc02a06e408d7f8f873793beb06eecaf527",
+        "648e196c2563cffdaa2931758a989986cade3a78b4669f7ed4b2a319da5d29d2",
+        "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+        "d5f0a597546150845e94e342608eadc02a06e408d7f8f873793beb06eecaf527"
+      ]
+    },
+    {
+      "id": "matmul-128x128x128",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "nodes": 32768,
+      "lanes": 16384,
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          16384
+        ],
+        "sha256": "de906ba69d1a5b2d537c4e9a5d3f37ee8b4abacc4ea6d047c38c7f1d6a3c669d",
+        "bytes": 131072
+      },
+      "layouts": [
+        {
+          "name": "after",
+          "seed": null,
+          "files": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "bd8f73e13343d9aa39a1911cd996f72acc517522d0aa55fd1e202bb37e9f3685",
+              "bytes": 262144
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                65538
+              ],
+              "sha256": "66b1c1ccda0c2ae19d03fb470fff5205ee238b94374cdc9ee8f73ae492a6b13a",
+              "bytes": 524304
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                32512
+              ],
+              "sha256": "ea6856c70730ab7f1636f87f349ff0c07002447bf0a44f2963c82d5aa7b1d2c8",
+              "bytes": 260096
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5cdbff0beb25a8d3ac4998976d87bdc0a97b08610f51cbe50a9dec4c11dcd164",
+              "bytes": 262144
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                16384
+              ],
+              "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "bytes": 65536
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5cdbff0beb25a8d3ac4998976d87bdc0a97b08610f51cbe50a9dec4c11dcd164",
+              "bytes": 262144
+            }
+          ],
+          "identity_order": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              32768
+            ],
+            "sha256": "6875b22d4606cecf1b2068a94240a34213b0adce15fdc2caa64b7390bdbe5cee",
+            "bytes": 262144
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 16384
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "before",
+          "seed": 928,
+          "files": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "0523f872b77bf647249d6704eed68c00323d2803ed3bcca9c9601b82b6ac16fd",
+              "bytes": 262144
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                65538
+              ],
+              "sha256": "626557d72aa1ede24eea08d081dfd6043126cd92c30cb32dbb9bf27c8c734321",
+              "bytes": 524304
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                32512
+              ],
+              "sha256": "008544e93fca849a46af9099229f6d7a81bee2c07d69730094bd603d3c4f5f7f",
+              "bytes": 260096
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "e628a613201223bbb8da35ca90e16aceaa993ccbcde08e8c9a1feffc2221a429",
+              "bytes": 262144
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                16384
+              ],
+              "sha256": "71189f7fb6aed638640078fba3a35fda6c39c8962e74dcc75935aac948da9063",
+              "bytes": 65536
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "e628a613201223bbb8da35ca90e16aceaa993ccbcde08e8c9a1feffc2221a429",
+              "bytes": 262144
+            }
+          ],
+          "identity_order": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              32768
+            ],
+            "sha256": "15f3340371d803138ae8aa4c31492f95053d17395d29b195b6ff69c4bdb4d9dc",
+            "bytes": 262144
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 16384
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random929",
+          "seed": 929,
+          "files": [
+            {
+              "file": "random929-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "e0a85f1e7f692cf0a2b01e195c8e6780e36ee122d6aaaf510a1c6df306915628",
+              "bytes": 262144
+            },
+            {
+              "file": "random929-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "random929-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                65538
+              ],
+              "sha256": "9063f2ab01abfbb2aa22c2f74832a96b3097c7851afc09e68d5d86716bfc4fc0",
+              "bytes": 524304
+            },
+            {
+              "file": "random929-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                32512
+              ],
+              "sha256": "2c1552cf3c0ade984b1c3bd31971e5e748f1a13b01d641b23b06f55307ede907",
+              "bytes": 260096
+            },
+            {
+              "file": "random929-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "a3947f1199925084470d6845204a8ab8a47435f9465e2f9221e2768cb1cb6590",
+              "bytes": 262144
+            },
+            {
+              "file": "random929-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "random929-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "random929-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "random929-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                16384
+              ],
+              "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "bytes": 65536
+            },
+            {
+              "file": "random929-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "a3947f1199925084470d6845204a8ab8a47435f9465e2f9221e2768cb1cb6590",
+              "bytes": 262144
+            }
+          ],
+          "identity_order": {
+            "file": "random929-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              32768
+            ],
+            "sha256": "1bd0afd8b3841215878bd2fed01b2ec85ac81b83121e62d76f74b72a83fd4759",
+            "bytes": 262144
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 16384
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random930",
+          "seed": 930,
+          "files": [
+            {
+              "file": "random930-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "4e44afbc488fd5c4abfdcfc567a92532ffb6d5bab0ba800478e55fec5f4a0e69",
+              "bytes": 262144
+            },
+            {
+              "file": "random930-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "random930-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                65538
+              ],
+              "sha256": "297d423029f4ce65a534ffbee62d68f0c44a15861c3febac848e201afc51ee93",
+              "bytes": 524304
+            },
+            {
+              "file": "random930-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                32512
+              ],
+              "sha256": "9315b14b741feffa60a7e3a5483190f9f11cb79e1793c324fd88013f93a3197f",
+              "bytes": 260096
+            },
+            {
+              "file": "random930-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "a648b7fdb23b5fd8d61f5d9c1d9d4c251f06ba249d6a8ea76ea0bb87336f060e",
+              "bytes": 262144
+            },
+            {
+              "file": "random930-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+              "bytes": 262144
+            },
+            {
+              "file": "random930-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "random930-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+              "bytes": 131072
+            },
+            {
+              "file": "random930-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                16384
+              ],
+              "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "bytes": 65536
+            },
+            {
+              "file": "random930-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32768
+              ],
+              "sha256": "a648b7fdb23b5fd8d61f5d9c1d9d4c251f06ba249d6a8ea76ea0bb87336f060e",
+              "bytes": 262144
+            }
+          ],
+          "identity_order": {
+            "file": "random930-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              32768
+            ],
+            "sha256": "5c2d6fd248677edbef4017ec5650562f65fa823d73235d3c6f10e532329e48da",
+            "bytes": 262144
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 128,
+            "lanes": 16384
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        }
+      ],
+      "predicted_strategy": "complete cursor-a BFS then complete cursor-b BFS; all A then all B",
+      "canonical_discovery_source": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+      "source_current_hashes": [
+        "09ffeb001fd6a67161140ed4b4716b53eafc5eabbc43aa3540af3cace2d4a207",
+        "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+        "82a3e8642c929a707c6652669307c3db2e243ecfe70add1110b28ecb4b3a5cb2",
+        "545fe3f9641804f8d39d6dc54112ce453a5d10f024fceef0b3b686585af44c16",
+        "c026e6436cf4aafd2a3645863c58604c69ddd5271fd5d0d1186a1d2bc7dbe267",
+        "5d13d4f5eabdb8645983b02dfd86438b77115918b5d2ec8c40ba3355c8a80dc1",
+        "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+        "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+        "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+        "c026e6436cf4aafd2a3645863c58604c69ddd5271fd5d0d1186a1d2bc7dbe267"
+      ]
+    },
+    {
+      "id": "matmul-256x256x256",
+      "shape": [
+        256,
+        256,
+        256
+      ],
+      "nodes": 131072,
+      "lanes": 65536,
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          65536
+        ],
+        "sha256": "25c807bc4da6dff44104c763cd650cd45fe3dde4ce41f0561741c9debaa58af4",
+        "bytes": 524288
+      },
+      "layouts": [
+        {
+          "name": "after",
+          "seed": null,
+          "files": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "23010b124b0e6042fa07ca83b1ebf42950626489d1231bf504febc6198697c86",
+              "bytes": 1048576
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                262146
+              ],
+              "sha256": "2c276c196d9068ad8ccb58bbbba42817e149c6946caa3b1cd2b03c144edd21ae",
+              "bytes": 2097168
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                130560
+              ],
+              "sha256": "4d6825bf288902a7996105a869b1bdf86f7b883781477fd261cada08ce83a555",
+              "bytes": 1044480
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "fc2a73a777ba0532bb50b9b7ce9e014bb3fac84d6b1f588cbdf1cfa599a0ed01",
+              "bytes": 1048576
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                65536
+              ],
+              "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+              "bytes": 262144
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "fc2a73a777ba0532bb50b9b7ce9e014bb3fac84d6b1f588cbdf1cfa599a0ed01",
+              "bytes": 1048576
+            }
+          ],
+          "identity_order": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              131072
+            ],
+            "sha256": "fcb85dca3bd78d7dac164c9b429ed0ab4d989095865f6a2e1c8ccf7b5dce19d9",
+            "bytes": 1048576
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 256,
+            "lanes": 65536
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "before",
+          "seed": 928,
+          "files": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "74a81c227bd6ab391ff6a77b1182417cf7476de282380d0f4bae5729329eb731",
+              "bytes": 1048576
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                262146
+              ],
+              "sha256": "64ca45ff527a7505ac5f6fe5cbad9a83747336bdf2464dd61eed4ddeacc7f19f",
+              "bytes": 2097168
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                130560
+              ],
+              "sha256": "089b61fe64b6b05dc9b32119c800e014781ea58830de423b897d9b08f3773718",
+              "bytes": 1044480
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "6b1e1241c208048526213525eb12a0aaa94e27869d91b71ef77c35d1fc9fddee",
+              "bytes": 1048576
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                65536
+              ],
+              "sha256": "3b874d3ba46c638fc3094f8e92fb744ca974893873f8885f54e23760f9b6311b",
+              "bytes": 262144
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "6b1e1241c208048526213525eb12a0aaa94e27869d91b71ef77c35d1fc9fddee",
+              "bytes": 1048576
+            }
+          ],
+          "identity_order": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              131072
+            ],
+            "sha256": "9558385fb49ab0971803dbd688be8fe58978ec4b254a8a33b3d09e1207dc8e08",
+            "bytes": 1048576
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 256,
+            "lanes": 65536
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random929",
+          "seed": 929,
+          "files": [
+            {
+              "file": "random929-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "3c6ab218846353f0d9bad84ecfd11abe90a8d16b476d4f359ad2dfc9facf4931",
+              "bytes": 1048576
+            },
+            {
+              "file": "random929-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "random929-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                262146
+              ],
+              "sha256": "a0b2ad2a0dc763d0c61d57a48f0f3d0dc970d5da9a57413556743a94db75ca50",
+              "bytes": 2097168
+            },
+            {
+              "file": "random929-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                130560
+              ],
+              "sha256": "3d798ee7c2c18e41e26d0724d22701843b68043ac75a87ac3792fb1356f7e9c3",
+              "bytes": 1044480
+            },
+            {
+              "file": "random929-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "75b983c0dcbf8c7d6e287d218959d21c31a4e0a7522fcdeccfebd5bebfede9ff",
+              "bytes": 1048576
+            },
+            {
+              "file": "random929-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "random929-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "random929-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "random929-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                65536
+              ],
+              "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+              "bytes": 262144
+            },
+            {
+              "file": "random929-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "75b983c0dcbf8c7d6e287d218959d21c31a4e0a7522fcdeccfebd5bebfede9ff",
+              "bytes": 1048576
+            }
+          ],
+          "identity_order": {
+            "file": "random929-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              131072
+            ],
+            "sha256": "8bafd4d0cd6e6ac9d702b1dc9d8cc782998440e5aa90ed2a7c851759c1844427",
+            "bytes": 1048576
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 256,
+            "lanes": 65536
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        },
+        {
+          "name": "random930",
+          "seed": 930,
+          "files": [
+            {
+              "file": "random930-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "d593bfa6f21c217e2af55824c6f4be8f403055285d1a92ef541aa93607465ed8",
+              "bytes": 1048576
+            },
+            {
+              "file": "random930-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "random930-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                262146
+              ],
+              "sha256": "788079732b6d88dc13bc8393375eab893b157cbd21e6f3c91d26103a3cb435b5",
+              "bytes": 2097168
+            },
+            {
+              "file": "random930-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                130560
+              ],
+              "sha256": "8326421d7ddbf9290c56d13a303293a12bfe3418293baffe8242f73edec2eecb",
+              "bytes": 1044480
+            },
+            {
+              "file": "random930-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "a7b3b47f05bc5dada03bf7cca214f2ff505cd46fdd54574f1165464e0e323862",
+              "bytes": 1048576
+            },
+            {
+              "file": "random930-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+              "bytes": 1048576
+            },
+            {
+              "file": "random930-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "random930-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                65536
+              ],
+              "sha256": "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+              "bytes": 524288
+            },
+            {
+              "file": "random930-8.bin",
+              "dtype": "<u4",
+              "shape": [
+                65536
+              ],
+              "sha256": "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+              "bytes": 262144
+            },
+            {
+              "file": "random930-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                131072
+              ],
+              "sha256": "a7b3b47f05bc5dada03bf7cca214f2ff505cd46fdd54574f1165464e0e323862",
+              "bytes": 1048576
+            }
+          ],
+          "identity_order": {
+            "file": "random930-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              131072
+            ],
+            "sha256": "7e36a1d130b568fd1a9df421348cf2c00bc2bc3399abf394e343182b912084e8",
+            "bytes": 1048576
+          },
+          "audit": {
+            "all_node_fields_edges_heads_and_queue_remap_verified": true,
+            "all_lane_cursor_arrivals_logically_identical": true,
+            "rounds_per_cursor": 256,
+            "lanes": 65536
+          },
+          "queue_capacity": 1,
+          "max_visits": 1000000
+        }
+      ],
+      "predicted_strategy": "complete cursor-a BFS then complete cursor-b BFS; all A then all B",
+      "canonical_discovery_source": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+      "source_current_hashes": [
+        "af8faca55a776db65a33b64afecb0b300e3dbe785ee137327b4d992b4a2da3ea",
+        "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+        "fb42535ab6715b8fa8f199c407a7b3528fe437e2e5f49bc2e28af096ef5ad8bf",
+        "726c9139648af3243664faf1c67673a47cb52fe60de900ecfa96cee4e577e500",
+        "1bd0c0a7bc9da3e9ed0f22074d518ed83b0a7e7a8ac4e411e125e3dc1d581fda",
+        "ea379b16ee52a9693faed8f82b4656c1d464771bd11d092329ac627efa0879f2",
+        "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+        "07854d2fef297a06ba81685e660c332de36d5d18d546927d30daad6d7fda1541",
+        "8a39d2abd3999ab73c34db2476849cddf303ce389b35826850f9a700589b4a90",
+        "1bd0c0a7bc9da3e9ed0f22074d518ed83b0a7e7a8ac4e411e125e3dc1d581fda"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+case,M,K,N,jac_before_random928_us,jac_after_predicted_us,handwritten_cuda_reference_us,layout_speedup_before_after,residual_gap_after_reference,unit,source_run_id
+matmul-3x5x2,3,5,2,7.264,8.224,1.568,0.8832684824902723,5.244897959183674,microseconds,profile
+matmul-17x31x19,17,31,19,49.313,52.609,2.176,0.9373491227736699,24.176930147058822,microseconds,profile
+matmul-64x128x64,64,128,64,230.881,212.753,5.44,1.0852067890934558,39.10900735294117,microseconds,profile
+matmul-128x128x128,128,128,128,316.289,228.08100000000002,4.832,1.3867397985803287,47.20219370860928,microseconds,profile
+matmul-256x256x256,256,256,256,4435.973,2150.6655,20.8,2.0626048076746475,103.3973798076923,microseconds,profile

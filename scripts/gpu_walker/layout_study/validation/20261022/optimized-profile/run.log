@@ -1,0 +1,10 @@
+matmul-3x5x2 {'Jac before (Random928 + checked LLVM O2)': 7.358, 'Jac after (Predicted + checked LLVM O2)': 8.336, 'Handwritten CUDA reference (nvcc O3)': 2.654, 'Random929 robustness': 7.996, 'Random930 robustness': 7.8}
+matmul-17x31x19 {'Jac before (Random928 + checked LLVM O2)': 43.424, 'Jac after (Predicted + checked LLVM O2)': 46.252, 'Handwritten CUDA reference (nvcc O3)': 3.304, 'Random929 robustness': 43.358, 'Random930 robustness': 43.296}
+matmul-64x128x64 {'Jac before (Random928 + checked LLVM O2)': 202.12, 'Jac after (Predicted + checked LLVM O2)': 182.064, 'Handwritten CUDA reference (nvcc O3)': 6.588, 'Random929 robustness': 201.886, 'Random930 robustness': 202.29}
+matmul-128x128x128 {'Jac before (Random928 + checked LLVM O2)': 190.696, 'Jac after (Predicted + checked LLVM O2)': 170.892, 'Handwritten CUDA reference (nvcc O3)': 5.892, 'Random929 robustness': 190.434, 'Random930 robustness': 190.322}
+matmul-256x256x256 {'Jac before (Random928 + checked LLVM O2)': 951.02, 'Jac after (Predicted + checked LLVM O2)': 541.354, 'Handwritten CUDA reference (nvcc O3)': 22.156, 'Random929 robustness': 951.7, 'Random930 robustness': 932.77}
+Collecting data...
+Generating '/tmp/nsys-report-d88e.qdstrm'
+[1/1] [0%                          ] trace.nsys-rep[1/1] [0%                          ] trace.nsys-rep[1/1] [6%                          ] trace.nsys-rep[1/1] [12%                         ] trace.nsys-rep[1/1] [13%                         ] trace.nsys-rep[1/1] [=================72%        ] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep
+Generated:
+	/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/trace.nsys-rep

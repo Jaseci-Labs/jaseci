@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "contract_sha256": "59d06adedba7d043d621a09b72cda034a513c1196d4171e1419b951e1b41d06c",
+  "primary_groups": [
+    "Jac before (Random928 + checked LLVM O2)",
+    "Jac after (Predicted + checked LLVM O2)",
+    "Handwritten CUDA reference (nvcc O3)"
+  ],
+  "jac_variable": "node layout only; same checked LLVM O2",
+  "identical_ptx": true,
+  "identical_jac_geometry": true,
+  "logical_identity_audits": true,
+  "full_output_status_checks": true,
+  "checked_error_artifact_verified": true,
+  "source_run_id": "optimized-profile",
+  "profiler_launches_verified": 7225,
+  "report_generator_sha256": "4345ccc77fd7c54b588291dca371bc0ac0e742882480a3dcf61fcda35952ca9f"
+}

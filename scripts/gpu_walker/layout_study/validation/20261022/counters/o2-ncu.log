@@ -1,0 +1,8 @@
+==PROF== Connected to process 2976160 (/usr/bin/nvidia-smi)
+==PROF== Disconnected from process 2976160
+==PROF== Connected to process 2976113 (/home/baichuan/.pyenv/versions/3.12.11/bin/python3.12)
+==ERROR== ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters on the target device 0. For instructions on enabling permissions and to get more information see https://developer.nvidia.com/ERR_NVGPUCTRPERM
+matmul-256x256x256 {'Jac before (Random928 + checked LLVM O2)': 1361.92}
+==PROF== Connected to process 2976545 (/usr/bin/nvidia-smi)
+==PROF== Disconnected from process 2976545
+==PROF== Disconnected from process 2976113

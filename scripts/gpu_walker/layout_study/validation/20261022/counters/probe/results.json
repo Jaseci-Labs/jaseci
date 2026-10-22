@@ -1,0 +1,99 @@
+{
+  "runner_sha256": "18c55f388b9c92898a5b8ffdd04787ff7e8b08989e6a65986d55683d9d37ce2e",
+  "prepare_sha256": "f7626d4875fa8f57a5759bab909321d2a50a382ab9e6e5efee334817532749dd",
+  "driver_sha256": "a3fdc20e6917432844699b5c7586c20fcc1b17aa98c8fdb3c5095df7fb7953ad",
+  "contract_sha256": "fe51a77b95ae7191247315a2241ea66a9b3d069bcd7e277de4c5106d1e179679",
+  "timestamp_utc": "2026-10-22T05:33:25.402146+00:00",
+  "input_manifest_sha256": "992ffeecc166dcfd8d90dd00f37d780e85b4476901eb5ee53fa0ab0c963fd8f9",
+  "jac_ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "jac_kernel": "jac_Dot_cursors_batch",
+  "jac_function_loaded_once_for_all_layouts": true,
+  "reference_kernel": "matmul_tiled_i64",
+  "reference_source_sha256": "6c1d25c54f48ae3dcdc412228365e7edc6cf9f430494e549d9860f7a7ec23725",
+  "reference_ptx_sha256": "bf1a011e79fc26c7c4b50044871a475669511873439b55b8931fbb070c5e3bb4",
+  "nvcc_command": [
+    "/usr/local/cuda-12.9/bin/nvcc",
+    "-ptx",
+    "-O3",
+    "-arch=compute_86",
+    "-std=c++17",
+    "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/matmul.cu",
+    "-o",
+    "scripts/gpu_walker/layout_study/validation/20261022/counters/probe/matmul.ptx"
+  ],
+  "primary_arms": [
+    "Jac before (Random928)",
+    "Jac after (Predicted)",
+    "Handwritten CUDA reference"
+  ],
+  "warmup": 0,
+  "repeats": 1,
+  "inner": 1,
+  "order_seed": 237,
+  "event_metric": "CUDA-event graph replay / inner, including graph scheduling gaps",
+  "gpu_before": "Thu Oct 22 01:33:25 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 33%   36C    P8             23W /  350W |   23488MiB /  24576MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n",
+  "cases": [
+    {
+      "id": "matmul-256x256x256",
+      "shape": [
+        256,
+        256,
+        256
+      ],
+      "lanes": 65536,
+      "expected_sha256": "25c807bc4da6dff44104c763cd650cd45fe3dde4ce41f0561741c9debaa58af4",
+      "planned_device_bytes": 9695248,
+      "free_before_case": 301268992,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 124107949604864,
+          "tags": 124107950653440,
+          "offsets": 124107951702016,
+          "targets": 124107955896320
+        }
+      },
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 4587.520122528076,
+          "min_event_us": 4587.520122528076,
+          "max_event_us": 4587.520122528076,
+          "sample_n": 1
+        }
+      }
+    }
+  ],
+  "records": [
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 4587.520122528076,
+      "all_outputs_and_statuses_checked": true
+    }
+  ],
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "memory_before": {
+    "free": 301268992,
+    "total": 25272516608
+  },
+  "complete": true,
+  "memory_after": {
+    "free": 301268992,
+    "total": 25272516608
+  },
+  "gpu_after": "Thu Oct 22 01:33:36 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 32%   43C    P2            112W /  350W |   23488MiB /  24576MiB |      7%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n"
+}

@@ -1,0 +1,80 @@
+{
+  "contract_sha256": "fe51a77b95ae7191247315a2241ea66a9b3d069bcd7e277de4c5106d1e179679",
+  "primary_groups": [
+    "Jac before (Random928)",
+    "Jac after (Predicted)",
+    "Handwritten CUDA reference"
+  ],
+  "jac_independent_variable": "node layout only",
+  "unit": "microseconds",
+  "statistic": "median actual Nsight kernel end-start",
+  "source_run_id": "profile",
+  "sources_sha256": {
+    "inputs/inputs.json": "992ffeecc166dcfd8d90dd00f37d780e85b4476901eb5ee53fa0ab0c963fd8f9",
+    "inputs/Dot.ptx": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+    "profile/results.json": "61d4bba668fbfe6e174656561d06b20fd8028112aad4f4f1dba56d0d123356fb",
+    "profile/verified.json": "4135bf199ca4a81274014bdda425ae56c3976f262e63c98b892feb83f3bba318",
+    "profile/trace.sqlite": "c01ed7fef31b86b42611f28bf004bc10d8c799c89657f6e7b1fad8ffab2383bf",
+    "profile/trace.nsys-rep": "e59b27ff70ab5d8af464683fc0c29d89ae9c0e2a0f133a6d56a171223116017b",
+    "ordinary/results.json": "4e00d7acc3fc21f3f827f7a2a9aecbc0201c6dc56365942783e7c4d69dd142dc",
+    "address-analysis.json": "85740e99d71c528a13386c6c15ca6238ee1a0b6dc946521c13ec2898f7a333ef",
+    "counters/ncu.log": "1717eb95e18aa7e4cb94f3f57ad7a2f32c814ebd167ea94565874eca2fef4f9e"
+  },
+  "rows": [
+    {
+      "case": "matmul-3x5x2",
+      "M": 3,
+      "K": 5,
+      "N": 2,
+      "jac_before_random928_us": 7.264,
+      "jac_after_predicted_us": 8.224,
+      "handwritten_cuda_reference_us": 1.568,
+      "layout_speedup_before_after": 0.8832684824902723,
+      "residual_gap_after_reference": 5.244897959183674
+    },
+    {
+      "case": "matmul-17x31x19",
+      "M": 17,
+      "K": 31,
+      "N": 19,
+      "jac_before_random928_us": 49.313,
+      "jac_after_predicted_us": 52.609,
+      "handwritten_cuda_reference_us": 2.176,
+      "layout_speedup_before_after": 0.9373491227736699,
+      "residual_gap_after_reference": 24.176930147058822
+    },
+    {
+      "case": "matmul-64x128x64",
+      "M": 64,
+      "K": 128,
+      "N": 64,
+      "jac_before_random928_us": 230.881,
+      "jac_after_predicted_us": 212.753,
+      "handwritten_cuda_reference_us": 5.44,
+      "layout_speedup_before_after": 1.0852067890934558,
+      "residual_gap_after_reference": 39.10900735294117
+    },
+    {
+      "case": "matmul-128x128x128",
+      "M": 128,
+      "K": 128,
+      "N": 128,
+      "jac_before_random928_us": 316.289,
+      "jac_after_predicted_us": 228.08100000000002,
+      "handwritten_cuda_reference_us": 4.832,
+      "layout_speedup_before_after": 1.3867397985803287,
+      "residual_gap_after_reference": 47.20219370860928
+    },
+    {
+      "case": "matmul-256x256x256",
+      "M": 256,
+      "K": 256,
+      "N": 256,
+      "jac_before_random928_us": 4435.973,
+      "jac_after_predicted_us": 2150.6655,
+      "handwritten_cuda_reference_us": 20.8,
+      "layout_speedup_before_after": 2.0626048076746475,
+      "residual_gap_after_reference": 103.3973798076923
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+matmul-3x5x2 {'Jac before (Random928 + checked LLVM O2)': 6.394, 'Jac after (Predicted + checked LLVM O2)': 7.36, 'Handwritten CUDA reference (nvcc O3)': 1.664, 'Random929 robustness': 6.976, 'Random930 robustness': 6.828}
+matmul-17x31x19 {'Jac before (Random928 + checked LLVM O2)': 42.304, 'Jac after (Predicted + checked LLVM O2)': 45.248, 'Handwritten CUDA reference (nvcc O3)': 2.304, 'Random929 robustness': 42.432, 'Random930 robustness': 42.56}
+matmul-64x128x64 {'Jac before (Random928 + checked LLVM O2)': 173.504, 'Jac after (Predicted + checked LLVM O2)': 156.352, 'Handwritten CUDA reference (nvcc O3)': 4.864, 'Random929 robustness': 173.376, 'Random930 robustness': 173.504}
+matmul-128x128x128 {'Jac before (Random928 + checked LLVM O2)': 189.696, 'Jac after (Predicted + checked LLVM O2)': 170.048, 'Handwritten CUDA reference (nvcc O3)': 5.12, 'Random929 robustness': 189.76, 'Random930 robustness': 189.632}
+matmul-256x256x256 {'Jac before (Random928 + checked LLVM O2)': 940.096, 'Jac after (Predicted + checked LLVM O2)': 548.608, 'Handwritten CUDA reference (nvcc O3)': 20.8, 'Random929 robustness': 940.224, 'Random930 robustness': 930.88}

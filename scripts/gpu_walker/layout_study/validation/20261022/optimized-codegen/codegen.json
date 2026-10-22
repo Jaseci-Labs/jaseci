@@ -1,0 +1,28 @@
+{
+  "pipeline": "standard LLVM O2; checked semantics retained",
+  "production_ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "optimized_ptx_sha256": "c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81",
+  "raw_ir_sha256": "d67158e1eeb1537d8f73b758d2b58a5f1a128ea7769257d7390ca6e9e7c3104e",
+  "optimized_ir_sha256": "d1c65063680f1b1fd4475d9bbc1797ce618363ac9724e57cd272da368ba3a90c",
+  "generator_sha256": "92b003bc2c173495bb29738774153e39f3c54991bb2e21a3dcd43b416cfb30a9",
+  "checked_error_fixtures": 13,
+  "status_evidence": "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/status-validation.json",
+  "status_evidence_sha256": "bea7ec93a379cfd9913cf2fb6728867efa3710d8fe1d527ef85e0ff530f11d05",
+  "compiler_source_sha256": {
+    "jac/jaclang/runtime/gpu_cursors.py": "62b51087120ce6d7332923f57d8f463cff8802259a7c1dbf086f205a0c80cf1a",
+    "jac/jaclang/compiler/backends/native/ptx.jac": "acb439948aac8889d5f904f62f5d1af6cab3f285faeb5cd32da8fe06ed87df36"
+  },
+  "baseline_allocas": 10,
+  "optimized_allocas": 0,
+  "ptx_local_load_sites": 0,
+  "ptx_local_store_sites": 0,
+  "ptxas_command": [
+    "/usr/local/cuda-12.9/bin/ptxas",
+    "-arch=sm_86",
+    "-v",
+    "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/O2.ptx",
+    "-o",
+    "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/O2.cubin"
+  ],
+  "ptxas_log": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 9.334 ms\n"
+}

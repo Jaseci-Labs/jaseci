@@ -1,0 +1,147 @@
+{
+  "working_directory": "repository root",
+  "source_head_before_scoped_commit": "dea3b8a5512f37e41cb56fd3997e1f022591b59b",
+  "versions": {
+    "nsys": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0\n",
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Apr__9_19:24:57_PDT_2025\nCuda compilation tools, release 12.9, V12.9.41\nBuild cuda_12.9.r12.9/compiler.35813241_0\n"
+  },
+  "commands": [
+    {
+      "purpose": "checked O2 emission",
+      "environment": {
+        "PYTHONPATH": "jac:scripts/gpu_walker"
+      },
+      "argv": [
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/emit_checked_o2.py",
+        "--inputs",
+        "scripts/gpu_walker/layout_study/validation/20261022/inputs/inputs.json",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen"
+      ],
+      "log": "optimized-codegen.log",
+      "exit_code": 0
+    },
+    {
+      "purpose": "primary randomized interleaved node profile",
+      "argv": [
+        "/usr/local/bin/nsys",
+        "profile",
+        "--trace=cuda",
+        "--cuda-graph-trace=node",
+        "--sample=none",
+        "--cpuctxsw=none",
+        "--force-overwrite=true",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/trace",
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/run.py",
+        "--inputs",
+        "scripts/gpu_walker/layout_study/validation/20261022/inputs/inputs.json",
+        "--jac-ptx",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/O2.ptx",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile",
+        "--warmup",
+        "3",
+        "--repeats",
+        "15"
+      ],
+      "log": "optimized-profile/run.log",
+      "exit_code": 0
+    },
+    {
+      "purpose": "SQLite export",
+      "argv": [
+        "/usr/local/bin/nsys",
+        "export",
+        "--type",
+        "sqlite",
+        "--force-overwrite=true",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/trace.sqlite",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/trace.nsys-rep"
+      ],
+      "exit_code": 0
+    },
+    {
+      "purpose": "independent complete launch join",
+      "argv": [
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/analyze.py",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/results.json",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/trace.sqlite",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/verified.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "purpose": "ordinary event cross-check",
+      "argv": [
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/run.py",
+        "--inputs",
+        "scripts/gpu_walker/layout_study/validation/20261022/inputs/inputs.json",
+        "--jac-ptx",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/O2.ptx",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-ordinary"
+      ],
+      "log": "optimized-ordinary.log",
+      "exit_code": 0
+    },
+    {
+      "purpose": "deterministic address analysis",
+      "argv": [
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/address_analysis.py",
+        "--inputs",
+        "scripts/gpu_walker/layout_study/validation/20261022/inputs/inputs.json",
+        "--profile",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/results.json",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-address-analysis.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "purpose": "hardware counter access probe",
+      "argv": [
+        "/opt/nvidia/nsight-compute/2025.3.0/ncu",
+        "--target-processes",
+        "all",
+        "--kernel-name",
+        "regex:jac_Dot_cursors_batch",
+        "--launch-count",
+        "1",
+        "--metrics",
+        "l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum",
+        "--force-overwrite",
+        "--export",
+        "scripts/gpu_walker/layout_study/validation/20261022/counters/o2-random928",
+        "env/bin/python",
+        "scripts/gpu_walker/layout_study/run.py",
+        "--inputs",
+        "scripts/gpu_walker/layout_study/validation/20261022/inputs/inputs.json",
+        "--jac-ptx",
+        "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/O2.ptx",
+        "--output",
+        "scripts/gpu_walker/layout_study/validation/20261022/counters/o2-probe",
+        "--case-id",
+        "matmul-256x256x256",
+        "--only-arm",
+        "before",
+        "--warmup",
+        "0",
+        "--repeats",
+        "1",
+        "--inner",
+        "1"
+      ],
+      "log": "counters/o2-ncu.log",
+      "exit_code": 1,
+      "error": "ERR_NVGPUCTRPERM"
+    }
+  ]
+}

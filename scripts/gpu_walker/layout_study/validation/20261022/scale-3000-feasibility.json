@@ -1,0 +1,25 @@
+{
+  "shape": [
+    3000,
+    3000,
+    3000
+  ],
+  "historical_full_outputs_checked": 9000000,
+  "historical_timed_outputs_per_launch": 32768,
+  "historical_subset_random_us": 70801.6555,
+  "historical_subset_predicted_us": 8972.6155,
+  "historical_subset_speedup": 7.890860307120036,
+  "historical_handwritten_reference": "absent",
+  "historical_ptx_sha256": "1dcb05c5f3cc1dfc7aa4a6ec3d79e4bc096f9b0842977b50183694db3131fdca",
+  "graph_bytes_per_layout": 719952016,
+  "current_free_bytes_after_context": 357826560,
+  "two_graphs_dense_full_matrices_and_bounded_private_lower_bytes": 1660360480,
+  "resident_graph_feasible_now": false,
+  "historical_raw_dir_currently_exists": false,
+  "historical_sources_sha256": {
+    "scripts/gpu_walker/large_matmul/validation/full-run.json": "22c2e3691ff7e391e4bd3fa0b587d76ce7623f787c999c54ffe9945078565a3e",
+    "scripts/gpu_walker/large_matmul/validation/profile.json": "79cf99d38eef984a8cb88e815bf95246cdf38a3cb9a63b2af42b64a1466b8804",
+    "scripts/gpu_walker/large_matmul/validation/identity-audit.json": "267721480eaf392ff3f4d7c55e36b29f974b1f87d232b0deb2dd85647e200759",
+    "docs/design/gpu-large-matmul-3000-results.md": "0855ba16b9c61f25ee5396cf5e2b080bb05316bd01b8f5ef84ab8b1786530961"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "contract_sha256": "fe51a77b95ae7191247315a2241ea66a9b3d069bcd7e277de4c5106d1e179679",
+  "primary_groups": [
+    "Jac before (Random928)",
+    "Jac after (Predicted)",
+    "Handwritten CUDA reference"
+  ],
+  "jac_variable": "node layout only",
+  "identical_ptx": true,
+  "identical_jac_geometry": true,
+  "logical_identity_audits": true,
+  "full_output_status_checks": true,
+  "source_run_id": "profile",
+  "profiler_launches_verified": 7225,
+  "report_generator_sha256": "192fd716a22b591571ac8d17b4b03400727fb68ba3a340a6c1a766556a68f521"
+}

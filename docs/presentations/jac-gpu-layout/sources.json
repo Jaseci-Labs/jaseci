@@ -1,0 +1,42 @@
+{
+  "source_run_id": "optimized-profile",
+  "primary_groups": [
+    "Jac before (Random928 + checked LLVM O2)",
+    "Jac after (Predicted + checked LLVM O2)",
+    "Handwritten CUDA reference (nvcc O3)"
+  ],
+  "files": [
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/comparison.json",
+      "sha256": "f9c1d6e3da721e2afdc8478a20d42d090fa8588a176b59a29e2122aef7f5c70a"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/REPORT.md",
+      "sha256": "651ace92b85d07d66849dc95a920aad052e8cfc28ed7e781d622a7df6bfbd607"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/contract-validation.json",
+      "sha256": "6ded366202c2e2e82ea7810a3bbd17bf4f90afc5d2153ca99d5ff07d7cdd3830"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/verified.json",
+      "sha256": "81a58512c1d71859bbe563ade27852c9c6df051d820631fe108f9cc6680a24b0"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/optimized-codegen/codegen.json",
+      "sha256": "c10ff1b1d9220627d314bbaab6d080807615617ce3ff755d67d2d30ce607399f"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/validation/20261022/optimized-address-analysis.json",
+      "sha256": "64a1725df28f7fbdd348e9de69f89b561b140b64561bb2574bbdc943a48d66e9"
+    },
+    {
+      "path": "scripts/gpu_walker/layout_study/RESEARCH_CONTRACT.md",
+      "sha256": "59d06adedba7d043d621a09b72cda034a513c1196d4171e1419b951e1b41d06c"
+    },
+    {
+      "path": "docs/presentations/jac-gpu-layout/generate.py",
+      "sha256": "980f6722d8de6a919c67467f54a14704293919908a1e0fd6c0c3e413ea76bdf6"
+    }
+  ]
+}

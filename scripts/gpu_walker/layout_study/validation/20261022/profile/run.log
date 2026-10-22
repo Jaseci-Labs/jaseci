@@ -1,0 +1,10 @@
+matmul-3x5x2 {'Jac before (Random928)': 8.45, 'Jac after (Predicted)': 9.37, 'Handwritten CUDA reference': 2.724, 'Random929 robustness': 9.06, 'Random930 robustness': 8.868}
+matmul-17x31x19 {'Jac before (Random928)': 50.476, 'Jac after (Predicted)': 53.778, 'Handwritten CUDA reference': 3.342, 'Random929 robustness': 50.608, 'Random930 robustness': 50.286}
+matmul-64x128x64 {'Jac before (Random928)': 232.166, 'Jac after (Predicted)': 214.0, 'Handwritten CUDA reference': 6.67, 'Random929 robustness': 235.998, 'Random930 robustness': 233.218}
+matmul-128x128x128 {'Jac before (Random928)': 317.774, 'Jac after (Predicted)': 233.318, 'Handwritten CUDA reference': 6.002, 'Random929 robustness': 316.524, 'Random930 robustness': 310.716}
+matmul-256x256x256 {'Jac before (Random928)': 4443.068, 'Jac after (Predicted)': 2153.442, 'Handwritten CUDA reference': 22.654, 'Random929 robustness': 4431.984, 'Random930 robustness': 4507.848}
+Collecting data...
+Generating '/tmp/nsys-report-4e28.qdstrm'
+[1/1] [0%                          ] trace.nsys-rep[1/1] [0%                          ] trace.nsys-rep[1/1] [6%                          ] trace.nsys-rep[1/1] [12%                         ] trace.nsys-rep[1/1] [13%                         ] trace.nsys-rep[1/1] [=================72%        ] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep
+Generated:
+	/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/layout_study/validation/20261022/profile/trace.nsys-rep

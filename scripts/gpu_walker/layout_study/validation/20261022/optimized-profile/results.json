@@ -1,0 +1,4287 @@
+{
+  "runner_sha256": "fce61bd25a7967e8e6effb9d89f2eb0dc26978cff7432bf2b0012e815a006589",
+  "prepare_sha256": "f7626d4875fa8f57a5759bab909321d2a50a382ab9e6e5efee334817532749dd",
+  "driver_sha256": "a3fdc20e6917432844699b5c7586c20fcc1b17aa98c8fdb3c5095df7fb7953ad",
+  "contract_sha256": "59d06adedba7d043d621a09b72cda034a513c1196d4171e1419b951e1b41d06c",
+  "timestamp_utc": "2026-10-22T05:45:21.500355+00:00",
+  "input_manifest_sha256": "992ffeecc166dcfd8d90dd00f37d780e85b4476901eb5ee53fa0ab0c963fd8f9",
+  "jac_compilation_policy": "checked standard LLVM O2",
+  "optimized_codegen_sha256": "c10ff1b1d9220627d314bbaab6d080807615617ce3ff755d67d2d30ce607399f",
+  "jac_ptx_sha256": "c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81",
+  "jac_kernel": "jac_Dot_cursors_batch",
+  "jac_function_loaded_once_for_all_layouts": true,
+  "reference_kernel": "matmul_tiled_i64",
+  "reference_source_sha256": "6c1d25c54f48ae3dcdc412228365e7edc6cf9f430494e549d9860f7a7ec23725",
+  "reference_ptx_sha256": "bf1a011e79fc26c7c4b50044871a475669511873439b55b8931fbb070c5e3bb4",
+  "nvcc_command": [
+    "/usr/local/cuda-12.9/bin/nvcc",
+    "-ptx",
+    "-O3",
+    "-arch=compute_86",
+    "-std=c++17",
+    "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/matmul.cu",
+    "-o",
+    "scripts/gpu_walker/layout_study/validation/20261022/optimized-profile/matmul.ptx"
+  ],
+  "primary_arms": [
+    "Jac before (Random928 + checked LLVM O2)",
+    "Jac after (Predicted + checked LLVM O2)",
+    "Handwritten CUDA reference (nvcc O3)"
+  ],
+  "warmup": 3,
+  "repeats": 15,
+  "inner": 16,
+  "order_seed": 237,
+  "event_metric": "CUDA-event graph replay / inner, including graph scheduling gaps",
+  "gpu_before": "Thu Oct 22 01:45:21 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 30%   35C    P8             27W /  350W |   23488MiB /  24576MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n",
+  "cases": [
+    {
+      "id": "matmul-3x5x2",
+      "shape": [
+        3,
+        5,
+        2
+      ],
+      "lanes": 6,
+      "expected_sha256": "28027377a5cf14c2e6a14d8f2147d099c9c9b65880c9614b97c7708eb180f40c",
+      "planned_device_bytes": 5784,
+      "free_before_case": 357826560,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 131654070829056,
+          "tags": 131654070829568,
+          "offsets": 131654070830080,
+          "targets": 131654070830592
+        },
+        "after": {
+          "values": 131654070834176,
+          "tags": 131654070834688,
+          "offsets": 131654070835200,
+          "targets": 131654070835712
+        },
+        "random929": {
+          "values": 131654070840832,
+          "tags": 131654070841344,
+          "offsets": 131654070841856,
+          "targets": 131654070842368
+        },
+        "random930": {
+          "values": 131654070845952,
+          "tags": 131654070846464,
+          "offsets": 131654070846976,
+          "targets": 131654070847488
+        }
+      },
+      "arms": {
+        "Jac before (Random928 + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 7.35800014808774,
+          "min_event_us": 7.317999843508005,
+          "max_event_us": 7.706000003963709,
+          "sample_n": 15
+        },
+        "Jac after (Predicted + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 8.336000144481659,
+          "min_event_us": 8.298000320792198,
+          "max_event_us": 8.523999713361263,
+          "sample_n": 15
+        },
+        "Handwritten CUDA reference (nvcc O3)": {
+          "kernel": "matmul_tiled_i64",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            16,
+            16,
+            1
+          ],
+          "median_event_us": 2.6539999525994062,
+          "min_event_us": 2.6179999113082886,
+          "max_event_us": 2.858000108972192,
+          "sample_n": 15
+        },
+        "Random929 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 7.996000349521637,
+          "min_event_us": 7.972000166773796,
+          "max_event_us": 8.178000338375568,
+          "sample_n": 15
+        },
+        "Random930 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 7.799999788403511,
+          "min_event_us": 7.786000147461891,
+          "max_event_us": 8.005999960005283,
+          "sample_n": 15
+        }
+      }
+    },
+    {
+      "id": "matmul-17x31x19",
+      "shape": [
+        17,
+        31,
+        19
+      ],
+      "lanes": 323,
+      "expected_sha256": "14aae05b9b391da860f6db9b697e222c957edbe4112aa383e8f7be5dc088983a",
+      "planned_device_bytes": 276840,
+      "free_before_case": 357826560,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 131654070829056,
+          "tags": 131654070838272,
+          "offsets": 131654070847488,
+          "targets": 131654070865408
+        },
+        "after": {
+          "values": 131654070898688,
+          "tags": 131654070907904,
+          "offsets": 131654070917120,
+          "targets": 131654070935040
+        },
+        "random929": {
+          "values": 131654070981120,
+          "tags": 131654070990336,
+          "offsets": 131654070999552,
+          "targets": 131654071017472
+        },
+        "random930": {
+          "values": 131654071050752,
+          "tags": 131654071059968,
+          "offsets": 131654071069184,
+          "targets": 131654071087104
+        }
+      },
+      "arms": {
+        "Jac before (Random928 + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            3,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 43.42399910092354,
+          "min_event_us": 43.32200065255165,
+          "max_event_us": 44.227998703718185,
+          "sample_n": 15
+        },
+        "Jac after (Predicted + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            3,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 46.25200107693672,
+          "min_event_us": 46.19399830698967,
+          "max_event_us": 46.29800096154213,
+          "sample_n": 15
+        },
+        "Handwritten CUDA reference (nvcc O3)": {
+          "kernel": "matmul_tiled_i64",
+          "grid": [
+            2,
+            2,
+            1
+          ],
+          "block": [
+            16,
+            16,
+            1
+          ],
+          "median_event_us": 3.30400001257658,
+          "min_event_us": 3.2679999712854624,
+          "max_event_us": 3.3480001147836447,
+          "sample_n": 15
+        },
+        "Random929 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            3,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 43.35800185799599,
+          "min_event_us": 43.28799992799759,
+          "max_event_us": 43.54599863290787,
+          "sample_n": 15
+        },
+        "Random930 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            3,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 43.296001851558685,
+          "min_event_us": 43.234001845121384,
+          "max_event_us": 43.375998735427856,
+          "sample_n": 15
+        }
+      }
+    },
+    {
+      "id": "matmul-64x128x64",
+      "shape": [
+        64,
+        128,
+        64
+      ],
+      "lanes": 4096,
+      "expected_sha256": "b038c4fde672b5b6f7b1eb7db415b2a841fa12026177d7029deb41ece86f35a9",
+      "planned_device_bytes": 3895360,
+      "free_before_case": 357826560,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 131654070829056,
+          "tags": 131654070960128,
+          "offsets": 131654071091200,
+          "targets": 131654071353856
+        },
+        "after": {
+          "values": 131654071762432,
+          "tags": 131654071893504,
+          "offsets": 131654072024576,
+          "targets": 131654072287232
+        },
+        "random929": {
+          "values": 131654072926208,
+          "tags": 131654073057280,
+          "offsets": 131654073188352,
+          "targets": 131654073451008
+        },
+        "random930": {
+          "values": 131654073794048,
+          "tags": 131654073925120,
+          "offsets": 131654074056192,
+          "targets": 131654074318848
+        }
+      },
+      "arms": {
+        "Jac before (Random928 + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 202.12000608444214,
+          "min_event_us": 201.98999345302582,
+          "max_event_us": 202.37800478935242,
+          "sample_n": 15
+        },
+        "Jac after (Predicted + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 182.0639967918396,
+          "min_event_us": 181.98199570178986,
+          "max_event_us": 182.5059950351715,
+          "sample_n": 15
+        },
+        "Handwritten CUDA reference (nvcc O3)": {
+          "kernel": "matmul_tiled_i64",
+          "grid": [
+            4,
+            4,
+            1
+          ],
+          "block": [
+            16,
+            16,
+            1
+          ],
+          "median_event_us": 6.587999872863293,
+          "min_event_us": 6.513999775052071,
+          "max_event_us": 6.969999987632036,
+          "sample_n": 15
+        },
+        "Random929 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 201.88599824905396,
+          "min_event_us": 201.82600617408752,
+          "max_event_us": 202.5880068540573,
+          "sample_n": 15
+        },
+        "Random930 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            32,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 202.28999853134155,
+          "min_event_us": 202.2079974412918,
+          "max_event_us": 202.84000039100647,
+          "sample_n": 15
+        }
+      }
+    },
+    {
+      "id": "matmul-128x128x128",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "lanes": 16384,
+      "expected_sha256": "de906ba69d1a5b2d537c4e9a5d3f37ee8b4abacc4ea6d047c38c7f1d6a3c669d",
+      "planned_device_bytes": 10084416,
+      "free_before_case": 357826560,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 131654070829056,
+          "tags": 131654071091200,
+          "offsets": 131654071353344,
+          "targets": 131654071878144
+        },
+        "after": {
+          "values": 131654073253888,
+          "tags": 131654073516032,
+          "offsets": 131654073778176,
+          "targets": 131654074302976
+        },
+        "random929": {
+          "values": 131654076071936,
+          "tags": 131654076334080,
+          "offsets": 131654077120512,
+          "targets": 131654076596224
+        },
+        "random930": {
+          "values": 131654078497280,
+          "tags": 131654078759424,
+          "offsets": 131654079217664,
+          "targets": 131654079742464
+        }
+      },
+      "arms": {
+        "Jac before (Random928 + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 190.69600105285645,
+          "min_event_us": 188.11200559139252,
+          "max_event_us": 191.5300041437149,
+          "sample_n": 15
+        },
+        "Jac after (Predicted + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 170.89200019836426,
+          "min_event_us": 164.93800282478333,
+          "max_event_us": 171.86599969863892,
+          "sample_n": 15
+        },
+        "Handwritten CUDA reference (nvcc O3)": {
+          "kernel": "matmul_tiled_i64",
+          "grid": [
+            8,
+            8,
+            1
+          ],
+          "block": [
+            16,
+            16,
+            1
+          ],
+          "median_event_us": 5.892000161111355,
+          "min_event_us": 5.756000056862831,
+          "max_event_us": 6.603999994695187,
+          "sample_n": 15
+        },
+        "Random929 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 190.43399393558502,
+          "min_event_us": 187.83000111579895,
+          "max_event_us": 191.34199619293213,
+          "sample_n": 15
+        },
+        "Random930 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            128,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 190.32199680805206,
+          "min_event_us": 187.67599761486053,
+          "max_event_us": 191.06200337409973,
+          "sample_n": 15
+        }
+      }
+    },
+    {
+      "id": "matmul-256x256x256",
+      "shape": [
+        256,
+        256,
+        256
+      ],
+      "lanes": 65536,
+      "expected_sha256": "25c807bc4da6dff44104c763cd650cd45fe3dde4ce41f0561741c9debaa58af4",
+      "planned_device_bytes": 40353856,
+      "free_before_case": 357826560,
+      "all_node_permutations_and_logical_traversals_verified": true,
+      "all_outputs_and_statuses_verified": true,
+      "device_array_bases": {
+        "before": {
+          "values": 131654070829056,
+          "tags": 131654071877632,
+          "offsets": 131654072926208,
+          "targets": 131654077120512
+        },
+        "after": {
+          "values": 131654083411968,
+          "tags": 131654084460544,
+          "offsets": 131654085509120,
+          "targets": 131654089703424
+        },
+        "random929": {
+          "values": 131654095994880,
+          "tags": 131654097043456,
+          "offsets": 131654098092032,
+          "targets": 131654144229376
+        },
+        "random930": {
+          "values": 131654150520832,
+          "tags": 131654151569408,
+          "offsets": 131654152617984,
+          "targets": 131654156812288
+        }
+      },
+      "arms": {
+        "Jac before (Random928 + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 951.0200023651123,
+          "min_event_us": 932.5259923934937,
+          "max_event_us": 960.889995098114,
+          "sample_n": 15
+        },
+        "Jac after (Predicted + checked LLVM O2)": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 541.3540005683899,
+          "min_event_us": 537.2639894485474,
+          "max_event_us": 543.6620116233826,
+          "sample_n": 15
+        },
+        "Handwritten CUDA reference (nvcc O3)": {
+          "kernel": "matmul_tiled_i64",
+          "grid": [
+            16,
+            16,
+            1
+          ],
+          "block": [
+            16,
+            16,
+            1
+          ],
+          "median_event_us": 22.1560001373291,
+          "min_event_us": 21.779999136924744,
+          "max_event_us": 22.760000079870224,
+          "sample_n": 15
+        },
+        "Random929 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 951.69997215271,
+          "min_event_us": 938.971996307373,
+          "max_event_us": 958.8879942893982,
+          "sample_n": 15
+        },
+        "Random930 robustness": {
+          "kernel": "jac_Dot_cursors_batch",
+          "grid": [
+            512,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 932.7700138092041,
+          "min_event_us": 920.1679825782776,
+          "max_event_us": 944.3659782409668,
+          "sample_n": 15
+        }
+      }
+    }
+  ],
+  "records": [
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 9.10400040447712,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 3.0960000585764647,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 7.915999740362167,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 8.3619998767972,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 8.092000149190426,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 7.85600021481514,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 7.993999868631363,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 8.365999907255173,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 7.60400015860796,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 2.644000109285116,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 8.02799966186285,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 7.845999673008919,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 2.6259999722242355,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 8.329999633133411,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 7.542000152170658,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 2.706000115722418,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 7.385999895632267,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 7.8039998188614845,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 8.314000442624092,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 8.004000410437584,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 2.6519999373704195,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 8.178000338375568,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 8.303999900817871,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 7.350000087171793,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 7.961999624967575,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 2.6539999525994062,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 7.972000166773796,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 7.575999945402145,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 7.786000147461891,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 8.328000083565712,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 2.681999932974577,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 7.989999838173389,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 7.786000147461891,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 8.321999572217464,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 7.706000003963709,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 7.796000223606825,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 8.005999960005283,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 8.484000340104103,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 7.348000071942806,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 2.6539999525994062,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 8.005999960005283,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 8.349999785423279,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 7.786000147461891,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 7.393999956548214,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 2.655999967828393,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 2.6179999113082886,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 7.340000011026859,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 8.005999960005283,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 8.298000320792198,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 7.993999868631363,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 7.799999788403511,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 7.993999868631363,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 2.66400002874434,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 8.336000144481659,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 7.3460000567138195,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 8.356000296771526,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 7.794000208377838,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 2.858000108972192,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 7.317999843508005,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 8.01599957048893,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 7.799999788403511,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 2.6320000179111958,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 8.307999931275845,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 8.162000216543674,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 7.356000132858753,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 2.6539999525994062,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 8.310000412166119,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 7.996000349521637,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 7.35800014808774,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 7.790000177919865,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 7.8039998188614845,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 8.523999713361263,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 2.6779999025166035,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 7.517999969422817,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 7.989999838173389,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 8.352000266313553,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 7.9819997772574425,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 7.799999788403511,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 7.350000087171793,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 2.8280001133680344,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 8.004000410437584,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 7.37799983471632,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 7.931999862194061,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 8.337999694049358,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 2.6519999373704195,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 8.345999754965305,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 2.644000109285116,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 7.9840002581477165,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 7.8220004215836525,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 7.548000197857618,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 44.068001210689545,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 43.682001531124115,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 3.582000033929944,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 43.77799853682518,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 46.55199870467186,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 43.34999993443489,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 3.329999977722764,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 46.46600037813187,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 43.43000054359436,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 43.421998620033264,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 3.344000084325671,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 43.441999703645706,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 43.42399910092354,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 43.31199824810028,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 46.261999756097794,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 43.54599863290787,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 43.446000665426254,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 46.29800096154213,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 43.29799860715866,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 3.286000108346343,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 46.24199867248535,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 3.3480001147836447,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 43.43400150537491,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 44.227998703718185,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 43.375998735427856,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 46.25000059604645,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 3.312000073492527,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 43.3179996907711,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 43.497998267412186,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 43.34000125527382,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 46.261999756097794,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 43.389998376369476,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 43.299999088048935,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 43.5199998319149,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 3.3179998863488436,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 43.31599920988083,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 43.44800114631653,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 43.473999947309494,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 46.23199999332428,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 3.2939999364316463,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 46.21199890971184,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 3.2679999712854624,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 43.38200017809868,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 43.35800185799599,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 43.234001845121384,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 43.32200065255165,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 3.3140000887215137,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 43.389998376369476,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 43.30199956893921,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 46.268001198768616,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 43.39800029993057,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 43.34399849176407,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 3.29799996688962,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 46.25200107693672,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 43.296001851558685,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 43.45199838280678,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 43.25399920344353,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 43.32200065255165,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 3.30400001257658,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 46.261999756097794,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 3.3100000582635403,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 43.29400137066841,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 46.254001557826996,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 43.32200065255165,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 43.26200112700462,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 46.25200107693672,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 43.428000062704086,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 43.39199885725975,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 43.29200088977814,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 3.2919999212026596,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 46.24199867248535,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 43.34200173616409,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 3.3080000430345535,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 43.27600076794624,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 43.28799992799759,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 3.306000027805567,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 43.37399825453758,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 46.19399830698967,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 43.441999703645706,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 43.29799860715866,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 43.30199956893921,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 46.22599855065346,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 43.3880016207695,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 3.3019999973475933,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 43.28799992799759,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 43.42399910092354,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 43.28799992799759,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 43.40999945998192,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 46.261999756097794,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 3.2820000778883696,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 182.86000192165375,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 202.26000249385834,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 202.565997838974,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 7.025999948382378,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 202.5820016860962,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 201.89400017261505,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 202.29600369930267,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 6.593999918550253,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 202.12799310684204,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 182.11600184440613,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 202.01599597930908,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 202.24399864673615,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 182.04200267791748,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 6.59599993377924,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 201.83800160884857,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 201.88599824905396,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 202.25200057029724,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 202.0139992237091,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 6.568000186234713,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 182.24799633026123,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 202.28999853134155,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 6.575999781489372,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 202.2700011730194,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 182.0479929447174,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 201.84800028800964,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 6.577999796718359,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 202.06600427627563,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 201.92399621009827,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 182.0259988307953,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 202.2079974412918,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 202.22200453281403,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 202.0380049943924,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 201.85400545597076,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 6.539999973028898,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 182.03000724315643,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 181.98199570178986,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 201.84199512004852,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 202.29600369930267,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 6.513999775052071,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 201.98999345302582,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 182.02200531959534,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 6.587999872863293,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 201.82600617408752,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 202.12000608444214,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 202.2079974412918,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 6.969999987632036,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 202.0300030708313,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 182.2260022163391,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 202.03199982643127,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 202.55999267101288,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 202.2559940814972,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 182.1500062942505,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 202.08999514579773,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 202.84000039100647,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 6.864000111818314,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 202.2400051355362,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 202.21999287605286,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 6.560000125318766,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 182.0639967918396,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 202.08799839019775,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 182.21800029277802,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 6.711999885737896,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 202.3400068283081,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 202.37399637699127,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 201.98999345302582,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 6.639999803155661,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 202.28199660778046,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 202.5880068540573,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 182.5059950351715,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 202.59599387645721,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 6.843999959528446,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 202.4019956588745,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 202.37800478935242,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 182.15200304985046,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 201.95400714874268,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 202.31600105762482,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 201.8660008907318,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 6.792000029236078,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 202.23000645637512,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 182.109996676445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 6.572000216692686,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 202.24200189113617,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 202.09600031375885,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 182.0240020751953,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 201.87799632549286,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 202.26000249385834,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 6.599999964237213,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 202.11000740528107,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 201.8360048532486,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 182.0400059223175,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 187.27600574493408,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 6.182000041007996,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 189.61599469184875,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 169.9959933757782,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 189.41399455070496,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 186.7240071296692,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 163.6819988489151,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 189.14400041103363,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 189.0300065279007,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 5.901999771595001,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 188.9979988336563,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 189.13200497627258,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 189.10999596118927,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 170.0800061225891,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 5.880000069737434,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 5.756000056862831,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 164.95999693870544,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 187.93800473213196,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 190.311998128891,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 190.57400524616241,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 5.872000008821487,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 190.32199680805206,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 170.8820015192032,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 190.76600670814514,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 190.35400450229645,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 190.2099996805191,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 5.869999993592501,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 170.88399827480316,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 190.7300055027008,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 190.55399298667908,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 187.98600137233734,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 190.72799384593964,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 190.77399373054504,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 170.9280014038086,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 5.892000161111355,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 188.11200559139252,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 164.93800282478333,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 190.30000269412994,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 190.3579980134964,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 5.824000108987093,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 5.770000163465738,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 170.84799706935883,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 187.83000111579895,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 190.31600654125214,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 190.87399542331696,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 170.76599597930908,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 5.83200016990304,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 190.3979927301407,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 190.60400128364563,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 190.43399393558502,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 170.89200019836426,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 187.85999715328217,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 190.36799669265747,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 5.816000048071146,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 190.61599671840668,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 170.89200019836426,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 190.66399335861206,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 6.045999936759472,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 190.29200077056885,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 190.69600105285645,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 190.6459927558899,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 5.9899999760091305,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 171.6500073671341,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 191.38599932193756,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 190.98199903964996,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 188.45799565315247,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 6.21799984946847,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 190.54999947547913,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 171.86599969863892,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 191.06200337409973,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 191.5300041437149,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 188.49200010299683,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 171.53599858283997,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 6.603999994695187,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 191.33000075817108,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 165.6000018119812,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 191.34999811649323,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 6.451999768614769,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 190.97599387168884,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 191.34199619293213,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 188.5019987821579,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 171.64799571037292,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 5.896000191569328,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 190.62800705432892,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 190.44199585914612,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 187.67599761486053,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 171.41999304294586,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 190.67400693893433,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 5.944000091403723,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 190.653994679451,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 25.049999356269836,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 1072.092056274414,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 1050.5540370941162,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 587.988018989563,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 1072.5480318069458,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 1064.784049987793,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 1041.043996810913,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 24.39199946820736,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 1071.6840028762817,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 587.5260233879089,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 581.0880064964294,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 945.8919763565063,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 22.113999351859093,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 938.2780194282532,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 927.8920292854309,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 537.2639894485474,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 22.260000929236412,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 938.971996307373,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 932.5259923934937,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 923.99001121521,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 937.6479983329773,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 946.8399882316589,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 543.6620116233826,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 22.760000079870224,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 934.6719980239868,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 951.0200023651123,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 22.471999749541283,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 948.5999941825867,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 927.157998085022,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 540.8759713172913,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 22.363999858498573,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 958.9959979057312,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 939.4519925117493,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 540.7559871673584,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 942.1240091323853,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 943.5359835624695,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 22.41400070488453,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 950.1259922981262,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 944.3659782409668,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 543.0880188941956,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 22.01000042259693,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 951.69997215271,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 954.6819925308228,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 540.153980255127,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 934.6960186958313,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 21.908000111579895,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 920.1679825782776,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 954.9540281295776,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 960.889995098114,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 542.7359938621521,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 959.6499800682068,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 931.2859773635864,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 22.1560001373291,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 541.3540005683899,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 952.9860019683838,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 936.1280202865601,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 939.2319917678833,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 22.19800092279911,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 543.0099964141846,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 955.4579854011536,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 538.8860106468201,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 950.6779909133911,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 22.072000429034233,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 941.5119886398315,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 931.5339922904968,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 937.0539784431458,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 956.9100141525269,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 958.8879942893982,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 22.074000909924507,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 541.9059991836548,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 540.2839779853821,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 21.862000226974487,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 932.7700138092041,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 941.9199824333191,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 953.7060260772705,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 958.6880207061768,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 936.6940259933472,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 22.17799983918667,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 542.1159863471985,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 951.7840147018433,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 539.8399829864502,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 21.779999136924744,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 954.55402135849,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 925.242006778717,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 947.0580220222473,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 22.096000611782074,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random930 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 929.3779730796814,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 950.4380226135254,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Random929 robustness",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 951.8600106239319,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 542.9859757423401,
+      "all_outputs_and_statuses_checked": true
+    }
+  ],
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "memory_before": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "complete": true,
+  "memory_after": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "gpu_after": "Thu Oct 22 01:45:27 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 30%   54C    P2            321W /  350W |   23488MiB /  24576MiB |     40%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n"
+}

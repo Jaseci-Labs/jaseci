@@ -1,0 +1,83 @@
+{
+  "contract_sha256": "59d06adedba7d043d621a09b72cda034a513c1196d4171e1419b951e1b41d06c",
+  "primary_groups": [
+    "Jac before (Random928 + checked LLVM O2)",
+    "Jac after (Predicted + checked LLVM O2)",
+    "Handwritten CUDA reference (nvcc O3)"
+  ],
+  "jac_independent_variable": "node layout only; same checked LLVM O2 PTX",
+  "unit": "microseconds",
+  "statistic": "median actual Nsight kernel end-start",
+  "source_run_id": "optimized-profile",
+  "sources_sha256": {
+    "inputs/inputs.json": "992ffeecc166dcfd8d90dd00f37d780e85b4476901eb5ee53fa0ab0c963fd8f9",
+    "inputs/Dot.ptx": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+    "optimized-codegen/O2.ptx": "c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81",
+    "optimized-codegen/codegen.json": "c10ff1b1d9220627d314bbaab6d080807615617ce3ff755d67d2d30ce607399f",
+    "optimized-profile/results.json": "66ac0851bea5a3c15369c3c792b8ae3dd5706cf184f556272a3adf2428da4869",
+    "optimized-profile/verified.json": "81a58512c1d71859bbe563ade27852c9c6df051d820631fe108f9cc6680a24b0",
+    "optimized-profile/trace.sqlite": "0676f8893b1052dbe4c859ed846c4a5d187af49befdecd2bee29bb35b88649fa",
+    "optimized-profile/trace.nsys-rep": "a8efb61990c60910b20a3c1203fdcd43705e4610918a54e9da0fec79bad897e8",
+    "optimized-ordinary/results.json": "d994365320152f36864a003add9b4dedd73401b2faff1c6c75510d56b242a880",
+    "optimized-address-analysis.json": "64a1725df28f7fbdd348e9de69f89b561b140b64561bb2574bbdc943a48d66e9",
+    "counters/o2-ncu.log": "66d7774a32397b5e51e85d727010c2ea691796de82897566ce794c298249c2e0",
+    "counters/o2-status.json": "ea9f9fcbc407ffffdec7547ac58b22f9baa4f44d4329ace0a4dcaee94d459599"
+  },
+  "rows": [
+    {
+      "case": "matmul-3x5x2",
+      "M": 3,
+      "K": 5,
+      "N": 2,
+      "jac_before_random928_o2_us": 6.272,
+      "jac_after_predicted_o2_us": 7.232,
+      "handwritten_cuda_o3_reference_us": 1.568,
+      "layout_speedup_before_after": 0.8672566371681416,
+      "residual_gap_after_reference": 4.612244897959184
+    },
+    {
+      "case": "matmul-17x31x19",
+      "M": 17,
+      "K": 31,
+      "N": 19,
+      "jac_before_random928_o2_us": 42.304,
+      "jac_after_predicted_o2_us": 45.152,
+      "handwritten_cuda_o3_reference_us": 2.208,
+      "layout_speedup_before_after": 0.9369241672572644,
+      "residual_gap_after_reference": 20.44927536231884
+    },
+    {
+      "case": "matmul-64x128x64",
+      "M": 64,
+      "K": 128,
+      "N": 64,
+      "jac_before_random928_o2_us": 200.929,
+      "jac_after_predicted_o2_us": 180.865,
+      "handwritten_cuda_o3_reference_us": 5.44,
+      "layout_speedup_before_after": 1.1109335692367235,
+      "residual_gap_after_reference": 33.247242647058826
+    },
+    {
+      "case": "matmul-128x128x128",
+      "M": 128,
+      "K": 128,
+      "N": 128,
+      "jac_before_random928_o2_us": 187.265,
+      "jac_after_predicted_o2_us": 164.0325,
+      "handwritten_cuda_o3_reference_us": 4.832,
+      "layout_speedup_before_after": 1.1416335177480073,
+      "residual_gap_after_reference": 33.94712334437086
+    },
+    {
+      "case": "matmul-256x256x256",
+      "M": 256,
+      "K": 256,
+      "N": 256,
+      "jac_before_random928_o2_us": 947.38,
+      "jac_after_predicted_o2_us": 540.418,
+      "handwritten_cuda_o3_reference_us": 20.705,
+      "layout_speedup_before_after": 1.7530504165294272,
+      "residual_gap_after_reference": 26.10084520647187
+    }
+  ]
+}

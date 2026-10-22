@@ -1,0 +1,193 @@
+{
+  "source_run_id": "optimized-profile",
+  "unit": "microseconds",
+  "primary_distributions": [
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "median_us": 6.272,
+      "p10_us": 6.272,
+      "p90_us": 6.304,
+      "min_us": 6.24,
+      "max_us": 6.528,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "median_us": 7.232,
+      "p10_us": 7.232,
+      "p90_us": 7.264,
+      "min_us": 7.2,
+      "max_us": 7.488,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "median_us": 1.568,
+      "p10_us": 1.568,
+      "p90_us": 1.6,
+      "min_us": 1.536,
+      "max_us": 1.888,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "median_us": 42.304,
+      "p10_us": 42.048,
+      "p90_us": 42.592,
+      "min_us": 41.792,
+      "max_us": 42.976,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "median_us": 45.152,
+      "p10_us": 45.12,
+      "p90_us": 45.185,
+      "min_us": 44.992,
+      "max_us": 45.504,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "median_us": 2.208,
+      "p10_us": 2.176,
+      "p90_us": 2.208,
+      "min_us": 2.176,
+      "max_us": 2.496,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "median_us": 200.929,
+      "p10_us": 200.801,
+      "p90_us": 201.089,
+      "min_us": 200.641,
+      "max_us": 201.281,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "median_us": 180.865,
+      "p10_us": 180.801,
+      "p90_us": 181.089,
+      "min_us": 180.736,
+      "max_us": 181.249,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "median_us": 5.44,
+      "p10_us": 5.408,
+      "p90_us": 5.472,
+      "min_us": 5.408,
+      "max_us": 5.76,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "median_us": 187.265,
+      "p10_us": 186.657,
+      "p90_us": 188.096,
+      "min_us": 186.081,
+      "max_us": 227.553,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "median_us": 164.0325,
+      "p10_us": 163.905,
+      "p90_us": 164.161,
+      "min_us": 163.808,
+      "max_us": 259.937,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "median_us": 4.832,
+      "p10_us": 4.832,
+      "p90_us": 4.864,
+      "min_us": 4.8,
+      "max_us": 6.912,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac before (Random928 + checked LLVM O2)",
+      "median_us": 947.38,
+      "p10_us": 920.452,
+      "p90_us": 971.908,
+      "min_us": 902.852,
+      "max_us": 1005.924,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac after (Predicted + checked LLVM O2)",
+      "median_us": 540.418,
+      "p10_us": 537.698,
+      "p90_us": 542.306,
+      "min_us": 534.754,
+      "max_us": 544.13,
+      "sample_n": 240
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Handwritten CUDA reference (nvcc O3)",
+      "median_us": 20.705,
+      "p10_us": 20.512,
+      "p90_us": 20.96,
+      "min_us": 20.32,
+      "max_us": 21.152,
+      "sample_n": 240
+    }
+  ],
+  "ordinary_events": [
+    {
+      "case": "matmul-3x5x2",
+      "before_us": 6.393999792635441,
+      "after_us": 7.360000163316727,
+      "reference_us": 1.6639999812468886,
+      "layout_speedup": 0.8687499525481036
+    },
+    {
+      "case": "matmul-17x31x19",
+      "before_us": 42.30400174856186,
+      "after_us": 45.24800181388855,
+      "reference_us": 2.3040000814944506,
+      "layout_speedup": 0.9349363519424397
+    },
+    {
+      "case": "matmul-64x128x64",
+      "before_us": 173.50399494171143,
+      "after_us": 156.3519984483719,
+      "reference_us": 4.863999783992767,
+      "layout_speedup": 1.1097011657257658
+    },
+    {
+      "case": "matmul-128x128x128",
+      "before_us": 189.69599902629852,
+      "after_us": 170.04799842834473,
+      "reference_us": 5.119999870657921,
+      "layout_speedup": 1.1155438510276445
+    },
+    {
+      "case": "matmul-256x256x256",
+      "before_us": 940.0960206985474,
+      "after_us": 548.6080050468445,
+      "reference_us": 20.800000056624413,
+      "layout_speedup": 1.7136024484700594
+    }
+  ]
+}

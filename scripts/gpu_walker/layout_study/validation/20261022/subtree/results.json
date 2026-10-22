@@ -1,0 +1,3578 @@
+{
+  "runner_sha256": "f6d16cd98cd4a96fa25a524dc74dc277dc551f122fbf33c74c00bbaca8ad2946",
+  "source_manifest_sha256": "dae13174f513aa73e145a61e04626e065d531ffa79f8380999a6c410afcf517b",
+  "contract_sha256": "fe51a77b95ae7191247315a2241ea66a9b3d069bcd7e277de4c5106d1e179679",
+  "jac_ptx_sha256": "45b959185e5c08239a3aac2b5397d67b94dfa5a9e3131e55e0708e2f5d95bb88",
+  "jac_source_sha256": "38d7a81d3085f7127f39d3c3d941b29189d4b94dda062230303b44dd312bd713",
+  "jac_function_loaded_once_for_both_layouts": true,
+  "after_strategy": "ordered multi-source BFS, seeded in original query-lane order, first occurrence; original CSR neighbor order",
+  "reference_layout": "after",
+  "reference_kernel": "subtree_checked",
+  "reference_source_sha256": "d34ca977b159e4b345872412729634c1ac513602f6593aa13ffed43b5ecb599e",
+  "reference_ptx_sha256": "e805276e02b704417745ac1b91e610b594b7d2358c07e989b6a7e4430b87ef0b",
+  "nvcc_command": [
+    "/usr/local/cuda-12.9/bin/nvcc",
+    "-ptx",
+    "-O3",
+    "-arch=compute_86",
+    "-std=c++17",
+    "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/subtree_query/subtree.cu",
+    "-o",
+    "scripts/gpu_walker/layout_study/validation/20261022/subtree/subtree.ptx"
+  ],
+  "primary_arms": [
+    "Jac before (Random928)",
+    "Jac after (Predicted BFS)",
+    "Handwritten checked CSR reference (after layout)"
+  ],
+  "warmup": 3,
+  "repeats": 15,
+  "inner": 8,
+  "order_seed": 237,
+  "gpu_before": "Thu Oct 22 01:42:31 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 30%   35C    P8             28W /  350W |   23488MiB /  24576MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n",
+  "cases": [
+    {
+      "id": "ragged37-mixed33",
+      "tree_nodes": 37,
+      "packed_nodes": 37,
+      "queries": 33,
+      "inputs": {
+        "before": {
+          "permutation": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              37
+            ],
+            "sha256": "4fc1825a909ab05f3e66fd16c98819ec464a2b8baa684b20e85bcfcefa5f35c4",
+            "bytes": 296
+          },
+          "arrays": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                37
+              ],
+              "sha256": "cd36aa3205cfdfd445dc0083068f2ad20e28903e7b4366be18c2495df0810f76",
+              "bytes": 296
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                37
+              ],
+              "sha256": "94c3a039fa9d0becce3454457e35d282c2d19a2bf598c8ad0e179c35a09e2fdb",
+              "bytes": 296
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                38
+              ],
+              "sha256": "dc48d508eb5f943a4fa60194b7534a16593b2ba32ed1ad3bc7a53d0c4b279726",
+              "bytes": 304
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                36
+              ],
+              "sha256": "dddf9062491c8a646b5de31cad352ac6c60a6c60d97b9156f536f5382d88a8f5",
+              "bytes": 288
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "55bf068e0b4607779c17f390a8b9c3a69c58a80bb8d39231e00185f70d25da67",
+              "bytes": 264
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "8280ad45cbfba5b84ed93a000614cf6e7840441be4ac26b2ac89c8e2f763013e",
+              "bytes": 264
+            }
+          ]
+        },
+        "after": {
+          "permutation": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              37
+            ],
+            "sha256": "fd1d0b6371bec2b0e96d185deab39ce43ff73fa8117bc0bf270d2bece78ae5d5",
+            "bytes": 296
+          },
+          "arrays": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                37
+              ],
+              "sha256": "a3b469a1ead2c6318b0a80441b416f72124865fbf4c0d0875cf10a2a1b6cb19f",
+              "bytes": 296
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                37
+              ],
+              "sha256": "14088d9a1dac3f13baddcf563198fd2f83b56369a6a055ea8ec0887e5f0e8a40",
+              "bytes": 296
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                38
+              ],
+              "sha256": "12adc9fae53e5e2d96046cdb866c30f841efea28493ddf99db5a971f8d1b5b8c",
+              "bytes": 304
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                36
+              ],
+              "sha256": "11515d1652721f625d11a9d8bad0d569ea11fd524eac52f931e22fdb0409c4b4",
+              "bytes": 288
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "3e0fa9266abdd084ea0b08fd455c3efaa88aae0eb7e589c10612f1a5cd0651eb",
+              "bytes": 264
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "44b8aa4d28701168922acf61435ea4bb442f97b0b14ad7a2510ed68874ee2a72",
+              "bytes": 264
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                33
+              ],
+              "sha256": "8280ad45cbfba5b84ed93a000614cf6e7840441be4ac26b2ac89c8e2f763013e",
+              "bytes": 264
+            }
+          ]
+        }
+      },
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          33,
+          5
+        ],
+        "sha256": "27beebbe7d8d2b9d136024950708362e7f229fd88e0a982fa26f87ac51656726",
+        "bytes": 1320
+      },
+      "same_logical_node_identities_edges_query_mapping_verified": true,
+      "serial_and_cpu_oracles_verified": true,
+      "full_output_status_checks": true,
+      "queue_capacity": 19,
+      "max_visits": 37,
+      "planned_device_bytes": 24940,
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 17.65199936926365
+        },
+        "Jac after (Predicted BFS)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 19.063999876379967
+        },
+        "Handwritten checked CSR reference (after layout)": {
+          "kernel": "subtree_checked",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 19.16000060737133
+        }
+      }
+    },
+    {
+      "id": "binary4095-mixed256",
+      "tree_nodes": 4095,
+      "packed_nodes": 4095,
+      "queries": 256,
+      "inputs": {
+        "before": {
+          "permutation": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              4095
+            ],
+            "sha256": "2fc45a44735d70ebb49e1379fe51f16778f37bb890aa3a49c2160f226354bb50",
+            "bytes": 32760
+          },
+          "arrays": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                4095
+              ],
+              "sha256": "ba660b60898a159e964730ba41b0e3ad8adf474b16139486de53dd3a5e4ff800",
+              "bytes": 32760
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                4095
+              ],
+              "sha256": "b52fdbe7d538cf2aa4aea43e41794fa3d2e48f394a7f21b6ceaa9158cff5feac",
+              "bytes": 32760
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "5bb4af904f278e6366e0a2375ec5f706d5d2770f50f9e0f83ee05ef38a674d21",
+              "bytes": 32768
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                4094
+              ],
+              "sha256": "79a58f5903cd8e8d8013aa2c8c93de9c1802a82bed0ab5fc4cb63df77c6435de",
+              "bytes": 32752
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "4ba52ddbd9aa3d9da96eaf8a36df962f59b7366e9a07e52775bb3a121c82308d",
+              "bytes": 2048
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7",
+              "bytes": 2048
+            }
+          ]
+        },
+        "after": {
+          "permutation": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              4095
+            ],
+            "sha256": "92b1065814a3829ff2789d12d4835fc54ef478ffb1c9d92c9101bc72e23f1cb4",
+            "bytes": 32760
+          },
+          "arrays": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                4095
+              ],
+              "sha256": "7f977d547560841487e3ab858bcdff6839540fd3a8ffa5fd312f9c0da730a190",
+              "bytes": 32760
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                4095
+              ],
+              "sha256": "019f36ca129d01b73f84400136aafa9392d3a49b9e81cc77452b0382c1f0c7d1",
+              "bytes": 32760
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                4096
+              ],
+              "sha256": "983310b667eadb8a39e27e825f752ae0dea388dd8801f69aece2e043376ec4b3",
+              "bytes": 32768
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                4094
+              ],
+              "sha256": "b9223e166031ecafbca3660e21bc529c192954b37ca97e7f86b64f1781957820",
+              "bytes": 32752
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "dbfc52a3e3cbad45e05fd6666e3f3efcb4387be451a146897561149feb9fc550",
+              "bytes": 2048
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7",
+              "bytes": 2048
+            }
+          ]
+        }
+      },
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          256,
+          5
+        ],
+        "sha256": "8cc49989087f9e8e867392751a44b158f41bbe7663dbfab8b6d181346e734fdd",
+        "bytes": 10240
+      },
+      "same_logical_node_identities_edges_query_mapping_verified": true,
+      "serial_and_cpu_oracles_verified": true,
+      "full_output_status_checks": true,
+      "queue_capacity": 2048,
+      "max_visits": 4095,
+      "planned_device_bytes": 12903360,
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 2392.8279876708984
+        },
+        "Jac after (Predicted BFS)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 2031.9240093231201
+        },
+        "Handwritten checked CSR reference (after layout)": {
+          "kernel": "subtree_checked",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 2051.7959594726562
+        }
+      }
+    },
+    {
+      "id": "binary4095-leaf1024",
+      "tree_nodes": 4095,
+      "packed_nodes": 817,
+      "queries": 1024,
+      "inputs": {
+        "before": {
+          "permutation": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              817
+            ],
+            "sha256": "220e994a085e4da1a846043e4aa00d58b9678efdfc27493cb04a60eaf729fee9",
+            "bytes": 6536
+          },
+          "arrays": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                817
+              ],
+              "sha256": "b4b5e09c8addc62c96a5764b123a30151269de4f848b485981b16a0cb9639ac4",
+              "bytes": 6536
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                817
+              ],
+              "sha256": "eb0a302b3a2c7e27874dbc1ff7e21c7a230e745a006eb82c7f8a5699f720385e",
+              "bytes": 6536
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                818
+              ],
+              "sha256": "94d4ae6842b156d033327f9242a8f923776185de10f54b63935dbfc5307e8617",
+              "bytes": 6544
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                0
+              ],
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "bytes": 0
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "a4543fa5b5583f7ef3bc3123a6cda99849487621235cfd64d5ec01ae5cd6b18b",
+              "bytes": 8192
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "159052104eadfaa6185c5182c163e2d291ee1b07cf529bc15e14a3b37338e093",
+              "bytes": 8192
+            }
+          ]
+        },
+        "after": {
+          "permutation": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              817
+            ],
+            "sha256": "d7f34adfae6185ba73d91f7ca40653f2521588cdbfb1cc4298579e4c40172214",
+            "bytes": 6536
+          },
+          "arrays": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                817
+              ],
+              "sha256": "3cc9cab89b098042fac71d46165143c5950eb5aecc2aed1a6b021fae74a7b8f4",
+              "bytes": 6536
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                817
+              ],
+              "sha256": "5c43e1b6ab096be1c206cc1ffa11fc7c3101437cc51f1f0234078610449ada5a",
+              "bytes": 6536
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                818
+              ],
+              "sha256": "94d4ae6842b156d033327f9242a8f923776185de10f54b63935dbfc5307e8617",
+              "bytes": 6544
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                0
+              ],
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "bytes": 0
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "29bf384840ac3543229205f0ef506964fbdbfd1915ecf21128027e2ff8c34c71",
+              "bytes": 8192
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+              "bytes": 8192
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                1024
+              ],
+              "sha256": "159052104eadfaa6185c5182c163e2d291ee1b07cf529bc15e14a3b37338e093",
+              "bytes": 8192
+            }
+          ]
+        }
+      },
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          1024,
+          5
+        ],
+        "sha256": "0b3d7b46640e99d72018efd5915e52084f486c3350ec8e2b1b2e6e462cf3f5a6",
+        "bytes": 40960
+      },
+      "same_logical_node_identities_edges_query_mapping_verified": true,
+      "serial_and_cpu_oracles_verified": true,
+      "full_output_status_checks": true,
+      "queue_capacity": 1,
+      "max_visits": 1,
+      "planned_device_bytes": 297280,
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            8,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 3.531999886035919
+        },
+        "Jac after (Predicted BFS)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            8,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 3.4719998948276043
+        },
+        "Handwritten checked CSR reference (after layout)": {
+          "kernel": "subtree_checked",
+          "grid": [
+            8,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 3.464000066742301
+        }
+      }
+    },
+    {
+      "id": "chain2048-mixed32",
+      "tree_nodes": 2048,
+      "packed_nodes": 2048,
+      "queries": 32,
+      "inputs": {
+        "before": {
+          "permutation": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              2048
+            ],
+            "sha256": "a9f0474f19dfb300ff9fd3f36138a10960c940668778530e15c7e87522a05f4d",
+            "bytes": 16384
+          },
+          "arrays": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                2048
+              ],
+              "sha256": "93935b8535e2799b6c33d7e6696540f1be3fce5ef29a9c0593fcdb8e4286c2db",
+              "bytes": 16384
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                2048
+              ],
+              "sha256": "929868926087a9a2b6963e7d22b37a7516b6aff3f6a3d2c09e4925774d24426d",
+              "bytes": 16384
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2049
+              ],
+              "sha256": "9a063165e9edd3b68e316249db56e6d1e7f2ffd7521fef03aa3ff86290a28d23",
+              "bytes": 16392
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                2047
+              ],
+              "sha256": "2ffc2f6bf59cdf383d81a21394cc3da267bf885ed8f327f2488474e1d9cf991a",
+              "bytes": 16376
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "2c0d08396b9999d140aff70ed752f693f7f35624c8809c6862a9f577c068f255",
+              "bytes": 256
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "958c7af903d15fcf426f514511d7c1219e47ed8ebe3f90abcda9e3cdf08af7b3",
+              "bytes": 256
+            }
+          ]
+        },
+        "after": {
+          "permutation": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              2048
+            ],
+            "sha256": "5ccf19f4f2c0424bb9636387a42e899d136172cb5e410c08d271cedf5925f25d",
+            "bytes": 16384
+          },
+          "arrays": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                2048
+              ],
+              "sha256": "14988cb97b13c4dc02e25caa03086748377d5096e8c9f665f7ca7ee65126deb4",
+              "bytes": 16384
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                2048
+              ],
+              "sha256": "37e7fee7480513f517073e22e68f413ab1dafed2e38e0e16403287546beb9167",
+              "bytes": 16384
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                2049
+              ],
+              "sha256": "13947d2c55addb1ad93c36093352d817346f1e4c18d1463ed4d4b5a583c49fee",
+              "bytes": 16392
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                2047
+              ],
+              "sha256": "1721530c1b9157cbb871cf583a2dd5a31ae9e89cef317bfee9b04d28342f2baa",
+              "bytes": 16376
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "bcc9bcfc670935c6018dc26a74956a373b655f8930dd55ab074d816d7d233780",
+              "bytes": 256
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1",
+              "bytes": 256
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                32
+              ],
+              "sha256": "958c7af903d15fcf426f514511d7c1219e47ed8ebe3f90abcda9e3cdf08af7b3",
+              "bytes": 256
+            }
+          ]
+        }
+      },
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          32,
+          5
+        ],
+        "sha256": "785bf0e372293ec8515aaa6f2717590bc23fa849f3aa6446d4eb86d15f989de5",
+        "bytes": 1280
+      },
+      "same_logical_node_identities_edges_query_mapping_verified": true,
+      "serial_and_cpu_oracles_verified": true,
+      "full_output_status_checks": true,
+      "queue_capacity": 1,
+      "max_visits": 2048,
+      "planned_device_bytes": 139136,
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 712.9160165786743
+        },
+        "Jac after (Predicted BFS)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 744.4440126419067
+        },
+        "Handwritten checked CSR reference (after layout)": {
+          "kernel": "subtree_checked",
+          "grid": [
+            1,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 751.1640191078186
+        }
+      }
+    },
+    {
+      "id": "irregular16383-mixed256",
+      "tree_nodes": 16383,
+      "packed_nodes": 16383,
+      "queries": 256,
+      "inputs": {
+        "before": {
+          "permutation": {
+            "file": "before-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16383
+            ],
+            "sha256": "41de27c72fcde0a10bc3497bebf32700fdead9f5bd526b246f7a7b5442245690",
+            "bytes": 131064
+          },
+          "arrays": [
+            {
+              "file": "before-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16383
+              ],
+              "sha256": "151262c280d07bbc31f1c17dee4765e6afdb16fbb5da887fc9bb2969775f120b",
+              "bytes": 131064
+            },
+            {
+              "file": "before-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16383
+              ],
+              "sha256": "7476ab0b1f011e16bc4e05edea0b2a3ffb2e5d8b5f64a96721e7129f5a547792",
+              "bytes": 131064
+            },
+            {
+              "file": "before-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "69a4e32672f74351a3986e1d99d7ab47ed8df6b34dab8f9630dd21828a3a80c8",
+              "bytes": 131072
+            },
+            {
+              "file": "before-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16382
+              ],
+              "sha256": "ce3941dbb7a8a98b60e2993645c13e567ca142a5522649157e88f3f95c3841d8",
+              "bytes": 131056
+            },
+            {
+              "file": "before-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "28433d88676c7f35a33f829d6a3c71c9084aa00508c77d95e04835bcc06ab4c0",
+              "bytes": 2048
+            },
+            {
+              "file": "before-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "before-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7",
+              "bytes": 2048
+            }
+          ]
+        },
+        "after": {
+          "permutation": {
+            "file": "after-permutation.bin",
+            "dtype": "<i8",
+            "shape": [
+              16383
+            ],
+            "sha256": "15ccedadea1b4628095acc377f57f06f58067dcc85fa04e981ed128e384fcdd8",
+            "bytes": 131064
+          },
+          "arrays": [
+            {
+              "file": "after-0.bin",
+              "dtype": "<i8",
+              "shape": [
+                16383
+              ],
+              "sha256": "0127cb2e8f326b72006ae7fd512cd9def023cdf70aa61ec91ce30d1e886af966",
+              "bytes": 131064
+            },
+            {
+              "file": "after-1.bin",
+              "dtype": "<i8",
+              "shape": [
+                16383
+              ],
+              "sha256": "ddc61c8dc3155ff63f0af1472292e67c32ebeada3c390b270958dd675baa8247",
+              "bytes": 131064
+            },
+            {
+              "file": "after-2.bin",
+              "dtype": "<i8",
+              "shape": [
+                16384
+              ],
+              "sha256": "1d3693fcd0a8cef1f5ac6a0311ec93bf0f597c9ffc82016c0d9dbe0a3f985567",
+              "bytes": 131072
+            },
+            {
+              "file": "after-3.bin",
+              "dtype": "<i8",
+              "shape": [
+                16382
+              ],
+              "sha256": "922339914cca01ad7aa0c27c8bae357b61d5f9d77431381d0d3d8b589ad2d50b",
+              "bytes": 131056
+            },
+            {
+              "file": "after-4.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "3f4e8996cd7afbe28d21fbca073ea7595712e95bae4de3274debc2ce4c508d5f",
+              "bytes": 2048
+            },
+            {
+              "file": "after-5.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-6.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-7.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-8.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad",
+              "bytes": 2048
+            },
+            {
+              "file": "after-9.bin",
+              "dtype": "<i8",
+              "shape": [
+                256
+              ],
+              "sha256": "2209ef4ea32824786340c193fea983ca8cb1fb6977c33ee73fe150c4602694c7",
+              "bytes": 2048
+            }
+          ]
+        }
+      },
+      "expected": {
+        "file": "expected.bin",
+        "dtype": "<i8",
+        "shape": [
+          256,
+          5
+        ],
+        "sha256": "590957e0c4b5d9a4b3fe8dd26f258df38e778c3d22ac7f389d2e824ddd7b9bf4",
+        "bytes": 10240
+      },
+      "same_logical_node_identities_edges_query_mapping_verified": true,
+      "serial_and_cpu_oracles_verified": true,
+      "full_output_status_checks": true,
+      "queue_capacity": 2028,
+      "max_visits": 16383,
+      "planned_device_bytes": 13566912,
+      "arms": {
+        "Jac before (Random928)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 11434.348106384277
+        },
+        "Jac after (Predicted BFS)": {
+          "kernel": "jac_SubtreeQuery_csr_batch",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 8263.872146606445
+        },
+        "Handwritten checked CSR reference (after layout)": {
+          "kernel": "subtree_checked",
+          "grid": [
+            2,
+            1,
+            1
+          ],
+          "block": [
+            128,
+            1,
+            1
+          ],
+          "median_event_us": 8355.055809020996
+        }
+      }
+    }
+  ],
+  "records": [
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 18.931999802589417,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 19.651999697089195,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 19.627999514341354,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 19.207999110221863,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 17.696000635623932,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 19.115999341011047,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 19.13199946284294,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 19.13999952375889,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 17.656000331044197,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 19.231999292969704,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 17.65199936926365,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 19.088000059127808,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 19.120000302791595,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 17.75199919939041,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 19.144000485539436,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 19.05200071632862,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 19.16000060737133,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 17.632000148296356,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 19.155999645590782,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 19.123999401926994,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 17.62400008738041,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 19.207999110221863,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 17.65199936926365,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 19.036000594496727,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 19.088000059127808,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 17.691999673843384,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 19.039999693632126,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 19.091999158263206,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 17.680000513792038,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 19.060000777244568,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 19.063999876379967,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 19.16000060737133,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 17.604000866413116,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 19.171999767422676,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 17.67200045287609,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 19.060000777244568,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 19.16000060737133,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 19.068000838160515,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 17.712000757455826,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 19.11200024187565,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 17.64800027012825,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 19.200000911951065,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 17.67200045287609,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 19.076000899076462,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 19.1079992800951,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 19.500000402331352,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 17.580000683665276,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 19.443999975919724,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 19.099999219179153,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 17.616000026464462,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 19.023999571800232,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 19.063999876379967,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 19.07999999821186,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "ragged37-mixed33",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 17.707999795675278,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 2378.796100616455,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 2355.7159900665283,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 2773.508071899414,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 2377.847909927368,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 2355.7119369506836,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 2772.8400230407715,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 2355.436086654663,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 2378.2200813293457,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 2635.0760459899902,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 2392.6239013671875,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 2051.624059677124,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 2031.708002090454,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 2031.480073928833,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 2391.4759159088135,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 2051.179885864258,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 2393.1519985198975,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 2032.5560569763184,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 2051.3200759887695,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 2393.5439586639404,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 2032.1159362792969,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 2051.7959594726562,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 2051.316022872925,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 2393.2321071624756,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 2031.3398838043213,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 2392.551898956299,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 2033.3480834960938,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 2052.1399974823,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 2030.344009399414,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 2051.959991455078,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 2393.1679725646973,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 2032.3400497436523,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 2392.8279876708984,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 2051.7239570617676,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 2051.215887069702,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 2031.8279266357422,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 2392.6920890808105,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 2032.2520732879639,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 2391.7479515075684,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 2051.0239601135254,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 2393.5000896453857,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 2032.9959392547607,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 2052.1318912506104,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 2392.8000926971436,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 2052.4721145629883,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 2030.2679538726807,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 2029.9439430236816,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 2392.0600414276123,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 2051.9280433654785,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 2395.18404006958,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 2032.9840183258057,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 2052.9680252075195,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 2394.131898880005,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 2031.9240093231201,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 2052.4721145629883,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 4.468000028282404,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 3.9599998854100704,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 3.8840000052005053,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 3.5800000187009573,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 3.5639998968690634,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 3.5719999577850103,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 3.5800000187009573,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 3.4680000972002745,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 3.5039999056607485,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 3.5280000884085894,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 3.4600000362843275,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 3.539999946951866,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 3.4119999036192894,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 3.548000007867813,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 3.4719998948276043,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 3.496000077575445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 3.5520000383257866,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 3.4199999645352364,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 3.4759999252855778,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 3.507999936118722,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 3.5200000274926424,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 3.5039999056607485,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 3.456000005826354,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 3.524000057950616,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 3.5039999056607485,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 3.5039999056607485,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 3.464000066742301,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 3.6039999686181545,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 3.464000066742301,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 3.387999953702092,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 3.4839999862015247,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 3.464000066742301,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 3.43999988399446,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 3.496000077575445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 3.567999927327037,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 3.4719998948276043,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 3.4439999144524336,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 3.5119999665766954,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 3.3760000951588154,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 3.4799999557435513,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 3.5119999665766954,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 3.456000005826354,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 3.531999886035919,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 3.4839999862015247,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 3.4759999252855778,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 3.4799999557435513,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 3.531999886035919,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 3.43999988399446,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 3.488000016659498,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 3.567999927327037,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 3.4680000972002745,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 3.496000077575445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 3.507999936118722,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "binary4095-leaf1024",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 3.496000077575445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 713.5599851608276,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 744.9319958686829,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 751.7759799957275,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 712.9960060119629,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 751.3560056686401,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 744.5560097694397,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 751.0319948196411,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 712.6280069351196,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 744.3199753761292,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 750.9639859199524,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 744.2039847373962,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 712.4800086021423,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 750.9639859199524,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 712.5920057296753,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 744.2160248756409,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 750.931978225708,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 713.4400010108948,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 745.1840043067932,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 751.0759830474854,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 712.6880288124084,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 744.4440126419067,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 712.9160165786743,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 751.1640191078186,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 744.3280220031738,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 744.3600296974182,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 751.471996307373,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 712.8599882125854,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 750.9559988975525,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 712.5880122184753,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 744.1920042037964,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 744.1999912261963,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 712.4879956245422,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 750.931978225708,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 744.2079782485962,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 750.976026058197,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 712.5440239906311,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 749.3839859962463,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 717.960000038147,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 756.6879987716675,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 749.7000098228455,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 718.0160284042358,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 756.6239833831787,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 717.9239988327026,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 756.5720081329346,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 749.9319911003113,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 717.8599834442139,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 756.5760016441345,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 749.9200105667114,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 749.8800158500671,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 718.1439995765686,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 756.5760016441345,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 718.0359959602356,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 756.6120028495789,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "chain2048-mixed32",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 749.7720122337341,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 8355.124473571777,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 11434.636116027832,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us": 8264.196395874023,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 8263.407707214355,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 11434.900283813477,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us": 8355.567932128906,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 11434.388160705566,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 8263.45157623291,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us": 8356.043815612793,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 8263.98754119873,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 11434.348106384277,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 0,
+      "event_us": 8354.567527770996,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 11434.091567993164,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 8264.876365661621,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 1,
+      "event_us": 8355.128288269043,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 8263.768196105957,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 8353.256225585938,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 2,
+      "event_us": 11434.4482421875,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 8355.704307556152,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 11435.059547424316,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 3,
+      "event_us": 8264.244079589844,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 8264.880180358887,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 8357.343673706055,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 4,
+      "event_us": 11434.539794921875,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 8264.360427856445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 11434.087753295898,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 5,
+      "event_us": 8354.727745056152,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 8263.40389251709,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 8352.848052978516,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 6,
+      "event_us": 11434.548377990723,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 8354.964256286621,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 11433.927536010742,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 7,
+      "event_us": 8264.74380493164,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 8354.864120483398,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 11434.187889099121,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 8,
+      "event_us": 8263.436317443848,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 8264.687538146973,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 11435.864448547363,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 9,
+      "event_us": 8355.80825805664,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 8355.520248413086,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 8263.660430908203,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 10,
+      "event_us": 11433.916091918945,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 11434.060096740723,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 8263.715744018555,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 11,
+      "event_us": 8353.588104248047,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 8263.443946838379,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 8355.631828308105,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 12,
+      "event_us": 11435.432434082031,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 11434.2041015625,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 8355.611801147461,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 13,
+      "event_us": 8263.567924499512,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Handwritten checked CSR reference (after layout)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 8355.055809020996,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac after (Predicted BFS)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 8263.872146606445,
+      "all_outputs_and_statuses_checked": true
+    },
+    {
+      "case": "irregular16383-mixed256",
+      "arm": "Jac before (Random928)",
+      "phase": "measured",
+      "pair": 14,
+      "event_us": 11434.78775024414,
+      "all_outputs_and_statuses_checked": true
+    }
+  ],
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "memory_before": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "complete": true,
+  "memory_after": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "gpu_after": "Thu Oct 22 01:42:38 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 30%   45C    P2            153W /  350W |   23488MiB /  24576MiB |     66%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n"
+}

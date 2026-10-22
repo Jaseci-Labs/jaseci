@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "python_syntax_sha256": {
+    "scripts/gpu_walker/layout_study/prepare.py": "f7626d4875fa8f57a5759bab909321d2a50a382ab9e6e5efee334817532749dd",
+    "scripts/gpu_walker/layout_study/address_analysis.py": "f892c1a5f80184894c93ff92a390a4beb9e9ba31a159f6384efb0adf2bc99783",
+    "scripts/gpu_walker/layout_study/counter_probe.py": "98934df44216f3535783e5c5c2d8ab47c41a647fd8ee826f640b59817135a441",
+    "scripts/gpu_walker/layout_study/build_report.py": "4345ccc77fd7c54b588291dca371bc0ac0e742882480a3dcf61fcda35952ca9f",
+    "scripts/gpu_walker/layout_study/run.py": "fce61bd25a7967e8e6effb9d89f2eb0dc26978cff7432bf2b0012e815a006589",
+    "scripts/gpu_walker/layout_study/emit_checked_o2.py": "92b003bc2c173495bb29738774153e39f3c54991bb2e21a3dcd43b416cfb30a9",
+    "scripts/gpu_walker/layout_study/analyze.py": "6932e4165701d92e97605f82a47c6fc331d8b07e2d747dbede420519ec109915",
+    "scripts/gpu_walker/layout_study/extract_pilot.py": "430bf3de44b4913832881de692e87299c9fa0fdd4f6d7c3007f85ae3ed2c31a6",
+    "scripts/gpu_walker/layout_study/subtree_run.py": "f6d16cd98cd4a96fa25a524dc74dc277dc551f122fbf33c74c00bbaca8ad2946",
+    "docs/presentations/jac-gpu-layout/generate.py": "980f6722d8de6a919c67467f54a14704293919908a1e0fd6c0c3e413ea76bdf6"
+  },
+  "shell_syntax_sha256": "dbf72adceca50bcaf1609033238b44f230e2899003a25141027eb0c411be6d12",
+  "resolved_document_links": 29,
+  "pdf_pages": 8,
+  "pdf_all_text_within_page": true,
+  "pdf_table_text_fits_cells": "asserted by generator",
+  "pdf_sha256": "569428bbd3f9e518f2373eb5db7730abb3291fd344a57eaf1b9f371f952e6851",
+  "contract_validation_sha256": "6ded366202c2e2e82ea7810a3bbd17bf4f90afc5d2153ca99d5ff07d7cdd3830",
+  "report_sha256": "651ace92b85d07d66849dc95a920aad052e8cfc28ed7e781d622a7df6bfbd607",
+  "validated_full_output_replays_profile_and_ordinary": 1200,
+  "staged_paths_scoped": true
+}

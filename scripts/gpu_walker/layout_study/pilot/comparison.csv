@@ -1,0 +1,6 @@
+case,jac_before_random_us,jac_after_predicted_us,handwritten_tiled_reference_us,layout_speedup,residual_gap,unit,source_run
+matmul-3x5x2,6.4,7.072,1.376,0.9049773755656109,5.1395348837209305,microseconds,scripts/gpu_walker/handwritten_matmul/validation/20261021/profile
+matmul-17x31x19,42.912,45.792,1.888,0.9371069182389936,24.254237288135595,microseconds,scripts/gpu_walker/handwritten_matmul/validation/20261021/profile
+matmul-64x128x64,201.025,183.7455,4.704,1.094040398268257,39.06154336734694,microseconds,scripts/gpu_walker/handwritten_matmul/validation/20261021/profile
+matmul-128x128x128,312.2895,227.233,4.8,1.3743140300924601,47.34020833333334,microseconds,scripts/gpu_walker/handwritten_matmul/validation/20261021/profile
+matmul-256x256x256,4486.394,2069.116,20.608,2.168266061448464,100.40353260869566,microseconds,scripts/gpu_walker/handwritten_matmul/validation/20261021/profile

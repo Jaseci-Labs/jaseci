@@ -1,0 +1,57 @@
+{
+  "source_run": "scripts/gpu_walker/handwritten_matmul/validation/20261021/profile",
+  "compiler_policy": "supplementary production emission before the added LLVM middle-end",
+  "extractor_sha256": "430bf3de44b4913832881de692e87299c9fa0fdd4f6d7c3007f85ae3ed2c31a6",
+  "source_sha256": {
+    "results.json": "27649de698ab631bbe9de41ee6b4d92a69c6b6759332c053637b0b061472e308",
+    "verified-kernels.json": "bfc5adcdad9e98278e12bd3e19839d6f9e6f865bb8ebd984363feb5469441611",
+    "trace.sqlite": "eccbeda34385b18d6c804d5f75f3aea92906a509e61d68ce67e1e9da38fc5d44",
+    "trace.nsys-rep": "5324b8351dedfa0d94a16a46eac0856a15eec163447c0e630c482c69447cc806"
+  },
+  "jac_ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "random_seed": 928,
+  "unit": "microseconds",
+  "statistic": "median actual Nsight kernel end-start",
+  "rows": [
+    {
+      "case": "matmul-3x5x2",
+      "jac_before_random_us": 6.4,
+      "jac_after_predicted_us": 7.072,
+      "handwritten_tiled_reference_us": 1.376,
+      "layout_speedup": 0.9049773755656109,
+      "residual_gap": 5.1395348837209305
+    },
+    {
+      "case": "matmul-17x31x19",
+      "jac_before_random_us": 42.912,
+      "jac_after_predicted_us": 45.792,
+      "handwritten_tiled_reference_us": 1.888,
+      "layout_speedup": 0.9371069182389936,
+      "residual_gap": 24.254237288135595
+    },
+    {
+      "case": "matmul-64x128x64",
+      "jac_before_random_us": 201.025,
+      "jac_after_predicted_us": 183.7455,
+      "handwritten_tiled_reference_us": 4.704,
+      "layout_speedup": 1.094040398268257,
+      "residual_gap": 39.06154336734694
+    },
+    {
+      "case": "matmul-128x128x128",
+      "jac_before_random_us": 312.2895,
+      "jac_after_predicted_us": 227.233,
+      "handwritten_tiled_reference_us": 4.8,
+      "layout_speedup": 1.3743140300924601,
+      "residual_gap": 47.34020833333334
+    },
+    {
+      "case": "matmul-256x256x256",
+      "jac_before_random_us": 4486.394,
+      "jac_after_predicted_us": 2069.116,
+      "handwritten_tiled_reference_us": 20.608,
+      "layout_speedup": 2.168266061448464,
+      "residual_gap": 100.40353260869566
+    }
+  ]
+}

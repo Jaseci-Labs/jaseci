@@ -1,0 +1,10 @@
+ragged37-mixed33 {'Jac before (Random928)': 17.652, 'Jac after (Predicted BFS)': 19.064, 'Handwritten checked CSR reference (after layout)': 19.16}
+binary4095-mixed256 {'Jac before (Random928)': 2392.828, 'Jac after (Predicted BFS)': 2031.924, 'Handwritten checked CSR reference (after layout)': 2051.796}
+binary4095-leaf1024 {'Jac before (Random928)': 3.532, 'Jac after (Predicted BFS)': 3.472, 'Handwritten checked CSR reference (after layout)': 3.464}
+chain2048-mixed32 {'Jac before (Random928)': 712.916, 'Jac after (Predicted BFS)': 744.444, 'Handwritten checked CSR reference (after layout)': 751.164}
+irregular16383-mixed256 {'Jac before (Random928)': 11434.348, 'Jac after (Predicted BFS)': 8263.872, 'Handwritten checked CSR reference (after layout)': 8355.056}
+Collecting data...
+Generating '/tmp/nsys-report-08fc.qdstrm'
+[1/1] [0%                          ] trace.nsys-rep[1/1] [0%                          ] trace.nsys-rep[1/1] [==============61%           ] trace.nsys-rep[1/1] [================68%         ] trace.nsys-rep[1/1] [==================76%       ] trace.nsys-rep[1/1] [==================77%       ] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep
+Generated:
+	/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/layout_study/validation/20261022/subtree/trace.nsys-rep
