@@ -650,7 +650,7 @@ impl BaseLLM._invoke_with_handler(mt_run: MTRuntime, on_event: Callable) -> obje
             ) {
                 if ev.event_type == "stream_reset" {
                     accumulated = "";
-                } else {
+                } elif ev.event_type == "chunk" {
                     accumulated += ev.data["content"];
                 }
                 try {

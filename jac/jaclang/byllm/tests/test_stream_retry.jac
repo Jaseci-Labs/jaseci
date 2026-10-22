@@ -216,3 +216,20 @@ test "a stream that fails mid-answer leaves no fragment in the conversation" {
         assert not fragments , f"{mode}: the conversation kept {fragments}";
     }
 }
+
+
+test "a typed call with a stream_handler keeps reasoning out of the parsed answer" {
+    seen: list[StreamEvent] = [];
+    llm = MockLLM(
+        outputs=[say("[1, 2]", fields={"reasoning_content": "Let me think. " * 30})]
+    );
+
+    def pick(options: str) -> list[int] by llm(
+        stream=True, logging=True, stream_handler=seen.append
+    );
+
+    assert pick("go") == [1, 2];
+    assert "reasoning" in event_types(seen) , (
+        f"the handler never received the reasoning: {event_types(seen)}"
+    );
+}
