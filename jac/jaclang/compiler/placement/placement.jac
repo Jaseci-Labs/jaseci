@@ -107,9 +107,9 @@ def native_blocker_scan(
     hold_exempt: bool = False
 ) -> NativeBlockerScan;
 
-def _scan_blocker_stmts(
+def _scan_blockers_under(
     scan: NativeBlockerScan,
-    stmts: list[uni.UniNode],
+    scope_node: uni.UniNode,
     module: uni.Module,
     base_dir: str,
     allow_pub: bool

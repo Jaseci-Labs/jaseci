@@ -86,27 +86,31 @@ impl is_server_anchored_module(module: (uni.Module | None)) -> bool {
     if anchor_path and is_service_app_entry(anchor_path) {
         return True;
     }
-    weighed = ModuleFacts.iter_placement_stmts(module);
-    for arch in ModuleFacts.stmts_sub_nodes(weighed, uni.Archetype) {
-        if arch.arch_kind is not None {
+    for arch in module.get_all_sub_nodes(uni.Archetype) {
+        if arch.arch_kind is not None and not ModuleFacts.is_test_code(arch) {
             return True;
         }
     }
-    if ModuleFacts.stmts_sub_nodes(weighed, uni.PyInlineCode) {
-        return True;
+    for inline_py in module.get_all_sub_nodes(uni.PyInlineCode) {
+        if not ModuleFacts.is_test_code(inline_py) {
+            return True;
+        }
     }
-    for stmt in weighed {
+    for stmt in ModuleFacts.iter_placement_stmts(module) {
         if isinstance(stmt, uni.TypedCtxBlock) {
             return True;
         }
     }
-    for ab in ModuleFacts.stmts_sub_nodes(weighed, uni.Ability) {
-        if ability_delegates_to_model(ab) {
+    for ab in module.get_all_sub_nodes(uni.Ability) {
+        if ability_delegates_to_model(ab) and not ModuleFacts.is_test_code(ab) {
             return True;
         }
     }
-    for imp in ModuleFacts.stmts_sub_nodes(weighed, uni.Import) {
-        if imp.has_clib_decls or imp.is_virtual_jac or imp.has_string_path {
+    for imp in module.get_all_sub_nodes(uni.Import) {
+        if imp.has_clib_decls
+            or imp.is_virtual_jac
+            or imp.has_string_path
+            or ModuleFacts.is_test_code(imp) {
             continue;
         }
         if classify_import(imp).world == 'py' {

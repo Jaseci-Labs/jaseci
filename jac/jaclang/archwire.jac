@@ -5697,7 +5697,7 @@ graph import compiler {
             classify_cross_app_import
         },
         placement.placement._element_reqs { classify_import },
-        placement.placement._scan_blocker_stmts { ability_delegates_to_model },
+        placement.placement._scan_blockers_under { ability_delegates_to_model },
         placement.placement.module_anchor_reasons {
             ability_delegates_to_model,
             classify_import,
@@ -6399,7 +6399,7 @@ graph import compiler {
         passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
-        placement.placement._scan_blocker_stmts {
+        placement.placement._scan_blockers_under {
             NATIVE_SUPPORTED_STDLIB,
             is_bundled_native_module,
             resolve_native_module
@@ -13789,7 +13789,7 @@ graph import compiler.placement {
         },
     ]
     placement_pins --> [
-        placement._scan_blocker_stmts { config_module_pin as _cmp, config_pin_for },
+        placement._scan_blockers_under { config_module_pin as _cmp, config_pin_for },
         placement.project_kind_name { config_project_kind },
         placement.summarize_module {
             config_element_pin,

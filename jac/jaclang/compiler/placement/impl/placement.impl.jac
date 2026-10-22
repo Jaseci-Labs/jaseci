@@ -140,10 +140,8 @@ impl module_has_root_access(stmt: uni.UniNode) -> bool {
         return cached;
     }
     found = False;
-    for svr in ModuleFacts.stmts_sub_nodes(
-        ModuleFacts.iter_placement_stmts(mod), uni.SpecialVarRef
-    ) {
-        if svr.orig.name == Tok.KW_ROOT {
+    for svr in mod.get_all_sub_nodes(uni.SpecialVarRef) {
+        if svr.orig.name == Tok.KW_ROOT and not ModuleFacts.is_test_code(svr) {
             found = True;
             break;
         }
@@ -396,35 +394,39 @@ impl module_anchor_reasons(module: uni.Module) -> list[str] {
             reasons.append('service app entry');
         }
     }
-    weighed = ModuleFacts.iter_placement_stmts(module);
-    for arch in ModuleFacts.stmts_sub_nodes(weighed, uni.Archetype) {
-        if arch.arch_kind is not None and module_has_root_access(module) {
+    for arch in module.get_all_sub_nodes(uni.Archetype) {
+        if arch.arch_kind is not None
+            and not ModuleFacts.is_test_code(arch)
+            and module_has_root_access(module) {
             reasons.append(f"graph archetype '{arch.name.value}'");
             break;
         }
     }
     import from jaclang.compiler.driver.boundary_classify { ability_delegates_to_model }
-    for ab in ModuleFacts.stmts_sub_nodes(weighed, uni.Ability) {
-        if ability_delegates_to_model(ab) {
+    for ab in module.get_all_sub_nodes(uni.Ability) {
+        if ability_delegates_to_model(ab) and not ModuleFacts.is_test_code(ab) {
             reasons.append(f"by llm ability '{ab.py_resolve_name()}'");
             break;
         }
     }
-    if ModuleFacts.stmts_sub_nodes(weighed, uni.PyInlineCode) {
-        reasons.append('inline ::py:: block');
+    for inline_py in module.get_all_sub_nodes(uni.PyInlineCode) {
+        if not ModuleFacts.is_test_code(inline_py) {
+            reasons.append('inline ::py:: block');
+            break;
+        }
     }
-    for stmt in weighed {
+    for stmt in ModuleFacts.iter_placement_stmts(module) {
         if isinstance(stmt, uni.TypedCtxBlock) {
             reasons.append('typed context block');
             break;
         }
     }
     import from jaclang.compiler.driver.boundary_classify { classify_import }
-    for imp in ModuleFacts.stmts_sub_nodes(weighed, uni.Import) {
+    for imp in module.get_all_sub_nodes(uni.Import) {
         if imp.has_clib_decls or imp.is_virtual_jac or imp.has_string_path {
             continue;
         }
-        if imp.is_comptime {
+        if imp.is_comptime or ModuleFacts.is_test_code(imp) {
             continue;
         }
         if classify_import(imp).world == 'py' {
@@ -465,13 +467,11 @@ impl native_blocker_scan(
             }
         }
     }
-    _scan_blocker_stmts(
-        scan, ModuleFacts.iter_placement_stmts(module), module, base_dir, allow_pub
-    );
+    _scan_blockers_under(scan, module, module, base_dir, allow_pub);
     for stmt in module.body {
         if isinstance(stmt, uni.Test) {
             probe = NativeBlockerScan();
-            _scan_blocker_stmts(probe, [stmt], module, base_dir, True);
+            _scan_blockers_under(probe, stmt, module, base_dir, True);
             why = probe.first();
             if why {
                 scan.tests.append((stmt, why));
@@ -481,32 +481,45 @@ impl native_blocker_scan(
     return scan;
 }
 
-impl _scan_blocker_stmts(
+impl _scan_blockers_under(
     scan: NativeBlockerScan,
-    stmts: list[uni.UniNode],
+    scope_node: uni.UniNode,
     module: uni.Module,
     base_dir: str,
     allow_pub: bool
 ) {
     deps = scan.deps;
+    skip_tests = scope_node is module;
     for (nd_name, typ) in PLACEMENT_SV_SIGNAL_NODES {
-        for found in ModuleFacts.stmts_sub_nodes(stmts, typ) {
+        for found in scope_node.get_all_sub_nodes(typ) {
+            if skip_tests and ModuleFacts.is_test_code(found) {
+                continue;
+            }
             scan.sites.append((found, f"contains {nd_name}"));
         }
     }
 
     for (nd_name, typ) in PLACEMENT_NATIVE_REJECT_NODES {
-        for found in ModuleFacts.stmts_sub_nodes(stmts, typ) {
+        for found in scope_node.get_all_sub_nodes(typ) {
+            if skip_tests and ModuleFacts.is_test_code(found) {
+                continue;
+            }
             scan.sites.append((found, f"native-unsupported {nd_name}"));
         }
     }
-    for svr in ModuleFacts.stmts_sub_nodes(stmts, uni.SpecialVarRef) {
+    for svr in scope_node.get_all_sub_nodes(uni.SpecialVarRef) {
+        if skip_tests and ModuleFacts.is_test_code(svr) {
+            continue;
+        }
         if svr.orig.name == Tok.KW_ROOT and not scan.module {
             scan.module = "root access (persistent graph)";
         }
     }
     import from jaclang.compiler.driver.boundary_classify { ability_delegates_to_model }
-    for ab in ModuleFacts.stmts_sub_nodes(stmts, uni.Ability) {
+    for ab in scope_node.get_all_sub_nodes(uni.Ability) {
+        if skip_tests and ModuleFacts.is_test_code(ab) {
+            continue;
+        }
         if ability_delegates_to_model(ab) {
             scan.sites.append((ab, "by llm ability (needs the byLLM runtime)"));
             continue;
@@ -532,7 +545,10 @@ impl _scan_blocker_stmts(
         }
     }
     scan_mod_path = module.loc.mod_path or '';
-    for stmt in stmts {
+    weighed: list[uni.UniNode] = ModuleFacts.iter_placement_stmts(module)
+        if skip_tests
+        else [];
+    for stmt in weighed {
         if stmt.top_element is not stmt {
             continue;
         }
@@ -550,7 +566,10 @@ impl _scan_blocker_stmts(
             scan.sites.append((stmt, endpoint));
         }
     }
-    for imp in ModuleFacts.stmts_sub_nodes(stmts, uni.Import) {
+    for imp in scope_node.get_all_sub_nodes(uni.Import) {
+        if skip_tests and ModuleFacts.is_test_code(imp) {
+            continue;
+        }
         if imp.has_clib_decls {
             continue;
         }

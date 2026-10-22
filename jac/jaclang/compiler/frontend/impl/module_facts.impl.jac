@@ -150,26 +150,18 @@ impl ModuleFacts.iter_context_stmts(
     return result;
 }
 
-impl ModuleFacts.iter_placement_stmts(module: Module) -> list[UniNode] {
-    return [
-        stmt
-        for stmt in module.body
-        if not isinstance(stmt, Test)
-    ];
+impl ModuleFacts.is_test_code(nd: UniNode) -> bool {
+    return isinstance(nd.top_element, Test);
 }
 
-impl ModuleFacts.stmts_sub_nodes[T](stmts: list[UniNode], typ: type[T]) -> list[T] {
-    found: list[T] = [];
-    for stmt in stmts {
-        if stmt.ct_pruned {
-            continue;
+impl ModuleFacts.iter_placement_stmts(module: Module) -> list[UniNode] {
+    weighed: list[UniNode] = [];
+    for stmt in module.body {
+        if not ModuleFacts.is_test_code(stmt) {
+            weighed.append(stmt);
         }
-        if type(stmt) is typ {
-            found.append(stmt);
-        }
-        found.extend(stmt.get_all_sub_nodes(typ));
     }
-    return found;
+    return weighed;
 }
 
 impl ModuleFacts.iter_module_imports(
