@@ -467,7 +467,8 @@ impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
 
 impl _results_after(msgs: list[any], start: int) -> set[str] {
     answered: set[str] = set();
-    for msg in msgs[start:] {
+    for i in range(start, len(msgs)) {
+        msg = msgs[i];
         role: any = msg.get("role") if isinstance(msg, dict) else msg?.role;
         if role != MessageRole.TOOL {
             break;
