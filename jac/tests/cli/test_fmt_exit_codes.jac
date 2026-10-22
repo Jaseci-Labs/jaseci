@@ -317,13 +317,15 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
                 str(wide)
             ];
             reset_state();
-            with deny_writes([str(Path(repo) / "blocked.impl.jac"), str(stuck)]) {
+            with deny_writes(
+                [str(Path(repo) / "impl" / "blocked.impl.jac"), str(stuck)]
+            ) {
                 ret = fmt_cmd(files, lintfix=True, jobs=jobs);
             }
-            stuck_annex_left = (Path(repo) / "stuck.impl.jac").exists();
+            stuck_annex_left = (Path(repo) / "impl" / "stuck.impl.jac").exists();
             wide_annex = (Path(repo) / "wide.impl.jac").read_bytes();
             fresh_text = fresh.read_text();
-            fresh_annex = (Path(repo) / "fresh.impl.jac").read_text();
+            fresh_annex = (Path(repo) / "impl" / "fresh.impl.jac").read_text();
             mod_text = mod.read_text();
             annex_text = annex.read_text();
             variant_annex = (
@@ -353,7 +355,7 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
         assert fresh_text == "def f(x: int) -> int;\n" , f"[jobs={jobs}] the module "
         f"keeps only the declaration, got:\n{fresh_text!r}";
         assert fresh_annex == "impl f(x: int) -> int {\n    return x + 1;\n}\n" , (
-            f"[jobs={jobs}] a module with no annex gets one, got:\n{fresh_annex!r}"
+            f"[jobs={jobs}] a module with no annex gets one in impl/, got:\n{fresh_annex!r}"
         );
         assert "def g(x: int) -> int;" in mod_text and "return x * 2" not in mod_text , (
             f"[jobs={jobs}] the body leaves the module, got:\n{mod_text!r}"

@@ -657,7 +657,7 @@ impl _float_impls_to_annex(
     } elif "." in stem {
         target = os.path.join(folder, stem + ".impl.jac");
     } else {
-        target = file_path[:-len(".jac")] + ".impl.jac";
+        target = os.path.join(os.path.dirname(file_path), "impl", stem + ".impl.jac");
     }
     existing = read_file_with_encoding(target) if os.path.exists(target) else "";
     annex_text = (existing.rstrip() + "\n\n" + moved) if existing.strip() else moved;
@@ -2025,7 +2025,8 @@ impl _format_single_file_worker(
                     new_logical = float_target;
                     if logical_path {
                         new_logical = str(
-                            Path(effective_logical).parent / Path(float_target).name
+                            Path(effective_logical).parent
+                                / os.path.relpath(float_target, str(path_obj.parent))
                         );
                     }
                     new_prog = JacProgram.jac_str_formatter(

@@ -167,7 +167,7 @@ glob GROUPS: list[dict[str, any]] = [
                      "tag": "persistence, free",
                      "title": "A server call, in passing",
                      "body": "One line inside the navbar keeps the install script fresh: await a server function and move on. Behind it, that function stamps its bookkeeping on root, the persistent graph, so there is no database setup, no ORM, no migration script. State that should outlive a request simply does.",
-                     "path": "core/site/ui/Navbar.impl.jac",
+                     "path": "core/site/ui/impl/Navbar.impl.jac",
                      "needle": "await ensure_install()",
                      "hl": 1,
                      "before": 4,
