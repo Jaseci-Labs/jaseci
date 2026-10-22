@@ -1562,18 +1562,20 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
         self.builder.branch(cond_bb);
     }
     self.loop_stack.pop();
-    self._emit_loop_else(nd, else_bb, end_bb);
 
-    if _gen_it_spill is not None {
-        _it_end = self._mark_owned(
-            self.builder.load(_gen_it_spill, name="iterf.it.end")
-        );
-        self._emit_rc_release_simple(_it_end, op="iter_end", loc=_loc);
-        self.builder.store(ir.Constant(_it_end.type, None), _gen_it_spill);
-    } elif _it_slot_var is not None {
-        self._release_loop_coll_slot(_it_slot_var, op="iter_end", loc=_loc);
-    } elif owns_iter {
-        self._emit_rc_release_simple(iter_val, op="iter_end", loc=_loc);
+    def release_iter {
+        if _gen_it_spill is not None {
+            _it_end = self._mark_owned(
+                self.builder.load(_gen_it_spill, name="iterf.it.end")
+            );
+            self._emit_rc_release_simple(_it_end, op="iter_end", loc=_loc);
+            self.builder.store(ir.Constant(_it_end.type, None), _gen_it_spill);
+        } elif _it_slot_var is not None {
+            self._release_loop_coll_slot(_it_slot_var, op="iter_end", loc=_loc);
+        } elif owns_iter {
+            self._emit_rc_release_simple(iter_val, op="iter_end", loc=_loc);
+        }
     }
+    self._emit_loop_else(nd, else_bb, end_bb, release_iter);
     return True;
 }

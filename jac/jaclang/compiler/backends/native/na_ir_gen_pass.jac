@@ -2754,7 +2754,8 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_loop_else(
         nd: (uni.WhileStmt | uni.InForStmt | uni.IterForStmt),
         else_bb: (ir.Block | None),
-        end_bb: ir.Block
+        end_bb: ir.Block,
+        release: (Callable[[], None] | None) = None
     ) -> None;
 
     def _codegen_stmt(nd: uni.UniNode) -> None;

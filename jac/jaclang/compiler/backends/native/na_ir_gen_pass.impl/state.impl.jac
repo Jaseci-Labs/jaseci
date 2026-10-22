@@ -100,17 +100,33 @@ impl NaIRGenPass._loop_exit_blocks(
 impl NaIRGenPass._emit_loop_else(
     nd: (uni.WhileStmt | uni.InForStmt | uni.IterForStmt),
     else_bb: (ir.Block | None),
-    end_bb: ir.Block
+    end_bb: ir.Block,
+    release: (Callable[[], None] | None) = None
 ) -> None {
-    if else_bb is not None {
-        self.builder.position_at_end(else_bb);
-        loop_else = nd.else_body;
-        if loop_else is not None and isinstance(loop_else.body, (list, tuple)) {
-            self._codegen_body(loop_else.body);
+    if else_bb is None {
+        self.builder.position_at_end(end_bb);
+        if release is not None {
+            release();
         }
-        if not self.builder.block.is_terminated {
-            self.builder.branch(end_bb);
-        }
+        return;
     }
-    self.builder.position_at_end(end_bb);
+    join_bb = end_bb;
+    if release is not None {
+        join_bb = self.builder.function.append_basic_block(name=f"{end_bb.name}.join");
+        self.builder.position_at_end(end_bb);
+        release();
+        self.builder.branch(join_bb);
+    }
+    self.builder.position_at_end(else_bb);
+    if release is not None {
+        release();
+    }
+    loop_else = nd.else_body;
+    if loop_else is not None and isinstance(loop_else.body, (list, tuple)) {
+        self._codegen_body(loop_else.body);
+    }
+    if not self.builder.block.is_terminated {
+        self.builder.branch(join_bb);
+    }
+    self.builder.position_at_end(join_bb);
 }
