@@ -49,6 +49,28 @@ glob KEY_ENTRY_SRC = "import torch;\n"
          + "    return x;\n"
          + "}\n";
 
+glob KEY_UNREL_ENTRY_SRC = "import torch;\n\n"
+         + "@torch.compile()\n"
+         + "def unrel_entry(x: any) -> any {\n"
+         + "    print(\"UNREL-ENTRY\", x);\n"
+         + "    return torch.sin(x);\n"
+         + "}\n\n"
+         + "class UnrelNet(torch.nn.Module) {\n"
+         + "    def forward(self: any, x: any) -> any {\n"
+         + "        return torch.cos(x);\n"
+         + "    }\n"
+         + "}\n",
+     KEY_SHARED_SRC = "import from usedmod { used_helper }\n\n"
+         + "def via_shared(x: any) -> any {\n"
+         + "    return used_helper(x);\n"
+         + "}\n",
+     KEY_ENTRY2_SRC = "import torch;\n"
+         + "import from sharedmod { via_shared }\n\n"
+         + "@torch.compile()\n"
+         + "def g(x: any) -> any {\n"
+         + "    return torch.sin(via_shared(x));\n"
+         + "}\n";
+
 """An entry, the helper its region reaches, and a torch module nothing touches."""
 def _mk_key_project(tmp: str) -> tuple[str, str, str] {
     with open(os.path.join(tmp, "jac.toml"), "w") as fh {
@@ -99,6 +121,70 @@ test "an unrelated torch module in the program does not move the cache key" {
                 "an unrelated module in the program moved the helper's cache key"
             );
             assert _mentions_symbol(code_used_b, "__jac_se_emit__");
+        }
+    } finally {
+        config_mod._config = old_config;
+    }
+}
+
+test "an unrelated compiled entry in the program does not move the cache key" {
+    old_config = config_mod._config;
+    try {
+        with TemporaryDirectory() as tmpdir {
+            tmpdir = os.path.realpath(tmpdir);
+            (main_path, used_path, _) = _mk_key_project(tmpdir);
+            unrel_path = os.path.join(tmpdir, "unrel_entry.jac");
+            with open(unrel_path, "w") as fh {
+                fh.write(KEY_UNREL_ENTRY_SRC);
+            }
+            config_mod._config = JacConfig.load(Path(tmpdir) / "jac.toml");
+            prog_a = JacProgram();
+            assert _bytecode(prog_a, main_path) is not None;
+            assert _bytecode(prog_a, used_path) is not None;
+            prog_b = JacProgram();
+            assert _bytecode(prog_b, unrel_path) is not None;
+            assert _bytecode(prog_b, main_path) is not None;
+            assert main_path not in prog_b.mod.hub , (
+                "an entry that never reaches the module moved its cache key"
+            );
+            assert _bytecode(prog_b, used_path) is not None;
+            assert used_path not in prog_b.mod.hub , (
+                "an entry that never reaches the helper moved its cache key"
+            );
+        }
+    } finally {
+        config_mod._config = old_config;
+    }
+}
+
+test "an entry reaching the helper through a shared module keys the helper" {
+    old_config = config_mod._config;
+    try {
+        with TemporaryDirectory() as tmpdir {
+            tmpdir = os.path.realpath(tmpdir);
+            (main_path, used_path, _) = _mk_key_project(tmpdir);
+            with open(os.path.join(tmpdir, "sharedmod.jac"), "w") as fh {
+                fh.write(KEY_SHARED_SRC);
+            }
+            entry2_path = os.path.join(tmpdir, "entry2.jac");
+            with open(entry2_path, "w") as fh {
+                fh.write(KEY_ENTRY2_SRC);
+            }
+            config_mod._config = JacConfig.load(Path(tmpdir) / "jac.toml");
+            prog_a = JacProgram();
+            for path in [main_path, entry2_path, used_path] {
+                assert _bytecode(prog_a, path) is not None;
+            }
+            with open(entry2_path, "w") as fh {
+                fh.write(KEY_ENTRY2_SRC.replace("torch.sin", "torch.cos"));
+            }
+            prog_b = JacProgram();
+            for path in [main_path, entry2_path, used_path] {
+                assert _bytecode(prog_b, path) is not None;
+            }
+            assert used_path in prog_b.mod.hub , (
+                "editing an entry that reaches the helper must invalidate it"
+            );
         }
     } finally {
         config_mod._config = old_config;

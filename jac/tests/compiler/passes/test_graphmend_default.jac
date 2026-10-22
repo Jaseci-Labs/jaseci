@@ -68,6 +68,14 @@ def _rehook_loader(prev: any) {
 }
 
 """Create a temp project with a jac.toml, a torch entry, and a plain helper."""
+glob TORCH_PRINT = "import torch;\n\n"
+         + "@torch.compile()\n"
+         + "def f(x: any) -> any {\n"
+         + "    x = torch.relu(x);\n"
+         + "    print(\"GM-SERVE\", x);\n"
+         + "    return torch.sin(x) * 2.0;\n"
+         + "}\n";
+
 def _mk_gm_project(tmp: str) -> tuple[str, str] {
     with open(os.path.join(tmp, "jac.toml"), "w") as fh {
         fh.write(
@@ -341,6 +349,34 @@ test "an open gate shares the cache artifact with off for a torch-free module" {
             );
         }
     } finally {
+        config_mod._config = old_config;
+    }
+}
+
+test "a serving compile does not reuse an artifact built with defer active" {
+    import jaclang.compiler.driver.compile_options as opt_mod;
+    old_config = config_mod._config;
+    saved = list(opt_mod._serving_probe);
+    try {
+        with TemporaryDirectory() as tmpdir {
+            tmpdir = os.path.realpath(tmpdir);
+            (main_path, _) = _mk_gm_project(tmpdir);
+            with open(main_path, "w") as fh {
+                fh.write(TORCH_PRINT);
+            }
+            config_mod._config = JacConfig.load(Path(tmpdir) / "jac.toml");
+            opt_mod._serving_probe[0] = False;
+            assert _mentions_symbol(
+                _bytecode(JacProgram(), main_path), "__jac_se_emit__"
+            );
+            opt_mod._serving_probe[0] = True;
+            code_serve = _bytecode(JacProgram(), main_path);
+            assert not _mentions_symbol(code_serve, "__jac_se_emit__") , (
+                "a serving compile reused the defer-active artifact"
+            );
+        }
+    } finally {
+        opt_mod._serving_probe[:] = saved;
         config_mod._config = old_config;
     }
 }

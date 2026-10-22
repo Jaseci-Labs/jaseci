@@ -265,9 +265,10 @@ def _report_abandoned_claim(path: str, reason: str) -> None:
         pass
 
 
-# Holds the live hook wrapper (under "wrapper") and whether the teardown
-# restore is armed (under "atexit"), so uninstall can tell our patch apart
-# from anyone else's and installs arm the restore exactly once.
+# Holds the live hook wrapper (under "wrapper"), the class's own get_code
+# from before the install (under "prior"), whether the atexit restore is
+# armed (under "atexit") and the live program finalizer (under
+# "finalizer"), so uninstall can tell our patch apart from anyone else's.
 _graphmend_hook_state: dict = {}
 
 
@@ -288,6 +289,7 @@ def install_graphmend_loader_hook() -> None:
     if getattr(loader, "_jac_graphmend_hooked", False):
         return
     original = loader.get_code
+    _graphmend_hook_state["prior"] = loader.__dict__.get("get_code")
 
     def get_code(self: object, fullname: str) -> object:
         path = getattr(self, "path", "") or ""
@@ -315,7 +317,8 @@ def install_graphmend_loader_hook() -> None:
     if not _graphmend_hook_state.get("atexit"):
         atexit.register(uninstall_graphmend_loader_hook)
         _graphmend_hook_state["atexit"] = True
-    if not _graphmend_hook_state.get("finalizer"):
+    finalizer = _graphmend_hook_state.get("finalizer")
+    if finalizer is None or not finalizer.alive:
         # The claims the hook answers live on the installing program, so the
         # patch's lifetime follows that program: when it is collected, the
         # stdlib class gets its method back. A later program that claims again
@@ -326,10 +329,9 @@ def install_graphmend_loader_hook() -> None:
 
             from jaclang.runtime.runtime import JacRuntime as Jac
 
-            weakref.finalize(
+            _graphmend_hook_state["finalizer"] = weakref.finalize(
                 Jac.get_program(), uninstall_graphmend_loader_hook
             )
-            _graphmend_hook_state["finalizer"] = True
         except Exception:
             pass
     _graphmend_hook_state["wrapper"] = get_code
@@ -338,10 +340,11 @@ def install_graphmend_loader_hook() -> None:
 
 
 def uninstall_graphmend_loader_hook() -> None:
-    """Give ``SourceFileLoader`` its inherited ``get_code`` back.
+    """Give ``SourceFileLoader`` back the ``get_code`` it had before the hook.
 
-    The hook is a class attribute shadowing the method ``SourceFileLoader``
-    inherits, so removal is deletion, restoring the exact stdlib behavior.
+    The hook is a class attribute, so removal restores what the class held at
+    install: deletion when it inherited the method, the earlier patch when it
+    had one.
     Only our own wrapper is removed: if someone else has patched over it,
     their patch is left in place (it still delegates through to the stock
     method). Idempotent, and registered with ``atexit`` at install time so
@@ -350,8 +353,15 @@ def uninstall_graphmend_loader_hook() -> None:
     """
     loader = importlib.machinery.SourceFileLoader
     wrapper = _graphmend_hook_state.pop("wrapper", None)
+    prior = _graphmend_hook_state.pop("prior", None)
+    finalizer = _graphmend_hook_state.pop("finalizer", None)
+    if finalizer is not None:
+        finalizer.detach()
     if wrapper is not None and loader.__dict__.get("get_code") is wrapper:
-        delattr(loader, "get_code")
+        if prior is not None:
+            loader.get_code = prior  # type: ignore[method-assign]
+        else:
+            delattr(loader, "get_code")
     if "_jac_graphmend_hooked" in loader.__dict__:
         delattr(loader, "_jac_graphmend_hooked")
 
@@ -504,20 +514,25 @@ class JacMetaImporter(MetaPathFinder, Loader):
         twin ``_graphmend_claims`` for the rule."""
         return _graphmend_claims(fullname, py_file)
 
-    def _exec_py_source_fallback(self, module: ModuleType, file_path: str) -> bool:
+    def _exec_py_source_fallback(
+        self, module: ModuleType, file_path: str, reason: str
+    ) -> bool:
         """Run a .py module from its original source via CPython's compiler.
 
         Used when GraphMend interception claimed a .py file but the Jac
         compiler could not produce bytecode for it. Keeps the import working
-        (untransformed) instead of failing. Returns True on success.
+        (untransformed) instead of failing. Returns False only when the source
+        cannot be read or compiled; an error raised by the module itself
+        propagates, as it would from the stock loader.
         """
         try:
             with open(file_path, encoding="utf-8") as fh:
                 code = compile(fh.read(), file_path, "exec")
-            exec(code, module.__dict__)  # noqa: S102
-            return True
         except Exception:
             return False
+        _report_abandoned_claim(file_path, reason)
+        exec(code, module.__dict__)  # noqa: S102
+        return True
 
     def _sealed_spec(self, fullname: str) -> importlib.machinery.ModuleSpec | None:
         found = _sealed.find_module(fullname)
@@ -643,10 +658,9 @@ class JacMetaImporter(MetaPathFinder, Loader):
             # GraphMend-claimed .py that jac can't compile: never break the
             # import -- fall back to running the original Python source. Worst
             # case is "not transformed", not a crash.
-            if is_py and self._exec_py_source_fallback(module, file_path):
-                _report_abandoned_claim(
-                    file_path, f"the Jac front end failed with {exc!r}"
-                )
+            if is_py and self._exec_py_source_fallback(
+                module, file_path, f"the Jac front end failed with {exc!r}"
+            ):
                 return
             raise
         if not codeobj:
@@ -656,10 +670,9 @@ class JacMetaImporter(MetaPathFinder, Loader):
             # A GraphMend-claimed .py that produced no bytecode still has usable
             # original source; run it untransformed rather than failing the
             # import. Tried before the diagnostic raise below.
-            if is_py and self._exec_py_source_fallback(module, file_path):
-                _report_abandoned_claim(
-                    file_path, "the Jac front end produced no bytecode for it"
-                )
+            if is_py and self._exec_py_source_fallback(
+                module, file_path, "the Jac front end produced no bytecode for it"
+            ):
                 return
             alerts = _module_scoped_alerts(program, file_path)
             if not alerts:

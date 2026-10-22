@@ -122,3 +122,24 @@ test "the cli disable flag reaches the compile options carrier" {
         config_mod._config = old_config;
     }
 }
+
+test "explicit compile options decide the transforms the compile runs" {
+    import shutil;
+    import tempfile;
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from tests.support { GRAPHMEND_FIXTURES, code_mentions_symbol }
+    with tempfile.TemporaryDirectory() as tmp {
+        path = os.path.join(os.path.realpath(tmp), "guard.jac");
+        shutil.copy(os.path.join(GRAPHMEND_FIXTURES, "val_guard_all.jac"), path);
+        prog = JacProgram();
+        code = prog._get_compiler().get_bytecode(
+            full_target=path,
+            target_program=prog,
+            options=CompileOptions(graphmend=True, graphmend_disable=["trap"])
+        );
+        assert code is not None;
+        assert not code_mentions_symbol(code, "_assert_async") , (
+            "the explicit trap disable was ignored by the compile"
+        );
+    }
+}

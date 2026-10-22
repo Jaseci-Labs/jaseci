@@ -11727,6 +11727,7 @@ graph import compiler.driver {
             | pipeline_runner
             | program
             | session_compile { CompileOptions },
+        compiler.JacCompiler.get_bytecode { defer_declines_here },
         nativecache.NativeBuildSession.finish { pop_native_target, push_native_target },
         nativecache.NativeUnitRegistry._miss { env_na_debug },
         nativecache.NativeUnitRegistry._source_key {

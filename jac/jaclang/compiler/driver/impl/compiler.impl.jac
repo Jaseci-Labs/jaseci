@@ -160,12 +160,17 @@ impl JacCompiler.get_bytecode(
             read_file_with_encoding(full_target), full_target, 'exec'
         );
     }
+    gm_disable: list[str] = list(options.graphmend_disable or []);
+    if defer_declines_here() and ('defer' not in gm_disable) {
+        gm_disable.append('defer');
+    }
+    gm_disable = sorted(gm_disable);
     gm_variant = "";
     if gm_active {
         gm_variant = ";".join(
             [
                 "graphmend",
-                "disable=" + ",".join(sorted(options.graphmend_disable or [])),
+                "disable=" + ",".join(gm_disable),
                 "claimed="
                     + str(int((real_target in target_program.graphmend_claimed))),
                 "region=" + gm_region
@@ -175,7 +180,9 @@ impl JacCompiler.get_bytecode(
     prev_variant = swap_graphmend_cache_variant(gm_variant);
     try {
         with compilation_scope(owner_scope_options(actual)) {
-            return self._get_bytecode(full_target, actual, skip_analysis, gm_active);
+            return self._get_bytecode(
+                full_target, actual, skip_analysis, gm_active, gm_disable
+            );
         }
     } finally {
         swap_graphmend_cache_variant(prev_variant);
@@ -186,7 +193,8 @@ impl JacCompiler._get_bytecode(
     full_target: str,
     target_program: JacProgram,
     skip_analysis: bool = False,
-    gm_active: bool = False
+    gm_active: bool = False,
+    gm_disable: (list[str] | None) = None
 ) -> (types.CodeType | None) {
     actual_program = self.selfhost.resolve(full_target, target_program, execution=True);
     (rebuild, no_precompile) = cache_mode();
@@ -346,7 +354,8 @@ impl JacCompiler._get_bytecode(
     options = CompileOptions(
         skip_native_engine=not self._wants_native_engine(full_target, actual_program),
         skip_analysis=skip_analysis,
-        graphmend=gm_active
+        graphmend=gm_active,
+        graphmend_disable=gm_disable
     );
     if not is_internal {
         (handled, adopted) = self._adopt_kernel_compile(

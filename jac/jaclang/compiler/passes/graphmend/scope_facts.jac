@@ -7,7 +7,8 @@ def compiled_region_ids(
     current: uni.Module,
     seen: set[str],
     wrapped: (list[uni.UniNode] | None) = None,
-    walked: (set[str] | None) = None
+    walked: (set[str] | None) = None,
+    sites: (dict[int, set[str]] | None) = None
 ) -> set[int];
 
 def _seed(work: list[uni.Ability], ab: uni.Ability);
@@ -31,7 +32,7 @@ def collect_wrap_entries(
     current: uni.Module,
     seen: set[str],
     wrap_keys: set[str],
-    walked: (set[str] | None) = None
+    sites: (dict[int, set[str]] | None) = None
 ) -> list[uni.UniNode];
 
 def resolve_wrapped_entry(
@@ -191,7 +192,8 @@ impl compiled_region_ids(
     current: uni.Module,
     seen: set[str],
     wrapped: (list[uni.UniNode] | None) = None,
-    walked: (set[str] | None) = None
+    walked: (set[str] | None) = None,
+    sites: (dict[int, set[str]] | None) = None
 ) -> set[int] {
     mods: list[uni.Module] = [current];
     for m in prog.mod.hub.values() {
@@ -202,39 +204,49 @@ impl compiled_region_ids(
     ids: set[int] = set();
     work: list[uni.Ability] = [];
     path_memo: dict[int, str] = {};
+    roots: list[tuple[list[uni.Ability], set[str]]] = [];
+    edges: dict[int, list[uni.Ability]] = {};
+    node_mod: dict[int, str] = {};
+    cur_path = _mod_path(current, path_memo);
     for m in mods {
         seeds = _compile_entry_seeds(m);
         fwds = module_entry_forwards(prog, m, seen);
-        if (walked is not None) and (seeds or fwds) {
-            walked.add(_mod_path(m, path_memo));
-        }
+        m_path = _mod_path(m, path_memo);
         for nd in seeds {
             if isinstance(nd, uni.Archetype) {
                 ids.add(id(nd));
+                if (walked is not None) and (m is current) {
+                    walked.add(m_path);
+                }
             } elif isinstance(nd, uni.Ability) {
                 _seed(work, nd);
+                roots.append(([nd], {m_path}));
             }
         }
         for fwd in fwds {
             _seed(work, fwd);
+            roots.append(([fwd], {m_path}));
         }
     }
     for w in (wrapped or []) {
-        if walked is not None {
-            wmod = w.find_parent_of_type(uni.Module);
-            if wmod is not None {
-                walked.add(_mod_path(wmod, path_memo));
-            }
+        extra: set[str] = set((sites or {}).get(id(w), set()));
+        wmod = w.find_parent_of_type(uni.Module);
+        if wmod is not None {
+            extra.add(_mod_path(wmod, path_memo));
         }
+        starts: list[uni.Ability] = [];
         if isinstance(w, uni.Archetype) {
             for meth in w.get_all_sub_nodes(uni.Ability) {
                 if meth.sym_name == 'forward' {
                     _seed(work, meth);
+                    starts.append(meth);
                 }
             }
         } elif isinstance(w, uni.Ability) {
             _seed(work, w);
+            starts.append(w);
         }
+        roots.append((starts, extra));
     }
     while work {
         ab = work.pop();
@@ -242,16 +254,19 @@ impl compiled_region_ids(
             continue;
         }
         ids.add(id(ab));
-        if walked is not None {
-            ab_mod = ab.find_parent_of_type(uni.Module);
-            if ab_mod is not None {
-                walked.add(_mod_path(ab_mod, path_memo));
-            }
+        ab_mod = ab.find_parent_of_type(uni.Module);
+        if ab_mod is not None {
+            node_mod[id(ab)] = _mod_path(ab_mod, path_memo);
         }
+        outs: list[uni.Ability] = [];
+        edges[id(ab)] = outs;
         owner = facts_for(ab).boundary.get(ab) or ab;
         callee: (uni.Ability | None) = None;
         for call in ab.get_all_sub_nodes(uni.FuncCall) {
             callee = _resolve_callee(ab, call, prog, seen);
+            if callee is not None {
+                outs.append(callee);
+            }
             if (callee is not None) and (id(callee) not in ids) {
                 facts_for(callee).boundary.setdefault(callee, owner);
                 work.append(callee);
@@ -263,10 +278,35 @@ impl compiled_region_ids(
                 continue;
             }
             for closure in _wrapper_closures(deco) {
+                outs.append(closure);
                 if id(closure) not in ids {
                     facts_for(closure).boundary.setdefault(closure, owner);
                     work.append(closure);
                 }
+            }
+        }
+    }
+    if walked is not None {
+        for (starts, extra) in roots {
+            reach: set[str] = set(extra);
+            hit = False;
+            stack: list[uni.Ability] = list(starts);
+            visited: set[int] = set();
+            while stack {
+                a = stack.pop();
+                if id(a) in visited {
+                    continue;
+                }
+                visited.add(id(a));
+                p = node_mod.get(id(a));
+                if p is not None {
+                    reach.add(p);
+                    hit = hit or (p == cur_path);
+                }
+                stack.extend(edges.get(id(a), []));
+            }
+            if hit {
+                walked.update(reach);
             }
         }
     }
@@ -332,8 +372,9 @@ impl region_closure_key(prog: JacProgram, target: uni.Module, target_path: str) 
     wrap_keys: set[str] = set();
     register_claim(prog, target, seen);
     materialize_claim_chain(prog, target_path, seen);
-    wrapped = collect_wrap_entries(prog, target, seen, wrap_keys, walked);
-    compiled_region_ids(prog, target, seen, wrapped, walked);
+    sites: dict[int, set[str]] = {};
+    wrapped = collect_wrap_entries(prog, target, seen, wrap_keys, sites);
+    compiled_region_ids(prog, target, seen, wrapped, walked, sites);
     tnorm = _norm(target_path);
     parts: list[str] = [];
     for path in sorted(walked | seen) {
@@ -390,7 +431,7 @@ impl collect_wrap_entries(
     current: uni.Module,
     seen: set[str],
     wrap_keys: set[str],
-    walked: (set[str] | None) = None
+    sites: (dict[int, set[str]] | None) = None
 ) -> list[uni.UniNode] {
     out: list[uni.UniNode] = [];
     ids: set[int] = set();
@@ -401,20 +442,16 @@ impl collect_wrap_entries(
         }
     }
     for m in mods {
-        first = True;
         for call in m.get_all_sub_nodes(uni.FuncCall) {
             if not is_torch_attr_target(call.target, 'compile') {
                 continue;
             }
-            if first {
-                if walked is not None {
-                    walked.add(_norm(m.loc.mod_path));
-                }
-                first = False;
-            }
             `entry = resolve_wrapped_entry(prog, call, seen);
             if `entry is None {
                 continue;
+            }
+            if sites is not None {
+                sites.setdefault(id(`entry), set()).add(_norm(m.loc.mod_path));
             }
             if isinstance(`entry, uni.Ability) {
                 wrap_keys.add(entry_key(`entry));

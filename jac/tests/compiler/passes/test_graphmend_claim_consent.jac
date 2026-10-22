@@ -30,6 +30,11 @@ def _unhook_loader -> any {
     return prev;
 }
 
+"""Stands in for an embedder's own get_code patch; never called."""
+def _embedder_get_code(self: any, fullname: str) -> any {
+    return None;
+}
+
 """Put back a patch `_unhook_loader` removed."""
 def _rehook_loader(prev: any) {
     if prev is not None {
@@ -252,5 +257,91 @@ test "teardown restores the stock loader get_code" {
     } finally {
         _unhook_loader();
         _rehook_loader(prev_hook);
+    }
+}
+
+test "teardown restores a get_code patch that was there before the hook" {
+    import jaclang.meta_importer as mi;
+    prev_hook = _unhook_loader();
+    try {
+        setattr(SourceFileLoader, "get_code", _embedder_get_code);
+        mi.install_graphmend_loader_hook();
+        assert SourceFileLoader.__dict__.get("get_code") is not _embedder_get_code;
+        mi.uninstall_graphmend_loader_hook();
+        assert SourceFileLoader.__dict__.get("get_code") is _embedder_get_code , (
+            "uninstall must restore the earlier patch instead of deleting it"
+        );
+    } finally {
+        _unhook_loader();
+        _rehook_loader(prev_hook);
+    }
+}
+
+test "a reinstall after the installing program is collected arms its own teardown" {
+    import jaclang.meta_importer as mi;
+    prev_hook = _unhook_loader();
+    try {
+        mi._graphmend_hook_state.pop("finalizer", None);
+        mi.install_graphmend_loader_hook();
+        first = mi._graphmend_hook_state.get("finalizer");
+        assert (first is not None) and first.alive;
+        first();
+        assert SourceFileLoader.__dict__.get("get_code") is None;
+        mi.install_graphmend_loader_hook();
+        second = mi._graphmend_hook_state.get("finalizer");
+        assert (second is not None) and (second is not first) and second.alive , (
+            "a reinstall must arm its own teardown"
+        );
+        mi.uninstall_graphmend_loader_hook();
+        assert not second.alive , "uninstall must detach the teardown it armed";
+    } finally {
+        _unhook_loader();
+        _rehook_loader(prev_hook);
+    }
+}
+
+test "an error the module raises propagates through the source fallback" {
+    import sys;
+    import importlib.util;
+    import from jaclang.meta_importer { JacMetaImporter }
+    prog = Jac.get_program();
+    compiler = Jac.get_compiler();
+    prev_warnings = list(prog.warnings_had);
+    def _refuse_bytecode(full_target: str, target_program: any) -> any {
+        raise RuntimeError("front end declined");
+    }
+    with tempfile.TemporaryDirectory() as tmp {
+        path = _write(
+            tmp,
+            "raising_claim_mod.py",
+            "X = 1\nraise ValueError(\"boom-from-module\")\n"
+        );
+        spec = importlib.util.spec_from_file_location("raising_claim_mod", path);
+        assert spec is not None;
+        mod = importlib.util.module_from_spec(spec);
+        raised = None;
+        try {
+            setattr(compiler, "get_bytecode", _refuse_bytecode);
+            JacMetaImporter()._exec_compiled_module(mod, path);
+        } except ValueError as e {
+            raised = e;
+        } finally {
+            if "get_bytecode" in compiler.__dict__ {
+                delattr(compiler, "get_bytecode");
+            }
+            sys.modules.pop("raising_claim_mod", None);
+        }
+        assert (raised is not None) and (str(raised) == "boom-from-module") , (
+            f"the module's own error was replaced: {raised!r}"
+        );
+        assert mod.__dict__.get("X") == 1;
+        assert [
+            w
+            for w in prog.warnings_had
+            if path in str(w)
+        ] , ("the abandoned claim must still be reported");
+        cur = Jac.get_program();
+        cur.warnings_had.clear();
+        cur.warnings_had.extend(prev_warnings);
     }
 }

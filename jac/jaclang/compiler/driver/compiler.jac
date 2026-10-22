@@ -78,7 +78,8 @@ obj JacCompiler(SessionHooks) {
         full_target: str,
         target_program: JacProgram,
         skip_analysis: bool = False,
-        gm_active: bool = False
+        gm_active: bool = False,
+        gm_disable: (list[str] | None) = None
     ) -> (types.CodeType | None);
 
     def _get_client_artifact(
