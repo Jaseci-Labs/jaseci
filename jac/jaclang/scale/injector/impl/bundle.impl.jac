@@ -968,6 +968,12 @@ impl _cached_seal(base: Path, key: str) -> (bytes | None) {
     return raw;
 }
 
+impl _bundle_ships(raw: bytes, member: str) -> bool {
+    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as sealed {
+        return member in sealed.getnames();
+    }
+}
+
 impl _remember_seal(base: Path, key: str, raw: bytes) {
     cache = _seal_cache_dir(base);
     partial = "";
@@ -1046,8 +1052,9 @@ impl pack_jab(
         if not _is_client_dist(path.relative_to(base))
     ];
     key = input_key(base, seal_sources);
+    import from jaclang.server.sealed_serve { SERVE_MANIFEST_REL }
     cached = _cached_seal(base, key);
-    if cached is not None {
+    if cached is not None and _bundle_ships(cached, SERVE_MANIFEST_REL) {
         logger.info(
             f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
         );
@@ -1121,7 +1128,6 @@ impl pack_jab(
                 logger.info(
                     f"Sealed {count} precompiled app-module artifacts into the .jab."
                 );
-                import from jaclang.server.sealed_serve { SERVE_MANIFEST_REL }
                 tar.add(
                     str(require_serve_manifest(staged)),
                     arcname=SERVE_MANIFEST_REL,

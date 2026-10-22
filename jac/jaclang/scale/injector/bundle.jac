@@ -260,6 +260,9 @@ def _seed_precompiled(stage: Path, seed: (Path | None)) -> int;
 def _cached_seal(base: Path, key: str) -> (bytes | None);
 
 
+def _bundle_ships(raw: bytes, member: str) -> bool;
+
+
 def _remember_seal(base: Path, key: str, raw: bytes);
 
 

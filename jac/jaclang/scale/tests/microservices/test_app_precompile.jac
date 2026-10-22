@@ -194,6 +194,17 @@ test "an unchanged project reuses its sealed bundle instead of sealing again" {
         f"a deploy of unchanged code sealed the app again: {again_log}"
     );
     assert again == first , "the reused bundle differs from the one sealed";
+    cache_dir = base / ".jac" / "seal-cache";
+    cached = [cache_dir / n for n in os.listdir(cache_dir) if n.endswith(".jab")];
+    assert len(cached) == 1 , cached;
+    with tarfile.open(str(cached[0]), mode="w:gz") as unbootable {
+        unbootable.add(str(base / "svc.jac"), arcname="svc.jac");
+    }
+    (resealed, resealed_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in resealed_log) , (
+        "a cached bundle with no serve manifest was reused"
+    );
+    assert ".jac/serve_manifest.json" in _names(resealed);
     (base / "svc.jac").write_text("def:pub ping -> str { return \"pong!\"; }\n");
     (edited, edited_log) = _pack_logged(base, binary);
     assert not any("Reusing the sealed bundle" in m for m in edited_log) , (
