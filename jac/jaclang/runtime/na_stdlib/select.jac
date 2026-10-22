@@ -8,6 +8,8 @@ def _check_fd(fd: int);
 
 def _add_fds(lst: list[int], events: int, fds: list[int], masks: list[int]);
 
+def _ready(lst: list[int], fds: list[int], res: list[int], ready: int) -> list[int];
+
 def:pub select(
     rlist: list[int], wlist: list[int], xlist: list[int], timeout: (float | None) = -1.0
 ) -> tuple[(list[int], list[int], list[int])];
@@ -64,26 +66,33 @@ impl select(
             "poll failed: [Errno " + str(last_errno()) + "] " + errno_message()
         );
     }
-    out_r: list[int] = [];
-    out_w: list[int] = [];
-    out_x: list[int] = [];
     n: int = len(fds);
     k: int = 0;
     while k < n {
-        rev: int = res[k + 1];
-        if (rev & _POLLNVAL) != 0 {
+        if (res[k + 1] & _POLLNVAL) != 0 {
             raise ValueError("invalid file descriptor in select()");
-        }
-        if rev != 0 {
-            fd: int = fds[k];
-            if (rev & (_POLLIN | _POLLERR | _POLLHUP)) != 0 {
-                out_r.append(fd);
-            }
-            if (rev & (_POLLOUT | _POLLERR | _POLLHUP)) != 0 {
-                out_w.append(fd);
-            }
         }
         k += 1;
     }
+    out_r: list[int] = _ready(rlist, fds, res, _POLLIN | _POLLERR | _POLLHUP);
+    out_w: list[int] = _ready(wlist, fds, res, _POLLOUT | _POLLERR | _POLLHUP);
+    out_x: list[int] = [];
     return (out_r, out_w, out_x);
+}
+
+impl _ready(lst: list[int], fds: list[int], res: list[int], ready: int) -> list[int] {
+    out: list[int] = [];
+    for fd in lst {
+        k: int = 0;
+        while k < len(fds) {
+            if fds[k] == fd {
+                if (res[k + 1] & ready) != 0 {
+                    out.append(fd);
+                }
+                break;
+            }
+            k += 1;
+        }
+    }
+    return out;
 }

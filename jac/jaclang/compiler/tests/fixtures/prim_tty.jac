@@ -3,12 +3,15 @@
 `import from tty { setcbreak, setraw }` binds CPython's `tty` on sv and the
 bundled `na_stdlib/tty.jac` on na. Uses a pty slave fd (pipes are ENOTTY
 for termios): `os.openpty()` on sv, libc `openpty(3)` on na, master kept
-open until the end. `setcbreak` must clear ICANON and ECHO in `mode[3]`
-(lflag) and set cc VMIN=1/VTIME=0 through the SHARED cc list, so the
-returned original-mode list reports VMIN=1 too -- CPython's behavior, pinned
-here. `setraw` must mask each flag word exactly by CPython's formula,
-computed from each lane's own saved attrs. Original attrs are restored and
-the restore is verified. ES/JS opts out (POSIX-only).
+open until the end. The pty is first seeded with VMIN=7/VTIME=3 and with
+NOFLSH|TOSTOP set in lflag, so every write the modes make is observable.
+`setcbreak` must clear ICANON and ECHO in `mode[3]` (lflag) and set cc
+VMIN=1/VTIME=0 on its OWN copy of the cc list, so the returned
+original-mode list still reports the seeded VMIN=7/VTIME=3 -- CPython
+3.12+'s behavior, pinned here. `setraw` must mask each flag word exactly
+by CPython's formula (clearing the seeded NOFLSH/TOSTOP), computed from
+each lane's own saved attrs. Original attrs are restored and the restore
+is verified. ES/JS opts out (POSIX-only).
 """
 
 import os;
@@ -65,7 +68,15 @@ def _pty_pair_na -> tuple[(int, int)] {
 def tty_py -> dict[any, any] {
     d: dict[any, any] = {};
     (m, s) = os.openpty();
+    seed = termios.tcgetattr(s);
+    seed[6][VMIN] = 7;
+    seed[6][VTIME] = 3;
+    seed[3] = seed[3] | NOFLSH | TOSTOP;
+    termios.tcsetattr(s, TCSADRAIN, seed);
     orig = termios.tcgetattr(s);
+    d["seed_noflsh_tostop"] = 1
+        if (orig[3] & (NOFLSH | TOSTOP)) == (NOFLSH | TOSTOP)
+        else 0;
     got = setcbreak(s);
     after = termios.tcgetattr(s);
     lflag = after[3];
@@ -75,7 +86,8 @@ def tty_py -> dict[any, any] {
     d["cbreak_vmin"] = _cc_int(cc[VMIN]);
     d["cbreak_vtime"] = _cc_int(cc[VTIME]);
     got_cc = got[6];
-    d["cbreak_shared_cc_vmin"] = _cc_int(got_cc[VMIN]);
+    d["cbreak_orig_cc_vmin"] = _cc_int(got_cc[VMIN]);
+    d["cbreak_orig_cc_vtime"] = _cc_int(got_cc[VTIME]);
     termios.tcsetattr(s, TCSADRAIN, orig);
     restored = termios.tcgetattr(s);
     d["cbreak_restored"] = 1 if restored[3] == orig[3] else 0;
@@ -111,7 +123,7 @@ def tty_py -> dict[any, any] {
     d["raw_vmin"] = _cc_int(raw_cc[VMIN]);
     d["raw_vtime"] = _cc_int(raw_cc[VTIME]);
     got2_cc = got2[6];
-    d["raw_shared_cc_vmin"] = _cc_int(got2_cc[VMIN]);
+    d["raw_orig_cc_vmin"] = _cc_int(got2_cc[VMIN]);
     d["raw_len"] = len(got2);
     termios.tcsetattr(s, TCSADRAIN, orig2);
     restored2 = termios.tcgetattr(s);
@@ -130,7 +142,20 @@ def tty_cl -> dict[any, any] {
 def tty_na -> dict[str, any] {
     d: dict[str, any] = {};
     (m, s) = _pty_pair_na();
+    seed = termios.tcgetattr(s);
+    seed_cc = seed[6];
+    if isinstance(seed_cc, list) {
+        seed_cc[VMIN] = 7;
+        seed_cc[VTIME] = 3;
+    }
+    seed_lflag: int = seed[3];
+    seed[3] = seed_lflag | NOFLSH | TOSTOP;
+    termios.tcsetattr(s, TCSADRAIN, seed);
     orig = termios.tcgetattr(s);
+    orig_lflag: int = orig[3];
+    d["seed_noflsh_tostop"] = 1
+        if (orig_lflag & (NOFLSH | TOSTOP)) == (NOFLSH | TOSTOP)
+        else 0;
     got = setcbreak(s);
     after = termios.tcgetattr(s);
     lflag: int = after[3];
@@ -148,12 +173,16 @@ def tty_na -> dict[str, any] {
     d["cbreak_vmin"] = cbreak_vmin;
     d["cbreak_vtime"] = cbreak_vtime;
     got_cc = got[6];
-    shared_vmin: int = 0;
+    orig_vmin: int = 0;
+    orig_vtime: int = 0;
     if isinstance(got_cc, list) {
         v3 = got_cc[VMIN];
-        shared_vmin = v3;
+        orig_vmin = v3;
+        v3t = got_cc[VTIME];
+        orig_vtime = v3t;
     }
-    d["cbreak_shared_cc_vmin"] = shared_vmin;
+    d["cbreak_orig_cc_vmin"] = orig_vmin;
+    d["cbreak_orig_cc_vtime"] = orig_vtime;
     termios.tcsetattr(s, TCSADRAIN, orig);
     restored = termios.tcgetattr(s);
     rlflag: int = restored[3];
@@ -207,12 +236,12 @@ def tty_na -> dict[str, any] {
     d["raw_vmin"] = raw_vmin;
     d["raw_vtime"] = raw_vtime;
     got2_cc = got2[6];
-    raw_shared: int = 0;
+    raw_orig_vmin: int = 0;
     if isinstance(got2_cc, list) {
         v6 = got2_cc[VMIN];
-        raw_shared = v6;
+        raw_orig_vmin = v6;
     }
-    d["raw_shared_cc_vmin"] = raw_shared;
+    d["raw_orig_cc_vmin"] = raw_orig_vmin;
     d["raw_len"] = len(got2);
     termios.tcsetattr(s, TCSADRAIN, orig2);
     restored2 = termios.tcgetattr(s);

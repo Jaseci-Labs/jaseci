@@ -10,7 +10,7 @@ def _set_cc(value: any) -> list[any];
 
 def:pub setraw(fd: int, when: int = TCSAFLUSH) -> list[any];
 
-def:pub setcbreak(fd: int, when: int = TCSANOW) -> list[any];
+def:pub setcbreak(fd: int, when: int = TCSAFLUSH) -> list[any];
 
 impl _mi(mode: list[any], i: int) -> int {
     v = mode[i];
@@ -72,7 +72,7 @@ impl setraw(fd: int, when: int = TCSAFLUSH) -> list[any] {
     return original;
 }
 
-impl setcbreak(fd: int, when: int = TCSANOW) -> list[any] {
+impl setcbreak(fd: int, when: int = TCSAFLUSH) -> list[any] {
     original: list[any] = tcgetattr(fd);
     cc: list[any] = _set_cc(original[CC]);
     new: list[any] = [

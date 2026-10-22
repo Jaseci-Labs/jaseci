@@ -7,7 +7,9 @@ answers writable at timeout 0.0, the empty probe answers three empty
 lists, and the block-forever sentinel answers immediately for a ready fd
 (spelled `None` on sv -- CPython's sentinel -- and `-1.0` on na: the
 documented divergence, so each lane pins its own spelling of the same
-observable). ES/JS opts out (POSIX-only).
+observable). Each result list follows its own input list: a repeated
+ready fd comes back once per occurrence, in input order, and a not-ready
+fd is skipped wherever it appears. ES/JS opts out (POSIX-only).
 """
 
 import os;
@@ -42,6 +44,7 @@ def select_py -> dict[any, any] {
     d["empty_ok"] = 1 if (len(er) == 0 and len(ew) == 0 and len(ex) == 0) else 0;
     (r3, w3, x3) = select.select([rfd], [wfd], [], 0.0);
     d["both_ready"] = 1 if (len(r3) == 1 and len(w3) == 1 and len(x3) == 0) else 0;
+    d["repeats"] = _repeats_py(rfd, wfd);
     d["pollin"] = select.POLLIN;
     d["pollout"] = select.POLLOUT;
     os.close(rfd);
@@ -70,9 +73,53 @@ def select_na -> dict[str, any] {
     d["empty_ok"] = 1 if (len(er) == 0 and len(ew) == 0 and len(ex) == 0) else 0;
     (r3, w3, x3) = select.select([rfd], [wfd], [], 0.0);
     d["both_ready"] = 1 if (len(r3) == 1 and len(w3) == 1 and len(x3) == 0) else 0;
+    d["repeats"] = _repeats_na(rfd, wfd);
     d["pollin"] = select.POLLIN;
     d["pollout"] = select.POLLOUT;
     close(i32(rfd));
     close(i32(wfd));
     return d;
+}
+
+
+"""Result lists for repeated and mixed-order inputs, flattened as positions
+(0 for the read end, 1 for the write end) with -1 closing each list. `rfd`
+is readable and `wfd` writable; `wfd` is never readable, so it drops out of
+the read result. (`rfd` is kept out of the write list: whether a pipe's
+read end polls writable differs by OS.)"""
+def _repeats_py(rfd: int, wfd: int) -> list[int] {
+    (r1, w1, _x1) = select.select([rfd, rfd], [wfd, wfd], [], 0.0);
+    (r2, w2, _x2) = select.select([wfd, rfd, wfd, rfd], [wfd, wfd, wfd], [], 0.0);
+    out: list[int] = [];
+    for lst in [r1, w1, r2, w2] {
+        for fd in lst {
+            out.append(0 if fd == rfd else 1);
+        }
+        out.append(-1);
+    }
+    return out;
+}
+
+
+def _repeats_na(rfd: int, wfd: int) -> list[int] {
+    (r1, w1, _x1) = select.select([rfd, rfd], [wfd, wfd], [], 0.0);
+    (r2, w2, _x2) = select.select([wfd, rfd, wfd, rfd], [wfd, wfd, wfd], [], 0.0);
+    out: list[int] = [];
+    _flatten_na(out, r1, rfd);
+    _flatten_na(out, w1, rfd);
+    _flatten_na(out, r2, rfd);
+    _flatten_na(out, w2, rfd);
+    return out;
+}
+
+
+def _flatten_na(out: list[int], lst: list[int], rfd: int) {
+    for fd in lst {
+        if fd == rfd {
+            out.append(0);
+        } else {
+            out.append(1);
+        }
+    }
+    out.append(-1);
 }

@@ -62,7 +62,7 @@ def:pub tcgetattr(fd: int) -> list[any];
 
 def _cc_byte(e: any) -> int;
 
-def _pack_attrs(attrs: list[any]) -> bytes;
+def _pack_attrs(base: bytes, attrs: list[any]) -> bytes;
 
 def:pub tcsetattr(fd: int, when: int, attrs: list[any]);
 
@@ -100,14 +100,26 @@ impl _cc_byte(e: any) -> int {
     if isinstance(e, int) {
         return e & 0xFF;
     }
-    if isinstance(e, bytes) and len(e) >= 1 {
+    if isinstance(e, bytes) and len(e) == 1 {
         return e[0];
     }
-    raise ValueError("tcsetattr: cc entries must be int or one-byte bytes");
+    raise TypeError(
+        "tcsetattr: elements of attributes must be bytes objects of length 1 or integers"
+    );
 }
 
-impl _pack_attrs(attrs: list[any]) -> bytes {
-    blob: bytes = new_buf();
+impl _pack_attrs(base: bytes, attrs: list[any]) -> bytes {
+    ccv = attrs[6];
+    if not isinstance(ccv, list) or len(ccv) != _NCCS {
+        raise TypeError(
+            "tcsetattr: attributes[6] must be " + str(_NCCS) + " element list"
+        );
+    }
+    cc_bytes: list[int] = [];
+    for e in ccv {
+        cc_bytes.append(_cc_byte(e));
+    }
+    blob: bytes = base;
     k: int = 0;
     while k < 6 {
         v = attrs[k];
@@ -122,7 +134,7 @@ impl _pack_attrs(attrs: list[any]) -> bytes {
                 blob = put_word(blob, _OFF_LFLAG, v);
             }
         } else {
-            raise ValueError("tcsetattr: attrs flag elements must be int");
+            raise TypeError("tcsetattr: attributes elements must be integers");
         }
         k += 1;
     }
@@ -130,28 +142,26 @@ impl _pack_attrs(attrs: list[any]) -> bytes {
     if speed_rc != 0 {
         _fail("tcsetattr");
     }
-    ccv = attrs[6];
-    if isinstance(ccv, list) {
-        j: int = 0;
-        while j < _NCCS and j < len(ccv) {
-            b = _cc_byte(ccv[j]);
-            blob = _put_byte(blob, _OFF_CC + j, b);
-            j += 1;
-        }
-    } else {
-        raise ValueError("tcsetattr: attrs[6] must be the cc list");
+    j: int = 0;
+    while j < _NCCS {
+        blob = _put_byte(blob, _OFF_CC + j, cc_bytes[j]);
+        j += 1;
     }
     return blob;
 }
 
 impl tcsetattr(fd: int, when: int, attrs: list[any]) {
+    if len(attrs) != 7 {
+        raise TypeError("tcsetattr, arg 3: must be 7 element list");
+    }
     if when != TCSANOW and when != TCSADRAIN and when != TCSAFLUSH {
         raise ValueError("invalid 'when' argument");
     }
-    if len(attrs) != 7 {
-        raise ValueError("tcsetattr: attrs must have 7 elements");
+    (current, get_rc) = get_attrs(fd);
+    if get_rc != 0 {
+        _fail("tcsetattr");
     }
-    rc: int = set_attrs(fd, when, _pack_attrs(attrs));
+    rc: int = set_attrs(fd, when, _pack_attrs(current, attrs));
     if rc != 0 {
         _fail("tcsetattr");
     }

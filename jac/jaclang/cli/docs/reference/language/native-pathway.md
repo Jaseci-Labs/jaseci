@@ -764,8 +764,9 @@ does not deadlock). Scoped to `args`/`stdin`/`stdout`/`stderr`/`text`/`cwd`/
 #### `fcntl` / `termios` / `tty` / `select` -- POSIX Terminal Floors
 
 `import fcntl` provides `fcntl(fd, cmd, arg=0)` (the `F_GETFL`/`F_SETFL`
-family) and `ioctl(fd, request, arg)` answering the mutated buffer (the
-packed `winsize` for `TIOCGWINSZ`). `import termios` provides
+family) and `ioctl(fd, request, arg)`, which copies a `bytes` arg into a
+private 1024-byte buffer and answers fresh `bytes` of the same length (the
+packed `winsize` for `TIOCGWINSZ`), as CPython does. `import termios` provides
 `tcgetattr`/`tcsetattr` over the CPython `[iflag, oflag, cflag, lflag,
 ispeed, ospeed, cc]` shape (cc as NCCS ints: 32 on glibc, 20 on darwin)
 and the V*/I*/O*/C*/L* constant groups with their per-OS values. `import
@@ -775,8 +776,9 @@ timeout=-1.0)` over `poll(2)` plus the `POLL*` constants.
 
 Divergences from CPython on these floors: errors raise `ValueError`
 carrying CPython's `[Errno N] <strerror>` text (CPython raises `OSError` /
-`termios.error` / `select.error`); `ioctl` answers the bytes buffer back
-where CPython answers a fresh copy of the mutated bytes; `select`'s
+`termios.error` / `select.error`); an `ioctl` request that writes past
+its argument raises `RuntimeError` where CPython raises `SystemError`;
+`termios` does not export Linux's `VSWTC`; `select`'s
 block-forever sentinel is `-1.0` rather than `None`, `POLLERR`/`POLLHUP`
 report readable AND writable, and the exceptional list is always empty.
 `fcntl` lacks `flock`/`lockf` and the `struct flock` commands.
