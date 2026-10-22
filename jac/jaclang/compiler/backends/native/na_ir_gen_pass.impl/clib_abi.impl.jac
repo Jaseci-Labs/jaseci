@@ -1,6 +1,4 @@
-import from jaclang.compiler.c_interop { c_variadic_param }
 impl NaIRGenPass._foreign_model -> dict[str, list[tuple[str, str | None]]] {
-    import from jaclang.compiler.backends.native.foreign { collect_foreign_structs }
     universe = [self.module] + self._foreign_modules;
     if self._foreign_structs is None or self._foreign_model_nmods != len(universe) {
         self._foreign_structs = collect_foreign_structs(universe);
@@ -10,7 +8,6 @@ impl NaIRGenPass._foreign_model -> dict[str, list[tuple[str, str | None]]] {
 }
 
 impl NaIRGenPass._foreign_fns -> dict[str, dict[str, any]] {
-    import from jaclang.compiler.backends.native.foreign { collect_foreign_fns }
     universe = [self.module] + self._foreign_modules;
     if self._foreign_fn_decls is None or self._foreign_fns_nmods != len(universe) {
         self._foreign_fn_decls = collect_foreign_fns(universe);
@@ -22,7 +19,6 @@ impl NaIRGenPass._foreign_fns -> dict[str, dict[str, any]] {
 impl NaIRGenPass._clib_struct_layout(
     name: str
 ) -> tuple[int, int, list[tuple[int, bool, int]]] {
-    import from jaclang.compiler.backends.native.foreign { foreign_struct_layout }
     return foreign_struct_layout(self._foreign_model(), name);
 }
 
@@ -331,7 +327,6 @@ impl NaIRGenPass._clib_reinterpret(
 }
 
 impl NaIRGenPass._clib_abi_signature(decl: uni.Ability) -> str {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     sig = decl.signature;
     if not isinstance(sig, uni.FuncSignature) {
         return "";
@@ -385,17 +380,17 @@ impl NaIRGenPass._declare_clib_definitions -> None {
             }
             continue;
         }
-        cfunc = self.clib_extern_fns.get(name) or self.func_symtab.get(name);
+        cfunc = self.clib_extern_fns.get(name) or self.scope.function(name);
         if not isinstance(cfunc, ir.Function) {
             continue;
         }
         self._clib_exports[name] = cfunc;
         self.clib_extern_fns.pop(name, None);
-        self.func_symtab.pop(name, None);
+        self.scope.unbind_function(name);
         self.clib_extern_names.discard(name);
         self._clib_symbol_lib.pop(name, None);
         self._maybe_declare_ability(decl, symbol=f"{name}.jac");
-        jac_fn = self.func_symtab.get(name);
+        jac_fn = self.scope.function(name);
         if isinstance(jac_fn, ir.Function) {
             jac_fn.linkage = "internal";
         }
@@ -417,20 +412,23 @@ impl NaIRGenPass._emit_clib_definitions -> None {
 
 impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
     cfunc = self._clib_exports[name];
-    jac_fn = self.func_symtab.get(name);
+    jac_fn = self.scope.function(name);
     if not isinstance(jac_fn, ir.Function) or cfunc.blocks {
         return;
     }
     plan = self.clib_fn_abi.get(name);
     state = self._enter_function(cfunc);
     try {
+        plan_ret: dict[str, any] = plan["ret"] if plan is not None else {};
+        plan_params: list[dict[str, any]] = plan["params"] if plan is not None else [];
         _scalar_only = plan is None
-            or (
-                not plan["sret"]
-                and plan["ret"].get("kind") != "struct_reg"
-                and all(pp["kind"] == "scalar" for pp in plan["params"])
-                and all(pp["argpos"] == i for (i, pp) in enumerate(plan["params"]))
-            );
+            or (not plan["sret"] and plan_ret.get("kind") != "struct_reg");
+        for i in range(len(plan_params)) {
+            pp = plan_params[i];
+            if pp["kind"] != "scalar" or pp["argpos"] != i {
+                _scalar_only = False;
+            }
+        }
         b = self.builder;
         i32 = ir.IntType(32);
 
@@ -442,7 +440,7 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
         saved = self._region_c_entry_escape();
         jac_args: list[ir.Value] = [];
         boxes: list[ir.Value] = [];
-        params = plan["params"] if plan is not None else [];
+        params: list[dict[str, any]] = plan["params"] if plan is not None else [];
         for (i, want) in enumerate(jac_fn.function_type.args) {
             if plan is None {
                 jac_args.append(
@@ -486,7 +484,7 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
             self._c_release_temp(box);
         }
         ret_type = cfunc.function_type.return_type;
-        ret_plan = plan["ret"] if plan is not None else {};
+        ret_plan: dict[str, any] = plan["ret"] if plan is not None else {};
         rkind = ret_plan.get("kind");
         if plan is not None and (plan["sret"] or rkind == "struct_reg") {
             self._mark_owned(result);

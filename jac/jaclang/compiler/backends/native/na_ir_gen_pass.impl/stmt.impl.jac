@@ -234,8 +234,8 @@ impl NaIRGenPass._codegen_delete(nd: uni.DeleteStmt) -> None {
 }
 
 impl NaIRGenPass._codegen_destroy_target(target: uni.Expr, nd: uni.DeleteStmt) -> None {
-    _destroy_fn = self.func_symtab.get("osp_destroy");
-    _destroy_all_fn = self.func_symtab.get("osp_destroy_all");
+    _destroy_fn = self.scope.function("osp_destroy");
+    _destroy_all_fn = self.scope.function("osp_destroy_all");
     if _destroy_fn is None or _destroy_all_fn is None {
         self.emit(E5092, node_override=nd, kind="statement", name="DeleteStmt");
         return;
@@ -245,8 +245,8 @@ impl NaIRGenPass._codegen_destroy_target(target: uni.Expr, nd: uni.DeleteStmt) -
         self.emit(E5092, node_override=nd, kind="statement", name="DeleteStmt");
         return;
     }
-    _forget_fn = self.func_symtab.get("osp_forget");
-    _forget_all_fn = self.func_symtab.get("osp_forget_all");
+    _forget_fn = self.scope.function("osp_forget");
+    _forget_all_fn = self.scope.function("osp_forget_all");
     if self._infer_list_elem_type(_val) is not None {
         _all_argtys = _destroy_all_fn.function_type.args;
         _hs = self._coerce_type(_val, _all_argtys[0]);
@@ -742,41 +742,61 @@ impl NaIRGenPass._tail_call_mismatch(
     """;
     callee = call.callee;
     fnty = func.function_type;
-    callee_ty: any = None;
+    callee_ty: (ir.FunctionType | None) = None;
     try {
         callee_ty = callee.function_type;
     } except TypeError {
+        callee_ty = None;
+    }
+    if callee_ty is None {
         return "the callee's signature is unknown";
     }
     if callee_ty.var_arg {
         return "the callee is variadic";
     }
     if callee_ty.return_type != fnty.return_type {
-        return f"the callee returns {callee_ty.return_type}, the caller {fnty.return_type}";
+        return "the callee returns "
+            + str(callee_ty.return_type)
+            + ", the caller "
+            + str(fnty.return_type);
     }
     if len(callee_ty.args) != len(fnty.args) {
-        return f"the callee takes {len(callee_ty.args)} parameters, the caller {len(
-            fnty.args
-        )}";
+        return "the callee takes "
+            + str(len(callee_ty.args))
+            + " parameters, the caller "
+            + str(len(fnty.args));
     }
-    for (i, (a, b)) in enumerate(zip(callee_ty.args, fnty.args)) {
-        if a != b {
-            return f"parameter {i + 1} is {a} in the callee and {b} in the caller";
+    for i in range(len(fnty.args)) {
+        want = fnty.args[i];
+        have = callee_ty.args[i];
+        if have != want {
+            return "parameter "
+                + str(i + 1)
+                + " is "
+                + str(have)
+                + " in the callee and "
+                + str(want)
+                + " in the caller";
         }
     }
-    if (call.cconv or "") != (func.calling_convention or "") {
+    call_cc = call.cconv if call.cconv is not None else "";
+    if call_cc != func.calling_convention {
         return "the callee uses a different calling convention";
     }
-    _abi = {"sret", "byval", "inalloca", "preallocated", "swifterror"};
+    abi_names = ["sret", "byval", "inalloca", "preallocated", "swifterror"];
     for arg in func.args {
-        if _abi & {str(a).split("(")[0] for a in arg.attributes} {
-            return "the caller passes a parameter by an ABI attribute (`sret`, `byval`)";
+        for abi_name in abi_names {
+            if arg.attributes.contains(abi_name) {
+                return "the caller passes a parameter by an ABI attribute (`sret`, `byval`)";
+            }
         }
     }
     if isinstance(callee, ir.Function) {
         for arg in callee.args {
-            if _abi & {str(a).split("(")[0] for a in arg.attributes} {
-                return "the callee takes a parameter by an ABI attribute (`sret`, `byval`)";
+            for abi_name in abi_names {
+                if arg.attributes.contains(abi_name) {
+                    return "the callee takes a parameter by an ABI attribute (`sret`, `byval`)";
+                }
             }
         }
     }
@@ -926,7 +946,6 @@ impl NaIRGenPass._codegen_while(nd: uni.WhileStmt) -> None {
     self.loop_stack.append((cond_bb, end_bb));
     self.builder.position_at_end(body_bb);
 
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
     _while_body_locals = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );
@@ -952,7 +971,6 @@ impl NaIRGenPass._codegen_while(nd: uni.WhileStmt) -> None {
 }
 
 impl NaIRGenPass._codegen_open_stmt(nd: uni.OpenStmt) -> None {
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
     _region_body_locals = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );
@@ -1010,7 +1028,6 @@ impl NaIRGenPass._codegen_forever(nd: uni.ForeverStmt) -> None {
     self.loop_stack.append((body_bb, end_bb));
     self.builder.position_at_end(body_bb);
 
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
     _forever_body_locals = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );
@@ -1056,7 +1073,7 @@ impl NaIRGenPass._codegen_iter_for(nd: uni.IterForStmt) -> None {
 
     self.loop_stack.append((step_bb, end_bb));
     self.builder.position_at_end(body_bb);
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
+
     _saved_locals = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );
@@ -1473,7 +1490,6 @@ impl NaIRGenPass._match_map_cond(
 }
 
 impl NaIRGenPass._match_arch_name(pat: uni.MatchArch) -> (str | None) {
-    import from jaclang.compiler.passes.layout_pass { class_type_native_name }
     pattern_type = pat.name.type if isinstance(pat.name, uni.Expr) else None;
     return self._arch_ref_key(pat.name)
         or class_type_native_name(pattern_type)
@@ -1980,7 +1996,6 @@ impl NaIRGenPass._none_initialized_local_type(nd: uni.Assignment) -> (ir.Type | 
 }
 
 impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
-    import from jaclang.compiler.frontend.constant { SymbolStorage }
     _rhs_errs_before = len(self.ctx.errors_had);
     if self._lower_partition_unpack(nd) {
         return;
@@ -3233,9 +3248,17 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
                     _raw_str_hint = None;
                 }
             }
-            if _raw_str_hint is not None and _raw_str_hint == self._str_desc_ty {
-                value = self._coerce_type(value, _raw_str_hint);
-                var_type = _raw_str_hint;
+            _desc_hint: (ir.Type | None) = None;
+            desc_ty = self._str_desc_ty;
+            if isinstance(_raw_str_hint, ir.IdentifiedStructType)
+                and desc_ty is not None {
+                if _raw_str_hint.name == desc_ty.name {
+                    _desc_hint = _raw_str_hint;
+                }
+            }
+            if _desc_hint is not None {
+                value = self._coerce_type(value, _desc_hint);
+                var_type = _desc_hint;
                 _pre_box_val = value;
             }
             if nd.type_tag and nd.type_tag.tag {
@@ -3503,7 +3526,7 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
         }
 
         if self._pending_lambda_captures is not None {
-            self.lambda_captures[var_name] = self._pending_lambda_captures;
+            self.scope.bind_lambda(var_name, self._pending_lambda_captures);
             self._pending_lambda_captures = None;
         }
 
@@ -3657,6 +3680,27 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
                 helpers = self.dict_helpers.get(items_dict_key)
                     if items_dict_key is not None
                     else None;
+                dict_struct = self.dict_types.get(items_dict_key)
+                    if items_dict_key is not None
+                    else None;
+                if collection_val is not None
+                    and helpers is not None
+                    and (
+                        dict_struct is None
+                        or collection_val.type != dict_struct.as_pointer()
+                    ) {
+                    self.emit(
+                        E5092,
+                        node_override=items_source,
+                        kind="dict iteration",
+                        name="items() of a value that is not a native dict",
+                        help_text="The value is typed as a dict only by narrowing a "
+                        "dynamically typed value, and it is held boxed, so native "
+                        "code cannot iterate it as a native dict. Give it a "
+                        "declared dict type, or keep this code in Python."
+                    );
+                    return;
+                }
                 if collection_val is not None and helpers is not None {
                     self._codegen_for_indexed(
                         nd,
@@ -3967,6 +4011,24 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
             actual_elem_type = inner_type;
         }
     }
+    _for_len_fn = helpers["len"];
+    if isinstance(_for_len_fn, ir.Function)
+        and len(_for_len_fn.function_type.args) > 0
+        and _coll_memo.type != _for_len_fn.function_type.args[0] {
+        if len(self.ctx.errors_had) == _for_errs0 {
+            self.emit(
+                E5092,
+                node_override=nd.collection or nd,
+                kind="for-loop iterable",
+                name=(coll_name or "<expr>"),
+                help_text="The value iterated here has no list layout natively "
+                "(an `Iterable`/`Iterator`-typed value is an iterator handle, "
+                "not a list), so the indexed loop cannot read it. Annotate it "
+                "as a concrete `list[...]`, or iterate it from a Python context."
+            );
+        }
+        return;
+    }
     self._codegen_for_indexed(
         nd,
         kind="list",
@@ -3982,8 +4044,6 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
 }
 
 impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
-
     if nd.else_body is not None {
         return False;
     }
@@ -4002,7 +4062,7 @@ impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
     if not _par_ok {
         return False;
     }
-    if "wasm" in str(self.llvm_module.triple) {
+    if self._target_is_wasm() {
         return False;
     }
     if self._gen_ctx is not None {
@@ -4897,7 +4957,7 @@ impl NaIRGenPass._codegen_for_indexed(
             return;
         }
     }
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
+
     _for_saved = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );
@@ -5080,7 +5140,6 @@ impl NaIRGenPass._try_chunked_for(nd: uni.InForStmt) -> bool {
     self._emit_chunk_header(coll, _nv, _ci, _hdr, helpers["len"]);
     self.builder.store(_hdr, _lv_alloca);
 
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
     _ch_saved = loop_body_locals(
         nd.body if isinstance(nd.body, (list, tuple)) else None
     );

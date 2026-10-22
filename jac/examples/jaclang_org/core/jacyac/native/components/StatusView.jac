@@ -1,6 +1,10 @@
 import from "@jac/mobui" { View, Text }
 
-def:pub EmptyState(icon: str, title: str, hint: str) -> JsxElement {
+def:pub EmptyState(icon: str, title: str, hint: str) -> JsxElement;
+
+def:pub LoadingRows(count: int) -> JsxElement;
+
+impl EmptyState(icon: str, title: str, hint: str) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);
@@ -11,7 +15,7 @@ def:pub EmptyState(icon: str, title: str, hint: str) -> JsxElement {
     </View>
 }
 
-def:pub LoadingRows(count: int) -> JsxElement {
+impl LoadingRows(count: int) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);

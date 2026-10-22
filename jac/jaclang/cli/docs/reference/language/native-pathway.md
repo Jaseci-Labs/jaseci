@@ -1168,9 +1168,10 @@ glue object holding `jac_entry` / `__jac_shared_init`, the platform entry
 point and the `jac_retain` / `jac_release` / `jac_str_new` wrappers (each
 wrapper only when a unit defines its target), and links. Two modes read different
 sections of the same entries: `objects`, the incremental default, links the
-units' relocatable objects; `bitcode` links every unit's bitcode into one
-LLVM module and optimizes it whole-program before a single codegen (the
-release lane; also what the in-process JIT, PE and wasm targets use).
+units' relocatable objects (sealed images link the compiler kernel this
+way); `bitcode` links every unit's bitcode into one LLVM module, optimizes
+it whole-program and splits it into one partition per emit job for code
+generation (what the in-process JIT, PE and wasm targets use).
 Select it per build with `jac build --native --link-mode bitcode` or
 `[native] link_mode = "bitcode"` in `jac.toml`. The plan writes a digest over every unit's
 keys and stamps beside the artifact and into the `<lib>.layout.json`
@@ -1227,7 +1228,7 @@ A method the backend cannot lower is *demoted*: it falls back to its Python impl
 JAC_NA_DEBUG=1 jac build --native program.jac
 ```
 
-Each demotion emits `NA_DEBUG demote <Type>.<method>` followed by every diagnostic that made the method un-lowerable, with source context. When the emitter raised outright rather than reporting a diagnostic, the line is `NA_DEBUG raise <Type>.<method>` followed by the Python traceback pointing at the codegen site. The flag also forces the seam warning on when `[check] warn_native_seams = false` would otherwise silence it.
+Each demotion emits `NA_DEBUG demote <Type>.<method>` followed by every diagnostic that made the method un-lowerable, with source context. When the emitter raises outright rather than reporting a diagnostic, that is a compiler bug and the build fails with an `E5092` error naming the callable; under the flag the line `NA_DEBUG raise <Type>.<method>` and the Python traceback pointing at the codegen site are printed as well. Pin the module to the server codespace under `[placement.pins]` to keep working until the bug is fixed. The flag also forces the seam warning on when `[check] warn_native_seams = false` would otherwise silence it.
 
 ### Bytecode Cache
 

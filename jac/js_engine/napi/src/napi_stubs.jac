@@ -32,7 +32,7 @@ import from "libjs_native.so" {
     def _napi_tsfn_result -> int;  def _napi_tsfn_get_js_func(tsfn_ptr: int) -> int;
 }
 
-import from engine.src.runtime.gc { gc_pin_value, gc_unpin_value }
+import from engine.src.runtime.gc_pin { gc_pin_value, gc_unpin_value }
 import from engine.src.runtime.jsvalue { JSValue }
 
 import from napi.src.napi_ops {
