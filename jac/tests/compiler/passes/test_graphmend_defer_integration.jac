@@ -50,6 +50,25 @@ class Net(torch.nn.Module):
 model = torch.compile(Net())
 ''';
 
+glob PY_FORWARD_TENSOR_LOG_SRC = '''
+import logging
+
+import torch
+
+logger = logging.getLogger("gm_forward_tensor_log")
+
+
+class Net(torch.nn.Module):
+    def forward(self, x):
+        y = torch.relu(x)
+        logger.warning("snap %s", y)
+        y.add_(100.0)
+        return y
+
+
+model = torch.compile(Net())
+''';
+
 """Import torch or skip the calling test."""
 def _torch -> any {
     try {
@@ -227,6 +246,46 @@ test "logger forward hook defragments and preserves the log" {
     # The log is preserved: replayed by the injected forward hook after the graph.
     assert "GM-FORWARD-HOOK-LOG" in fixed_msgs , "logger output was lost";
     assert "GM-FORWARD-HOOK-LOG" in orig_msgs;
+}
+
+test "a deferred logger call with a tensor argument logs its call-site value" {
+    _torch();
+    (graphs, msgs) = _run_model(
+        PY_FORWARD_TENSOR_LOG_SRC,
+        "forward_tensor_log.py",
+        "gm_forward_tensor_log",
+        True
+    );
+    assert graphs == 1 , f"expected one graph, got {graphs}";
+    assert len(msgs) == 1 , f"expected one replayed log, got {msgs}";
+    assert ("1., 2., 3." in msgs[0]) and ("101" not in msgs[0]) , msgs[0];
+}
+
+test "a compiled caller of the model still gets its tensor log" {
+    torch = _torch();
+    src = _py_model_src(PY_FORWARD_TENSOR_LOG_SRC, "forward_tensor_caller.py", True);
+    ns = _exec_src(src, "forward_tensor_caller.py");
+    model = ns["model"];
+    msgs: list[any] = [];
+    class _Capture(logging.Handler) {
+        def emit(self: any, record: any) {
+            msgs.append(record.getMessage());
+        }
+    }
+    handler = _Capture();
+    logging.getLogger("gm_forward_tensor_log").addHandler(handler);
+    try {
+        def _step(x: any) -> any {
+            return model(x) + 1.0;
+        }
+        torch._dynamo.reset();
+        out = torch.compile(_step, backend="eager")(torch.tensor([1.0, 2.0, 3.0]));
+    } finally {
+        logging.getLogger("gm_forward_tensor_log").removeHandler(handler);
+    }
+    assert torch.allclose(out, torch.tensor([102.0, 103.0, 104.0]));
+    assert len(msgs) == 1 , f"expected one replayed log, got {msgs}";
+    assert ("1., 2., 3." in msgs[0]) and ("101" not in msgs[0]) , msgs[0];
 }
 
 test "the flush hook is registered with always_call=True" {

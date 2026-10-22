@@ -53,6 +53,7 @@ def resolve_ref(
 
 glob _gm_log_registry: list[any] = [],
      _gm_log_slots: dict[tuple[int, int], int] = {},
+     _gm_eager_replay: list[any] = [None],
      _gm_se_buffer: list[any] = [],
      _gm_se_depth: list[int] = [0];
 
@@ -399,6 +400,9 @@ class JacBuiltin {
     ) -> None;
 
     static def se_snap(v: any, tensor_type: any) -> any;
+    static def se_arm_replay -> None;
+    static def se_replay_now(pending: list[tuple[any, ...]]) -> None;
+    static def se_replay(pending: list[tuple[any, ...]]) -> None;
     static def se_flush -> None;
     static def se_region_enter -> None;
     static def se_region_exit -> None;

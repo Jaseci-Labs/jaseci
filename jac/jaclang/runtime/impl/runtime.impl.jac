@@ -888,6 +888,32 @@ impl JacBuiltin.se_flush -> None {
     }
     pending: list[tuple[any, ...]] = list(_gm_se_buffer);
     _gm_se_buffer.clear();
+    JacBuiltin.se_replay(pending);
+}
+
+impl JacBuiltin.se_arm_replay -> None {
+    if (_gm_eager_replay[0] is None) and ("torch" in sys.modules) {
+        import torch;
+        _gm_eager_replay[0] = torch.compiler.disable(JacBuiltin.se_replay_now);
+    }
+}
+
+impl JacBuiltin.se_replay(pending: list[tuple[any, ...]]) -> None {
+    if not pending {
+        return;
+    }
+    eager = _gm_eager_replay[0];
+    if eager is not None {
+        import torch;
+        if torch.compiler.is_compiling() {
+            eager(pending);
+            return;
+        }
+    }
+    JacBuiltin.se_replay_now(pending);
+}
+
+impl JacBuiltin.se_replay_now(pending: list[tuple[any, ...]]) -> None {
     for `entry in pending {
         (fn, args, kwargs) = `entry;
         if isinstance(fn, int) {
@@ -899,6 +925,7 @@ impl JacBuiltin.se_flush -> None {
 }
 
 impl JacBuiltin.se_guard(fn: any) -> any {
+    JacBuiltin.se_arm_replay();
     import functools;
     @functools.wraps(fn)
     def _gm_se_wrapper(*args: any, **kwargs: any) -> any {
@@ -919,6 +946,7 @@ impl JacBuiltin.log_register(fn: any) -> int {
     if slot is not None {
         return slot;
     }
+    JacBuiltin.se_arm_replay();
     _gm_log_registry.append(fn);
     slot = len(_gm_log_registry) - 1;
     _gm_log_slots[key] = slot;
@@ -976,7 +1004,7 @@ impl JacBuiltin.log_emit(
     if _gm_se_depth[0] > 0 {
         _gm_se_buffer.append((slot, args, kwargs));
     } else {
-        _gm_log_registry[slot](*args, **kwargs);
+        JacBuiltin.se_replay([(slot, args, kwargs)]);
     }
 }
 
