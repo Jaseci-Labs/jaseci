@@ -1681,3 +1681,67 @@ test "loading a prepared application grows with its module count, not its square
         f"prepared lookups went {small} -> {large} for 4x the modules"
     );
 }
+
+"""A dev reload invalidates an edited module in every app context, and must
+drop that module's diagnostics there too. A service context that failed on a
+broken shared module kept those alerts after the file was restored, so its next
+compile was blocked by them and kept reporting errors at lines that no longer
+existed."""
+test "a reload drops a restored module's errors from every app context" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-context-alerts-");
+    base = Path(tmp);
+    path = base / 'web' / 'main.jac';
+    shared = base / 'core' / 'graph.jac';
+    service = base / 'core' / 'know.jac';
+    def reload(program: JacProgram, edited: Path) {
+        program.invalidate_module(os.path.realpath(str(edited)));
+        program.drop_module_alerts(os.path.realpath(str(edited)));
+    }
+    try {
+        (base / 'jac.toml').write_text(
+            '[project]\nname="ctxalerts"\ndefault-app="web"\n'
+                + '[apps.web]\nkind="service"\nentry-point="web.main"\n'
+                + '[apps.know]\nkind="service"\nentry-point="core.know"\n'
+        );
+        (base / 'web').mkdir();
+        (base / 'core').mkdir();
+        good = "def:pub g_value -> int {\n    return 1;\n}\n";
+        shared.write_text(good);
+        service.write_text(
+            "import from core.graph { g_value }\n"
+                + "def:pub know_ping -> int { return g_value(); }\n"
+        );
+        path.write_text("def:pub total -> int { return 3; }\n");
+        program = JacProgram();
+        prepare_application(str(path), program, tmp, services=[str(service)]);
+        shared.write_text(
+            good + "\n\n\ndef probe -> int {\n    return NOT_DEFINED.size;\n}\n"
+        );
+        reload(program, shared);
+        for _ in range(2) {
+            failed = False;
+            try {
+                prepare_application(str(path), program, tmp, services=[str(service)]);
+            } except RuntimeError {
+                failed = True;
+            }
+            assert failed , "the broken shared module must fail the service";
+        }
+        shared.write_text(good);
+        reload(program, shared);
+        for context in program.contexts.values() {
+            assert not context.diags.owned_errors(os.path.realpath(str(shared))) , (
+                "a context kept the errors of a module the reload restored"
+            );
+        }
+        service.write_text(
+            "import from core.graph { g_value }\n"
+                + "def:pub know_ping -> int { return g_value() + 1; }\n"
+        );
+        shutil.rmtree(base / '.jac' / 'cache');
+        prepare_application(str(path), program, tmp, services=[str(service)]);
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
