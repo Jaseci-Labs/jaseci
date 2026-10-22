@@ -248,7 +248,6 @@ impl register_py_callbacks(
 }
 
 impl _sized_ctypes_tables -> dict[(str, type)] {
-    import from jaclang.runtime.scalars { numeric_shapes }
     types: dict[(str, type)] = {};
     for shape in numeric_shapes() {
         if not shape.sized {

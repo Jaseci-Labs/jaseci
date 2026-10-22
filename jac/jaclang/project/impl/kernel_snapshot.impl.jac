@@ -695,10 +695,6 @@ impl call_kernel_isolated(
         code = 0;
         try {
             import gc;
-            if os.environ.get("JAC_KERNEL_FAULTHANDLER") == "1" {
-                import faulthandler;
-                faulthandler.enable(all_threads=True);
-            }
             gc.disable();
             os.close(report_in);
             os.close(answer_out);

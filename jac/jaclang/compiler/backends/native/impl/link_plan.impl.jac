@@ -996,17 +996,6 @@ impl link_artifact(
     log: any = None,
     app_imports: (set | None) = None
 ) -> LinkResult {
-    if kind == ArtifactKind.SHARED or kind == ArtifactKind.ENTRY_LIB {
-        for unit in plan.units {
-            if set(unit.iface.python_imports)
-                - {b.name for b in plan.callback_bindings} {
-                raise LinkPlanError(
-                    f"Cannot link shared native unit {unit.path}: Python imports "
-                    f"require the JIT bridge ({', '.join(unit.iface.python_imports)})"
-                );
-            }
-        }
-    }
     if kind == ArtifactKind.WASM {
         return link_wasm(plan, output_path, app_imports);
     }
@@ -1559,7 +1548,7 @@ impl resolved_callback_bindings(
         return ([], {});
     }
     declarations: dict[str, str] = {};
-    defined: set[str] = {};
+    defined: set[str] = set();
     registry = plan.prog.native_units();
     for unit in plan.units {
         bitcode = registry.bitcode_for(unit.path, plan.options);

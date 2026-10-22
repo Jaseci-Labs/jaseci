@@ -133,8 +133,6 @@ impl ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
 
 impl bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
     import os;
-    import from jaclang.cli.commands.native_build { native_build_sealed_pair }
-    import from jaclang.server.sealed_serve { native_lib_name }
 
     entry_file = resolve_entry_file(config, app);
     if entry_file is None or not native_default_path_ok(str(entry_file)) {

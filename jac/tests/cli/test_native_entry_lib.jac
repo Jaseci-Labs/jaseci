@@ -11,9 +11,7 @@ import from jaclang.cli.commands { execution as exec_cmds }
 import from jaclang.cli.commands { project as proj_cmds }
 import from jaclang.cli.commands.native_build { native_build }
 import from jaclang.project.config { JacConfig }
-import from jaclang.server.sealed_serve {
-    native_lib_name
-}
+import from jaclang.server.sealed_serve { native_lib_name }
 
 
 def _llvm_available -> bool {
@@ -62,8 +60,6 @@ def _seal_fixture_project(
 }
 
 
-
-
 test "native_lib_name uses the platform shared-library suffix" {
     if sys.platform.startswith("win") {
         assert native_lib_name("main") == "main.dll";
@@ -98,17 +94,15 @@ test "resolve_sv_callbacks finds a nested provider under the image root" {
             ];
             (fns, failures) = resolve_sv_callbacks(callbacks, str(img));
             assert not failures , f"provider should resolve from image root: {failures}";
-            assert "nested_double" in fns , (
+            assert "caller.nested_double" in fns , (
                 f"source {src!r} must resolve to lib/nested_helper.jac"
             );
-            assert fns["nested_double"](21) == 42;
+            assert fns["caller.nested_double"](21) == 42;
         }
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
 }
-
-
 
 
 test "_run_native_lib returns None when the library cannot be loaded" {
@@ -132,10 +126,6 @@ test "_run_native_lib returns None when required exports are missing" {
     }
     assert rc is None , "missing protocol exports must refuse the library";
 }
-
-
-
-
 
 
 test "_bake_native_payloads accepts native_build_sealed_pair success (return 0)" {
@@ -220,15 +210,15 @@ test "sealed pair on a native_imports app drops the exe and keeps the lib" {
         );
         rec = json.loads(record.read_text(encoding="utf-8"));
         assert rec.get("interop") is True , "the record must mark the app interop";
-        assert rec.get("unresolved") == ["py_double"] , (
-            f"the record must name the na->sv bindings; got {rec.get('unresolved')}"
+        assert len(rec.get("callbacks") or []) == 1 , (
+            f"the record must name the na->sv bindings; got {rec.get('callbacks')}"
         );
+        assert rec["callbacks"][0]["name"] == "py_double";
+        assert rec["callbacks"][0]["symbol"].endswith(".py_double");
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
 }
-
-
 
 
 test "standalone exe native_build still rejects native_imports" {
@@ -262,15 +252,11 @@ def _fake_jab_image(img_root: Path, interop: bool) {
         "capabilities": ["has-entry", "has-native"],
         "entry": {"module": "app.main", "path": "main.jac"},
         "package": "app",
-        "native_payloads": {
-            "test-triple": {"interop": interop, "sha256": "0" * 64}
-        }
+        "native_payloads": {"test-triple": {"interop": interop, "sha256": "0" * 64}}
     };
     (pre / "MANIFEST.json").write_text(json.dumps(meta), encoding="utf-8");
     (img_root / "main.jac").write_text("with entry { }\n", encoding="utf-8");
 }
-
-
 
 
 test "run_jab_image loads interop jabs in-process and never execs them" {
@@ -308,9 +294,7 @@ test "run_jab_image loads interop jabs in-process and never execs them" {
 
         with patch(
             "jaclang.cli.commands.execution._jab_native_bin", return_value=None
-        ), patch(
-            "jaclang.cli.commands.execution._jab_run_entry_lib", fake_run_lib
-        ), patch(
+        ), patch("jaclang.cli.commands.execution._jab_run_entry_lib", fake_run_lib), patch(
             "jaclang.cli.commands.execution.run", fake_run
         ), patch("os.execv", fake_execv) {
             rc = exec_cmds.run_jab_image(img, None, ["arg1"], False, "img");
@@ -361,9 +345,7 @@ test "started native entry never falls back to the JIT in either lane" {
 
             with patch(
                 "jaclang.cli.commands.execution._jab_native_bin", return_value=None
-            ), patch(
-                "jaclang.cli.commands.execution._jab_run_entry_lib", raising_lib
-            ), patch(
+            ), patch("jaclang.cli.commands.execution._jab_run_entry_lib", raising_lib), patch(
                 "jaclang.cli.commands.execution.run", fake_run
             ), patch("os.execv", fake_execv) {
                 rc = exec_cmds.run_jab_image(img, None, [], False, "img");
@@ -443,14 +425,12 @@ test "unreadable interop record marks the app non-interop" {
         payload = (meta.get("native_payloads") or {}).get(triple) or {};
         assert payload.get("interop") == "corrupt" , (
             "unreadable sidecar metadata must be marked rejectable, "
-                + f"not treated as a plain library; got {payload}"
+            + f"not treated as a plain library; got {payload}"
         );
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
 }
-
-
 
 
 test "sized scalars map to width-correct ctypes trampolines" {
@@ -476,7 +456,8 @@ test "None-returning callback builds a void trampoline" {
     class _Binding {
         has name: str = "noop",
             ret_type: str = "None",
-            param_types: list[str] = [];
+            param_types: list[str] = [],
+            native_symbol: str = "";
     }
     def _no_register(sym: str, addr: int) {}
     table: dict[(str, Callable[(..., object)])] = {};
@@ -531,8 +512,9 @@ test "seal succeeds when a native module imports a server fn it never calls" {
         rec = json.loads(record.read_text(encoding="utf-8"));
         assert rec.get("interop") is True;
         assert rec.get("callbacks") == [] , (
-            f"the uncalled import must get no callback record; "
-            f"got {rec.get('callbacks')}"
+            f"the uncalled import must get no callback record; got {rec.get(
+                'callbacks'
+            )}"
         );
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);

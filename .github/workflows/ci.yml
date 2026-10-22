@@ -194,7 +194,7 @@ jobs:
           printf 'obj P { has x:int=0; def sq->int { return self.x*self.x; } }\nwith entry { print(P(x=7).sq()); }\n' > "$WORK/obj.jac"
           env -i HOME="$WORK" PATH=/usr/bin:/bin "$BIN" --version
           env -i HOME="$WORK" PATH=/usr/bin:/bin "$BIN" -c 'import os, ssl; assert os.path.isfile(os.environ["SSL_CERT_FILE"]); assert ssl.create_default_context().cert_store_stats()["x509_ca"] > 0'
-          out="$(env -i HOME="$WORK" PATH=/usr/bin:/bin JAC_KERNEL_FAULTHANDLER=1 "$BIN" run "$WORK/obj.jac")"
+          out="$(env -i HOME="$WORK" PATH=/usr/bin:/bin "$BIN" run "$WORK/obj.jac")"
           grep -q 49 <<<"$out"
 
       - name: Run real jac programs (end-to-end execution)

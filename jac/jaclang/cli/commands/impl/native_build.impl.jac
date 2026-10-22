@@ -342,12 +342,6 @@ impl _restore_target(prev_target: (str | None)) {
 }
 
 
-"""Compile once for the sealed pair (exe + entry library).
-
-The same options `jac build --native` uses for an AOT host-triple build; the
-seal calls this once and links every artifact of the pair from the returned
-plan, so the executable and the entry library are one compile apart, never
-two."""
 impl _sealed_native_plan(
     filename: str,
     target: str = "",
@@ -355,7 +349,6 @@ impl _sealed_native_plan(
     memory: str = "",
     no_ir_cache: bool = False
 ) -> (LinkPlan | None) {
-
     if not is_jac(filename) {
         console.error("Input must be a .jac file.");
         return None;
@@ -488,23 +481,38 @@ impl native_build_sealed_pair(
     if plan is None {
         return 1;
     }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_spelling }
+    import jaclang.compiler.backends.native.llvm.binding as llvm;
     bindings = [];
+    registry = plan.prog.native_units();
     for unit in plan.units {
         module = plan.prog.find_module(unit.path);
         manifest = module.gen.interop_manifest if module is not None else None;
-        if manifest is not None {
+        bitcode = registry.bitcode_for(unit.path, plan.options);
+        if manifest is not None and bitcode is not None {
+            unit_ir = llvm.parse_bitcode(bitcode);
             for (local_name, binding) in manifest.bindings.items() {
                 native_caller = any(
                     caller.value == "native" for caller in binding.callers
                 );
                 if (
-                    binding.kind == "function"
-                    and binding.source_context.value == "server"
-                    and native_caller
+                    binding.kind != "function"
+                    or binding.source_context.value != "server"
+                    or not native_caller
                 ) {
-                    local_symbol = native_unit_spelling(local_name, unit.path);
-                    binding.native_symbol = f"{unit.prefix}.{local_symbol}";
+                    continue;
+                }
+
+                suffixes = {"." + local_name, "." + binding.name};
+                matches = [
+                    str(function.name)
+                    for function in unit_ir.functions
+                    if function.is_declaration
+                        and any(
+                            str(function.name).endswith(suffix) for suffix in suffixes
+                        )
+                ];
+                if len(matches) == 1 {
+                    binding.native_symbol = matches[0];
                     bindings.append(binding);
                 }
             }
@@ -512,9 +520,11 @@ impl native_build_sealed_pair(
     }
     plan.callback_bindings = bindings;
     (resolved, _) = resolved_callback_bindings(plan);
+    has_native_imports = any(unit.iface.python_imports for unit in plan.units)
+        or bool(resolved);
     record = interop_record_path(lib_output);
 
-    if resolved {
+    if has_native_imports {
         callback_records = [];
         try {
             for b in resolved {

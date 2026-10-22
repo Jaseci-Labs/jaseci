@@ -1047,41 +1047,6 @@ test "replacing native bitcode invalidates its previous optional object" {
     }
 }
 
-test "shared artifacts reject Python imports before publishing" {
-    import from jaclang.compiler.backends.native.link_plan {
-        LinkPlan,
-        LinkUnit,
-        LinkPlanError
-    }
-    import from jaclang.compiler.driver.native_iface { NativeIface }
-    with tempfile.TemporaryDirectory() as directory {
-        path = str(Path(directory) / "unit.jac");
-        iface = NativeIface(module="unit", prefix="unit", python_imports=["helper"]);
-        unit = LinkUnit(
-            path=path, prefix="unit", digest=iface.digest(), iface=iface, is_root=True
-        );
-        plan = LinkPlan(
-            prog=JacProgram(),
-            options=_opts(),
-            roots=[path],
-            units=[unit],
-            mode="objects",
-            triple="x86_64-unknown-linux-gnu"
-        );
-        output = str(Path(directory) / "libunit.so");
-        raised = False;
-        try {
-            link_artifact(plan, output, ArtifactKind.SHARED);
-        } except LinkPlanError as exc {
-            raised = True;
-            assert path in str(exc)
-                and "helper" in str(exc)
-                and "JIT bridge" in str(exc);
-        }
-        assert raised;
-        assert not Path(output).exists();
-    }
-}
 
 test "imported strings keep their ABI across enforced and runtime units" {
     if _can_link_host() {

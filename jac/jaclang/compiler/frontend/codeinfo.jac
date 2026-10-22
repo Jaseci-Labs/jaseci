@@ -343,7 +343,7 @@ obj InteropBinding {
         provider_app: str = '',
         native_contract: dict[str, any] = {},
         endpoint_id: str = "",
-        native_symbol: str = "";  # Link-time qualified caller symbol; `name` is the provider symbol.
+        native_symbol: str = "";
 
     has is_cross_module: bool { getter; }
 }

@@ -1023,7 +1023,7 @@ impl CodeGenTarget.has_native_ir -> bool {
     return self.ir_module is not None or self.llvm_ir is not None;
 }
 
-impl CodeGenTarget.drop_native_ir{
+impl CodeGenTarget.drop_native_ir {
     self.ir_module = None;
     self.llvm_ir = None;
     self.native_fallbacks = None;

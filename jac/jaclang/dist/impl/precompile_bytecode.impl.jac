@@ -856,7 +856,6 @@ impl app_metadata(pkg_path: Path, pkg_name: str, app: str = "") -> dict[str, any
         }
         native_meta = _native_payload_meta(native_dir);
         if native_meta {
-            # Keep per-target entry libraries separate from package native units.
             meta["native_payloads"] = native_meta;
         }
     }
@@ -894,7 +893,7 @@ impl _native_payload_meta(native_dir: Path) -> dict[str, any] {
                     info["callbacks"] = len(raw.get("callbacks") or []);
                 } except Exception as e {
                     console.warning(f"{record}: unreadable interop record ({e})");
-                    # preserve rejectable status for the runtime consumer
+
                     info["interop"] = "corrupt";
                 }
             }

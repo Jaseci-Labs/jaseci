@@ -23,7 +23,7 @@ import from jaclang.cli.commands { execution as exec_cmds }
 import from jaclang.cli.commands.native_build { native_build_sealed_pair }
 import from jaclang.server.sealed_serve { interop_record_path, native_lib_name }
 import from jaclang.dist.precompile_bytecode { _native_payload_meta, app_metadata }
-import from jaclang.dist.jab { jab_app_meta };
+import from jaclang.dist.jab { jab_app_meta }
 
 
 glob _TOML_TAIL_TOML: str = (
@@ -368,7 +368,7 @@ test "a standalone binary stays exe-first: execv, not the lib lane" {
             ),
             encoding="utf-8"
         );
-        execed: list[tuple] = [];
+        execed: list[tuple[str, list[str]]] = [];
         def fake_execv(path: str, argv: list[str]) {
             execed.append((path, argv));
             raise ExecReplaced("exec replaced process");
@@ -378,11 +378,13 @@ test "a standalone binary stays exe-first: execv, not the lib lane" {
         ), patch.object(exec_cmds.os, "execv", side_effect=fake_execv), patch.object(
             exec_cmds, "_jab_run_entry_lib"
         ) as lib_lane {
+            replaced = False;
             try {
                 exec_cmds.run_jab_image(img, None, [], False, "entrylane");
-            } except ExecReplaced as e {
-                pass;
+            } except ExecReplaced {
+                replaced = True;
             }
+            assert replaced , "execv must replace the process";
         }
         assert execed , "the standalone binary must be exec'd";
         assert execed[0][0] == "/img/native/main";
@@ -402,18 +404,16 @@ test "sealed package and entry-library native metadata coexist" {
     with tempfile.TemporaryDirectory() as d {
         proj = Path(d) / "proj";
         proj.mkdir();
-        _write_project(proj, "manifestmix", false);
+        _write_project(proj, "manifestmix", False);
         payload_dir = proj / ".jac" / "native" / "test-triple";
         payload_dir.mkdir(parents=True);
         (payload_dir / "main.so").write_bytes(b"entry library");
-
         app_meta = app_metadata(proj, "manifestmix");
         payload_meta = app_meta.get("native_payloads") or {};
         assert "test-triple" in payload_meta;
         assert "native" not in app_meta , (
             "per-target payload metadata must not occupy the package native key"
         );
-
         package_native = {
             "units": ["manifestmix.main"],
             "artifact": {"path": "native/libmanifestmix.so", "sha256": "trusted"}

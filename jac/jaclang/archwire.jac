@@ -199,7 +199,10 @@ graph import {
     cli.commands.analysis ++> packages.publish.check_gate { check }
     cli.commands.execution ++> client.targets.web_target.WebTarget.start { serve }
     cli.commands.execution --> scale.tests.server.test_serve { _find_free_port }
-    cli.commands.native_build ++> dist.seal.bake_native_payloads { native_build, native_build_sealed_pair }
+    cli.commands.native_build ++> dist.seal.bake_native_payloads {
+        native_build,
+        native_build_sealed_pair
+    }
     cli.console ++> [
         byllm.cli
             | byllm.model_cache._emit
@@ -545,15 +548,8 @@ graph import {
     compiler.backends.native.kernel_stage0 --> dist.precompile_bytecode.seal_native {
         refuse_missing_entries
     }
-    compiler.frontend.unitree --> cli.commands.native_build._callback_source_path { Module }
     compiler.backends.native.link_plan ++> [
         cli.commands.native_build { LinkPlan },
-        cli.commands.native_build.native_build {
-            ArtifactKind,
-            LinkPlanError,
-            build_link_plan,
-            link_artifact
-        },
         cli.commands.native_build._link_kind_artifact {
             ArtifactKind,
             LinkPlan,
@@ -564,6 +560,12 @@ graph import {
             LinkPlan,
             LinkPlanError,
             build_link_plan
+        },
+        cli.commands.native_build.native_build {
+            ArtifactKind,
+            LinkPlanError,
+            build_link_plan,
+            link_artifact
         },
         cli.commands.native_build.native_build_sealed_pair {
             ArtifactKind,
@@ -592,10 +594,11 @@ graph import {
     }
     compiler.backends.native.llvm.binding as llvm ++> cli.commands.native_build._application_ir;
     compiler.backends.native.llvm.binding as llvm --> [
-        cli.commands.execution._jab_native_bin,
-        cli.commands.execution._jab_run_entry_lib
+        cli.commands.execution._jab_native_bin
+            | cli.commands.native_build.native_build_sealed_pair
+            | dist.seal.bake_native_payloads,
+        cli.commands.execution._jab_run_entry_lib,
     ]
-    compiler.backends.native.llvm.binding as llvm --> dist.seal.bake_native_payloads;
     type compiler.backends.native.llvm.binding.executionengine ++> cli.commands.execution {
         ExecutionEngine
     }
@@ -705,17 +708,17 @@ graph import {
         cli.commands.analysis.grammar | dist.precompile_bytecode.precompile_context {
             CompileOptions
         },
+        cli.commands.native_build._link_kind_artifact { push_native_target },
         cli.commands.native_build._restore_target { pop_native_target },
+        cli.commands.native_build._sealed_native_plan {
+            CompileOptions,
+            push_native_target
+        },
         cli.commands.native_build.native_build {
             CompileOptions,
             NATIVE_LINK_MODES,
             push_native_target
         },
-        cli.commands.native_build._sealed_native_plan {
-            CompileOptions,
-            push_native_target
-        },
-        cli.commands.native_build._link_kind_artifact { push_native_target },
         dist.precompile_bytecode.precompile_native_unit { CompileOptions },
         dist.precompile_bytecode.seal_native { CompileOptions },
         lsp.server.engine { CancelToken },
@@ -893,7 +896,7 @@ graph import {
             | cli.commands.architecture
             | cli.commands.execution.debug
             | cli.commands.fix._format_source
-            | cli.commands.native_build.native_build
+            | cli.commands.native_build._sealed_native_plan
             | cli.commands.transform.jac2js
             | cli.mcp.compiler_bridge.CompilerBridge.get_ast_snippet._do_ast
             | dist.native_product.write_native_product
@@ -914,6 +917,7 @@ graph import {
             | testing.test_runner._fresh_jac_state { JacProgram },
         cli.commands.analysis._format_single_file_worker
             | cli.commands.fix._verify_claims
+            | cli.commands.native_build.native_build
             | cli.commands.transform.jac2py
             | cli.mcp.compiler_bridge.CompilerBridge.jac_to_js._do_jac2js
             | dist.precompile_bytecode.prebuild_native_closure
@@ -928,7 +932,6 @@ graph import {
         cli.commands.analysis.lint
             | cli.mcp.compiler_bridge.CompilerBridge.py_to_jac._do_py2jac
             | dist.precompile_bytecode.seal_native { JacProgram },
-        cli.commands.native_build._sealed_native_plan { JacProgram },
         cli.mcp.compiler_bridge.CompilerBridge.typecheck_snippet._do_typecheck {
             JacProgram
         },
@@ -1042,9 +1045,6 @@ graph import {
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
     ]
-    compiler.frontend.codeinfo --> cli.commands.native_build.native_build_sealed_pair {
-        native_unit_spelling
-    }
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
         | client.jac_client_compiler
@@ -1247,8 +1247,11 @@ graph import {
         lsp.server.utils { Symbol, UniScopeNode },
         packages.api { HasVar, Module, Symbol },
     ]
-    compiler.frontend.unitree --> cli.commands.analysis._check_file_job
-        | lsp.server.engine.JacLangServer.type_check_file { Source as _Src }
+    compiler.frontend.unitree --> [
+        cli.commands.analysis._check_file_job
+            | lsp.server.engine.JacLangServer.type_check_file { Source as _Src },
+        cli.commands.native_build._callback_source_path { Module },
+    ]
     compiler.frontend.unitree as uni ++> [
         cli.commands.fix._access_plan
             | cli.commands.transform.py2jac
@@ -1678,9 +1681,8 @@ graph import {
             | project.kernel_snapshot.KernelSnapshot.emits
             | testing.cl_test_runner.module_entry_for { is_annex },
         cli.commands.cli_helpers { base_stem, is_jac, is_python },
-        cli.commands.execution._jab_native_bin { base_stem },
-        cli.commands.execution._jab_run_entry_lib { base_stem },
-        client.jac_client_compiler.JacClientCompiler._native_variant
+        cli.commands.execution._jab_native_bin
+            | client.jac_client_compiler.JacClientCompiler._native_variant
             | client.targets.client_dev_common.dev_proxy_paths
             | compiler.driver.application._semantic_metadata
             | dist.seal.bake_native_payloads
@@ -1690,12 +1692,15 @@ graph import {
             | scale.server.inprocess
             | server.hmr.HotReloader._get_js_filename
             | testing.test_runner.run_file { base_stem },
-        cli.commands.native_build.native_build {
-            base_stem,
+        cli.commands.execution._jab_run_entry_lib
+            | runtime.prepared.semantic_for_scope
+            | server.hmr.HotReloader._path_to_module { base_stem },
+        cli.commands.native_build._sealed_native_plan {
             is_jac,
             is_retired_native_marker
         },
-        cli.commands.native_build._sealed_native_plan {
+        cli.commands.native_build.native_build {
+            base_stem,
             is_jac,
             is_retired_native_marker
         },
@@ -1708,9 +1713,6 @@ graph import {
             is_annex
         },
         project.modresolver { MODULE_SUFFIXES, is_jac_namespace_package, language_of },
-        runtime.prepared.semantic_for_scope | server.hmr.HotReloader._path_to_module {
-            base_stem
-        },
         server.hmr.HotReloader._dispatch_change { is_impl },
         server.watcher.JacFileWatcher._beside_watched_file { is_annex_path_of },
         server.watcher.JacFileWatcher._foreign_shared_annex {
@@ -1836,8 +1838,10 @@ graph import {
         load_template_jab
     }
     packages.verify --> cli.commands.project.publish { run_verify }
-    project ++> cli.commands.native_build.native_build { get_config }
-    project ++> cli.commands.native_build._sealed_native_plan { get_config }
+    project ++> [
+        cli.commands.native_build._sealed_native_plan { get_config },
+        cli.commands.native_build.native_build { get_config },
+    ]
     project --> compiler.backends.native.wasm_build._project_gc_settings { get_config }
     project.app_kinds ++> [
         cli.commands.execution._app_serves { kind_spec },
@@ -2293,14 +2297,15 @@ graph import {
         client.client_diagnostics.ClientDiagnostic.render
             | compiler.passes.context.Alert.pretty_print { render_diagnostic },
         compiler.passes.context.Alert.as_log { render_diagnostic_header },
+        compiler.passes.import_wiring_pass | compiler.tools.lang_tools {
+            pascal_to_snake
+        },
         runtime.traceback_render { pretty_print_source_location },
         scale.injector.bundle.BundleSourceFilter.parks { path_matches_exclude },
     ]
-    project.source ++> compiler.passes.import_wiring_pass { pascal_to_snake }
     project.source --> compiler.passes.pyast_load_pass.PyastBuildPass.convert {
         pascal_to_snake
     }
-    project.source ++> compiler.tools.lang_tools { pascal_to_snake }
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
         cli.commands.project._create_app { scaffold_app },
@@ -2586,14 +2591,14 @@ graph import {
         server.session.Session.quarantine_ref { sv_forget_by_id },
     ]
     runtime.osp_graph_sv --> byllm.visit_routing._candidate_for { sv_register_hydrated }
-    runtime.osp_kernel ++> byllm.visit_routing._route_context { _current_scope }
     runtime.osp_kernel ++> [
+        byllm.visit_routing._route_context { _current_scope },
         compiler.backends.es.esast_gen_pass
             | compiler.backends.py.jcir_gen_pass
             | compiler.passes.comptime_resolve_pass
             | compiler.passes.jsx_intrinsic_guard_pass
             | compiler.passes.scope_walk
-            | compiler.tools.grammar_extract_pass { osp_skip_rest }
+            | compiler.tools.grammar_extract_pass { osp_skip_rest },
     ]
     runtime.osp_kernel --> [
         compiler.passes.context.CompileContext.enter_node { osp_skip_rest },
@@ -3416,15 +3421,6 @@ graph import {
         client.cli.run_client_setup { JacRuntime as Jac },
     ]
     runtime.scalars ++> [
-        compiler.type_registry {
-            ScalarShape,
-            numeric_shapes,
-            shape_literal_fits,
-            shape_range,
-            shapes_unify,
-            shapes_widen_to,
-            sized_scalar_names
-        },
         compiler.backends.es.esast_gen_pass.EsastGenPass._apply_fw_coercion
             | compiler.backends.es.primitives_es.ESBuiltinEmitter.emit_print
             | compiler.backends.py.jcir_gen_pass
@@ -3445,6 +3441,15 @@ graph import {
         },
         compiler.boundary_rules.non_string_key { sized_scalar_names },
         compiler.boundary_rules.python_native_wire { sized_scalar_names },
+        compiler.type_registry {
+            ScalarShape,
+            numeric_shapes,
+            shape_literal_fits,
+            shape_range,
+            shapes_unify,
+            shapes_widen_to,
+            sized_scalar_names
+        },
     ]
     runtime.scalars --> [
         compiler.passes.wasm_contract.value_contract { ScalarShape, shape_range },
@@ -3711,15 +3716,14 @@ graph import {
     }
     server.request_scope ++> scale.server.websocket_ext { RequestScope }
     server.sealed_serve ++> [
-        cli.commands.execution._jab_native_bin { NATIVE_DIR_REL },
         cli.commands.execution._jab_interop_record { interop_record_path },
+        cli.commands.execution._jab_native_bin
+            | dist.precompile_bytecode._native_payload_meta { NATIVE_DIR_REL },
         cli.commands.execution._jab_run_entry_lib {
             NATIVE_DIR_REL,
             interop_record_path,
             native_lib_name
         },
-        dist.precompile_bytecode.seal_native,
-        dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
         cli.commands.execution._run_native_lib { interop_record_path },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
@@ -3733,12 +3737,12 @@ graph import {
             NATIVE_DIR_REL,
             SERVE_MANIFEST_REL
         },
+        dist.precompile_bytecode.seal_native,
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
+        dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
     ]
-    server.sealed_serve --> cli.commands.native_build.native_build_sealed_pair {
-        interop_record_path
-    }
     server.sealed_serve --> [
+        cli.commands.native_build.native_build_sealed_pair { interop_record_path },
         compiler.driver.application.prepare_application {
             sealed_root_for,
             unlisted_image_root
@@ -10909,9 +10913,9 @@ graph import compiler.backends.native {
             init_object_codegen,
             link_glue_ir
         },
-        link_plan.callback_glue_ir { bind_shared_callbacks },
         link_plan.heap_glue_ir { inject_heap_accounting },
     ]
+    link_glue --> link_plan.callback_glue_ir { bind_shared_callbacks }
     link_plan ++> [
         kernel_resolve.kernel_plan { build_link_plan },
         kernel_stage0 { LinkPlan },
@@ -15228,13 +15232,13 @@ graph import runtime {
         walk_nodes
     }
     interop_bridge --> [
-        prepared.execute_module { NativeLibrary },
-        source_app._load_application { NativeCallback, NativeLibrary },
         cli.commands.execution._run_native_lib {
             NativeCallback,
             NativeLibrary,
             resolve_sv_callbacks
         },
+        prepared.execute_module { NativeLibrary },
+        source_app._load_application { NativeCallback, NativeLibrary },
     ]
     memory ++> context { Memory }
     object_interop ++> typecache { fields, is_record }
@@ -15336,9 +15340,8 @@ graph import runtime {
     ]
     type runtime ++> builtin { LLMModel }
     scalars ++> [
-        interop_bridge._sized_ctypes_tables { numeric_shapes },
         builtin._is_sized_type_name { is_sized },
-        cinterop { numeric_shapes },
+        cinterop | interop_bridge._sized_ctypes_tables { numeric_shapes },
         sized { numeric_shapes, range_of, shape_of, wrap_value },
     ]
     semantic ++> runtime { Info }
