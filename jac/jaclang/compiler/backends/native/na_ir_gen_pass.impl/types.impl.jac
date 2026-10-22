@@ -3403,31 +3403,35 @@ impl NaIRGenPass._emit_str_concat_inplace(
     );
 
     self.builder.position_at_end(capcall_bb);
-    _triple = str(self.llvm_module.triple or "").lower();
-    _is_darwin = ("darwin" in _triple)
-        or ("apple" in _triple)
-        or ("macos" in _triple)
-        or ("ios" in _triple);
-    _msz_sym = "malloc_size" if _is_darwin else "malloc_usable_size";
-    _msz_fn = self._get_or_declare_extern(_msz_sym, i64, [i8p]);
-    usable = self.builder.call(_msz_fn, [base], name="ip.usable");
-    cap = self.builder.sub(usable, ir.Constant(i64, HDR_TOTAL), name="ip.cap");
-    _units = self.builder.lshr(cap, ir.Constant(i64, 8), name="ip.units");
-    _clamped = self.builder.select(
-        self.builder.icmp_unsigned(">", _units, ir.Constant(i64, 4095), name="ip.uov"),
-        ir.Constant(i64, 4095),
-        _units,
-        name="ip.uc"
-    );
-    _stamp = self.builder.or_(
-        self.builder.and_(aw, ir.Constant(i64, 0x000FFFFFFFFFFFFF), name="ip.awkeep"),
-        self.builder.shl(_clamped, ir.Constant(i64, 52), name="ip.ushift"),
-        name="ip.stamp"
-    );
-    self.builder.store(_stamp, aw_slot);
-    self.builder.cbranch(
-        self.builder.icmp_unsigned("<=", need, cap, name="ip.fits"), tail_bb, grow_bb
-    );
+    cap: ir.Value = ir.Constant(i64, 0);
+    if self._target_is_wasm() {
+        self.builder.branch(grow_bb);
+    } else {
+        usable = self._floor_call("__jac_malloc_size", i64, [base], "ip.usable");
+        cap = self.builder.sub(usable, ir.Constant(i64, HDR_TOTAL), name="ip.cap");
+        _units = self.builder.lshr(cap, ir.Constant(i64, 8), name="ip.units");
+        _clamped = self.builder.select(
+            self.builder.icmp_unsigned(
+                ">", _units, ir.Constant(i64, 4095), name="ip.uov"
+            ),
+            ir.Constant(i64, 4095),
+            _units,
+            name="ip.uc"
+        );
+        _stamp = self.builder.or_(
+            self.builder.and_(
+                aw, ir.Constant(i64, 0x000FFFFFFFFFFFFF), name="ip.awkeep"
+            ),
+            self.builder.shl(_clamped, ir.Constant(i64, 52), name="ip.ushift"),
+            name="ip.stamp"
+        );
+        self.builder.store(_stamp, aw_slot);
+        self.builder.cbranch(
+            self.builder.icmp_unsigned("<=", need, cap, name="ip.fits"),
+            tail_bb,
+            grow_bb
+        );
+    }
 
     self.builder.position_at_end(grow_bb);
     capin = self.builder.phi(i64, name="ip.capin");
