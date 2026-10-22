@@ -1759,10 +1759,10 @@ impl TypeCheckPass._is_exception_operand(ty: TypeBase, allow_none: bool) -> bool
     if isinstance(ty, ClassType) and self.evaluator._is_type_subscript(ty) {
         return self._is_exception_operand(ty.private.type_args[0], allow_none=False);
     }
-    ty = self.evaluator._convert_to_instance(ty);
     if self.evaluator.is_none_type(ty) {
-        return allow_none;
+        return allow_none and ty.is_class_instance();
     }
+    ty = self.evaluator._convert_to_instance(ty);
     base_exception = self.evaluator.prefetch.base_exception_class;
     if base_exception is None {
         return True;
