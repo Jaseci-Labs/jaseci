@@ -36,13 +36,24 @@ from jaclang.compiler.backends.native.link_plan import (
 import jaclang.compiler.backends.native.llvm.binding as llvm
 
 program = JacProgram()
-entry = root / "jaclang/compiler/backends/py/jacpython/native_api.jac"
+# The roots of the native object: the compiler's entry points, the table of
+# built-in modules (its PyInit addresses root every native extension module)
+# and the object model ports, which define interpreter types and functions
+# under their C names for C callers no Jac module imports.
+entries = [
+    root / "jaclang/compiler/backends/py/jacpython/native_api.jac",
+    root / "jaclang/runtime/python/inittab.jac",
+    *sorted(
+        path for path in (root / "jaclang/runtime/python/object_model").glob("*.jac")
+        if path.name != "__init__.jac"
+    ),
+]
 options = CompileOptions(
     aot_mode=True, default_codespace="native", skip_native_engine=True,
     native_required=True,
     memory_profile="rc", no_ir_cache=False, opt_level=2, native_target=triple,
 )
-plan = build_link_plan(program, [str(entry)], options)
+plan = build_link_plan(program, [str(entry) for entry in entries], options)
 if program.errors_had:
     for error in program.errors_had:
         print(error.pretty_print(), file=sys.stderr)

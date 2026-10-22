@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 130 C files / 229,391 lines; 119 headers / 115,516 lines.
-#   Total: 249 files / 344,907 source lines.
+#   Excluded: 133 C files / 232,044 lines; 122 headers / 116,444 lines.
+#   Total: 255 files / 348,488 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -399,7 +399,7 @@ Modules/_io/iobase.c
 Modules/_io/stringio.c
 Modules/_io/textio.c
 # Modules/_json.c  # removed: 1,974 source lines
-Modules/_localemodule.c
+# Modules/_localemodule.c  # removed: 1,129 source lines
 # Modules/_lsprof.c  # removed: 1,146 source lines
 # Modules/_lzmamodule.c  # removed: 1,664 source lines
 Modules/_math.h
@@ -515,7 +515,7 @@ Modules/addrinfo.h
 # Modules/clinic/_functoolsmodule.c.h  # removed: 195 source lines
 # Modules/clinic/_hashopenssl.c.h  # removed: 1,987 source lines
 # Modules/clinic/_heapqmodule.c.h  # removed: 361 source lines
-Modules/clinic/_localemodule.c.h
+# Modules/clinic/_localemodule.c.h  # removed: 598 source lines
 # Modules/clinic/_lsprof.c.h  # removed: 479 source lines
 # Modules/clinic/_lzmamodule.c.h  # removed: 337 source lines
 # Modules/clinic/_opcode.c.h  # removed: 779 source lines
@@ -559,7 +559,7 @@ Modules/clinic/signalmodule.c.h
 # Modules/clinic/socketmodule.c.h  # removed: 376 source lines
 # Modules/clinic/symtablemodule.c.h  # removed: 56 source lines
 # Modules/clinic/syslogmodule.c.h  # removed: 268 source lines
-Modules/clinic/termios.c.h
+# Modules/clinic/termios.c.h  # removed: 303 source lines
 # Modules/clinic/timemodule.c.h  # removed: 74 source lines
 # Modules/clinic/unicodedata.c.h  # removed: 552 source lines
 # Modules/clinic/zlibmodule.c.h  # removed: 1,125 source lines
@@ -590,8 +590,8 @@ Modules/makesetup
 # Modules/pwdmodule.c  # removed: 380 source lines
 # Modules/pyexpat.c  # removed: 2,537 source lines
 # Modules/resource.c  # removed: 568 source lines
-Modules/rotatingtree.c
-Modules/rotatingtree.h
+# Modules/rotatingtree.c  # removed: 125 source lines
+# Modules/rotatingtree.h  # removed: 27 source lines
 # Modules/selectmodule.c  # removed: 2,896 source lines
 # Modules/sha1module.c  # removed: 411 source lines
 # Modules/sha2module.c  # removed: 954 source lines
@@ -601,7 +601,7 @@ Modules/signalmodule.c
 # Modules/socketmodule.h  # removed: 414 source lines
 # Modules/symtablemodule.c  # removed: 130 source lines
 # Modules/syslogmodule.c  # removed: 469 source lines
-Modules/termios.c
+# Modules/termios.c  # removed: 1,399 source lines
 # Modules/timemodule.c  # removed: 2,398 source lines
 # Modules/unicodedata.c  # removed: 1,821 source lines
 # Modules/unicodedata_db.h  # removed: 8,358 source lines

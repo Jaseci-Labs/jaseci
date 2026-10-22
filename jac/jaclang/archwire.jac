@@ -5483,6 +5483,7 @@ graph import compiler {
             clib_global_of_name,
             is_builtin_addressof_call
         },
+        passes.import_wiring_pass { clib_global_of_name },
         passes.layout_pass.open_dispatch { is_clib_archetype },
         passes.ownership_check_pass {
             c_call_borrows_args,
@@ -7667,7 +7668,6 @@ graph import compiler {
             UnaryOp,
             Yield,
             YieldFrom,
-            alias,
             arguments,
             ast_node,
             comprehension,
@@ -11504,7 +11504,7 @@ graph import compiler.backends.py.jacpython {
             same_loc,
             stmt_cont
         },
-        compiler_match { basicblock, cfg_builder, cloc, loc, stmt_cont },
+        compiler_match { basicblock, cfg_builder, cloc, stmt_cont },
         flowgraph {
             basicblock,
             cinstr,
@@ -15751,6 +15751,7 @@ graph import runtime.na_stdlib {
 }
 
 graph import runtime.python {
+    bindings.abc ++> inittab { PyInit__abc }
     bindings.arguments ++> [
         modules.datetime_date
             | modules.datetime_datetime
@@ -15778,6 +15779,12 @@ graph import runtime.python {
             invoke
         },
     ]
+    bindings.array ++> inittab { PyInit_array }
+    bindings.asyncio ++> inittab { PyInit__asyncio }
+    bindings.atexit ++> inittab { PyInit_atexit }
+    bindings.binascii ++> inittab { PyInit_binascii }
+    bindings.bisect ++> inittab { PyInit__bisect }
+    bindings.blake2 ++> inittab { PyInit__blake2 }
     bindings.buffer ++> [
         modules.array
             | modules.binascii
@@ -15807,6 +15814,16 @@ graph import runtime.python {
             jacpy_binding_buffer_fill
         },
     ]
+    bindings.bz2 ++> inittab { PyInit__bz2 }
+    bindings.cmath ++> inittab { PyInit_cmath }
+    bindings.codecs ++> inittab { PyInit__codecs }
+    bindings.codecs_cn ++> inittab { PyInit__codecs_cn }
+    bindings.codecs_hk ++> inittab { PyInit__codecs_hk }
+    bindings.codecs_iso2022 ++> inittab { PyInit__codecs_iso2022 }
+    bindings.codecs_jp ++> inittab { PyInit__codecs_jp }
+    bindings.codecs_kr ++> inittab { PyInit__codecs_kr }
+    bindings.codecs_tw ++> inittab { PyInit__codecs_tw }
+    bindings.collections ++> inittab { PyInit__collections }
     bindings.converters ++> [
         modules.abc | modules.mmap | modules.select {
             ClassToken,
@@ -15870,6 +15887,24 @@ graph import runtime.python {
         modules.sqlite3 { ClassToken, bad_argument, borrowed_false, borrowed_true },
         modules.ssl { bad_argument, borrowed_false, borrowed_none, borrowed_true },
     ]
+    bindings.csv ++> inittab { PyInit__csv }
+    bindings.datetime ++> inittab { PyInit__datetime }
+    bindings.decimal ++> inittab { PyInit__decimal }
+    bindings.elementtree ++> inittab { PyInit__elementtree }
+    bindings.errno ++> inittab { PyInit_errno }
+    bindings.fcntl ++> inittab { PyInit_fcntl }
+    bindings.functools ++> inittab { PyInit__functools }
+    bindings.grp ++> inittab { PyInit_grp }
+    bindings.hashopenssl ++> inittab { PyInit__hashlib }
+    bindings.heapq ++> inittab { PyInit__heapq }
+    bindings.hmac ++> inittab { PyInit__hmac }
+    bindings.itertools ++> inittab { PyInit_itertools }
+    bindings.json ++> inittab { PyInit__json }
+    bindings.locale ++> inittab { PyInit__locale }
+    bindings.lsprof ++> inittab { PyInit__lsprof }
+    bindings.lzma ++> inittab { PyInit__lzma }
+    bindings.math ++> inittab { PyInit_math }
+    bindings.md5 ++> inittab { PyInit__md5 }
     bindings.members ++> [
         modules.bz2 | modules.zlib { record_set_byte, record_set_object },
         modules.collections | modules.zoneinfo { record_set_object },
@@ -15879,11 +15914,14 @@ graph import runtime.python {
             | modules.sqlite3 { MemberField },
         modules.multiprocessing | modules.posix_stat { MemberField, MemberType },
         modules.pickle { record_int, record_set_int },
-    ]
-    bindings.members --> [
-        modules.lzma { record_set_byte, record_set_int, record_set_object },
         modules.unicodedata { record_set_address },
     ]
+    bindings.members --> modules.lzma {
+        record_set_byte,
+        record_set_int,
+        record_set_object
+    }
+    bindings.mmap ++> inittab { PyInit_mmap }
     bindings.module ++> [
         modules.abc {
             FunctionTable,
@@ -15981,6 +16019,10 @@ graph import runtime.python {
             visit_reference
         },
     ]
+    bindings.multibytecodec ++> inittab { PyInit__multibytecodec }
+    bindings.multiprocessing ++> inittab { PyInit__multiprocessing }
+    bindings.opcode ++> inittab { PyInit__opcode }
+    bindings.operator ++> inittab { PyInit__operator }
     bindings.payload ++> [
         modules.abc
             | modules.array
@@ -16034,6 +16076,14 @@ graph import runtime.python {
         },
         modules.ssl | modules.ssl_cert { jacpy_binding_native_set },
     ]
+    bindings.pickle ++> inittab { PyInit__pickle }
+    bindings.posix ++> inittab { PyInit_posix }
+    bindings.posixshmem ++> inittab { PyInit__posixshmem }
+    bindings.posixsubprocess ++> inittab { PyInit__posixsubprocess }
+    bindings.pwd ++> inittab { PyInit_pwd }
+    bindings.pyexpat ++> inittab { PyInit_pyexpat }
+    bindings.queue ++> inittab { PyInit__queue }
+    bindings.random ++> inittab { PyInit__random }
     bindings.references ++> [
         modules.abc | modules.array | modules.collections | modules.pickle {
             ReferenceState,
@@ -16043,6 +16093,16 @@ graph import runtime.python {
         modules.functools | modules.itertools | modules.struct { ReferenceState },
         modules.lsprof { call_method },
     ]
+    bindings.resource ++> inittab { PyInit_resource }
+    bindings.select ++> inittab { PyInit_select }
+    bindings.sha1 ++> inittab { PyInit__sha1 }
+    bindings.sha2 ++> inittab { PyInit__sha2 }
+    bindings.sha3 ++> inittab { PyInit__sha3 }
+    bindings.socket ++> inittab { PyInit__socket }
+    bindings.sqlite3 ++> inittab { PyInit__sqlite3 }
+    bindings.sre ++> inittab { PyInit__sre }
+    bindings.ssl ++> inittab { PyInit__ssl }
+    bindings.stat ++> inittab { PyInit__stat }
     bindings.state ++> modules.abc
         | modules.array
         | modules.asyncio_core
@@ -16080,6 +16140,14 @@ graph import runtime.python {
         | modules.zlib
         | modules.zoneinfo
         | modules.zstd { NativeState }
+    bindings.statistics ++> inittab { PyInit__statistics }
+    bindings.struct ++> inittab { PyInit__struct }
+    bindings.suggestions ++> inittab { PyInit__suggestions }
+    bindings.sysconfig ++> inittab { PyInit__sysconfig }
+    bindings.syslog ++> inittab { PyInit_syslog }
+    bindings.termios ++> inittab { PyInit_termios }
+    bindings.time ++> inittab { PyInit_time }
+    bindings.tracemalloc ++> inittab { PyInit__tracemalloc }
     bindings.type ++> [
         modules.abc
             | modules.functools
@@ -16164,6 +16232,14 @@ graph import runtime.python {
             jacpy_binding_record
         },
     ]
+    bindings.types ++> inittab { PyInit__types }
+    bindings.typing ++> inittab { PyInit__typing }
+    bindings.unicodedata ++> inittab { PyInit_unicodedata }
+    bindings.uuid ++> inittab { PyInit__uuid }
+    bindings.weakref ++> inittab { PyInit__weakref }
+    bindings.zlib ++> inittab { PyInit_zlib }
+    bindings.zoneinfo ++> inittab { PyInit__zoneinfo }
+    bindings.zstd ++> inittab { PyInit__zstd }
     capi ++> [
         bindings.arguments {
             boundary_failure,
@@ -16690,6 +16766,7 @@ graph import runtime.python {
             | bindings.suggestions
             | bindings.sysconfig
             | bindings.tracemalloc
+            | inittab
             | modules.codecs_cn
             | modules.codecs_hk
             | modules.codecs_jp

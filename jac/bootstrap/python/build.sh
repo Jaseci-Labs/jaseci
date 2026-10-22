@@ -228,15 +228,17 @@ SETUP
     archives=
     if [ -n "$host" ]; then
         # Setup.local is read first and its first rule wins, so a registered
-        # module's PyInit resolves from jacpython.o even when Setup.bootstrap
-        # or Setup.stdlib still names the replaced C source.
+        # module never builds from the C source Setup.bootstrap or
+        # Setup.stdlib still names. Its rule carries only linker flags: the
+        # table of built-in modules is inittab.jac's C data, which holds the
+        # module's PyInit and so links it from jacpython.o.
         registry=$recipe/jacpython-modules.txt
-        native_api=$root/jaclang/compiler/backends/py/jacpython/native_api.jac
+        inittab=$root/jaclang/runtime/python/inittab.jac
         echo '*static*' >> Modules/Setup.local
         while read -r module tests flags; do
             case "$module" in ''|'#'*) continue ;; esac
-            grep -qw "PyInit_$module" "$native_api" || {
-                echo "native_api.jac does not import PyInit_$module" >&2
+            grep -qw "PyInit_$module" "$inittab" || {
+                echo "inittab.jac has no PyInit_$module; run scripts/jacpython/gen_inittab.jac" >&2
                 exit 1
             }
             # A flag prefixed with an OS (linux:-lrt) applies only there.

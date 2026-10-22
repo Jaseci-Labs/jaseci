@@ -72,17 +72,24 @@ Steps for a module `_foo` built from `Modules/_foomodule.c`:
    plain `def` and `glob` stay importable from other Jac modules.
 4. Run `jac run scripts/jacpython/gen_capi.jac` so every new API call has a
    declaration.
-5. Import `PyInit__foo` in `compiler/backends/py/jacpython/native_api.jac`,
-   add the registry line, comment the C files in `cpython-sources.txt` as
-   `# removed: 0 source lines`, and run `jac run scripts/jacpython_manifest.jac --write`.
+5. Add the registry line and run `jac run scripts/jacpython/gen_inittab.jac`,
+   which adds the module's `PyInit__foo` to the table of built-in modules
+   (`runtime/python/inittab.jac`) and wires it in `archwire.jac`. Comment the
+   C files in `cpython-sources.txt` as `# removed: 0 source lines`, and run
+   `jac run scripts/jacpython_manifest.jac --write`.
 6. `jac check` each new file (from the repository root, so the dev source
    reroute checks with this tree's compiler). A single-file check reports
    native lowering failures (E5092) and native placement errors (E5090) for
    the file itself; `jac check native_api.jac` checks the closure's lowering.
 
-`build.sh` writes the `Setup.local` `*static*` block from the registry and fails
-when `native_api.jac` does not import a listed `PyInit`. `smoke.py` and the CI
-compatibility step read the same registry.
+The table of built-in modules, `_PyImport_Inittab`, is C data in
+`inittab.jac`, so makesetup's `config.c` holds no table. A module's PyInit
+address in it is a real use of the binding, and `prepare_native.py` links the
+table, so every registered module enters `jacpython.o`. `build.sh` writes the
+`Setup.local` `*static*` block from the registry (a registered module's rule
+carries only its linker flags and keeps the C rule from applying) and fails
+when the table lacks a listed `PyInit`. `smoke.py` and the CI compatibility
+step read the same registry.
 
 A module over a library that CPython vendors and builds itself names the
 library's archive as its linker flag: `_md5` lists
@@ -494,8 +501,9 @@ layouts.
 
 **Removing the C file.** The port marks the file `# removed:` in
 `cpython-sources.txt`, `compiler-bridge.patch` deletes its object from
-`OBJECT_OBJS` (the build-only host keeps it), and `native_api.jac` imports the
-port so its definitions are in `jacpython.o`. The build's absent-input check
+`OBJECT_OBJS` (the build-only host keeps it), and the port's definitions are
+in `jacpython.o` because `prepare_native.py` links every module under
+`object_model/`. The build's absent-input check
 then proves the C object is gone.
 
 What boolobject needed beyond the layouts:
