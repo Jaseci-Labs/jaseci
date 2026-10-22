@@ -6,27 +6,6 @@ standard trashcan mechanism bounds destruction of long block chains.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyIter_Next,
-    PyList_GetItemRef,
-    PyObject,
-    PyObject_GetIter,
-    PyTuple_New,
-    Py_NewRef,
-    jacpy_list_size,
-    jacpy_object_type,
-    jacpy_release,
-    jacpy_tuple_set_owned,
-    jacpy_type_check
-}
-import from jaclang.runtime.python.capi {
-    required,
-    checked,
-    object_error,
-    boundary_failure
-}
-
 obj tee_block {
     has source: ptr[PyObject] = NULL,
         next_block: ptr[PyObject] = NULL,
@@ -62,7 +41,7 @@ def:pub jacpy_tee_block_init(
     next_block: ptr[PyObject]
 ) -> i64 {
     if values != 0 and jacpy_list_size(values) > 57 {
-        object_error("ValueError", "Invalid arguments");
+        object_error(PyExc_ValueError, "Invalid arguments");
         return -1;
     }
     state.source = Py_NewRef(source);
@@ -224,7 +203,7 @@ def:pub jacpy_tee_next(cursor: tee_cursor) -> ptr[PyObject] {
     }
     if cursor.index >= len(state.values) {
         if state.running {
-            object_error("RuntimeError", "cannot re-enter the tee iterator");
+            object_error(PyExc_RuntimeError, "cannot re-enter the tee iterator");
             return NULL;
         }
         state.running = True;

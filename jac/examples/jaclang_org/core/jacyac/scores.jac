@@ -15,7 +15,11 @@ obj Scores {
         loadRepos: Callable[[int], None];
 }
 
-def sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project] {
+def sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project];
+
+def:pub useScores(model: JacYacState) -> Scores;
+
+impl sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project] {
     q = query.strip().lower();
     result = [
         p
@@ -32,7 +36,7 @@ def sorted_projects(projects: list[Project], query: str, sort: str) -> list[Proj
     return result;
 }
 
-def:pub useScores(model: JacYacState) -> Scores {
+impl useScores(model: JacYacState) -> Scores {
     has query: str = "",
         sort: str = "score",
         repos: list[GithubRepo] = [],

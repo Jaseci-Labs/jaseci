@@ -8,6 +8,16 @@ glob TABS: list[list[str]] = [
 
 def:pub PackageVersions(
     name: str, versions: list[PackageVersion], current: str
+) -> JsxElement;
+
+def:pub PackageDeps(version: PackageVersion | None) -> JsxElement;
+
+def:pub PackagePage(
+    name: str, detail: PackageDetail | None, loading: bool
+) -> JsxElement;
+
+impl PackageVersions(
+    name: str, versions: list[PackageVersion], current: str
 ) -> JsxElement {
     return
         <ul className="flex flex-col divide-y divide-border/60">
@@ -43,7 +53,7 @@ def:pub PackageVersions(
         </ul>;
 }
 
-def:pub PackageDeps(version: PackageVersion | None) -> JsxElement {
+impl PackageDeps(version: PackageVersion | None) -> JsxElement {
     if version is None {
         return <span></span>;
     }
@@ -73,9 +83,7 @@ def:pub PackageDeps(version: PackageVersion | None) -> JsxElement {
         </div>;
 }
 
-def:pub PackagePage(
-    name: str, detail: PackageDetail | None, loading: bool
-) -> JsxElement {
+impl PackagePage(name: str, detail: PackageDetail | None, loading: bool) -> JsxElement {
     has tab: str = "readme";
 
     def pick(t: str) {

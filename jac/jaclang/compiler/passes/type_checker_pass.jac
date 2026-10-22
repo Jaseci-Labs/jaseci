@@ -1,164 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    Ability,
-    ArchHas,
-    Archetype,
-    AssertStmt,
-    Assignment,
-    AstSymbolNode,
-    AtomTrailer,
-    BinaryExpr,
-    BuiltinType,
-    CodeBlockStmt,
-    CompareExpr,
-    DeleteStmt,
-    EdgeRefTrailer,
-    Enum,
-    EventSignature,
-    Except,
-    Expr,
-    ExprAsItem,
-    FilterCompr,
-    FormattedValue,
-    FString,
-    FuncCall,
-    FuncSignature,
-    GenCompr,
-    HasVar,
-    ImplDef,
-    Import,
-    InForStmt,
-    IndexSlice,
-    JsxElement,
-    JsxElementName,
-    KWPair,
-    LambdaExpr,
-    ListVal,
-    Literal,
-    MatchAs,
-    MatchArch,
-    ModuleCode,
-    ImportRule,
-    ModuleItem,
-    ModulePath,
-    MultiString,
-    Name,
-    Null,
-    ParamVar,
-    RaiseStmt,
-    ReportStmt,
-    ReturnStmt,
-    Slice,
-    SpecialVarRef,
-    Symbol,
-    SubTag,
-    Token,
-    UnaryExpr,
-    TupleVal,
-    TypeAlias,
-    VisitStmt,
-    in_type_position,
-    type_only_import_of,
-    IfStmt,
-    ElseIf,
-    WhileStmt,
-    WithStmt,
-    YieldExpr,
-    find_python_scope_node_of,
-    WireItem
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-
-import from jaclang.compiler.symbol_utils { return_type_is_jsx }
-import from jaclang.compiler.frontend.constant { ImmutabilityKind, Tokens as Tok }
-import from jaclang.compiler.frontend.diagnostics { E0033, E0108, E0109 }
-import from jaclang.compiler.types.ct_value {
-    CT_DEFERRED,
-    CtValue,
-    ct_is_iterable,
-    ct_str,
-    ct_truthy,
-    ct_type_name
-}
-import from jaclang.compiler.types.types {
-    AnyType,
-    ClassType,
-    FunctionType,
-    ModuleType,
-    TypeBase,
-    TypeVarType,
-    UnionType,
-    UnknownType
-}
-import from jaclang.compiler.types.type_utils {
-    BARE_GENERIC_REQUIRED,
-    PropertyWriteKind,
-    get_declared_generator_return_type,
-    get_generator_yield_type,
-    is_generator_family_type
-}
-import from jaclang.compiler.types.operations {
-    ARITHMETIC_OPERATORS,
-    AUG_OPERATOR_MAP,
-    AUG_TO_BINARY_MAP,
-    BINARY_OPERATOR_MAP,
-    BITWISE_OPERATORS,
-    COMPLEX_ARITH_OPS,
-    SHIFT_OPERATORS,
-    get_complex_arith_result_type,
-    get_numeric_promotion_type,
-    get_pow_result_type
-}
-import type from jaclang.compiler.types.type_evaluator { TypeEvaluator }
-import from jaclang.compiler.frontend.diagnostics {
-    Category,
-    DiagnosticInfo,
-    E1001,
-    E1002,
-    E1003,
-    E1004,
-    E1005,
-    E1010,
-    E1011,
-    E1020,
-    E1021,
-    E1022,
-    E1042,
-    E1060,
-    E1061,
-    E1090,
-    E1091,
-    E1092,
-    E1093,
-    E1094,
-    E1095,
-    E1106,
-    E1107,
-    E1109,
-    E1112,
-    E1113,
-    E1116,
-    E1117,
-    E1119,
-    E1124,
-    E1132,
-    E1133,
-    E1135,
-    E1150,
-    E1151,
-    E1152,
-    E1036,
-    W1036,
-    W1037,
-    W1052,
-    W2014,
-    W6008,
-    E2015
-}
-
 glob FW_INTERVAL_OPS: dict[str, str] = {
          "PLUS": "+",
          "MINUS": "-",
@@ -166,14 +5,17 @@ glob FW_INTERVAL_OPS: dict[str, str] = {
      };
 
 walker TypeCheckPass(TreePass) {
+    static has contract: PassContract = PassContract(provides=(AnalysisFact.TYPE_OF, ));
     has evaluator: TypeEvaluator postinit,
         _deferred_writes: list[tuple[Expr, (UniNode | None)]] postinit,
         _lambda_depth: int = 0,
         _restores_evaluator: bool = False,
         _outer_pass: (CompileContext | None) = None,
-        _outer_ct_quiet: bool = False;
+        _outer_ct_quiet: bool = False,
+        _generator_bodies: dict[int, bool] = {};
 
     def postinit -> None;
+    def _is_generator(scope: Ability) -> bool;
     can initialize with entry;
     override def release -> None;
     can prepare with entry;
@@ -201,9 +43,18 @@ walker TypeCheckPass(TreePass) {
     def _c_plain_data(t: (TypeBase | None), allow_callable: bool = False) -> bool;
     def _opaque_member(t: (TypeBase | None)) -> (Archetype | None);
     def _check_c_type_use(ann_node: (UniNode | None)) -> None;
+    def _check_c_global_use(nd: Name) -> None;
+    def _check_c_variadic_def(nd: Ability) -> None;
+    def _check_c_function_def(nd: Ability) -> None;
+    def _check_c_variadic_args(nd: FuncCall) -> None;
+    def _check_c_global_decl(assign: Assignment) -> None;
+    def _c_const_problem(expr: Expr, ctype: (TypeBase | None)) -> (str | None);
     def _check_c_interop_import(imp: Import) -> None;
     def _foreign_struct_contains(t: (TypeBase | None), target: Archetype) -> bool;
     def _check_c_interop_call(nd: FuncCall) -> None;
+    def _borrowed_scalar_param(name: Name) -> bool;
+    def _check_borrowed_scalar_write(leaf: Expr) -> None;
+    def _check_borrowed_scalar_forward(nd: FuncCall) -> None;
     def _c_arg_instance(t: (TypeBase | None)) -> (TypeBase | None);
     can exit_gen_compr with GenCompr exit;
     def _check_intrinsic_collision(nd: Ability) -> None;

@@ -66,6 +66,7 @@ obj Artifact {
     def probe_checkout -> Probe abst;
     def probe_kit -> Probe;
     def checkout_path -> str abst;
+    def built -> Probe;
     def build(log: Callable[[str], None], force: bool, exact: bool) -> None abst;
     def host_supported -> bool;
     def build_blocker -> str;

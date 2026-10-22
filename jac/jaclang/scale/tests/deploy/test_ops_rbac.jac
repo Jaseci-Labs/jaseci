@@ -1,18 +1,3 @@
-import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
-    build_ops_rbac,
-    ops_role_name,
-    ops_sa_is_ours,
-    ops_sa_name
-}
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.manifest_builder { ManifestBuilder }
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.runtime.context.util { GATEWAY_NAME }
-import from jaclang.scale.runtime.fleet { fleet_of }
-
-
 def _all_verbs(role: dict[str, any]) -> list[str] {
     out: list[str] = [];
     for rule in role["rules"] {

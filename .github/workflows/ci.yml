@@ -50,6 +50,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       installer: ${{ steps.filter.outputs.installer }}
       native: ${{ steps.filter.outputs.native }}
+      kernel: ${{ steps.filter.outputs.kernel }}
       pack_smoke: ${{ steps.filter.outputs.pack_smoke }}
       site_journey: ${{ steps.filter.outputs.site_journey }}
     steps:
@@ -60,6 +61,7 @@ jobs:
           filters: |
             core:
               - 'jac/**'
+              - 'jac.toml'
               - 'scripts/run_cpython_compiler_tests.jac'
               - '.github/workflows/build-binaries.yml'
               - '.github/workflows/ci.yml'
@@ -113,6 +115,49 @@ jobs:
               - 'jac/jaclang/cli/commands/impl/precompile.impl.jac'
               - '.github/actions/**'
               - 'scripts/ci_cache_keys.sh'
+            # Sources the native compiler kernel is lowered from, plus the
+            # compiler that lowers them. A pull request touching any of them
+            # seals the kernel in build-kit, as the `native:kernel` label does:
+            # its kit otherwise skips the seal and the break lands on main.
+            kernel:
+              - 'jac/jaclang/compiler/**'
+              - 'jac/jaclang/runtime/na_stdlib/**'
+              - 'jac/jaclang/runtime/constants.jac'
+              - 'jac/jaclang/runtime/osp_graph.jac'
+              - 'jac/jaclang/runtime/osp_kernel.jac'
+              - 'jac/jaclang/runtime/osp_tag.jac'
+              - 'jac/jaclang/runtime/portability.jac'
+              - 'jac/jaclang/runtime/region_native.jac'
+              - 'jac/jaclang/runtime/scalars.jac'
+              - 'jac/jaclang/runtime/semantic.jac'
+              - 'jac/jaclang/runtime/surface.jac'
+              - 'jac/jaclang/runtime/impl/constants.impl.jac'
+              - 'jac/jaclang/runtime/impl/osp_graph.impl.jac'
+              - 'jac/jaclang/runtime/impl/osp_kernel.impl.jac'
+              - 'jac/jaclang/runtime/impl/osp_tag.impl.jac'
+              - 'jac/jaclang/runtime/impl/portability.impl.jac'
+              - 'jac/jaclang/runtime/impl/region_native.impl.jac'
+              - 'jac/jaclang/runtime/impl/scalars.impl.jac'
+              - 'jac/jaclang/runtime/impl/semantic.impl.jac'
+              - 'jac/jaclang/runtime/impl/surface.impl.jac'
+              - 'jac/jaclang/project/app_kinds.jac'
+              - 'jac/jaclang/project/mobui_scope.jac'
+              - 'jac/jaclang/project/source.jac'
+              - 'jac/jaclang/project/workspace_model.jac'
+              - 'jac/jaclang/project/impl/app_kinds.impl.jac'
+              - 'jac/jaclang/project/impl/mobui_scope.impl.jac'
+              - 'jac/jaclang/project/impl/source.impl.jac'
+              - 'jac/jaclang/project/impl/workspace_model.impl.jac'
+              - 'jac/jaclang/client/client_surface.jac'
+              - 'jac/jaclang/client/targets/react_native/html_tag_map.jac'
+              - 'jac/jaclang/archwire.jac'
+              - 'jac/jaclang/artifacts/kit.jac'
+              - 'jac/jaclang/artifacts/impl/kit.impl.jac'
+              - 'jac/jaclang/dist/precompile_bytecode.jac'
+              - 'jac/jaclang/dist/impl/precompile_bytecode.impl.jac'
+              - 'jac/native/**'
+              - 'jac.toml'
+              - '.github/actions/setup-jac/action.yml'
 
   # The kit lane builds this checkout and publishes it for every test lane.
   build-kit:
@@ -124,9 +169,11 @@ jobs:
     # kernel build itself compiles through. The kernel is most of a kit's build
     # time and a pull request rarely changes what it does. Main, nightly and
     # release kits build it, and so does a pull request carrying the
-    # `native:kernel` label (adding the label starts a new run). The seal reads
-    # that from the pull request's event (artifacts/kit.jac pr_kit_omits), and
-    # the kit's manifest records the omission for the runtime to read.
+    # `native:kernel` label (adding the label starts a new run) or touching a
+    # path in the `kernel` filter. setup-jac turns that into JAC_KIT_OMIT, the
+    # only thing the seal reads (artifacts/kit.jac pr_kit_omits), and the kit's
+    # manifest records the omission for the runtime to read.
+    needs: changes
     steps:
       - uses: actions/checkout@v5
 
@@ -137,6 +184,7 @@ jobs:
           # source-built interpreter and its native compiler object. A binary
           # cache hit skips producing both, so ask for them explicitly.
           need-build-inputs: "true"
+          native-kernel: ${{ needs.changes.outputs.kernel }}
 
       - name: Set up Zig 0.16.0
         uses: mlugg/setup-zig@v2
@@ -162,17 +210,14 @@ jobs:
       # cache hit does not, so leaving it implicit made the kit's contents a
       # function of cache state -- present on a miss, missing on a hit, with
       # if-no-files-found blind to it because the other paths matched.
-      # Every zig build here depends on the source-built runtime, so each names
-      # the kit's interpreter; a pull request reuses a JacPython whose lowered
-      # sources are unchanged instead of rebuilding it after the kit was built.
+      # Every zig build here runs through the kit's own (CPython) runtime.
       - name: Materialize typeshed + vendored runtimes
         working-directory: jac
         run: |
-          PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
-          zig build fetch-typeshed "${PY[@]}" --summary all
-          zig build vendor-musl "${PY[@]}" --summary all
-          zig build vendor-musl-linux-aarch64 "${PY[@]}" --summary all
-          zig build vendor-wasm-libc "${PY[@]}" --summary all
+          zig build fetch-typeshed --summary all
+          zig build vendor-musl --summary all
+          zig build vendor-musl-linux-aarch64 --summary all
+          zig build vendor-wasm-libc --summary all
 
       - name: Hermeticity + smoke (no system Python)
         working-directory: jac
@@ -184,10 +229,12 @@ jobs:
           WORK="$(mktemp -d)"; cd "$WORK"
           ldd "$BIN" || true
           ! ldd "$BIN" | grep -qi python
-          "$BIN" -c 'import ctypes; assert ctypes.pythonapi._PyJac_CompilerRequired() == 1; assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4'
+          # The official configuration bundles stock CPython; JacPython is an
+          # accelerator its own lanes build (_jacpython.yml).
+          "$BIN" -c 'import ctypes; assert not hasattr(ctypes.pythonapi, "_PyJac_CompilerRequired")'
           # The kit carries every artifact a release does, less what its
           # manifest declares it leaves out -- only a pull request's kit may
-          # (the seal decides that, artifacts/kit.jac pr_kit_omits).
+          # (setup-jac asks through JAC_KIT_OMIT, artifacts/kit.jac pr_kit_omits).
           "$BIN" native status
           "$BIN" native status --require kit
           printf 'obj P { has x:int=0; def sq->int { return self.x*self.x; } }\nwith entry { print(P(x=7).sq()); }\n' > "$WORK/obj.jac"
@@ -263,9 +310,9 @@ jobs:
         working-directory: jac
         run: |
           set -euo pipefail
-          DIR="$(find .precompiled-build/jacpython -maxdepth 1 -type d -name 'cpython-*' | head -1)"
-          [ -n "$DIR" ] || { echo "::error::no .precompiled-build/jacpython/cpython-<ver> tree"; exit 1; }
-          [ -f .precompiled-build/jacpython/MANIFEST.json ] || {
+          DIR="$(find .precompiled-build/cpython -maxdepth 1 -type d -name 'cpython-*' | head -1)"
+          [ -n "$DIR" ] || { echo "::error::no .precompiled-build/cpython/cpython-<ver> tree"; exit 1; }
+          [ -f .precompiled-build/cpython/MANIFEST.json ] || {
             echo "::error::precompile tree has no MANIFEST.json, so the seal did not finish"; exit 1; }
           UNITS="$(find "$DIR" -name '*.jir' | wc -l | tr -d ' ')"
           [ "$UNITS" -ge 400 ] || { echo "::error::precompile tree has only $UNITS units"; exit 1; }
@@ -275,7 +322,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jac-precompiled
-          path: jac/.precompiled-build/jacpython
+          path: jac/.precompiled-build/cpython
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -379,7 +426,7 @@ jobs:
               echo "No .jac files changed in this PR; skipping format check."
               exit 0
             fi
-            FILES="$(grep -vE '(/fixtures/|^scripts/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
+            FILES="$(grep -vE '(/fixtures/|^scripts/|^jac/js_engine/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
             if [ -z "$FILES" ]; then
               echo "No formattable .jac files changed (all excluded); skipping."
               exit 0
@@ -387,7 +434,7 @@ jobs:
             printf '%s\n' "$FILES" | tr '\n' '\0' \
               | xargs -0 --no-run-if-empty jac fmt --check --lintfix
           else
-            git ls-files -z '*.jac' | grep -zv -E '(/fixtures/|^scripts/|/passes/native/llvm/|_err\.jac$|_syntax_err\.jac$)' | xargs -0 --no-run-if-empty jac fmt --check --lintfix
+            git ls-files -z '*.jac' | grep -zv -E '(/fixtures/|^scripts/|^jac/js_engine/|/passes/native/llvm/|_err\.jac$|_syntax_err\.jac$)' | xargs -0 --no-run-if-empty jac fmt --check --lintfix
           fi
 
       # Autofix push mirrors pre-commit.ci. Without a JAC_AUTOFIX_TOKEN secret
@@ -408,7 +455,7 @@ jobs:
             exit 0
           fi
           git checkout -B "$HEAD_REF" FETCH_HEAD
-          FILES="$(grep -vE '(/fixtures/|^scripts/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
+          FILES="$(grep -vE '(/fixtures/|^scripts/|^jac/js_engine/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
           if [ -z "$FILES" ]; then
             echo "No formattable .jac files to fix."
             exit 0
@@ -435,7 +482,7 @@ jobs:
         if: steps.fmt.outcome == 'failure'
         run: |
           set -euo pipefail
-          FILES="$(grep -vE '(/fixtures/|^scripts/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
+          FILES="$(grep -vE '(/fixtures/|^scripts/|^jac/js_engine/|/passes/native/llvm/|_err\.jac$)' changed-jac.txt || true)"
           if [ -n "$FILES" ]; then
             printf '%s\n' "$FILES" | tr '\n' '\0' \
               | xargs -0 --no-run-if-empty jac fmt --lintfix || true
@@ -612,19 +659,6 @@ jobs:
           name: native-test-failures
           path: ${{ runner.temp }}/native-test-artifacts
           if-no-files-found: ignore
-      - name: Check JacPython native code-object boundary
-        if: matrix.chunk == 'passes-native'
-        run: jac run scripts/test_jacpython_native.jac
-      - name: Check native standard-library replacements against CPython
-        if: matrix.chunk == 'passes-native'
-        run: |
-          jac install "hypothesis>=6,<7" --global
-          while read -r module tests _ <&3; do
-            case "$module" in ''|'#'*) continue ;; esac
-            for test in $(printf '%s' "$tests" | tr ',' ' '); do
-              jac run scripts/run_cpython_compiler_tests.jac --module "$test" --native-modules "$module"
-            done
-          done 3< jac/bootstrap/python/jacpython-modules.txt
 
   # Everything except the compiler tests.
   test-runtime:
@@ -723,6 +757,9 @@ jobs:
         run: |
           set -o pipefail
           cp -r jac/jaclang/byllm/tests "$RUNNER_TEMP/byllm-tests"
+          # The suite's archwire.jac fences it off from jaclang's graph inside
+          # the checkout; copied out, it is ordinary code beside the package.
+          rm "$RUNNER_TEMP/byllm-tests/archwire.jac"
           timeout --kill-after=30 300 jac test "$RUNNER_TEMP/byllm-tests/test_mtir_integration.jac"
       - name: HMR refresh (scale server)
         env:
@@ -1099,9 +1136,9 @@ jobs:
       # should name the quickstart step, not a missing module at bundle time.
       - name: Verify the scaffold came from the bundled template
         run: |
-          test -f site/web/main.jac && test -f site/core/site/game/arena.jac \
+          test -f site/web.jac && test -f site/core/site/game/arena.jac \
             || { echo "::error::scaffold is missing the site's entry or the wasm game"; exit 1; }
-          test -f site/desktop/main.jac \
+          test -f site/desktop.jac \
             || { echo "::error::scaffold is missing the desktop app"; exit 1; }
           # Client npm deps live under the project's build dir (.jac/client),
           # not a top-level node_modules; that is where the vite bundler looks.
@@ -1607,10 +1644,10 @@ jobs:
         run: |
           cp jac/tests/compiler/backends/native/fixtures/arena_replay.jac site/core/site/game/arena_replay.jac
           sed -i '/^import from sim /d' site/core/site/game/arena_replay.jac
-          cat >> site/arch.jac <<'JAC'
+          cat >> site/archwire.jac <<'JAC'
 
-          impl import core.site.game {
-              sim --> core.site.game.arena_replay { Game, world_new, sim_tick }
+          graph import core.site.game {
+              sim ++> arena_replay { sim_tick, world_new }
           }
           JAC
           cat >> site/jac.toml <<'TOML'
@@ -1700,6 +1737,20 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'macos')) }}
     uses: ./.github/workflows/_macos-native.yml
 
+  # The js_engine accelerator's lane: build it, install it, and hold the
+  # official binary to using it (node suite, a client build, test262). On
+  # request only -- the `native:js-engine` label or a manual run; nightly.yml
+  # runs it too.
+  js-engine:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'native:js-engine')) }}
+    uses: ./.github/workflows/_js_engine.yml
+  # The JacPython accelerator's lane: its own kit and its upstream CPython
+  # gates. On request only -- the `native:jacpython` label or a manual run;
+  # nightly.yml runs it on every platform.
+  jacpython:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'native:jacpython')) }}
+    uses: ./.github/workflows/_jacpython.yml
+
   test-managed-android:
     needs: [changes, build-kit]
     if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.core == 'true' }}
@@ -1745,6 +1796,8 @@ jobs:
       - changes
       - build-kit
       - macos-native
+      - js-engine
+      - jacpython
       - jac-check
       - contribution-checks
       - test-compiler
