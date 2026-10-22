@@ -109,7 +109,8 @@ impl release_docs(tag: str) -> DocBundle | None {
 }
 
 impl ninjaclaw_enabled -> tuple[bool, str] {
-    if os.environ.get("NINJACLAW_ENABLED", "1").strip().lower() in ("0", "false", "no", "off") {
+    if os.environ.get("NINJACLAW_ENABLED", "1").strip().lower()
+        in ("0", "false", "no", "off") {
         return (False, "turned off on this server (NINJACLAW_ENABLED=0)");
     }
     if not os.environ.get("ANTHROPIC_API_KEY", "").strip() {
@@ -117,7 +118,10 @@ impl ninjaclaw_enabled -> tuple[bool, str] {
     }
     status = read_status();
     if status.phase != "ready" {
-        return (False, "warming up: the jac repo is " + (status.phase or "not cloned yet"));
+        return (
+            False,
+            "warming up: the jac repo is " + (status.phase or "not cloned yet")
+        );
     }
     return (True, "");
 }
@@ -191,7 +195,12 @@ impl ninjaclaw_work_tick {
     job.started_at = stamp();
     RUNNER.start(
         JobSpec(
-            job_id=jid(job), question=job.question, asker=job.asker, source=job.source
+            job_id=jid(job),
+            question=job.question,
+            asker=job.asker,
+            source=job.source,
+            repo_root=str(checkout_root() or ""),
+            version=resolve_cli_version()
         ),
         tutorial_catalog() + docs_catalog(),
         run_pipeline
@@ -223,7 +232,9 @@ impl ninjaclaw_activity -> Activity {
     recent: list[JobView] = [];
     for j in jobs {
         if j.status == "working" {
-            current = public_view(j, live if spec is not None and spec.job_id == jid(j) else []);
+            current = public_view(
+                j, live if spec is not None and spec.job_id == jid(j) else []
+            );
         } elif j.status == "queued" {
             if len(queue) < QUEUE_LIMIT {
                 queue.append(public_view(j));
@@ -261,7 +272,13 @@ impl ninjaclaw_activity -> Activity {
             pr_url=hub.pr_url,
             pr_note=hub.pr_note
         ),
-        tutorials=len([t for t in claw_tutorials() if t.status == "published"]),
+        tutorials=len(
+            [
+                t
+                for t in claw_tutorials()
+                if t.status == "published"
+            ]
+        ),
         gaps=claw_gaps()
     );
 }
@@ -276,7 +293,11 @@ impl ninjaclaw_job(job_id: str) -> JobView | None {
 }
 
 impl ninjaclaw_tutorials -> list[TutorialCard] {
-    return [tutorial_card(t) for t in claw_tutorials() if t.status != "removed"];
+    return [
+        tutorial_card(t)
+        for t in claw_tutorials()
+        if t.status != "removed"
+    ];
 }
 
 impl ninjaclaw_tutorial(slug: str) -> TutorialView | None {
@@ -285,6 +306,10 @@ impl ninjaclaw_tutorial(slug: str) -> TutorialView | None {
         return None;
     }
     return TutorialView(
-        card=tutorial_card(t), body=t.body, blocks=t.blocks, job_id=t.job_id, pr_url=t.pr_url
+        card=tutorial_card(t),
+        body=t.body,
+        blocks=t.blocks,
+        job_id=t.job_id,
+        pr_url=t.pr_url
     );
 }

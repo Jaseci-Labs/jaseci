@@ -379,8 +379,18 @@ graph import core.jacyac.native.components {
 }
 
 graph import core.ninjaclaw {
-    brain ++> runner { AskKind, Candidate, classify_ask, pick_answer }
-    index ++> runner { IndexDoc, excerpt, search }
+    brain ++> runner {
+        AskKind,
+        Candidate,
+        classify_ask,
+        pick_answer,
+        repair_tutorial,
+        write_tutorial
+    }
+    index ++> [
+        runner { IndexDoc, excerpt, search },
+        tools { IndexDoc, docs_from_tree, excerpt, index_doc, search },
+    ]
     model ++> [
         graph {
             AskInput,
@@ -392,12 +402,21 @@ graph import core.ninjaclaw {
             TutorialCard
         },
         runner { BlockView, LinkView, StepView },
+        verify { BlockView },
     ]
     runner ++> graph { Outcome, stamp }
+    tools ++> [
+        brain { list_jac_guides, read_jac_file, read_jac_guide, search_jac },
+        runner { agent_catalog, open_toolbox },
+    ]
+    verify ++> runner { verify_markdown }
 }
 
 graph import core.site {
-    docs.Markdown ++> jacyac.components.TutorialsTab | packages.PackagePage { Markdown }
+    docs.Markdown ++> [
+        jacyac.components.TutorialsTab { MDSpans, Markdown },
+        packages.PackagePage { Markdown },
+    ]
     game.webgl_host ++> landing.WasmGame { run_game }
     landing.CopyCommand ++> home.HomeClose
         | home.HomeHero

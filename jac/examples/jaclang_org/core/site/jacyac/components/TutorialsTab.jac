@@ -24,7 +24,9 @@ impl TutorialRow(card: TutorialCard) -> JsxElement {
                 <Badge variant="outline">stale</Badge>
             }}
         </div>
-        <p className="mt-0.5 line-clamp-2 text-sm text-foreground/80">{card.summary}</p>
+        <p className="mt-0.5 line-clamp-2 text-sm text-foreground/80">
+            <MDSpans text={card.summary}/>
+        </p>
         <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
             <span>{"verified on jac " + card.verified_version}</span>
             <span>{count_label(card.answered, "asker", "askers")}</span>
@@ -36,7 +38,9 @@ impl TutorialDetail(view: TutorialView) -> JsxElement {
     card = view.card;
     <article className="p-4" id="lx-tutorial">
         <h2 className="font-display text-2xl font-extrabold">{card.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{card.summary}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+            <MDSpans text={card.summary}/>
+        </p>
         <div
             className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"
         >

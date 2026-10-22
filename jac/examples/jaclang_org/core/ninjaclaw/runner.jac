@@ -1,11 +1,14 @@
 import threading;
+import from pathlib { Path }
 import from datetime { datetime, UTC }
 
 obj JobSpec {
     has job_id: str = "",
         question: str = "",
         asker: str = "",
-        source: str = "";
+        source: str = "",
+        repo_root: str = "",
+        version: str = "";
 }
 
 obj TutorialDraft {
@@ -43,6 +46,7 @@ obj Runner {
 }
 
 glob MIN_CONFIDENCE: float = 0.6,
+     MAX_REPAIRS: int = 2,
      CANDIDATES: int = 12,
      REPLY_LIMIT: int = 280,
      RUNNER: Runner = Runner();
@@ -56,6 +60,12 @@ def job_path(job_id: str) -> str;
 def link_reply(title: str, href: str, job_id: str) -> str;
 
 def gap_reply(links: list[LinkView], job_id: str) -> str;
+
+def generated_reply(job_id: str) -> str;
+
+def write_verified(
+    spec: JobSpec, note: Callable
+) -> tuple[TutorialDraft | None, list[BlockView], str];
 
 def run_pipeline(spec: JobSpec, catalog: list[IndexDoc], note: Callable) -> Outcome;
 
@@ -88,6 +98,55 @@ impl gap_reply(links: list[LinkView], job_id: str) -> str {
         }
     }
     return text;
+}
+
+impl generated_reply(job_id: str) -> str {
+    return "I wrote a short tutorial for this, with every example checked on this jac: {tutorial} · how I wrote it: "
+        + job_path(job_id);
+}
+
+impl write_verified(
+    spec: JobSpec, note: Callable
+) -> tuple[TutorialDraft | None, list[BlockView], str] {
+    repo_root = Path(spec.repo_root);
+    open_toolbox(repo_root, agent_catalog(repo_root), note);
+    note("write", "no existing answer: researching and drafting a short tutorial");
+    draft = write_tutorial(spec.question, spec.version);
+    blocks: list[BlockView] = [];
+    for attempt in range(MAX_REPAIRS + 1) {
+        note("write", "draft: " + draft.title);
+        blocks = verify_markdown(draft.body, note);
+        failures: list[str] = [];
+        if not blocks {
+            failures = [
+                "the tutorial has no ```jac code block; add a runnable example"
+            ];
+        } else {
+            failures = [
+                "block " + str(b.index + 1) + ": " + b.detail
+                for b in blocks
+                if not b.ok
+            ];
+        }
+        if not failures {
+            return (
+                TutorialDraft(
+                    title=draft.title,
+                    summary=draft.summary,
+                    body=draft.body,
+                    blocks=blocks
+                ),
+                blocks,
+                ""
+            );
+        }
+        if attempt == MAX_REPAIRS {
+            break;
+        }
+        note("repair", str(len(failures)) + " problem(s); fixing the draft");
+        draft = repair_tutorial(spec.question, draft, failures, spec.version);
+    }
+    return (None, blocks, "could not produce a tutorial whose examples all pass");
 }
 
 impl Runner.busy -> bool {
@@ -190,8 +249,21 @@ impl run_pipeline(spec: JobSpec, catalog: list[IndexDoc], note: Callable) -> Out
     } else {
         note("retrieve", "nothing in the tutorials or docs matches");
     }
+    if spec.repo_root {
+        (tutorial, blocks, why) = write_verified(spec, note);
+        out.blocks = blocks;
+        if tutorial is not None {
+            note("publish", "every example passed: publishing " + tutorial.title);
+            out.outcome = "generated";
+            out.tutorial = tutorial;
+            out.reply = generated_reply(spec.job_id);
+            return out;
+        }
+        note("gap", why);
+        out.detail = why;
+    }
     out.outcome = "gap";
-    out.detail = "no existing tutorial or docs page answers it";
+    out.detail = out.detail or "no existing tutorial or docs page answers it";
     out.links = [LinkView(title=h.doc.title, href=h.doc.href) for h in hits[:2]];
     out.reply = gap_reply(out.links, spec.job_id);
     return out;
