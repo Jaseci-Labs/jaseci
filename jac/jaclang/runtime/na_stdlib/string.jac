@@ -1,3 +1,5 @@
+import from c { def memchr(s: int, c: i32, n: u64) -> int;  }
+
 glob:pub whitespace: str = " \t\n\r\x0b\x0c",
      ascii_lowercase: str = "abcdefghijklmnopqrstuvwxyz",
      ascii_uppercase: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -19,6 +21,9 @@ def _invalid(template: str, i: int);
 
 
 def _ph(bv: bytes, i: int, n: int) -> tuple[(str, int, str)];
+
+
+def _expand_ascii(template: str, mapping: (dict[str, any] | None), safe: bool) -> str;
 
 
 def _expand(template: str, mapping: (dict[str, any] | None), safe: bool) -> str;

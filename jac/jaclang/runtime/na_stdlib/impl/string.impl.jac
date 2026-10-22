@@ -133,7 +133,88 @@ impl _ph(bv: bytes, i: int, n: int) -> tuple[(str, int, str)] {
 }
 
 
+impl _expand_ascii(template: str, mapping: (dict[str, any] | None), safe: bool) -> str {
+    out: str = "";
+    src: int = __str_data(template);
+    n: int = len(template);
+    i: int = 0;
+    while i < n {
+        hit0: int = memchr(src + i, i32(36), u64(n - i));
+        j0: int = n if hit0 == 0 else hit0 - src;
+        if j0 > i {
+            out += template[i:j0];
+            i = j0;
+            continue;
+        }
+        if i + 1 >= n {
+            if safe {
+                out += "$";
+                i += 1;
+                continue;
+            }
+            _invalid(template, i);
+        }
+        nx: int = int(__mem_load_i8(src + i + 1));
+        if nx == 36 {
+            out += "$";
+            i += 2;
+            continue;
+        }
+        a: int = i + 1;
+        b: int = a;
+        consumed: int = 0;
+        if nx == 123 {
+            a = i + 2;
+            b = a;
+            while b < n and is_word(int(__mem_load_i8(src + b))) {
+                b += 1;
+            }
+            if b > a
+                and is_id_start(int(__mem_load_i8(src + a)))
+                and b < n
+                and int(__mem_load_i8(src + b)) == 125 {
+                consumed = b + 1 - i;
+            }
+        } elif is_id_start(nx) {
+            while b < n and is_word(int(__mem_load_i8(src + b))) {
+                b += 1;
+            }
+            consumed = b - i;
+        }
+        if consumed == 0 {
+            if safe {
+                out += "$";
+                i += 1;
+                continue;
+            }
+            _invalid(template, i);
+        }
+        name: str = template[a:b];
+        if isinstance(mapping, dict) {
+            m2: dict[str, any] = mapping;
+            if name in m2 {
+                out += _strval(m2[name]);
+                i += consumed;
+                continue;
+            }
+        }
+        if safe {
+            out += template[i:i + consumed];
+        } elif mapping is None {
+            out += name;
+        } else {
+            raise KeyError(name);
+        }
+        i += consumed;
+    }
+    return out;
+}
+
+
 impl _expand(template: str, mapping: (dict[str, any] | None), safe: bool) -> str {
+    if template.isascii() {
+        return _expand_ascii(template, mapping, safe);
+    }
     out: str = "";
     bv: bytes = template.encode();
     src: int = __bytes_data(bv);
