@@ -1,5 +1,5 @@
 impl loads(s: str) -> any {
-    raw: bytes = s.encode();
+    raw: bytes = s.encode("utf-8", "surrogatepass");
     p: _JsonParser = _JsonParser(buf=raw, n=len(raw));
     return p._parse_value();
 }
@@ -75,7 +75,7 @@ impl _JsonParser._parse_string -> str {
         plain: bytes = self.buf[self.pos:closing];
         if plain.find(b"\\") < 0 {
             self.pos = closing + 1;
-            return plain.decode();
+            return plain.decode("utf-8", "surrogatepass");
         }
     }
     parts: list[str] = [];
@@ -84,14 +84,18 @@ impl _JsonParser._parse_string -> str {
         c: int = self._cc();
         if c == 34 or c == -1 {
             if self.pos > run_start {
-                parts.append(self.buf[run_start:self.pos].decode());
+                parts.append(
+                    self.buf[run_start:self.pos].decode("utf-8", "surrogatepass")
+                );
             }
             self.pos += 1;
             break;
         }
         if c == 92 {
             if self.pos > run_start {
-                parts.append(self.buf[run_start:self.pos].decode());
+                parts.append(
+                    self.buf[run_start:self.pos].decode("utf-8", "surrogatepass")
+                );
             }
             self.pos += 1;
             e: int = self._cc();
@@ -116,7 +120,7 @@ impl _JsonParser._parse_string -> str {
             } elif e == 102 {
                 parts.append(chr(12));
             } elif e == 117 {
-                parts.append(chr(self._hex4()));
+                parts.append(chr(self._hex4_pair()));
             }
             run_start = self.pos;
         } else {
@@ -147,6 +151,25 @@ impl _JsonParser._hex4 -> int {
         k += 1;
     }
     return v;
+}
+
+impl _JsonParser._hex4_pair -> int {
+    cp: int = self._hex4();
+    if cp < 55296
+        or cp >= 56320
+        or self._cc() != 92
+        or self.pos + 1 >= self.n
+        or self.buf[self.pos + 1] != 117 {
+        return cp;
+    }
+    mark: int = self.pos;
+    self.pos += 2;
+    low: int = self._hex4();
+    if low >= 56320 and low < 57344 {
+        return 65536 + (cp - 55296) * 1024 + (low - 56320);
+    }
+    self.pos = mark;
+    return cp;
 }
 
 impl _JsonParser._parse_number -> any {

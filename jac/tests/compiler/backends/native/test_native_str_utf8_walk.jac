@@ -45,6 +45,7 @@ test "json.dumps and json.loads handle multibyte text the way CPython does" {
     );
     assert '"h\\u00e9llo" "héllo"' in out , out[:400];
     assert "150000 True True" in out , out[-400:];
+    assert "True 3 [97, 55296, 233]" in out , out[-600:];
     assert '["a\\tb", "🙂é", "plain é", 1.5, -2, true, null]' in out , out[-400:];
 }
 

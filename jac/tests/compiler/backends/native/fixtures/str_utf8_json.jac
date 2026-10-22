@@ -23,6 +23,19 @@ def run_loads -> int {
     items: list[any] = raw["日本"];
     print(json.dumps(items, ensure_ascii=False));
     print(json.dumps(json.loads("[\"日本\", \"\\u65e5é\\\\\", \"🙂\"]")));
+    pairs: str = json.loads("\"\\ud83d\\ude42|\\ud83d\\u0041|\\ude42\\ud83d|\\ud83d\"");
+    print([ord(c) for c in pairs]);
+    for lone in [
+        "a" + chr(0xD800) + "é",
+        "é\"" + chr(0xD800) + "x\n🙂" + chr(0xDFFF) + "\\end",
+        chr(0xDBFF),
+        chr(0xD83D) + "A" + chr(0xDE42) + chr(0xD83D)
+    ] {
+        for ascii_only in [False, True] {
+            back: str = json.loads(json.dumps(lone, ensure_ascii=ascii_only));
+            print(back == lone, len(back), [ord(c) for c in back]);
+        }
+    }
     return len(k);
 }
 

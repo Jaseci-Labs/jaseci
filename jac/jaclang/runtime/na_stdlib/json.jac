@@ -30,6 +30,7 @@ obj _JsonParser {
     def _parse_value -> any;
     def _parse_string -> str;
     def _hex4 -> int;
+    def _hex4_pair -> int;
     def _parse_number -> any;
     def _parse_array -> any;
     def _parse_object -> any;
