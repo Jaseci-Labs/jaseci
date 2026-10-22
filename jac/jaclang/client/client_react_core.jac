@@ -120,9 +120,11 @@ glob __JAC_EXTENSION_URL_PREFIXES: list[str] = [
      ],
      __JAC_ERROR_REPORTS_PER_MINUTE: int = 10,
      __JAC_ERROR_REPORTS_PER_PAGE: int = 200,
-     __JAC_STACK_FRAME_URL_RE: any = RegExp(
-         "^\\s*at\\s+(?:.*?\\()?([a-z][a-z0-9+.-]*://[^\\s()]+)|^[^@]*@([a-z][a-z0-9+.-]*://[^\\s()]+)",
-         "i"
+     __JAC_STACK_FRAME_RE: any = RegExp(
+         "^\\s*at\\s+(?:.*?\\()?(.*?)\\)?\\s*$|^[^@]*@(.*:\\d+:\\d+)\\s*$"
+     ),
+     __JAC_ENGINE_FRAME_RE: any = RegExp(
+         "^(?:<anonymous>|native|\\[native code\\]|index \\d+|unknown location)?$"
      );
 
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;

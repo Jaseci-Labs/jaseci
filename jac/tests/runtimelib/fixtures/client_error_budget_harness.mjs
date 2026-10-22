@@ -40,11 +40,35 @@ const EXTENSION_STACK_WITH_URL_MESSAGE = [
   "Error: Request failed for https://app.test/api/data",
   "    at Y (chrome-extension://abc/inject.js:1:5)",
 ].join("\n");
+// Engine-internal frames between the extension's own say nothing about whose
+// code threw.
+const EXTENSION_STACK_WITH_ENGINE_FRAMES = [
+  "TypeError: Cannot read properties of undefined (reading 'M_ID')",
+  "    at Y (chrome-extension://abc/inject.js:1:5)",
+  "    at new Promise (<anonymous>)",
+  "    at async Promise.all (index 0)",
+  "    at Array.forEach (native)",
+].join("\n");
+const SAFARI_EXTENSION_STACK_WITH_NATIVE_FRAME = [
+  "Y@safari-web-extension://0A1B2C3D/content.js:1:761",
+  "forEach@[native code]",
+  "global code@safari-web-extension://0A1B2C3D/content.js:3:4",
+].join("\n");
 const APP_STACK = "TypeError: boom\n    at render (https://app.test/static/client.js:1:200)";
 const MIXED_STACK = [
   "TypeError: boom",
   "    at hook (chrome-extension://abc/inject.js:1:5)",
   "    at render (https://app.test/static/client.js:1:200)",
+].join("\n");
+// App frames whose location is not a scheme://host URL.
+const MIXED_STACK_WITH_BLOB_FRAME = [
+  "TypeError: boom",
+  "    at hook (chrome-extension://abc/inject.js:1:5)",
+  "    at render (blob:https://app.test/id:1:200)",
+].join("\n");
+const FIREFOX_MIXED_STACK_WITH_BLOB_FRAME = [
+  "hook@moz-extension://0a1b2c3d/content.js:1:5",
+  "render@blob:https://app.test/id:1:200",
 ].join("\n");
 
 function errorWith(message, stack) {
@@ -141,6 +165,12 @@ const results = {
   safariExtensionRejections: scenario(() =>
     times(1000, () => rejection("x is undefined", SAFARI_EXTENSION_STACK)),
   ),
+  extensionStackWithEngineFrames: scenario(() =>
+    times(1000, () => rejection("Cannot read properties of undefined (reading 'M_ID')", EXTENSION_STACK_WITH_ENGINE_FRAMES)),
+  ),
+  safariExtensionStackWithNativeFrame: scenario(() =>
+    times(1000, () => rejection("x is undefined", SAFARI_EXTENSION_STACK_WITH_NATIVE_FRAME)),
+  ),
   extensionStackWithUrlMessage: scenario(() =>
     times(100, () => rejection("Request failed for https://app.test/api/data", EXTENSION_STACK_WITH_URL_MESSAGE)),
   ),
@@ -149,6 +179,8 @@ const results = {
   ),
   identicalAppErrors: scenario(() => times(1000, () => rejection("boom", APP_STACK))),
   mixedStack: scenario(() => rejection("boom", MIXED_STACK)),
+  mixedStackWithBlobFrame: scenario(() => rejection("boom", MIXED_STACK_WITH_BLOB_FRAME)),
+  firefoxMixedStackWithBlobFrame: scenario(() => rejection("boom", FIREFOX_MIXED_STACK_WITH_BLOB_FRAME)),
   appWindowError: scenario(() =>
     windowError("boom", errorWith("boom", APP_STACK), "https://app.test/static/client.js"),
   ),

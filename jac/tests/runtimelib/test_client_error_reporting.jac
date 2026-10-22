@@ -244,14 +244,23 @@ def assert_page_budget(results: dict[str, any]) {
         "extensionRejections",
         "firefoxExtensionRejections",
         "safariExtensionRejections",
+        "extensionStackWithEngineFrames",
+        "safariExtensionStackWithNativeFrame",
         "extensionStackWithUrlMessage"
     ] {
         assert results[name]["sent"] == 0 , (name, results[name]);
     }
     # One report per distinct error, however often it is thrown.
     assert results["identicalAppErrors"]["sent"] == 1 , results;
-    # A stack that passes through app code is ours to see.
-    assert results["mixedStack"]["sent"] == 1 , results;
+    # A stack that passes through app code is ours to see, wherever that code
+    # was loaded from.
+    for name in [
+        "mixedStack",
+        "mixedStackWithBlobFrame",
+        "firefoxMixedStackWithBlobFrame"
+    ] {
+        assert results[name]["sent"] == 1 , (name, results[name]);
+    }
     # At most 10 reports a minute, and the budget refills the next minute...
     assert results["distinctAppErrors"]["sent"] == 10 , results;
     assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
