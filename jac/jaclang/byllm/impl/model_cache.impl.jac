@@ -60,10 +60,13 @@ impl _skip_gguf_value(f: any, vtype: int) {
         count = _read_le(f, "Q");
         if etype in _GGUF_SCALAR_SIZES {
             f.seek(count * _GGUF_SCALAR_SIZES[etype], 1);
-        } else {
+        } elif etype == 8 {
             for _ in range(count) {
-                _skip_gguf_value(f, etype);
+                f.seek(_read_le(f, "Q"), 1);
             }
+        } else {
+            # llama.cpp refuses arrays of arrays too, so such a file can't load.
+            raise ValueError(f"GGUF array of type {etype}");
         }
     } else {
         raise ValueError(f"unknown GGUF value type {vtype}");

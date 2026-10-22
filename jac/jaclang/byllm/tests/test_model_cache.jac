@@ -23,7 +23,13 @@ def tiny_gguf -> bytes {
 }
 
 glob ALIAS: str = "gemma-4-e2b",
-     GOOD: bytes = tiny_gguf();
+     GOOD: bytes = tiny_gguf(),
+     # One key whose value is an array of arrays, nested 100,000 deep.
+     NESTED: bytes = b"GGUF"
+         + struct.pack("<IQQQ", 3, 0, 1, 1)
+         + b"k"
+         + struct.pack("<I", 9)
+         + struct.pack("<IQ", 9, 1) * 100000;
 
 """Point the cache at `<base>/models`, fake `_download` to record each call in `calls`
 and, like huggingface_hub, write `GOOD` only where no file is unless forced, and give
@@ -90,7 +96,8 @@ test "jac model pull replaces a bad weight and keeps a good one" {
         ("junk bytes", b"junk", 1),
         ("only the magic", b"GGUF", 1),
         ("cut in the header", GOOD[:40], 1),
-        ("cut in the tensor data", GOOD[:-1], 1)
+        ("cut in the tensor data", GOOD[:-1], 1),
+        ("deeply nested arrays", NESTED, 1)
     ];
     for (label, on_disk, want_downloads) in rows {
         with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack {
