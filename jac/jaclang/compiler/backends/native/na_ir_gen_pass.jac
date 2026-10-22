@@ -747,6 +747,10 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
 
+    def _emit_intrinsic_list_data(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
+
     def _native_module_call_target(nd: uni.FuncCall) -> tuple[str, str] | None;
     def _stdlib_intercept_covers(module_name: str, func_name: str) -> bool;
     def _emit_stdlib_intercept(
@@ -2762,6 +2766,10 @@ walker NaIRGenPass(CompilerPass) {
 
     def _unwind_node_type -> ir.Type;
     def _register_unwind_cleanup -> None;
+    def _unwind_shadow_slots(
+        func: ir.Function, slots: list[tuple[str, ir.Value]]
+    ) -> dict[int, ir.Value];
+
     def _hoist_entry_allocas(entry_blk: ir.Block) -> None;
     def _codegen_tail_return(nd: uni.ReturnStmt) -> None;
     def _thunk_tail_callable(cfunc: ir.Function, jac_fn: ir.Function) -> bool;
