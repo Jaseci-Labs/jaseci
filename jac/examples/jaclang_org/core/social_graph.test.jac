@@ -6,49 +6,12 @@ import from jaclang.testing.testing { JacTestClient, TestResponse }
 
 glob SERVER = os.path.join(os.path.dirname(__file__), "social_graph.jac");
 
-test "Genius traverses source and author nodes and respects hourly cooldown" {
-    sample = GuideSample(
-        title="osp",
-        body="Walkers visit nodes.",
-        url="https://jaclang.org/docs/latest/osp"
-    );
-    with patch(jacyac_genius.__module__ + ".random_guide", return_value=sample), patch(
-        jacyac_genius.__module__ + ".optional_fact",
-        return_value="Walkers explore graphs!\n" + sample.url
-    ) as generate {
-        root spawn jacyac_genius();
-        root spawn jacyac_genius();
-        memories = [root-->[?:GeniusMemory]];
-        assert len(memories) == 1;
-        assert memories[0].previous_guide == "osp";
-        topics = [memories[0]->:Studies:->[?:GeniusTopic]];
-        assert len(topics) == 1;
-        authors = [topics[0]->:PublishesAs:->[?:Profile]];
-        assert len(authors) == 1;
-        assert authors[0].username == "jacyac_genius";
-        assert len([authors[0]->:Post:->[?:Tweet]]) == 1;
-        assert generate.call_count == 1;
-        memories[0].last_posted = "";
-        root spawn jacyac_genius();
-        assert len([authors[0]->:Post:->[?:Tweet]]) == 2;
-        assert len([memories[0]->:Studies:->[?:GeniusTopic]]) == 1;
-    }
-}
-
-test "Genius skips failed AI without creating a profile or post" {
-    sample = GuideSample(
-        title="osp",
-        body="Walkers visit nodes.",
-        url="https://jaclang.org/docs/latest/osp"
-    );
-    with patch(jacyac_genius.__module__ + ".random_guide", return_value=sample), patch(
-        jacyac_genius.__module__ + ".optional_fact", return_value=""
-    ) {
-        root spawn jacyac_genius();
-        assert not [root-->[?:Profile, username=="jacyac_genius"]];
-        memories = [root-->[?:GeniusMemory]];
-        assert memories[0].last_posted == "";
-    }
+test "ninjaclaw mentions are found and stripped" {
+    assert mentions_ninjaclaw("hey @ninjaclaw how do walkers work?");
+    assert mentions_ninjaclaw("@NinjaClaw help");
+    assert not mentions_ninjaclaw("email me at a@ninjaclaw.dev");
+    assert not mentions_ninjaclaw("@ninjaclawfan hi");
+    assert strip_mention("hey @ninjaclaw  how do walkers work?") == "hey how do walkers work?";
 }
 
 def make_client -> JacTestClient;

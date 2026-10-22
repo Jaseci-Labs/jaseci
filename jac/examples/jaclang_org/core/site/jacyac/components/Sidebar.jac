@@ -5,7 +5,9 @@ import from "lucide-react" {
     User,
     Feather,
     LogOut,
-    MoreHorizontal
+    MoreHorizontal,
+    BookOpen,
+    Bot
 }
 
 def:pub Sidebar(
@@ -80,6 +82,32 @@ impl Sidebar(
             >
                 <Hash size={24}/>
                 <span className="hidden xl:inline">Channels</span>
+            </Button>
+            <Button
+                variant="ghost"
+                className={cn(
+                    nav_base,
+                    "text-primary bg-primary/10"
+                        if activeTab == "tutorials"
+                        else "text-foreground"
+                )}
+                onClick={lambda { onNavigate("tutorials"); }}
+            >
+                <BookOpen size={24}/>
+                <span className="hidden xl:inline">Tutorials</span>
+            </Button>
+            <Button
+                variant="ghost"
+                className={cn(
+                    nav_base,
+                    "text-primary bg-primary/10"
+                        if activeTab == "ninjaclaw"
+                        else "text-foreground"
+                )}
+                onClick={lambda { onNavigate("ninjaclaw"); }}
+            >
+                <Bot size={24}/>
+                <span className="hidden xl:inline">ninjaclaw</span>
             </Button>
             <Button
                 variant="ghost"

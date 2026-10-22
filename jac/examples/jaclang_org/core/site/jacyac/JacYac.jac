@@ -1,12 +1,15 @@
 import from "lucide-react" { Feather, ArrowLeft }
+import from "@jac/runtime" { useLocation }
 
 glob AVATAR_SIDE: int = 256,
-     PUBLIC_TABS: list[str] = ["user"],
+     PUBLIC_TABS: list[str] = ["user", "tutorials", "ninjaclaw"],
      TAB_TITLES: dict[str, str] = {
          "feed": "Home",
          "explore": "Explore",
          "channels": "Channels",
-         "profile": "Profile"
+         "profile": "Profile",
+         "tutorials": "Tutorials",
+         "ninjaclaw": "ninjaclaw"
      };
 
 async def shrink_avatar(file: any) -> str;
@@ -38,6 +41,12 @@ impl shrink_avatar(file: any) -> str {
 
 impl JacYac(initialTab: str = "feed") -> JsxElement {
     model = useJacYac();
+    loc = useLocation();
+    path_parts = loc.pathname.split("/");
+    focus = path_parts[3]
+        if len(path_parts) > 3 and path_parts[2] == model.activeTab
+        else "";
+    claw = useClaw(model.activeTab, focus);
     can with entry {
         if initialTab != "feed" {
             model.navigate(initialTab);
@@ -163,7 +172,11 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                     </Button>
                 </div>
             }}
-            {if model.activeTab == "feed" {
+            {if model.activeTab == "ninjaclaw" {
+                <NinjaclawTab model={claw} {focus}/>
+            } elif model.activeTab == "tutorials" {
+                <TutorialsTab model={claw} {focus}/>
+            } elif model.activeTab == "feed" {
                 <FeedTab
                     showWelcome={model.showWelcome}
                     onDismissWelcome={model.handleDismissWelcome}

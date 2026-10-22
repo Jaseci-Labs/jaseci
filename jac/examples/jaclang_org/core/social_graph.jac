@@ -1,6 +1,7 @@
 import re;
 import base64;
 import datetime;
+import os;
 
 def _now -> str;
 
@@ -61,27 +62,37 @@ edge Member: Profile --> Channel {}
 edge ChannelPost: Channel --> Tweet {}
 edge HasAvatar: Profile --> Avatar {}
 
-edge Studies: GeniusMemory --> GeniusTopic {}
-edge PublishesAs: GeniusTopic --> Profile {}
-
-node GeniusMemory {
-    has last_posted: str = "",
-        previous_guide: str = "";
+node NinjaclawDesk {
+    has started_at: str = "",
+        handled: list[str] = [],
+        pending: dict[str, str] = {},
+        recent_asks: dict[str, list[str]] = {};
 }
 
-node GeniusTopic {
-    has sample: GuideSample;
-}
+glob NINJACLAW: str = "ninjaclaw",
+     HELP_CHANNEL: str = "help",
+     DESK_TICK_S: float = 15.0,
+     ASKS_PER_HOUR: int = int(os.environ.get("NINJACLAW_ASKS_PER_HOUR", "3") or 3),
+     HANDLED_LIMIT: int = 5000,
+     MENTION_RE: str = r"(?<![\w@])@ninjaclaw\b";
 
-@schedule(cron="0 * * * *")
-walker:priv jacyac_genius {
-    has memory: GeniusMemory | None = None,
-        content: str = "";
+def mentions_ninjaclaw(text: str) -> bool;
 
-    can wake with Root entry;
-    can explore with GeniusMemory entry;
-    can compose with GeniusTopic entry;
-    can publish with Profile entry;
+def strip_mention(text: str) -> str;
+
+def ninjaclaw_profile -> Profile;
+
+def help_channel(claw: Profile) -> Channel;
+
+def desk_asks(desk: NinjaclawDesk, help: Channel) -> list[AskInput];
+
+def throttled(desk: NinjaclawDesk, asker: str) -> bool;
+
+def post_reply(tweet_id: str, reply: str) -> bool;
+
+@schedule(trigger=ScheduleTrigger.STATIC, interval=DESK_TICK_S)
+async walker:priv ninjaclaw_desk {
+    async can run with Root entry;
 }
 
 node Profile {
@@ -307,65 +318,6 @@ walker:protect create_channel_tweet(find_channel) {
 
 impl _now -> str {
     return datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat() + "Z";
-}
-
-impl jacyac_genius.wake with Root entry {
-    visit [-->[?:GeniusMemory]] else {
-        visit here ++> GeniusMemory();
-    }
-}
-
-impl jacyac_genius.explore with GeniusMemory entry {
-    self.memory = here;
-    if here.last_posted and here.last_posted[:13] == now_iso()[:13] {
-        disengage;
-    }
-    try {
-        sample = random_guide(here.previous_guide);
-        if sample is None {
-            disengage;
-        }
-        topics = [here->:Studies:->[?:GeniusTopic]];
-        if topics {
-            topics[0].sample = sample;
-            visit topics[0];
-        } else {
-            visit here +>:Studies():+> GeniusTopic(sample=sample);
-        }
-    } except Exception {
-        disengage;
-    }
-}
-
-impl jacyac_genius.compose with GeniusTopic entry {
-    self.content = optional_fact(here.sample);
-    if not self.content {
-        disengage;
-    }
-    visit [->:PublishesAs:->[?:Profile]] else {
-        author = root ++> Profile(
-            username="jacyac_genius",
-            display_name="JacYac Genius",
-            bio="An AI Jac enthusiast sharing hourly fun facts from the Jac guide.",
-            created_at=now_iso()
-        );
-        grant(author, level=AccessLevel.CONNECT);
-        here +>:PublishesAs():+> author;
-        visit author;
-    }
-}
-
-impl jacyac_genius.publish with Profile entry {
-    if self.memory is None or not valid_post(self.content) {
-        disengage;
-    }
-    post = here +>:Post():+> Tweet(
-        content=self.content, author_username=here.username, created_at=now_iso()
-    );
-    grant(post, level=AccessLevel.WRITE);
-    self.memory.last_posted = post.created_at;
-    topics = [self.memory->:Studies:->[?:GeniusTopic]];
-    self.memory.previous_guide = topics[0].sample.title;
 }
 
 impl Profile.avatar_url -> str {
@@ -882,4 +834,168 @@ impl create_channel_tweet.act with Channel entry {
         }
         disengage;
     }
+}
+
+impl mentions_ninjaclaw(text: str) -> bool {
+    return re.search(MENTION_RE, text, re.IGNORECASE) is not None;
+}
+
+impl strip_mention(text: str) -> str {
+    return re.sub(r"\s+", " ", re.sub(MENTION_RE, "", text, flags=re.IGNORECASE)).strip();
+}
+
+impl ninjaclaw_profile -> Profile {
+    found = [root-->[?:Profile, username==NINJACLAW]];
+    if found {
+        return found[0];
+    }
+    claw = root ++> Profile(
+        username=NINJACLAW,
+        display_name="ninjaclaw",
+        bio="I answer Jac questions on JacYac. Mention @ninjaclaw or post in #help. Everything I do is public at /jacyac/ninjaclaw.",
+        created_at=_now()
+    );
+    grant(claw, level=AccessLevel.CONNECT);
+    return claw;
+}
+
+impl help_channel(claw: Profile) -> Channel {
+    found = [claw->:Member:->[?:Channel, name==HELP_CHANNEL]];
+    if found {
+        return found[0];
+    }
+    made = claw +>:Member():+> Channel(
+        name=HELP_CHANNEL,
+        description="Ask anything about Jac. ninjaclaw answers every post here.",
+        creator_username=NINJACLAW,
+        created_at=_now()
+    );
+    grant(made, level=AccessLevel.CONNECT);
+    return made;
+}
+
+impl throttled(desk: NinjaclawDesk, asker: str) -> bool {
+    cutoff = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=1)).replace(
+        tzinfo=None
+    ).isoformat()
+        + "Z";
+    kept = [
+        t
+        for t in desk.recent_asks.get(asker, [])
+        if t >= cutoff
+    ];
+    if len(kept) >= ASKS_PER_HOUR {
+        desk.recent_asks = {**desk.recent_asks, asker: kept};
+        return True;
+    }
+    desk.recent_asks = {**desk.recent_asks, asker: kept + [_now()]};
+    return False;
+}
+
+impl desk_asks(desk: NinjaclawDesk, help: Channel) -> list[AskInput] {
+    seen = set(desk.handled);
+    asks: list[AskInput] = [];
+    fresh: list[str] = [];
+
+    def consider(key: str, tweet: Tweet, author: str, text: str, created: str, source: str) {
+        if key in seen or created < desk.started_at or author == NINJACLAW {
+            return;
+        }
+        seen.add(key);
+        fresh.append(key);
+        question = strip_mention(text);
+        if not question or throttled(desk, author) {
+            return;
+        }
+        asks.append(
+            AskInput(
+                ask_key=key,
+                tweet_id=jid(tweet),
+                asker=author,
+                question=question,
+                source=source,
+                asked_at=created
+            )
+        );
+    }
+
+    tweets: dict[str, Tweet] = {};
+    for r in allroots() {
+        for t in [r-->[?:Profile]-->[?:Tweet]] {
+            tweets[jid(t)] = t;
+        }
+        for c in [r-->[?:Profile]->:Member:->[?:Channel]] {
+            for t in [c-->[?:Tweet]] {
+                tweets[jid(t)] = t;
+            }
+        }
+    }
+    help_posts = {jid(t) for t in [help-->[?:Tweet]]};
+    for (tid, t) in tweets.items() {
+        in_help = tid in help_posts;
+        if in_help or mentions_ninjaclaw(t.content) {
+            consider(tid, t, t.author_username, t.content, t.created_at, "help" if in_help else "mention");
+        }
+        for (n, c) in enumerate(t.comments) {
+            body = str(c.get("content", ""));
+            if mentions_ninjaclaw(body) {
+                consider(
+                    tid + "#c" + str(n),
+                    t,
+                    str(c.get("username", "")),
+                    body,
+                    str(c.get("created_at", "")),
+                    "mention"
+                );
+            }
+        }
+    }
+    if fresh {
+        desk.handled = (desk.handled + fresh)[-HANDLED_LIMIT:];
+    }
+    return asks;
+}
+
+impl post_reply(tweet_id: str, reply: str) -> bool {
+    target = jobj(tweet_id);
+    if not isinstance(target, Tweet) or not valid_post(reply) {
+        return False;
+    }
+    target.comments = target.comments
+        + [{"username": NINJACLAW, "content": reply, "created_at": _now()}];
+    return True;
+}
+
+impl ninjaclaw_desk.run with Root entry {
+    desks = [-->[?:NinjaclawDesk]];
+    desk = desks[0] if desks else (here ++> NinjaclawDesk(started_at=_now()));
+    claw = ninjaclaw_profile();
+    help = help_channel(claw);
+    secret = service_secret();
+    asks = desk_asks(desk, help);
+    if asks {
+        ids = await ninjaclaw_submit(secret=secret, asks=asks);
+        pending = dict(desk.pending);
+        for (n, job_id) in enumerate(ids) {
+            if n < len(asks) {
+                pending[job_id] = asks[n].tweet_id;
+            }
+        }
+        desk.pending = pending;
+    }
+    if not desk.pending {
+        return;
+    }
+    replies = await ninjaclaw_results(secret=secret, job_ids=list(desk.pending.keys()));
+    pending = dict(desk.pending);
+    for r in replies {
+        if r.status in ("queued", "working") {
+            continue;
+        }
+        if r.reply {
+            post_reply(r.tweet_id, r.reply);
+        }
+        pending.pop(r.job_id, None);
+    }
+    desk.pending = pending;
 }

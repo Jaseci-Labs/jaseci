@@ -1,4 +1,4 @@
-import from "lucide-react" { Home, Compass, Hash, User }
+import from "lucide-react" { Home, Compass, Hash, User, BookOpen, Bot }
 
 def:pub MobileNav(
     activeTab: str, notifCount: int, onNavigate: Callable[[str], None]
@@ -36,6 +36,26 @@ impl MobileNav(
             onClick={lambda { onNavigate("channels"); }}
         >
             <Hash size={24}/>
+        </button>
+        <button
+            aria-label="Tutorials"
+            className={cn(
+                item,
+                "text-primary" if activeTab == "tutorials" else "text-muted-foreground"
+            )}
+            onClick={lambda { onNavigate("tutorials"); }}
+        >
+            <BookOpen size={24}/>
+        </button>
+        <button
+            aria-label="ninjaclaw"
+            className={cn(
+                item,
+                "text-primary" if activeTab == "ninjaclaw" else "text-muted-foreground"
+            )}
+            onClick={lambda { onNavigate("ninjaclaw"); }}
+        >
+            <Bot size={24}/>
         </button>
         <button
             className={cn(

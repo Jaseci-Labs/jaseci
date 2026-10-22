@@ -20,7 +20,10 @@ graph import {
     core.site.docs.DocsShell ++> pages.docs.index { DocsShell }
     core.site.home.Home ++> pages.index { Home }
     core.site.jacyac.GithubCallback ++> pages.jacyac.github.callback { GithubCallback }
-    core.site.jacyac.JacYac ++> pages.jacyac | pages.socialize { JacYac }
+    core.site.jacyac.JacYac ++> pages.jacyac
+        | pages.jacyac.ninjaclaw
+        | pages.jacyac.tutorials
+        | pages.socialize { JacYac }
     core.site.packages.PackagesShell ++> pages.packages.index { PackagesShell }
     core.site.ui.SiteShell ++> pages.layout { SiteShell }
     core.social_graph ++> cli { create_tweet, load_feed }
@@ -65,14 +68,23 @@ graph import core {
     ]
     install ++> site.ui.Navbar { ensure_install }
     jac_tokenizer ++> site.ui.CodeBlock { Token, tokenize_lines }
+    jacyac.claw ++> [
+        site.jacyac.JacYac { useClaw },
+        site.jacyac.components.NinjaclawTab | site.jacyac.components.TutorialsTab {
+            ClawModel
+        },
+    ]
     jacyac.format ++> [
         site.jacyac.components.ExploreTab
             | site.jacyac.components.ProfileHeader
             | site.jacyac.components.RightSidebar
             | site.jacyac.components.TweetCard { handle_of, initial_of },
-        site.jacyac.components.Sidebar { handle_of },
+        site.jacyac.components.NinjaclawTab | site.jacyac.components.Sidebar {
+            handle_of
+        },
+        site.jacyac.components.RichText { text_segments },
+        site.jacyac.components.TutorialsTab { count_label },
     ]
-    jacyac.genius ++> social_graph { GuideSample, optional_fact, random_guide }
     jacyac.github.auth ++> site.jacyac.GithubCallback {
         complete_native_github,
         github_callback_mode
@@ -92,14 +104,74 @@ graph import core {
         site.jacyac.components.Composer { chars_left, post_limit, valid_post },
         social_graph { valid_post },
     ]
-    knowledge.repo ++> knowledge_service {
-        ReleaseLine,
-        RepoStatus,
-        ensure_repo,
-        export_docs,
-        read_status
+    knowledge.repo ++> [
+        knowledge_service {
+            DOCS_PATH,
+            ReleaseLine,
+            RepoStatus,
+            checkout_root,
+            ensure_repo,
+            export_docs,
+            read_status
+        },
+        ninjaclaw.secret { knowledge_dir },
+    ]
+    knowledge_service ++> [
+        docs.sync { release_doc_lines, release_docs },
+        jacyac.claw {
+            ninjaclaw_activity,
+            ninjaclaw_job,
+            ninjaclaw_tutorial,
+            ninjaclaw_tutorials
+        },
+        social_graph { ninjaclaw_results, ninjaclaw_submit },
+    ]
+    ninjaclaw.graph ++> knowledge_service {
+        ClawHub,
+        ClawJob,
+        RECENT_LIMIT,
+        claw_gaps,
+        claw_jobs,
+        claw_tutorials,
+        enqueue_asks,
+        find_hub,
+        job_view,
+        next_queued,
+        record_outcome,
+        replies_for,
+        requeue_stale,
+        take_budget,
+        tutorial_by_slug,
+        tutorial_card
     }
-    knowledge_service ++> docs.sync { release_doc_lines, release_docs }
+    ninjaclaw.index ++> knowledge_service { IndexDoc, docs_from_tree, index_doc }
+    ninjaclaw.model ++> [
+        jacyac.claw { Activity, JobView, TutorialCard, TutorialView },
+        knowledge_service {
+            Activity,
+            AskInput,
+            JobReply,
+            JobView,
+            StepView,
+            TutorialCard,
+            TutorialView,
+            UpkeepView
+        },
+        site.jacyac.components.NinjaclawTab { JobView, StepView },
+        site.jacyac.components.TutorialsTab { TutorialCard, TutorialView },
+        social_graph { AskInput },
+    ]
+    ninjaclaw.runner ++> knowledge_service {
+        JobSpec,
+        Outcome,
+        RUNNER,
+        run_pipeline,
+        stamp
+    }
+    ninjaclaw.secret ++> [
+        knowledge_service { secret_ok },
+        social_graph { service_secret },
+    ]
     packages.catalog ++> [
         site.packages.ApiDocs { ApiMember, ApiModule, ApiParam, ApiSymbol },
         site.packages.PackagePage { PackageDetail, PackageVersion },
@@ -306,8 +378,26 @@ graph import core.jacyac.native.components {
     Avatar ++> Composer | TweetCard { Avatar }
 }
 
+graph import core.ninjaclaw {
+    brain ++> runner { AskKind, Candidate, classify_ask, pick_answer }
+    index ++> runner { IndexDoc, excerpt, search }
+    model ++> [
+        graph {
+            AskInput,
+            BlockView,
+            JobReply,
+            JobView,
+            LinkView,
+            StepView,
+            TutorialCard
+        },
+        runner { BlockView, LinkView, StepView },
+    ]
+    runner ++> graph { Outcome, stamp }
+}
+
 graph import core.site {
-    docs.Markdown ++> packages.PackagePage { Markdown }
+    docs.Markdown ++> jacyac.components.TutorialsTab | packages.PackagePage { Markdown }
     game.webgl_host ++> landing.WasmGame { run_game }
     landing.CopyCommand ++> home.HomeClose
         | home.HomeHero
@@ -351,8 +441,10 @@ graph import core.site {
         | jacyac.components.Sidebar
         | jacyac.components.TweetCard { Avatar, AvatarFallback, AvatarImage }
     ui.badge ++> jacyac.components.ChannelsTab
+        | jacyac.components.NinjaclawTab
         | jacyac.components.RightSidebar
         | jacyac.components.Sidebar
+        | jacyac.components.TutorialsTab
         | landing.Agents
         | landing.BookSection
         | landing.ExplorerFinale
@@ -403,7 +495,8 @@ graph import core.site {
     }
     ui.empty ++> jacyac.components.ChannelsTab
         | jacyac.components.ExploreTab
-        | jacyac.components.FeedTab {
+        | jacyac.components.FeedTab
+        | jacyac.components.TutorialsTab {
         Empty,
         EmptyDescription,
         EmptyHeader,
@@ -557,15 +650,18 @@ graph import core.site.jacyac {
     components.ExploreTab ++> JacYac { ExploreTab }
     components.FeedTab ++> JacYac { FeedTab }
     components.MobileNav ++> JacYac { MobileNav }
+    components.NinjaclawTab ++> JacYac { NinjaclawTab }
     components.ProfileEditor ++> JacYac { ProfileEditor }
     components.ProfileHeader ++> JacYac { ProfileHeader }
     components.RightSidebar ++> JacYac { RightSidebar }
     components.Sidebar ++> JacYac { Sidebar }
+    components.TutorialsTab ++> JacYac { TutorialsTab }
     components.TweetCard ++> JacYac { TweetCard }
 }
 
 graph import core.site.jacyac.components {
     Composer ++> ChannelsTab | FeedTab { Composer }
+    RichText ++> NinjaclawTab | TweetCard { RichText }
     TweetCard ++> ChannelsTab | FeedTab { TweetCard }
     WelcomeBanner ++> FeedTab { WelcomeBanner }
 }

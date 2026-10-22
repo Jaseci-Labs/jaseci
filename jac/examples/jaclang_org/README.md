@@ -93,20 +93,40 @@ desktop, and mobile.
 
 Set `ANTHROPIC_API_KEY` in the server environment to enable the Sonnet 5.5
 model configured in `jac.toml`. No credential belongs in the workspace.
-The private `jacyac_genius` walker in `core/social_graph.jac` wakes at the
-start of each UTC hour under Jac's scheduler (`0 * * * *`). It traverses
-`GeniusMemory` → `GeniusTopic` → `Profile`, using `Studies` and `PublishesAs` edges. The topic
-comes from a random section of the bundled Jac guide interface; one byLLM
-call turns at most 2,400 characters into a fact. Successful runs publish
-under **JacYac Genius** (`@jacyac_genius`), with a docs link. Find the profile
-in Explore and follow it to include facts in your feed.
-The memory node records the last successful post and guide, preventing
-immediate repeats and duplicate posts within the same UTC hour. The topic
-is reused, and the profile is created only after a fact succeeds. Fact generation has
-a 120-token output cap, a 12-second timeout, and no retries. Missing keys,
-provider errors, invalid output, and unavailable guides skip the optional
-work; scoring and the site remain usable. The first scheduled run occurs
-at the next UTC hour; keep the social graph service running for posts.
+ninjaclaw is the only feature that uses it.
+
+### ninjaclaw
+
+ninjaclaw answers Jac questions on JacYac. Mention `@ninjaclaw` in a post or a
+reply, or post anything in the `#help` channel it owns, and it replies with a
+link to a tutorial or a docs page that answers the question. Posts that are
+off topic or not about Jac are ignored. Everything it does is public at
+`/jacyac/ninjaclaw`, and every reply links to its own job page there.
+
+The work is split across the two service apps:
+
+- **The desk** (`ninjaclaw_desk` in `core/social_graph.jac`, every 15 s) owns
+  the `@ninjaclaw` profile and `#help`, scans for new asks (posts, replies and
+  `#help` posts newer than the desk), submits them to the knowledge service,
+  and posts each finished reply as a comment. Asks are limited per user
+  (`NINJACLAW_ASKS_PER_HOUR`, default 3).
+- **The worker** (`ninjaclaw_work_tick` in `core/knowledge_service.jac`, every
+  5 s) claims one queued job and hands it to a background runner
+  (`core/ninjaclaw/runner.jac`), so model calls never hold a database
+  transaction open; the next tick records the outcome. Jobs and tutorials live
+  in `core/ninjaclaw/graph.jac`, readable by anyone; a daily budget
+  (`NINJACLAW_DAILY_JOBS`, default 200) caps the work.
+- **A job** classifies the post (`core/ninjaclaw/brain.jac`), retrieves
+  candidate tutorials and docs sections from the serving release's checkout
+  (`core/ninjaclaw/index.jac`, BM25 over `##` sections), and asks the model
+  whether one answers it. A confident match is linked; otherwise the question
+  is recorded as a docs gap. A failed attempt is retried once.
+
+The submit and collect calls between the apps carry a shared secret
+(`NINJACLAW_SERVICE_SECRET`, or a generated file under the knowledge
+directory when the apps share a host). ninjaclaw is off when
+`ANTHROPIC_API_KEY` is unset or `NINJACLAW_ENABLED=0`, and warming up until
+the jac repo clone is ready; the activity view says which.
 
 ## Checks
 
@@ -508,7 +528,7 @@ Posts, comments, and channel posts share an account quota: 1 per 10 seconds and
 50 per 24-hour window starting with the first accepted submission. Server
 environment variables `JACYAC_POSTS_PER_WINDOW`, `JACYAC_POST_WINDOW_SECONDS`,
 and `JACYAC_POSTS_PER_DAY` override these defaults. The 280-character maximum
-still applies. GitHub users have the same posting quota; scheduled Genius posts
+still applies. GitHub users have the same posting quota; ninjaclaw's replies
 are exempt. Rejected submissions show the remaining wait and keep the draft.
 Counters use atomic updates in the existing database and persist across workers
 and restarts. If that database is unavailable, limited actions are temporarily

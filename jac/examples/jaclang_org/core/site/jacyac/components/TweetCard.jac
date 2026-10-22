@@ -138,7 +138,7 @@ impl TweetCard(
             <p
                 className="mt-0.5 whitespace-pre-wrap break-words text-[0.95rem] leading-relaxed text-foreground"
             >
-                {tweet.content}
+                <RichText text={tweet.content}/>
             </p>
             <TooltipProvider>
                 <div className="mt-2 flex items-center gap-1 text-muted-foreground">
@@ -220,8 +220,8 @@ impl TweetCard(
                                 <div className="text-xs font-semibold text-foreground">
                                     {handle_of(c["username"])}
                                 </div>
-                                <div className="text-sm text-foreground/90">
-                                    {c["content"]}
+                                <div className="text-sm text-foreground/90 break-words">
+                                    <RichText text={c["content"]}/>
                                 </div>
                             </div>
                         </div>
