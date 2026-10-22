@@ -20,13 +20,13 @@ impl native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool {
 impl contexts_of(module: uni.Module) -> list[str] {
     return [
         elem.code_context.value if isinstance(elem, uni.ContextAwareNode) else ''
-        for elem in module.body
+        for elem in module.elements
     ];
 }
 
 impl settle_server(module: uni.Module) -> bool {
     moved = False;
-    for elem in module.body {
+    for elem in module.elements {
         if isinstance(elem, uni.ContextAwareNode)
             and elem.code_context == CodeContext.NATIVE {
             _stamp_context_element(elem, CodeContext.SERVER);
@@ -64,7 +64,7 @@ impl module_spaces(mod: (uni.Module | None)) -> set[str] {
         return {str(mod.decided_codespace)};
     }
     spaces: set[str] = set();
-    for stmt in mod.body {
+    for stmt in mod.elements {
         if isinstance(stmt, uni.ContextAwareNode) {
             spaces.add(str(stmt.code_context));
         }

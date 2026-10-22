@@ -1,10 +1,4 @@
-def _tolist[C: Iterable](src: C) -> list[any] {
-    out: list[any] = [];
-    for v in src {
-        out.append(v);
-    }
-    return out;
-}
+def _tolist[C: Iterable](src: C) -> list[any];
 
 def _tolist_any(src: any) -> list[any];
 
@@ -14,11 +8,135 @@ def:pub count(start: int | float = 0, step: int | float = 1) -> Iterator[any];
 
 def _count_gen(start: int | float, step: int | float) -> Iterator[any];
 
-def:pub cycle[C: Iterable](iterable: C) -> Iterator[any] {
+def:pub cycle[C: Iterable](iterable: C) -> Iterator[any];
+
+def _cycle_gen[C: Iterable](src: C) -> Iterator[any];
+
+def:pub repeat(object: any, times: int | None = None) -> Iterator[any];
+
+def _repeat_gen(x: any, times: int | None) -> Iterator[any];
+
+def:pub accumulate[C: Iterable](
+    iterable: C, func: (Callable[[any, any], any] | None) = None, *, initial: any = None
+) -> Iterator[any];
+
+def _accumulate_gen[C: Iterable](
+    src: C, func: (Callable[[any, any], any] | None), initial: any
+) -> Iterator[any];
+
+def _accumulate_default[C: Iterable](src: C, initial: any) -> Iterator[any];
+
+def _accumulate_func[C: Iterable](
+    src: C, func: Callable[[any, any], any], initial: any
+) -> Iterator[any];
+
+def:pub chain(*iterables: any) -> Iterator[any];
+
+def chain_from_iterable[C: Iterable](iterable: C) -> Iterator[any];
+
+def _chain_fi_gen[C: Iterable](src: C) -> Iterator[any];
+
+def:pub compress[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any];
+
+def _compress_gen[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any];
+
+def:pub dropwhile[C: Iterable](
+    predicate: Callable[[any], any], iterable: C
+) -> Iterator[any];
+
+def _dropwhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any];
+
+def:pub takewhile[C: Iterable](
+    predicate: Callable[[any], any], iterable: C
+) -> Iterator[any];
+
+def _takewhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any];
+
+def:pub filterfalse[C: Iterable](
+    predicate: (Callable[[any], any] | None), iterable: C
+) -> Iterator[any];
+
+def _filterfalse_gen[C: Iterable](
+    pred: (Callable[[any], any] | None), src: C
+) -> Iterator[any];
+
+def _ff_none[C: Iterable](src: C) -> Iterator[any];
+
+def _ff_pred[C: Iterable](src: C, pred: Callable[[any], any]) -> Iterator[any];
+
+def:pub groupby[C: Iterable](
+    iterable: C, key: (Callable[[any], any] | None) = None
+) -> Iterator[any];
+
+def _groupby_gen[C: Iterable](
+    src: C, key: (Callable[[any], any] | None)
+) -> Iterator[any];
+
+def _grouped_nokey[C: Iterable](src: C) -> Iterator[any];
+
+def _grouped_key[C: Iterable](src: C, key: Callable[[any], any]) -> Iterator[any];
+
+def:pub islice[C: Iterable](iterable: C, *args: any) -> Iterator[any];
+
+def _islice_gen[C: Iterable](
+    src: C, start: int, stop: int, step: int
+) -> Iterator[any];
+
+def:pub pairwise[C: Iterable](iterable: C) -> Iterator[any];
+
+def _pairwise_gen[C: Iterable](src: C) -> Iterator[any];
+
+def:pub starmap[C: Iterable](
+    func: Callable[[any, any], any], iterable: C
+) -> Iterator[any];
+
+def _starmap_gen[C: Iterable](
+    func: Callable[[any, any], any], src: C
+) -> Iterator[any];
+
+def:pub product(*iterables: any, repeat: int = 1) -> Iterator[any];
+
+def _product_gen(pools: list[list[any]]) -> Iterator[any];
+
+def:pub permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator[any];
+
+def _perm_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub combinations[C: Iterable](iterable: C, r: int) -> Iterator[any];
+
+def _comb_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub combinations_with_replacement[C: Iterable](
+    iterable: C, r: int
+) -> Iterator[any];
+
+def _cwr_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub batched[C: Iterable](
+    iterable: C, n: int, *, strict: bool = False
+) -> Iterator[any];
+
+def _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any];
+
+def:pub zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any];
+
+def _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any];
+
+def:pub tee[C: Iterable](iterable: C, n: int = 2) -> list[any];
+
+impl _tolist[C: Iterable](src: C) -> list[any] {
+    out: list[any] = [];
+    for v in src {
+        out.append(v);
+    }
+    return out;
+}
+
+impl cycle[C: Iterable](iterable: C) -> Iterator[any] {
     return _cycle_gen(iterable);
 }
 
-def _cycle_gen[C: Iterable](src: C) -> Iterator[any] {
+impl _cycle_gen[C: Iterable](src: C) -> Iterator[any] {
     saved: list[any] = [];
     for v in src {
         saved.append(v);
@@ -35,17 +153,13 @@ def _cycle_gen[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def:pub repeat(object: any, times: int | None = None) -> Iterator[any];
-
-def _repeat_gen(x: any, times: int | None) -> Iterator[any];
-
-def:pub accumulate[C: Iterable](
+impl accumulate[C: Iterable](
     iterable: C, func: (Callable[[any, any], any] | None) = None, *, initial: any = None
 ) -> Iterator[any] {
     return _accumulate_gen(iterable, func, initial);
 }
 
-def _accumulate_gen[C: Iterable](
+impl _accumulate_gen[C: Iterable](
     src: C, func: (Callable[[any, any], any] | None), initial: any
 ) -> Iterator[any] {
     if func is None {
@@ -54,7 +168,7 @@ def _accumulate_gen[C: Iterable](
     return _accumulate_func(src, func, initial);
 }
 
-def _accumulate_default[C: Iterable](src: C, initial: any) -> Iterator[any] {
+impl _accumulate_default[C: Iterable](src: C, initial: any) -> Iterator[any] {
     total: any = initial;
     started = not (initial is None);
     if started {
@@ -88,7 +202,7 @@ def _accumulate_default[C: Iterable](src: C, initial: any) -> Iterator[any] {
     }
 }
 
-def _accumulate_func[C: Iterable](
+impl _accumulate_func[C: Iterable](
     src: C, func: Callable[[any, any], any], initial: any
 ) -> Iterator[any] {
     total: any = initial;
@@ -107,13 +221,11 @@ def _accumulate_func[C: Iterable](
     }
 }
 
-def:pub chain(*iterables: any) -> Iterator[any];
-
-def chain_from_iterable[C: Iterable](iterable: C) -> Iterator[any] {
+impl chain_from_iterable[C: Iterable](iterable: C) -> Iterator[any] {
     return _chain_fi_gen(iterable);
 }
 
-def _chain_fi_gen[C: Iterable](src: C) -> Iterator[any] {
+impl _chain_fi_gen[C: Iterable](src: C) -> Iterator[any] {
     for it in src {
         if isinstance(it, str) {
             sv: str = it;
@@ -133,11 +245,11 @@ def _chain_fi_gen[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def:pub compress[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any] {
+impl compress[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any] {
     return _compress_gen(data, selectors);
 }
 
-def _compress_gen[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any] {
+impl _compress_gen[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[any] {
     for pair in zip(data, selectors) {
         s = pair[1];
         if bool(s) {
@@ -146,13 +258,13 @@ def _compress_gen[C: Iterable, S: Iterable](data: C, selectors: S) -> Iterator[a
     }
 }
 
-def:pub dropwhile[C: Iterable](
+impl dropwhile[C: Iterable](
     predicate: Callable[[any], any], iterable: C
 ) -> Iterator[any] {
     return _dropwhile_gen(predicate, iterable);
 }
 
-def _dropwhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any] {
+impl _dropwhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any] {
     skipping = True;
     for v in src {
         if skipping {
@@ -166,13 +278,13 @@ def _dropwhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[
     }
 }
 
-def:pub takewhile[C: Iterable](
+impl takewhile[C: Iterable](
     predicate: Callable[[any], any], iterable: C
 ) -> Iterator[any] {
     return _takewhile_gen(predicate, iterable);
 }
 
-def _takewhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any] {
+impl _takewhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[any] {
     keeping = True;
     for v in src {
         if keeping {
@@ -185,13 +297,13 @@ def _takewhile_gen[C: Iterable](pred: Callable[[any], any], src: C) -> Iterator[
     }
 }
 
-def:pub filterfalse[C: Iterable](
+impl filterfalse[C: Iterable](
     predicate: (Callable[[any], any] | None), iterable: C
 ) -> Iterator[any] {
     return _filterfalse_gen(predicate, iterable);
 }
 
-def _filterfalse_gen[C: Iterable](
+impl _filterfalse_gen[C: Iterable](
     pred: (Callable[[any], any] | None), src: C
 ) -> Iterator[any] {
     if pred is None {
@@ -200,7 +312,7 @@ def _filterfalse_gen[C: Iterable](
     return _ff_pred(src, pred);
 }
 
-def _ff_none[C: Iterable](src: C) -> Iterator[any] {
+impl _ff_none[C: Iterable](src: C) -> Iterator[any] {
     for v in src {
         if not bool(v) {
             yield v;
@@ -208,7 +320,7 @@ def _ff_none[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def _ff_pred[C: Iterable](src: C, pred: Callable[[any], any]) -> Iterator[any] {
+impl _ff_pred[C: Iterable](src: C, pred: Callable[[any], any]) -> Iterator[any] {
     for v in src {
         keep = bool(pred(v));
         if not keep {
@@ -217,13 +329,13 @@ def _ff_pred[C: Iterable](src: C, pred: Callable[[any], any]) -> Iterator[any] {
     }
 }
 
-def:pub groupby[C: Iterable](
+impl groupby[C: Iterable](
     iterable: C, key: (Callable[[any], any] | None) = None
 ) -> Iterator[any] {
     return _groupby_gen(iterable, key);
 }
 
-def _groupby_gen[C: Iterable](
+impl _groupby_gen[C: Iterable](
     src: C, key: (Callable[[any], any] | None)
 ) -> Iterator[any] {
     if key is None {
@@ -232,7 +344,7 @@ def _groupby_gen[C: Iterable](
     return _grouped_key(src, key);
 }
 
-def _grouped_nokey[C: Iterable](src: C) -> Iterator[any] {
+impl _grouped_nokey[C: Iterable](src: C) -> Iterator[any] {
     first = True;
     ck: any = None;
     grp: list[any] = [];
@@ -259,7 +371,7 @@ def _grouped_nokey[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def _grouped_key[C: Iterable](src: C, key: Callable[[any], any]) -> Iterator[any] {
+impl _grouped_key[C: Iterable](src: C, key: Callable[[any], any]) -> Iterator[any] {
     first = True;
     ck: any = None;
     grp: list[any] = [];
@@ -286,7 +398,7 @@ def _grouped_key[C: Iterable](src: C, key: Callable[[any], any]) -> Iterator[any
     }
 }
 
-def:pub islice[C: Iterable](iterable: C, *args: any) -> Iterator[any] {
+impl islice[C: Iterable](iterable: C, *args: any) -> Iterator[any] {
     nargs = len(args);
     if nargs < 1 {
         raise TypeError("islice expected at least 2 arguments, got 1");
@@ -375,7 +487,7 @@ def:pub islice[C: Iterable](iterable: C, *args: any) -> Iterator[any] {
     return _islice_gen(iterable, start, limit, step);
 }
 
-def _islice_gen[C: Iterable](
+impl _islice_gen[C: Iterable](
     src: C, start: int, stop: int, step: int
 ) -> Iterator[any] {
     i = 0;
@@ -392,11 +504,11 @@ def _islice_gen[C: Iterable](
     }
 }
 
-def:pub pairwise[C: Iterable](iterable: C) -> Iterator[any] {
+impl pairwise[C: Iterable](iterable: C) -> Iterator[any] {
     return _pairwise_gen(iterable);
 }
 
-def _pairwise_gen[C: Iterable](src: C) -> Iterator[any] {
+impl _pairwise_gen[C: Iterable](src: C) -> Iterator[any] {
     first = True;
     prev: any = None;
     for v in src {
@@ -410,13 +522,13 @@ def _pairwise_gen[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def:pub starmap[C: Iterable](
+impl starmap[C: Iterable](
     func: Callable[[any, any], any], iterable: C
 ) -> Iterator[any] {
     return _starmap_gen(func, iterable);
 }
 
-def _starmap_gen[C: Iterable](
+impl _starmap_gen[C: Iterable](
     func: Callable[[any, any], any], src: C
 ) -> Iterator[any] {
     for args in src {
@@ -429,11 +541,7 @@ def _starmap_gen[C: Iterable](
     }
 }
 
-def:pub product(*iterables: any, repeat: int = 1) -> Iterator[any];
-
-def _product_gen(pools: list[list[any]]) -> Iterator[any];
-
-def:pub permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator[any] {
+impl permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator[any] {
     pool = _tolist(iterable);
     n = len(pool);
     rr = n;
@@ -447,9 +555,7 @@ def:pub permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator
     return _perm_gen(pool, rr);
 }
 
-def _perm_gen(pool: list[any], r: int) -> Iterator[any];
-
-def:pub combinations[C: Iterable](iterable: C, r: int) -> Iterator[any] {
+impl combinations[C: Iterable](iterable: C, r: int) -> Iterator[any] {
     if r < 0 {
         raise ValueError("r must be non-negative");
     }
@@ -457,11 +563,7 @@ def:pub combinations[C: Iterable](iterable: C, r: int) -> Iterator[any] {
     return _comb_gen(pool, r);
 }
 
-def _comb_gen(pool: list[any], r: int) -> Iterator[any];
-
-def:pub combinations_with_replacement[C: Iterable](
-    iterable: C, r: int
-) -> Iterator[any] {
+impl combinations_with_replacement[C: Iterable](iterable: C, r: int) -> Iterator[any] {
     if r < 0 {
         raise ValueError("r must be non-negative");
     }
@@ -469,9 +571,7 @@ def:pub combinations_with_replacement[C: Iterable](
     return _cwr_gen(pool, r);
 }
 
-def _cwr_gen(pool: list[any], r: int) -> Iterator[any];
-
-def:pub batched[C: Iterable](
+impl batched[C: Iterable](
     iterable: C, n: int, *, strict: bool = False
 ) -> Iterator[any] {
     if n < 1 {
@@ -480,7 +580,7 @@ def:pub batched[C: Iterable](
     return _batched_gen(iterable, n, strict);
 }
 
-def _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any] {
+impl _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any] {
     cur: list[any] = [];
     for v in src {
         cur.append(v);
@@ -497,11 +597,7 @@ def _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any] {
     }
 }
 
-def:pub zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any];
-
-def _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any];
-
-def:pub tee[C: Iterable](iterable: C, n: int = 2) -> list[any] {
+impl tee[C: Iterable](iterable: C, n: int = 2) -> list[any] {
     if n < 0 {
         raise ValueError("n must be >= 0");
     }

@@ -22,6 +22,11 @@ def _summarize_after_first(ctx: IterationContext) -> IterationAction {
 }
 
 
+def _reply_text(msg: any) -> str {
+    return str(msg.get("content", "") if isinstance(msg, dict) else msg.content);
+}
+
+
 """The events of one `logging=True` turn, and the runtime whose conversation it wrote."""
 def _events_turn(ending: str, retry: any) -> tuple[list[StreamEvent], any] {
     attempts = [fail(_dropped(), content="partial text here", after=1), retry];
@@ -79,7 +84,7 @@ test "a retried answer replaces the attempt that failed" {
         );
         assert shown == expected , f"{label}: the caller ends with {shown!r}";
         if ending != "none" {
-            stored = str(getattr(mt.messages[-1], "content", ""));
+            stored = _reply_text(mt.messages[-1]);
             assert stored == expected , f"{label}: the conversation stored {stored!r}";
         }
     }

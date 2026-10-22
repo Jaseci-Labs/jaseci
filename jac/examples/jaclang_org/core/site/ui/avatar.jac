@@ -1,6 +1,18 @@
 import from "radix-ui" { Avatar as AvatarPrimitive }
 
-def:pub Avatar(props: any) -> JsxElement {
+def:pub Avatar(props: any) -> JsxElement;
+
+def:pub AvatarImage(props: any) -> JsxElement;
+
+def:pub AvatarFallback(props: any) -> JsxElement;
+
+def:pub AvatarBadge(props: any) -> JsxElement;
+
+def:pub AvatarGroup(props: any) -> JsxElement;
+
+def:pub AvatarGroupCount(props: any) -> JsxElement;
+
+impl Avatar(props: any) -> JsxElement {
     size = props["size"] or "default";
     <AvatarPrimitive.Root
         {**props}
@@ -13,7 +25,7 @@ def:pub Avatar(props: any) -> JsxElement {
     />
 }
 
-def:pub AvatarImage(props: any) -> JsxElement {
+impl AvatarImage(props: any) -> JsxElement {
     <AvatarPrimitive.Image
         {**props}
         data-slot="avatar-image"
@@ -23,7 +35,7 @@ def:pub AvatarImage(props: any) -> JsxElement {
     />
 }
 
-def:pub AvatarFallback(props: any) -> JsxElement {
+impl AvatarFallback(props: any) -> JsxElement {
     <AvatarPrimitive.Fallback
         {**props}
         data-slot="avatar-fallback"
@@ -34,7 +46,7 @@ def:pub AvatarFallback(props: any) -> JsxElement {
     />
 }
 
-def:pub AvatarBadge(props: any) -> JsxElement {
+impl AvatarBadge(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <span
         {**attrs}
@@ -49,7 +61,7 @@ def:pub AvatarBadge(props: any) -> JsxElement {
     />
 }
 
-def:pub AvatarGroup(props: any) -> JsxElement {
+impl AvatarGroup(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -61,7 +73,7 @@ def:pub AvatarGroup(props: any) -> JsxElement {
     />
 }
 
-def:pub AvatarGroupCount(props: any) -> JsxElement {
+impl AvatarGroupCount(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}

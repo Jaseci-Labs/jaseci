@@ -5,6 +5,13 @@ def:pub BridgeBanner(
     canRetry: bool,
     onRetry: Callable[[], None],
     onDismiss: Callable[[], None],
+) -> JsxElement;
+
+impl BridgeBanner(
+    message: str,
+    canRetry: bool,
+    onRetry: Callable[[], None],
+    onDismiss: Callable[[], None],
 ) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
