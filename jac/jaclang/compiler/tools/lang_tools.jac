@@ -3,7 +3,6 @@ import inspect;
 import json;
 import os;
 import sys;
-import from jaclang.project.source { pascal_to_snake }
 
 obj AstKidInfo {
     has name: str,

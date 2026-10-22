@@ -545,7 +545,7 @@ graph import {
     compiler.backends.native.kernel_stage0 --> dist.precompile_bytecode.seal_native {
         refuse_missing_entries
     }
-    compiler.frontend.unitree.Module --> cli.commands.native_build._callback_source_path { Module }
+    compiler.frontend.unitree --> cli.commands.native_build._callback_source_path { Module }
     compiler.backends.native.link_plan ++> [
         cli.commands.native_build { LinkPlan },
         cli.commands.native_build.native_build {
@@ -1020,7 +1020,6 @@ graph import {
         },
         cli.commands.execution.serve { set_effective_default_codespace },
         cli.commands.native_build._application_ir { is_toolchain_unit },
-        cli.commands.native_build.native_build_sealed_pair { native_unit_spelling },
         client.compiler.ViteCompiler._compile_wasm_module
             | dist.source.client.write_client { native_wasm_stem },
         client.js_runtime._pkg_dir
@@ -1043,6 +1042,9 @@ graph import {
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
     ]
+    compiler.frontend.codeinfo --> cli.commands.native_build.native_build_sealed_pair {
+        native_unit_spelling
+    }
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
         | client.jac_client_compiler
@@ -2297,8 +2299,8 @@ graph import {
     project.source --> [
         compiler.passes.import_wiring_pass { pascal_to_snake },
         compiler.passes.pyast_load_pass.PyastBuildPass.convert { pascal_to_snake },
-        compiler.tools.lang_tools { pascal_to_snake },
     ]
+    project.source ++> compiler.tools.lang_tools { pascal_to_snake }
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
         cli.commands.project._create_app { scaffold_app },
@@ -2584,7 +2586,7 @@ graph import {
         server.session.Session.quarantine_ref { sv_forget_by_id },
     ]
     runtime.osp_graph_sv --> byllm.visit_routing._candidate_for { sv_register_hydrated }
-    runtime.osp_kernel --> byllm.visit_routing._route_context { _current_scope }
+    runtime.osp_kernel ++> byllm.visit_routing._route_context { _current_scope }
     runtime.osp_kernel ++> [
         compiler.backends.es.esast_gen_pass
             | compiler.backends.py.jcir_gen_pass
@@ -3709,7 +3711,6 @@ graph import {
         },
         dist.precompile_bytecode.seal_native,
         dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
-        cli.commands.native_build.native_build_sealed_pair { interop_record_path },
         cli.commands.execution._run_native_lib { interop_record_path },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
@@ -3725,6 +3726,9 @@ graph import {
         },
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
     ]
+    server.sealed_serve --> cli.commands.native_build.native_build_sealed_pair {
+        interop_record_path
+    }
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
             sealed_root_for,

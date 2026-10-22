@@ -355,9 +355,6 @@ impl _sealed_native_plan(
     memory: str = "",
     no_ir_cache: bool = False
 ) -> (LinkPlan | None) {
-    import from jaclang.jac0core.ext_registry { is_jac, is_retired_native_marker }
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
 
     if not is_jac(filename) {
         console.error("Input must be a .jac file.");
@@ -423,7 +420,6 @@ impl _sealed_native_plan(
 impl _link_kind_artifact(
     plan: LinkPlan, output: str, kind: ArtifactKind, label: str
 ) -> int {
-    import from jaclang.compiler.backends.native.link_plan { link_artifact }
     prev = push_native_target(plan.triple);
     try {
         link_artifact(plan, output, kind, log=console.print);
