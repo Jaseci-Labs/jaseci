@@ -1,6 +1,5 @@
 import textwrap;
 import from collections.abc { Sequence }
-import from jaclang.runtime.osp_kernel { osp_skip_rest }
 
 
 glob TOKEN_CLS_BY_NAME: dict[(str, str)] = {
