@@ -221,13 +221,7 @@ impl native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
 }
 
 impl _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
-    owner = stmt;
-    if isinstance(stmt, uni.ImplDef) and stmt.decl_link is not None {
-        owner = stmt.decl_link;
-        while owner.parent is not None and not isinstance(owner.parent, uni.Module) {
-            owner = owner.parent;
-        }
-    }
+    owner = stmt.top_element or stmt;
     if not isinstance(owner, uni.ContextAwareNode) {
         return True;
     }

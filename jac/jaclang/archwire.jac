@@ -7,7 +7,7 @@ graph import {
     edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.*;
     edge Comptime: comptime --> byllm.* | cli.* | client.* | scale.* | server.*;
-    edge Data: data.* --> cli.* | compiler.* | runtime.* | scale.* | server.*;
+    edge Data: data.* --> cli.* | client.* | compiler.* | runtime.* | scale.* | server.*;
     edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
     edge Jac0: jac0 --> dist.*;
     edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
@@ -266,7 +266,9 @@ graph import {
             | project.config._apply_memory_native_placement
             | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._install_app_deps
             | server.server.JacAPIServer.start { console },
-        client.cli.run_client_setup | server.server.print_endpoint_docs { console },
+        client.cli.run_client_setup
+            | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._start_client_build
+            | server.server.print_endpoint_docs { console },
         client.cli.run_client_start { console },
         client.cli.run_npm_add { console },
         client.cli.run_npm_add_global { console },
@@ -287,7 +289,8 @@ graph import {
     cli.manifest_route ++> [
         scale.injector.binary.deploy_generation_refusal
             | scale.tests.deploy.test_client_build_fail_fast
-            | scale.tests.deploy.test_version_pin { resolve_cli_version },
+            | scale.tests.deploy.test_version_pin
+            | server.sealed_serve.serve_manifest_stamp { resolve_cli_version },
         scale.injector.binary.host_toolchain_path { resolve_cli_version },
     ]
     cli.manifest_route --> scale.observability.prometheus_metrics.PrometheusMetricsCollector.__post_init__
@@ -297,6 +300,10 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
+        compiler.backends.native.na_compile_pass.codegen_map {
+            MEM_HEADROOM,
+            memory_headroom_bytes
+        },
         dist.precompile_bytecode._precompile_retire {
             WORKER_MEM_BYTES,
             env_int,
@@ -321,6 +328,9 @@ graph import {
             WorkPool,
             pool_available,
             resolve_jobs
+        },
+        scale.deploy.target.kubernetes.manifest_builder.client_build_alongside_seal {
+            memory_headroom_bytes
         },
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
@@ -529,10 +539,15 @@ graph import {
     compiler.backends.native.host_facts --> project.compiler_host.ProjectHost.native_fact {
         host_native_fact
     }
-    compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        SEALED_LINK_MODE,
-        kernel_lib_name
-    }
+    compiler.backends.native.kernel_resolve ++> [
+        dist.precompile_bytecode.adopt_kernel {
+            LAYOUT_SIDECAR_SUFFIX,
+            kernel_lib_name,
+            read_sidecar,
+            unit_drift
+        },
+        dist.precompile_bytecode.seal_native { kernel_lib_name },
+    ]
     compiler.backends.native.kernel_resolve --> [
         project.kernel_check.analysis_kernel { KernelLoadError },
         project.kernel_check.kernel_check | project.kernel_compile.kernel_route {
@@ -1012,6 +1027,7 @@ graph import {
     compiler.frontend.codeinfo --> [
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
+        project.compiler_host.ProjectHost.ct_environment { effective_native_target },
     ]
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
@@ -1247,6 +1263,7 @@ graph import {
             kernel_root_path,
             native_scope_paths
         },
+        dist.precompile_bytecode.adopt_kernel { in_native_scope_path },
         dist.precompile_bytecode.seal_native { in_native_scope_path },
     ]
     compiler.native_scope --> dist.precompile_bytecode.native_roots { kernel_root_path }
@@ -1304,6 +1321,11 @@ graph import {
     compiler.placement.placement_solver ++> dist.seal.bake_native_payloads {
         native_default_path_ok
     }
+    compiler.target_spec ++> [
+        dist.precompile_bytecode._shared_suffix { host_target_spec },
+        dist.precompile_bytecode.adopt_kernel { host_target_spec },
+    ]
+    compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
@@ -1410,6 +1432,10 @@ graph import {
         server.session.own_child_databases { process_alive, this_host },
     ]
     data.pg_dist ++> cli.commands.db._db_fetch { download_dist }
+    data.pg_dist --> client.targets.desktop.desktop_build.stage_postgres {
+        bundled_dist_dir,
+        cached_dist_dir
+    }
     data.pgembed ++> [
         cli.commands.db._catalog_runtime
             | scale.tests.data.test_pg_stream
@@ -1427,6 +1453,7 @@ graph import {
         },
     ]
     data.pgembed --> [
+        client.targets.desktop.native.host_boot._stop_embedded_store { stop_cluster },
         scale.deploy.database.kubernetes_postgres.KubernetesPostgresProvider.deploy {
             pg_tuning_settings
         },
@@ -1870,7 +1897,9 @@ graph import {
         compiler.driver.application._prepare_revision { client_input_dirs },
     ]
     project.config ++> [
-        artifacts.router._provision | toolchains.store.offline { offline_mode },
+        artifacts.router._provision
+            | data.pg_dist.bundled_dist_dir
+            | toolchains.store.offline { offline_mode },
         cache.registry.project_bucket
             | cli.commands.analysis._configured_check_excludes
             | cli.commands.architecture
@@ -2046,9 +2075,10 @@ graph import {
             | client.jac_client_compiler.JacClientCompiler._client_app_dir
             | client.vite_bundler.ViteBundler._get_client_dir { get_config },
         client.jac_client_compiler.JacClientCompiler._get_client_dir { get_config },
-        client.targets.desktop.desktop_build.stage_program
+        client.targets.desktop.desktop_build.desktop_storage_identifier
             | scale.server.inprocess.prepare_inprocess_runtime
             | server.hmr.HotReloader._reload_server_module { get_config_for_dir },
+        client.targets.desktop.desktop_build.stage_program { get_config_for_dir },
         runtime.runtime.JacRuntime.reset_process_state { set_config },
         runtime.source_app.main { JacConfig, set_config },
         scale.runtime.fleet.fleet_member_names { get_config, get_config_for_dir },
@@ -3676,9 +3706,9 @@ graph import {
             | dist.seal.bake_native_payloads { NATIVE_DIR_REL },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
-        compiler.driver.application._prepare_sealed | dist.seal.bake_serve_payloads {
+        compiler.driver.application._prepare_sealed {
             CLIENT_DIST_REL,
-            SERVE_MANIFEST_REL
+            read_serve_manifest
         },
         dist.precompile_bytecode.app_metadata { CLIENT_DIST_REL, NATIVE_DIR_REL },
         dist.precompile_bytecode.collect_payloads {
@@ -3687,6 +3717,8 @@ graph import {
             SERVE_MANIFEST_REL
         },
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
+        dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
+        dist.seal.build_serve_manifest { serve_manifest_stamp },
     ]
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
@@ -4393,8 +4425,17 @@ graph import byllm {
         visit_routing { ROUTE_SELECT_ATTR },
     ]
     telemetry ++> [
-        lib { register_agent_callback },
-        llm { _aggregate_usage, _current_invocation_id, _emit_agent_telemetry },
+        lib {
+            register_agent_callback,
+            register_llm_call_hook,
+            unregister_llm_call_hook
+        },
+        llm {
+            _aggregate_usage,
+            _current_invocation_id,
+            _emit_agent_telemetry,
+            _notify_llm_call
+        },
     ]
     tool_protocol ++> llm {
         coerce_message_dict,
@@ -4414,6 +4455,7 @@ graph import byllm {
             MockRawResponse,
             MockToolCall,
             StreamEvent,
+            Text,
             Tool,
             ToolCallResultMsg,
             Video
@@ -4438,17 +4480,17 @@ graph import byllm {
         },
         mtir {
             LiteLLMMessage,
-            Media,
             Message,
             MessageRole,
             MessageType,
             Text,
             Tool,
             ToolCallResultMsg,
+            as_media_list,
             image_resp_kind
         },
         parallel { ToolCallResultMsg, normalize_tool_result },
-        systemone.build_state { Media },
+        systemone.build_state { as_media_list },
         systemone.lower { image_resp_kind },
         visit_routing.route_visit { Message, MessageRole },
     ]
@@ -5160,6 +5202,8 @@ graph import client.targets.desktop {
             _stage_fused_runtime,
             build_cef_dispatch,
             build_cef_subprocess,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
         native.cef.build { build_cef_dispatch, build_cef_subprocess },
@@ -5169,6 +5213,8 @@ graph import client.targets.desktop {
             _jac_bin,
             _jac_subprocess_env,
             _stage_fused_runtime,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
     ]
@@ -5695,11 +5741,7 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.kernel_resolve {
-            CompileOptions,
-            NATIVE_LINK_MODE_BITCODE,
-            NATIVE_LINK_MODE_OBJECTS
-        },
+        backends.native.kernel_resolve { CompileOptions, NATIVE_LINK_MODE_OBJECTS },
         backends.native.link_plan {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -6141,6 +6183,7 @@ graph import compiler {
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
             native_unit_identity,
+            real_path,
             str_len_tag
         },
         backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__ { native_unit_prefix },
@@ -6317,6 +6360,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
+        driver.program.JacProgram.init { forget_real_paths },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -6354,6 +6398,7 @@ graph import compiler {
         passes.endpoint_effect_pass.EndpointEffectPass._classify {
             endpoint_descriptor
         },
+        passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
         placement.placement.native_blocker_scan {
@@ -6559,7 +6604,6 @@ graph import compiler {
             | passes.graph_lowering_pass
             | passes.mtir_gen_pass
             | passes.ownership_check_pass.OwnershipCheckPass._emit_flow_for_diagnostics
-            | passes.sym_tab_build_pass.SymTabBuildPass.exit_binary_expr
             | passes.type_checker_pass.TypeCheckPass.exit_impl_def
             | tools.cfg_dot.CoalesceBBPass._node_label
             | tools.comment_attach_pass
@@ -6841,6 +6885,7 @@ graph import compiler {
             E2016,
             E2017,
             E2026,
+            E2030,
             E2087,
             W2080
         },
@@ -7280,8 +7325,7 @@ graph import compiler {
             binding_sites,
             binds_target,
             confined_to,
-            enclosing_loop,
-            is_within
+            enclosing_loop
         },
         backends.native.na_ir_gen_pass {
             LoopLinks,
@@ -7306,7 +7350,8 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
-            | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
+            | passes.rc_facts_pass
+            | passes.type_checker_pass.TypeCheckPass._is_generator
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7319,14 +7364,9 @@ graph import compiler {
         passes.placement_pass.client_refused_elements { client_capability_violations },
         types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.module_facts --> passes.type_checker_pass.TypeCheckPass.exit_ability {
-        ModuleFacts
-    }
-    frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
-        parse as rd_parse
-    }
     frontend.parser.frontend ++> [
-        driver.wiring.WiringSpec.wire_import { parse_woven },
+        driver.compiler.JacCompiler._prepare_tool_program
+            | driver.wiring.WiringSpec.wire_import { parse_woven },
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
         driver.wiring.prune_wiring_source { parse_woven },
@@ -7798,8 +7838,7 @@ graph import compiler {
         },
     ]
     frontend.roles ++> [
-        backends.es.esast_gen_pass
-            | backends.native.na_ir_gen_pass
+        backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
             | driver.program
             | driver.progstate
@@ -7884,6 +7923,7 @@ graph import compiler {
         backends.py.jcir_gen_pass {
             Ability,
             ArchHas,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -8358,7 +8398,7 @@ graph import compiler {
             TypeParam,
             UniNode
         },
-        passes.context { Module, Source, TreeWalker, UniNode },
+        passes.context { ImplDef, Module, Source, TreeWalker, UniNode },
         passes.dataflow { UniCFGNode },
         passes.decl_impl_match_pass {
             Ability,
@@ -8367,6 +8407,7 @@ graph import compiler {
             AstImplNeedingNode,
             AstSymbolNode,
             AtomTrailer,
+            BinaryExpr,
             FuncSignature,
             HasVar,
             ImplDef,
@@ -8380,8 +8421,10 @@ graph import compiler {
             UniNode,
             UniScopeNode,
             bind_assignment_targets,
-            find_python_scope_node_of,
-            is_identifier_slot
+            bind_walrus_target,
+            binding_sites_in,
+            is_identifier_slot,
+            typed_rebind_names
         },
         passes.endpoint_effect_pass {
             Ability,
@@ -8518,7 +8561,6 @@ graph import compiler {
             GlobalVars,
             HasVar,
             IfElseExpr,
-            ImplDef,
             Import,
             InForStmt,
             IndexSlice,
@@ -8557,7 +8599,6 @@ graph import compiler {
             Archetype,
             AtomTrailer,
             ContextAwareNode,
-            ImplDef,
             Import,
             Module,
             ModuleCode,
@@ -8676,11 +8717,9 @@ graph import compiler {
             FuncSignature,
             IfElseExpr,
             IfStmt,
-            ImplDef,
             InForStmt,
             IterForStmt,
             KWPair,
-            LambdaExpr,
             ListCompr,
             ListVal,
             Module,
@@ -8693,13 +8732,12 @@ graph import compiler {
             SetVal,
             String,
             Symbol,
-            Test,
             Token,
             UnaryExpr,
             UniCFGNode,
             UniNode,
             WhileStmt,
-            same_lexical_scope
+            is_frame
         },
         passes.region_infer_pass {
             Ability,
@@ -8852,15 +8890,15 @@ graph import compiler {
             TypeAlias,
             TypeParam,
             TypedCtxBlock,
-            UniNode,
             UniScopeNode,
             WhileStmt,
             WithStmt,
             bind_assignment_targets,
+            bind_walrus_target,
             def_insert_unpacking,
             find_python_scope_node_of,
-            rebind_or_def_insert,
-            record_cross_scope_rebind
+            is_walrus,
+            typed_rebind_names
         },
         passes.type_checker_pass {
             Ability,
@@ -9157,6 +9195,7 @@ graph import compiler {
         },
         types.type_evaluator {
             Ability,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -10055,6 +10094,12 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
+    target_spec ++> [
+        backends.native.kernel_resolve { host_target_spec, target_spec, triple_osarch },
+        backends.native.link_glue.link_glue_ir { triple_osarch },
+    ]
+    type target_spec ++> backends.native.kernel_resolve
+        | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
     tools.code_intel ++> tests.test_code_intel { CodeIntelligence }
     tools.comment_attach_pass ++> [
@@ -10844,7 +10889,7 @@ graph import compiler.backends.native {
         na_ir_gen_pass.NaIRGenPass._foreign_model { collect_foreign_structs },
     ]
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
-    kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
+    kernel_resolve ++> kernel_stage0 { KERNEL_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
@@ -10916,7 +10961,13 @@ graph import compiler.backends.native {
     type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
         entry_points.validate_native_application { native_linked_ir_text },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
+        link_plan {
+            NATIVE_CODE_MODEL,
+            NATIVE_RELOC_MODEL,
+            emit_unit_objects,
+            object_emit_jobs,
+            unit_function_counts
+        },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [
@@ -10925,7 +10976,6 @@ graph import compiler.backends.native {
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
             FACT_IMPORT_PATHS,
-            FACT_OS,
             FACT_PACKAGE_STORE,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
@@ -10943,7 +10993,6 @@ graph import compiler.backends.native {
             EXC_LINEAGE_SLOTS,
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
-            FACT_OS,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
             FACT_SEP,
@@ -10990,6 +11039,13 @@ graph import compiler.backends.native {
         },
         wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
     ]
+    posix_floor --> link_glue.link_glue_ir { posix_floor_ir }
+    posix_floor_ir ++> posix_floor {
+        POSIX_FLOOR_IR_LINUX_AARCH64,
+        POSIX_FLOOR_IR_LINUX_X86_64,
+        POSIX_FLOOR_IR_MACOS_AARCH64,
+        POSIX_FLOOR_IR_MACOS_X86_64
+    }
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -11068,7 +11124,6 @@ graph import compiler.backends.native.llvm.binding {
         module | targets | value { _decode_string, _encode_string },
     ]
     context ++> module { get_global_context }
-    initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
     value ++> [
         module { ValueRef },
@@ -11914,6 +11969,7 @@ graph import compiler.frontend {
             get_effective_default_codespace_override,
             set_effective_default_codespace
         },
+        source_layout { real_path },
         unitree.ModulePath.native_bundled_path {
             NATIVE_STDLIB_EXTENSIONS,
             is_bundled_native_module,
@@ -12203,22 +12259,18 @@ graph import compiler.frontend {
             DictCompr,
             Enum,
             ForeverStmt,
-            ImplDef,
             InForStmt,
             InnerCompr,
             IterForStmt,
             LambdaExpr,
             ListCompr,
-            Module,
-            ModuleCode,
             Name,
             Symbol,
-            Test,
             UniNode,
             UniScopeNode,
             WhileStmt,
-            is_identifier_slot,
-            same_lexical_scope
+            is_frame,
+            is_identifier_slot
         },
         module_facts {
             Ability,
@@ -15305,6 +15357,8 @@ graph import runtime.na_stdlib {
         dt_tm_gmtoff,
         dt_tm_zone
     }
+    _digest ++> hashlib | hmac { new_core }
+    type _digest ++> hashlib | hmac { DigestCore }
     _directory_native ++> [
         glob | shutil | uuid | zoneinfo { try_directory_names },
         pathlib { directory_names },
@@ -15318,37 +15372,15 @@ graph import runtime.na_stdlib {
         _directory_native { clear_errno, last_errno, raise_os_error },
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
+        _time_native { raise_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fd_native ++> _replace_native { AT_FDCWD }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
     ]
     _glob_native ++> glob { glob_lexists }
-    _hashlib_native ++> [
-        hashlib {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_ctx_clone,
-            evp_ctx_digest,
-            evp_ctx_free,
-            evp_ctx_new,
-            evp_ctx_update,
-            evp_md_for
-        },
-        hmac {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_md_for,
-            hmac_ctx_clone,
-            hmac_ctx_digest,
-            hmac_ctx_free,
-            hmac_ctx_new,
-            hmac_ctx_update
-        },
-    ]
     _hex ++> hashlib | hmac | secrets { to_hex }
     _locale_tables ++> locale { _load_alias, _load_encalias }
     _logging_native ++> logging {
@@ -15422,7 +15454,6 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
-    _passwd_layout ++> _user_home { PASSWD_DIR, PASSWD_SIZE }
     _replace_native ++> _os_native { replace_file }
     _socket_abi ++> [
         _socket_native {
@@ -15504,6 +15535,18 @@ graph import runtime.na_stdlib {
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
+    ]
+    _time_native ++> [
+        _datetime_native { CLK_REALTIME },
+        time {
+            CLK_MONOTONIC,
+            CLK_MONOTONIC_RAW,
+            CLK_PROCESS_CPUTIME,
+            CLK_PY_MONOTONIC,
+            CLK_REALTIME,
+            CLK_THREAD_CPUTIME,
+            time_sleep_ns
+        },
     ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
@@ -30732,6 +30775,7 @@ graph import scale {
     injector.bundle ++> [
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle {
             _stage_app,
+            client_build_sources,
             release_binary_env,
             remove_stage_root,
             source_filter_for

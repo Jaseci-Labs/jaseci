@@ -198,9 +198,12 @@ impl _reserved_c_symbols -> frozenset[str] {
         "pthread_setspecific "
         "socket connect send recv shutdown getaddrinfo freeaddrinfo gai_strerror "
         "dlopen dlsym dlclose dlerror "
-        "BCryptOpenAlgorithmProvider BCryptCreateHash BCryptHashData "
-        "BCryptDuplicateHash BCryptFinishHash BCryptDestroyHash BCryptGetProperty "
         "__jac_win_executable_path "
+        "__jac_errno __jac_stdio __jac_platform_id __jac_stat __jac_opendir "
+        "__jac_readdir __jac_closedir __jac_dirent_name __jac_at_fdcwd "
+        "__jac_home_dir __jac_executable_path __jac_addrinfo_layout "
+        "__jac_sockaddr_family __jac_clock_id __jac_sleep_ns __jac_malloc_size "
+        "__jac_fmadd __jac_va_list __jac_va_i64 __jac_va_f64 "
         "main _start __libc_start_main __getmainargs mainCRTStartup "
         "compress2 uncompress uncompress2 compressBound crc32_z adler32_z "
         "BZ2_bzBuffToBuffCompress BZ2_bzBuffToBuffDecompress "
@@ -209,13 +212,7 @@ impl _reserved_c_symbols -> frozenset[str] {
         "ZSTD_CCtx_setParameter ZSTD_compress2 ZSTD_freeDCtx ZSTD_DCtx_setParameter "
         "ZSTD_decompressStream_simpleArgs ZSTD_getFrameContentSize "
         "ZSTD_getDictID_fromFrame "
-        "RAND_bytes CRYPTO_memcmp EVP_MD_CTX_new EVP_MD_CTX_free EVP_MD_CTX_copy_ex "
-        "EVP_DigestInit_ex EVP_DigestUpdate EVP_DigestFinal_ex "
-        "EVP_md5 EVP_sha1 EVP_sha224 EVP_sha256 EVP_sha384 EVP_sha512 "
-        "EVP_sha3_224 EVP_sha3_256 EVP_sha3_384 EVP_sha3_512 "
-        "EVP_blake2b512 EVP_blake2s256 "
-        "HMAC_CTX_new HMAC_CTX_free HMAC_CTX_copy HMAC_Init_ex HMAC_Update "
-        "HMAC_Final TLS_client_method "
+        "RAND_bytes CRYPTO_memcmp TLS_client_method "
         "SSL_CTX_new SSL_CTX_set_verify SSL_CTX_load_verify_locations "
         "SSL_CTX_set_default_verify_paths SSL_CTX_free SSL_new SSL_set_fd SSL_ctrl "
         "SSL_set1_host SSL_connect SSL_get_verify_result SSL_get_error SSL_read "
@@ -263,7 +260,7 @@ impl native_arch_scope(mod_path: str) -> str {
         return memo;
     }
     import from jaclang.compiler.native_scope { binds_bare_arch_names }
-    source = os.path.realpath(mod_path);
+    source = real_path(mod_path);
     out = "";
     if source.endswith(".jac") and not binds_bare_arch_names(source) {
         stem = os.path.basename(source);
@@ -413,7 +410,7 @@ impl native_unit_identity(path: str) -> str {
         return memo;
     }
     import os;
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     unit_root = native_unit_root(os.path.dirname(rp));
     identity = rp;
     if unit_root is not None {
@@ -430,7 +427,7 @@ impl native_module_key(path: str) -> str {
     keyed by its path within that root, so the symbols a sealed unit
     defines at build time are the ones consumers reference at run time.""";
     import os;
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     base = os.path.basename(rp);
     dot = base.rfind(".");
     stem = base[0:dot] if dot > 0 else base;
@@ -470,10 +467,10 @@ impl jaclang_pkg_root -> str {
 impl is_compiler_source_path(source_path: str) -> bool {
     import os;
     if not _PKG_REAL {
-        _PKG_REAL.append(os.path.realpath(jaclang_pkg_root()) + os.sep);
+        _PKG_REAL.append(real_path(jaclang_pkg_root()) + os.sep);
     }
     try {
-        return os.path.realpath(source_path).startswith(_PKG_REAL[0]);
+        return real_path(source_path).startswith(_PKG_REAL[0]);
     } except (OSError, ValueError) {
         return False;
     }
@@ -500,14 +497,28 @@ impl kernel_unit_paths -> list[str] {
     return [kernel_unit_path(rel) for rel in kernel_unit_rels()];
 }
 
+impl real_path(path: str) -> str {
+    found = _REAL_PATHS.get(path);
+    if found is None {
+        import os;
+        found = os.path.realpath(path);
+        _REAL_PATHS[path] = found;
+    }
+    return found;
+}
+
+impl forget_real_paths {
+    _REAL_PATHS.clear();
+}
+
 impl is_kernel_unit_path(path: str) -> bool {
     import os;
     if not path {
         return False;
     }
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     for rel in kernel_unit_rels() {
-        if rp == os.path.realpath(kernel_unit_path(rel)) {
+        if rp == real_path(kernel_unit_path(rel)) {
             return True;
         }
     }
@@ -589,12 +600,12 @@ impl is_toolchain_unit(file_path: str) -> bool {
     if not file_path {
         return False;
     }
-    unit_root = native_unit_root(os.path.dirname(os.path.realpath(file_path)));
+    unit_root = native_unit_root(os.path.dirname(real_path(file_path)));
     if unit_root is None {
         return False;
     }
-    keyed = os.path.realpath(unit_root);
-    return any(keyed == os.path.realpath(pkg) for pkg in bundled_pkg_roots());
+    keyed = real_path(unit_root);
+    return any(keyed == real_path(pkg) for pkg in bundled_pkg_roots());
 }
 
 impl bundled_native_module_names -> list[str] {
@@ -690,9 +701,9 @@ impl is_shared_runtime_module(file_path: str) -> bool {
     if not named {
         return False;
     }
-    path = os.path.realpath(file_path);
+    path = real_path(file_path);
     for pkg in bundled_pkg_roots() {
-        package = os.path.realpath(pkg);
+        package = real_path(pkg);
         for module in SHARED_RUNTIME_MODULES {
             rel = module.split('.', 1)[1].replace('.', os.sep) + '.jac';
             if path == os.path.join(package, rel) {
@@ -806,8 +817,7 @@ impl is_selected_native_variant(path: str) -> bool {
     for cut in (2, 1) {
         portable = os.path.join(os.path.dirname(path), ".".join(parts[:-cut]) + ".jac");
         if len(parts) > cut and os.path.exists(portable) {
-            return os.path.realpath(native_variant_of(portable))
-                == os.path.realpath(path);
+            return real_path(native_variant_of(portable)) == real_path(path);
         }
     }
     return False;
@@ -912,7 +922,7 @@ impl resolve_native_module(
             return (None, None);
         }
 
-        candidate = os.path.realpath(
+        candidate = real_path(
             _native_variant_path(candidate[:-len('.jac')]) or candidate
         );
         if (native_unit_compile_active() and in_native_scope_path(candidate))

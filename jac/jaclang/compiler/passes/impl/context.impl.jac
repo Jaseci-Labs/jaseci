@@ -226,3 +226,20 @@ impl TreePass.enter_walk with UniNode entry {
 impl TreePass.exit_walk with UniNode exit {
     self.ctx.exit_node(here);
 }
+
+impl TreePass.walk_decl_body(decl: UniNode) -> None {
+    for impl_def in decl.own_impls {
+        self._decl_bodies.append(impl_def);
+        try {
+            self.ctx.walk_subtree(impl_def, self);
+        } finally {
+            self._decl_bodies.pop();
+        }
+    }
+}
+
+impl TreePass.reached_by_syntax(nd: UniNode) -> bool {
+    return isinstance(nd, ImplDef)
+        and nd.decl_link is not None
+        and nd not in self._decl_bodies;
+}

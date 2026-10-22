@@ -444,8 +444,19 @@ impl _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> bo
     if not isinstance(callee, Name) or callee.sym_name != name {
         return False;
     }
-    stub_sym = evaluator.jac_builtins_module.names_in_scope.get(name);
-    return stub_sym is not None and callee.sym is stub_sym;
+    sym = callee.sym;
+    stub = evaluator.jac_builtins_module;
+    stub_sym = stub.names_in_scope.get(name);
+    if sym is None or stub_sym is None {
+        return False;
+    }
+    if sym is stub_sym {
+        return True;
+    }
+    """A module analyzed on demand can bind the name in another load of the
+    same stub, so the builtin is the stub's file, not the stub's object.""";
+    home = sym.decl.loc.mod_path if sym.decl.loc else "";
+    return bool(home) and home == stub.loc.mod_path;
 }
 
 impl fixed_width_call_type(

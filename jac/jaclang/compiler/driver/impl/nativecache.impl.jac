@@ -1,6 +1,15 @@
 impl NativeUnitRegistry.postinit {
     self.building = set();
-    self.checking = set();
+}
+
+impl NativeUnitRegistry.begin_parse(path: str) {
+    """A module's parse starts a stretch of allocation. A session settles
+    its heap first, so no collection scans more than one module's new
+    tree.""";
+    if self.session is not None {
+        self.session.settle_heap();
+    }
+    self.note_step("parse", path);
 }
 
 impl NativeUnitRegistry.note_step(
@@ -337,14 +346,19 @@ impl NativeUnitRegistry.recorded_native_deps(
 }
 
 impl NativeUnitRegistry._deps_match(
-    data: bytes,
-    stamp: NativeStamp,
-    base_dir: str,
-    anchor: str = "",
-    options: (CompileOptions | None) = None
+    dep_digests: list[tuple[str, str]], options: (CompileOptions | None) = None
 ) -> bool {
-    for (dep, recorded) in read_native_dep_hashes(data, stamp, base_dir, anchor) {
-        ent = self.ensure(dep, compile_on_miss=False, options=options);
+    """Whether each direct dependency still has the interface the unit was
+    lowered against. A dependency counts as it stands, its own
+    dependencies unchecked: a dependency that is stale may lower to the
+    same interface, so judging its consumers by its staleness would
+    rebuild everything above it. The link plan lowers dependencies before
+    their consumers and settles cycle peers once their interfaces are
+    final.""";
+    for (dep, recorded) in dep_digests {
+        ent = self.ensure(
+            dep, compile_on_miss=False, options=options, check_deps=False
+        );
         if ent is None or ent.digest != recorded {
             return False;
         }
@@ -359,6 +373,11 @@ impl NativeUnitRegistry.dep_digests(paths: list[str]) -> dict[str, str] {
         out[real] = self.known_digest(real);
     }
     return out;
+}
+
+impl NativeUnitRegistry._dep_miss(resolved: str) {
+    self._event("native_dep_miss");
+    self._miss(resolved, "a dependency's native interface changed");
 }
 
 impl NativeUnitRegistry._read_from_disk(
@@ -394,15 +413,16 @@ impl NativeUnitRegistry._read_from_disk(
         return None;
     }
     iface.resolve_deps(resolved);
-    if check_deps and not self._deps_match(data, stamp, base_dir, resolved, options) {
-        self._event("native_dep_miss");
-        self._miss(resolved, "a dependency's native interface changed");
+    dep_digests = read_native_dep_hashes(data, stamp, base_dir, resolved);
+    if check_deps and not self._deps_match(dep_digests, options) {
+        self._dep_miss(resolved);
         return None;
     }
     ent = self._register(resolved, iface, stamp, "disk");
     ent.compile_deps = compile_deps;
     ent.compile_deps_base = base_dir;
-    ent.dep_digests = dict(read_native_dep_hashes(data, stamp, base_dir, resolved));
+    ent.dep_digests = dict(dep_digests);
+    ent.deps_checked = check_deps;
     ent.object_bytes = native_section_payload(
         read_section_bytes(data, SEC_NOBJ), stamp
     );
@@ -424,8 +444,20 @@ impl NativeUnitRegistry.ensure(
     }
     stamp = self.stamp_for(options, resolved);
     ent = self.entries.get(resolved);
+    stale_deps = False;
     if ent is not None and ent.stamp.matches(stamp) and self._entry_fresh(ent) {
-        return ent;
+        """An entry read for a consumer's check is unchecked itself; a
+        caller that asks for checked dependencies checks them before
+        relying on it.""";
+        if not check_deps or ent.deps_checked {
+            return ent;
+        }
+        if self._deps_match(sorted(ent.dep_digests.items()), options) {
+            ent.deps_checked = True;
+            return ent;
+        }
+        self._dep_miss(resolved);
+        stale_deps = True;
     }
     if ent is not None {
         del self.entries[resolved];
@@ -433,19 +465,11 @@ impl NativeUnitRegistry.ensure(
     if resolved in self.building {
         return None;
     }
-    if resolved in self.checking and not options.no_ir_cache {
-        return self._read_from_disk(resolved, stamp, check_deps=False, options=options);
-    }
     (rebuild, _) = cache_mode();
-    if not rebuild and not options.no_ir_cache and not self.cold {
-        self.checking.add(resolved);
-        try {
-            found = self._read_from_disk(
-                resolved, stamp, check_deps=check_deps, options=options
-            );
-        } finally {
-            self.checking.discard(resolved);
-        }
+    if not stale_deps and not rebuild and not options.no_ir_cache and not self.cold {
+        found = self._read_from_disk(
+            resolved, stamp, check_deps=check_deps, options=options
+        );
         if found is not None {
             self._event("native_iface_hit");
             return found;
@@ -585,7 +609,7 @@ impl NativeUnitRegistry.compile_unit(
     """Lower a unit and, when `products` is set, optimize, emit and persist
         its products. An analysis-only consumer needs the interface and
         layouts that lowering records; a build that later needs the products
-        compiles the unit again through `bitcode_for` or `object_for`.""";
+        gets them through `bitcode_for` or `object_for`.""";
     if self.session is not None {
         if self.session.discovery_open {
             self._event("native_nested_lower");
@@ -723,16 +747,44 @@ impl NativeUnitRegistry.known_digest(path: str) -> str {
     return NativeIface.verified_digest(payload) or "";
 }
 
+impl NativeUnitRegistry._with_products(
+    path: str, options: (CompileOptions | None) = None
+) -> (NativeUnitEntry | None) {
+    """The unit's entry with its products. Products a closure release
+    dropped come back from the module cache while it holds the entry's
+    interface; a unit with none there is compiled again.""";
+    ent = self.ensure(path, options=options, check_deps=False);
+    if ent is None or ent.bitcode is not None or ent.object_bytes is not None {
+        return ent;
+    }
+    found = self._module_jir(ent.path, ent.stamp);
+    if found is not None {
+        data = found[0];
+        cached = native_section_payload(
+            read_section_bytes(data, SEC_NIFACE), ent.stamp
+        );
+        if NativeIface.verified_digest(cached) == ent.digest {
+            ent.bitcode = native_section_payload(
+                read_section_bytes(data, SEC_NBITCODE), ent.stamp
+            );
+            ent.object_bytes = native_section_payload(
+                read_section_bytes(data, SEC_NOBJ), ent.stamp
+            );
+        }
+    }
+    if ent.bitcode is None and ent.object_bytes is None {
+        return self.compile_unit(path, options);
+    }
+    return ent;
+}
+
 impl NativeUnitRegistry.emit_objects(
     paths: list[str], options: (CompileOptions | None) = None
 ) {
     pending: list[NativeUnitEntry] = [];
     bitcodes: list[bytes] = [];
     for path in paths {
-        ent = self.ensure(path, options=options, check_deps=False);
-        if ent is not None and ent.object_bytes is None and ent.bitcode is None {
-            ent = self.compile_unit(path, options);
-        }
+        ent = self._with_products(path, options);
         if ent is not None and ent.object_bytes is None and ent.bitcode is not None {
             pending.append(ent);
             bitcodes.append(ent.bitcode);
@@ -760,11 +812,8 @@ impl NativeUnitRegistry.emit_objects(
 impl NativeUnitRegistry.object_for(
     path: str, options: (CompileOptions | None) = None
 ) -> (bytes | None) {
-    ent = self.ensure(path, options=options, check_deps=False);
+    ent = self._with_products(path, options);
     if ent is not None and ent.object_bytes is None {
-        if ent.bitcode is None {
-            ent = self.compile_unit(path, options);
-        }
         if ent is not None and ent.bitcode is not None {
             import from jaclang.compiler.backends.native.na_compile_pass {
                 emit_unit_object
@@ -787,7 +836,7 @@ impl NativeUnitRegistry.object_for(
 impl NativeUnitRegistry.bitcode_for(
     path: str, options: (CompileOptions | None) = None
 ) -> (bytes | None) {
-    ent = self.ensure(path, options=options, check_deps=False);
+    ent = self._with_products(path, options);
     if ent is not None and ent.bitcode is None {
         ent = self.compile_unit(path, options);
     }

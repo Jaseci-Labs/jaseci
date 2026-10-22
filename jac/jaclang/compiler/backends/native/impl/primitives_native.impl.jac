@@ -712,131 +712,38 @@ def _str_cp_region(
     p: NaIRGenPass, b: ir.IRBuilder, target: ir.Value, bounds: list[ir.Value]
 ) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value, ir.Value, ir.Value];
 
+def _emit_str_search(
+    p: NaIRGenPass, target: ir.Value, args: list[ir.Value], mode: str, missing: str = ""
+) -> (ir.Value | None);
+
 impl NativeStrEmitter.emit_count(
     self: NativeStrEmitter, ctx: NativeEmitCtx, target: ir.Value, args: list[ir.Value]
 ) -> (ir.Value | None) {
-    if not args or len(args) > 3 {
-        return None;
-    }
-    p = ctx.pass_ref;
-    b = get_builder(p);
-    i8p = ir.IntType(8).as_pointer();
-    i64 = ir.IntType(64);
-    strstr_fn = p._get_or_declare_extern("strstr", i8p, [i8p, i8p]);
-    sub_len = p._call_str_len(b, args[0], name="cnt.sub.len");
-    (_, _, lo_cp, hi_cp, lo_off, hi_off, inverted) = _str_cp_region(
-        p, b, target, args[1:]
-    );
-    null_ptr = ir.Constant(i8p, None);
-    func = b.basic_block.function;
-    empty_bb = func.append_basic_block(name="cnt.empty");
-    scan_bb = func.append_basic_block(name="cnt.scan");
-    loop_bb = func.append_basic_block(name="cnt.loop");
-    found_bb = func.append_basic_block(name="cnt.found");
-    hit_bb = func.append_basic_block(name="cnt.hit");
-    done_bb = func.append_basic_block(name="cnt.done");
-
-    search_from = b.gep(target, [lo_off], name="cnt.lo");
-    is_empty = b.icmp_unsigned("==", sub_len, ir.Constant(i64, 0), name="cnt.isempty");
-    b.cbranch(is_empty, empty_bb, scan_bb);
-    b.position_at_start(empty_bb);
-
-    empty_count = b.select(
-        inverted,
-        ir.Constant(i64, 0),
-        b.add(
-            b.sub(hi_cp, lo_cp, name="cnt.span"), ir.Constant(i64, 1), name="cnt.ep1"
-        ),
-        name="cnt.empty.n"
-    );
-    b.branch(done_bb);
-    b.position_at_start(scan_bb);
-    b.branch(loop_bb);
-    b.position_at_start(loop_bb);
-    cur_ptr = b.phi(i8p, name="cnt.cur");
-    count = b.phi(i64, name="cnt.count");
-    cur_ptr.add_incoming(search_from, scan_bb);
-    count.add_incoming(ir.Constant(i64, 0), scan_bb);
-    found = b.call(strstr_fn, [cur_ptr, args[0]], name="cnt.found.ptr");
-    is_null = b.icmp_unsigned("==", found, null_ptr, name="cnt.null");
-    b.cbranch(is_null, done_bb, found_bb);
-    b.position_at_start(found_bb);
-
-    f_off = b.sub(
-        b.ptrtoint(found, i64, name="cnt.fnd.int"),
-        b.ptrtoint(target, i64, name="cnt.tgt.int"),
-        name="cnt.foff"
-    );
-    in_bounds = b.icmp_signed(
-        "<=", b.add(f_off, sub_len, name="cnt.fend"), hi_off, name="cnt.inb"
-    );
-    b.cbranch(in_bounds, hit_bb, done_bb);
-    b.position_at_start(hit_bb);
-    new_count = b.add(count, ir.Constant(i64, 1), name="cnt.inc");
-    found_int = b.ptrtoint(found, i64, name="cnt.fnd2.int");
-    next_int = b.add(found_int, sub_len, name="cnt.next.int");
-    next_ptr = b.inttoptr(next_int, i8p, name="cnt.next.ptr");
-    cur_ptr.add_incoming(next_ptr, hit_bb);
-    count.add_incoming(new_count, hit_bb);
-    b.branch(loop_bb);
-    b.position_at_start(done_bb);
-    result = b.phi(i64, name="cnt.result");
-    result.add_incoming(empty_count, empty_bb);
-    result.add_incoming(count, loop_bb);
-    result.add_incoming(count, found_bb);
-    return b.select(inverted, ir.Constant(i64, 0), result, name="cnt.final");
+    return _emit_str_search(ctx.pass_ref, target, args, "count");
 }
-
-def _emit_str_find_bounded(
-    p: NaIRGenPass,
-    ctx: NativeEmitCtx,
-    target: ir.Value,
-    args: list[ir.Value],
-    rfind: bool
-) -> (ir.Value | None);
 
 impl NativeStrEmitter.emit_find(
     self: NativeStrEmitter, ctx: NativeEmitCtx, target: ir.Value, args: list[ir.Value]
 ) -> (ir.Value | None) {
-    return _emit_str_find_bounded(ctx.pass_ref, ctx, target, args, rfind=False);
+    return _emit_str_search(ctx.pass_ref, target, args, "find");
 }
 
 impl NativeStrEmitter.emit_rfind(
     self: NativeStrEmitter, ctx: NativeEmitCtx, target: ir.Value, args: list[ir.Value]
 ) -> (ir.Value | None) {
-    return _emit_str_find_bounded(ctx.pass_ref, ctx, target, args, rfind=True);
+    return _emit_str_search(ctx.pass_ref, target, args, "rfind");
 }
 
 impl NativeStrEmitter.emit_index(
     self: NativeStrEmitter, ctx: NativeEmitCtx, target: ir.Value, args: list[ir.Value]
 ) -> (ir.Value | None) {
-    result = _emit_str_find_bounded(ctx.pass_ref, ctx, target, args, rfind=False);
-    if result is None {
-        return None;
-    }
-    p = ctx.pass_ref;
-    b = get_builder(p);
-    is_neg = b.icmp_signed(
-        "<", result, ir.Constant(ir.IntType(64), 0), name="index.neg"
-    );
-    p._emit_runtime_raise(is_neg, "ValueError", "substring not found");
-    return result;
+    return _emit_str_search(ctx.pass_ref, target, args, "find", "substring not found");
 }
 
 impl NativeStrEmitter.emit_rindex(
     self: NativeStrEmitter, ctx: NativeEmitCtx, target: ir.Value, args: list[ir.Value]
 ) -> (ir.Value | None) {
-    result = _emit_str_find_bounded(ctx.pass_ref, ctx, target, args, rfind=True);
-    if result is None {
-        return None;
-    }
-    p = ctx.pass_ref;
-    b = get_builder(p);
-    is_neg = b.icmp_signed(
-        "<", result, ir.Constant(ir.IntType(64), 0), name="rindex.neg"
-    );
-    p._emit_runtime_raise(is_neg, "ValueError", "substring not found");
-    return result;
+    return _emit_str_search(ctx.pass_ref, target, args, "rfind", "substring not found");
 }
 
 impl NativeStrEmitter.emit_startswith(
@@ -7660,100 +7567,67 @@ impl _str_cp_region(
     return (blen, ascii, lo, hi, lo_off, hi_off, inverted);
 }
 
-impl _emit_str_find_bounded(
-    p: NaIRGenPass,
-    ctx: NativeEmitCtx,
-    target: ir.Value,
-    args: list[ir.Value],
-    rfind: bool
+impl _emit_str_search(
+    p: NaIRGenPass, target: ir.Value, args: list[ir.Value], mode: str, missing: str = ""
 ) -> (ir.Value | None) {
-    if not args or len(args) > 3 {
-        return None;
-    }
-    b = get_builder(p);
     i8p = ir.IntType(8).as_pointer();
     i64 = ir.IntType(64);
-    strstr_fn = p._get_or_declare_extern("strstr", i8p, [i8p, i8p]);
-    null_ptr = ir.Constant(i8p, None);
-    sub_len = p._call_str_len(b, args[0], name="find.sub.len");
-    (_, ascii, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
-    target_int = b.ptrtoint(target, i64, name="find.tgt.int");
-
-    if not rfind {
-        search_from = b.gep(target, [lo_off], name="find.from");
-        found = b.call(strstr_fn, [search_from, args[0]], name="find.ptr");
-        is_null = b.icmp_unsigned("==", found, null_ptr, name="find.null");
-        f_off = b.sub(
-            b.ptrtoint(found, i64, name="find.fnd.int"), target_int, name="find.foff"
-        );
-        within = b.icmp_signed(
-            "<=", b.add(f_off, sub_len, name="find.fend"), hi_off, name="find.inb"
-        );
-        ok = b.and_(
-            b.and_(b.not_(is_null, name="find.hit"), within, name="find.ok1"),
-            b.not_(inverted, name="find.ninv"),
-            name="find.ok"
-        );
-        safe_off = b.select(ok, f_off, ir.Constant(i64, 0), name="find.safe");
-        cp_pos = p._call_utf8_cplen(b, target, safe_off, ascii, name="find.cppos");
-        return b.select(ok, cp_pos, ir.Constant(i64, -1), name="find.result");
+    modes = {"find": 0, "rfind": 1, "count": 2};
+    if not args or len(args) > 3 or mode not in modes or args[0].type != i8p {
+        return None;
     }
-
-    func = b.basic_block.function;
-    entry_bb = b.basic_block;
-    empty_bb = func.append_basic_block(name="rfind.empty");
-    search_bb = func.append_basic_block(name="rfind.search");
-    loop_bb = func.append_basic_block(name="rfind.loop");
-    found_bb = func.append_basic_block(name="rfind.found");
-    hit_bb = func.append_basic_block(name="rfind.hit");
-    done_bb = func.append_basic_block(name="rfind.done");
-    search_from = b.gep(target, [lo_off], name="rfind.lo");
-    is_empty = b.icmp_unsigned(
-        "==", sub_len, ir.Constant(i64, 0), name="rfind.isempty"
+    for bound in args[1:] {
+        if not isinstance(bound.type, ir.IntType) {
+            return None;
+        }
+    }
+    b = get_builder(p);
+    zero = ir.Constant(i64, 0);
+    minus_one = ir.Constant(i64, -1);
+    (blen, ascii, lo_cp, hi_cp, lo_off, hi_off, inverted) = _str_cp_region(
+        p, b, target, args[1:]
     );
-    b.cbranch(is_empty, empty_bb, search_bb);
-    b.position_at_start(empty_bb);
-    b.branch(done_bb);
-    b.position_at_start(search_bb);
-    b.branch(loop_bb);
-    b.position_at_start(loop_bb);
-    cur_ptr = b.phi(i8p, name="rfind.cur");
-    last_pos = b.phi(i64, name="rfind.last");
-    cur_ptr.add_incoming(search_from, search_bb);
-    last_pos.add_incoming(ir.Constant(i64, -1), search_bb);
-    found = b.call(strstr_fn, [cur_ptr, args[0]], name="rfind.found.ptr");
-    is_null = b.icmp_unsigned("==", found, null_ptr, name="rfind.null");
-    b.cbranch(is_null, done_bb, found_bb);
-    b.position_at_start(found_bb);
-    f_off = b.sub(
-        b.ptrtoint(found, i64, name="rfind.fnd.int"), target_int, name="rfind.foff"
-    );
-    in_bounds = b.icmp_signed(
-        "<=", b.add(f_off, sub_len, name="rfind.fend"), hi_off, name="rfind.inb"
-    );
-    b.cbranch(in_bounds, hit_bb, done_bb);
-    b.position_at_start(hit_bb);
 
-    next_ptr = b.gep(found, [ir.Constant(i64, 1)], name="rfind.next");
-    cur_ptr.add_incoming(next_ptr, hit_bb);
-    last_pos.add_incoming(f_off, hit_bb);
-    b.branch(loop_bb);
-    b.position_at_start(done_bb);
-    result = b.phi(i64, name="rfind.result");
-
-    result.add_incoming(hi_off, empty_bb);
-    result.add_incoming(last_pos, loop_bb);
-    result.add_incoming(last_pos, found_bb);
-    has_hit = b.icmp_signed(">=", result, ir.Constant(i64, 0), name="rfind.hit");
+    start = b.select(
+        inverted,
+        b.add(hi_off, ir.Constant(i64, 1), name="ss.past"),
+        lo_off,
+        name="ss.start"
+    );
+    sub_len = p._call_str_len(b, args[0], name="ss.sub.len");
+    found = b.call(
+        p._bytes_search_fn(),
+        [
+            target,
+            blen,
+            args[0],
+            sub_len,
+            zero,
+            start,
+            hi_off,
+            ir.Constant(i64, modes[mode])
+        ],
+        name=f"ss.{mode}"
+    );
+    if mode == "count" {
+        slots = b.add(
+            b.sub(hi_cp, lo_cp, name="ss.span"), ir.Constant(i64, 1), name="ss.slots"
+        );
+        empty = b.and_(
+            b.icmp_unsigned("==", sub_len, zero, name="ss.empty"),
+            b.not_(inverted, name="ss.ninv"),
+            name="ss.empty.ok"
+        );
+        return b.select(empty, slots, found, name="ss.count");
+    }
+    hit = b.icmp_signed(">=", found, zero, name="ss.hit");
     cp_pos = p._call_utf8_cplen(
-        b,
-        target,
-        b.select(has_hit, result, ir.Constant(i64, 0), name="rfind.safe"),
-        ascii,
-        name="rfind.cppos"
+        b, target, b.select(hit, found, zero, name="ss.safe"), ascii, name="ss.cppos"
     );
-    cp_result = b.select(has_hit, cp_pos, result, name="rfind.cp");
-    return b.select(inverted, ir.Constant(i64, -1), cp_result, name="rfind.final");
+    if missing {
+        p._emit_runtime_raise(b.not_(hit, name="ss.miss"), "ValueError", missing);
+    }
+    return b.select(hit, cp_pos, minus_one, name="ss.result");
 }
 
 
