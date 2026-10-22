@@ -836,7 +836,8 @@ native layout records the emitted name separately from its source-level key.
   memory the call owns whatever size the caller passed, and answers fresh
   `bytes` of `len(arg)`; the caller's object is never written. An `arg`
   longer than 1024 bytes raises `ValueError`, and a request that writes
-  past `len(arg)` (a short buffer) is caught by the guard. The
+  past `len(arg)` (a short buffer) is caught by the guard. Both calls
+  retry on `EINTR`, as CPython's do (PEP 475). The
   `fcntl(2)` extern is declared at fixed arity (the flag word as `i64`),
   the ABI shape the calls here make. DIVERGENCES: the short-buffer case
   raises `RuntimeError("buffer overflow")` where CPython raises
@@ -862,7 +863,8 @@ native layout records the emitted name separately from its source-level key.
   values, and it rejects malformed attributes with CPython's `TypeError`
   before touching the terminal: a list that is not 7 elements, a `cc` list
   that is not exactly `NCCS` entries, or a `cc` entry that is neither an
-  int nor a one-byte `bytes`. The
+  int nor a one-byte `bytes`. As in CPython, no `termios` call is retried
+  on `EINTR`. The
   floor split is structural: glibc lays the struct out as four `u32` flag
   words + `c_cc[32]` (60 bytes), Libsystem as four `u64` words +
   `c_cc[20]` (72 bytes), and the surface parameterizes on the floor's
@@ -887,8 +889,12 @@ native layout records the emitted name separately from its source-level key.
   layout, `POLL*` values and timeout shape are identical on every POSIX
   host) -- `select(rlist, wlist, xlist, timeout=-1.0)` merging the three
   lists into one pollfd array and building each result by walking its own
-  input list, so order and repeated fds come back as CPython returns them,
-  plus the `POLLIN`/`POLLOUT`/`POLLERR`/`POLLHUP`/`POLLNVAL` constants.
+  input list, so order and repeated fds come back as CPython returns them.
+  A wait interrupted by a signal whose handler returns is retried, as in
+  CPython (PEP 475): a finite timeout is recomputed from the monotonic
+  clock, and a deadline already passed answers three empty lists. The
+  module also exports the `POLLIN`/`POLLOUT`/`POLLERR`/`POLLHUP`/`POLLNVAL`
+  constants.
   DIVERGENCES: `-1.0` is the block-forever sentinel where CPython spells
   `None` (any negative timeout other than the sentinel raises `ValueError`);
   `POLLERR`/`POLLHUP` report the fd readable AND writable where CPython

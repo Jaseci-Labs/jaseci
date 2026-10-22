@@ -19,6 +19,9 @@ def:pub ioctl(fd: int, request: int, arg: bytes) -> bytes;
 
 impl fcntl(fd: int, cmd: int, arg: int = 0) -> int {
     rc: int = do_fcntl(fd, cmd, arg);
+    while rc < 0 and last_errno() == EINTR {
+        rc = do_fcntl(fd, cmd, arg);
+    }
     if rc < 0 {
         raise ValueError(
             "fcntl failed: [Errno " + str(last_errno()) + "] " + errno_message()
@@ -34,6 +37,9 @@ impl ioctl(fd: int, request: int, arg: bytes) -> bytes {
     }
     buf: bytes = arg + _IOCTL_GUARD + b"\x00" * (_IOCTL_BUFSZ - n);
     rc: int = do_ioctl(fd, request, buf);
+    while rc < 0 and last_errno() == EINTR {
+        rc = do_ioctl(fd, request, buf);
+    }
     if rc < 0 {
         raise ValueError(
             "ioctl failed: [Errno " + str(last_errno()) + "] " + errno_message()

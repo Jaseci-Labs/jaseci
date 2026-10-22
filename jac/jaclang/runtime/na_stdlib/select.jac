@@ -1,3 +1,5 @@
+import time;
+
 glob POLLIN: int = _POLLIN,
      POLLOUT: int = _POLLOUT,
      POLLERR: int = _POLLERR,
@@ -53,14 +55,26 @@ impl select(
     }
 
     tmo: int = -1;
+    deadline_ns: int = -1;
     if timeout is None {
         tmo = -1;
     } elif timeout >= 0.0 {
         tmo = int(timeout * 1000.0);
+        deadline_ns = time.monotonic_ns() + int(timeout * 1000000000.0);
     } elif timeout != -1.0 {
         raise ValueError("timeout must be None, -1.0 (block), or non-negative");
     }
     res: list[int] = do_poll(fds, masks, tmo);
+    while res[0] < 0 and last_errno() == EINTR {
+        if deadline_ns >= 0 {
+            left_ns: int = deadline_ns - time.monotonic_ns();
+            if left_ns < 0 {
+                return ([], [], []);
+            }
+            tmo = (left_ns + 999999) // 1000000;
+        }
+        res = do_poll(fds, masks, tmo);
+    }
     if res[0] < 0 {
         raise ValueError(
             "poll failed: [Errno " + str(last_errno()) + "] " + errno_message()
