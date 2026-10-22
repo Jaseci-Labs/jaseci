@@ -1898,22 +1898,19 @@ impl JacAutoLintPass._collect_reactive_has_names(
     ability_node: uni.Ability
 ) -> set[str] {
     names: set[str] = set();
-    container: (uni.UniNode | None) = ability_node.parent;
+    container = ability_node.decl_parent;
     while container is not None {
         if isinstance(container, (uni.Archetype, uni.Ability)) {
-            body = container.body;
-            if body is not None and isinstance(body, list) {
-                for stmt in body {
-                    if isinstance(stmt, uni.ArchHas) and stmt.in_client_context() {
-                        for hv in stmt.vars {
-                            names.add(hv.name.sym_name);
-                        }
+            for stmt in ModuleFacts.unwrap_body(container) or [] {
+                if isinstance(stmt, uni.ArchHas) and stmt.in_client_context() {
+                    for hv in stmt.vars {
+                        names.add(hv.name.sym_name);
                     }
                 }
             }
             break;
         }
-        container = container.parent;
+        container = container.decl_parent;
     }
     return names;
 }
@@ -2706,7 +2703,7 @@ impl JacAutoLintPass._collect_inline_abilities(
 }
 
 impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
-    if ab.accessor_kind or ab.is_abstract or ab.is_comptime or ab.type_params {
+    if ab.accessor_kind or ab.is_abstract or ab.is_comptime {
         return False;
     }
     if not isinstance(ab.name_ref, uni.Name) or not isinstance(ab.body, list) {
@@ -2717,16 +2714,6 @@ impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
     }
     if not self.ctx._is_suppressed(W3038)
         and any(self._is_usestate_assignment(stmt) is not None for stmt in ab.body) {
-        return False;
-    }
-    if any(isinstance(stmt, uni.ArchHas) for stmt in ab.body)
-        or ab.get_all_sub_nodes(uni.JsxElement) {
-        return False;
-    }
-    sig = ab.signature;
-    if isinstance(sig, uni.FuncSignature)
-        and isinstance(sig.return_type, uni.Name)
-        and sig.return_type.value == "JsxElement" {
         return False;
     }
     kids = [ab->:Kid:->];
@@ -2773,7 +2760,19 @@ impl JacAutoLintPass._impl_header(
         sig_start = sig.loc.pos_start;
         sig_text = src.code.encode("utf-8")[sig_start:sig.loc.pos_end].decode("utf-8");
     }
-    head = "impl " + target + (" " if isinstance(sig, uni.EventSignature) else "");
+    tp_text = "";
+    if ab.type_params {
+        kids = [ab->:Kid:->];
+        opener = kids[kids.index(ab.type_params[0]) - 1];
+        closer = kids[kids.index(ab.type_params[-1]) + 1];
+        tp_text = src.code.encode("utf-8")[opener.loc.pos_start:closer.loc.pos_end].decode(
+            "utf-8"
+        );
+    }
+    head = "impl "
+        + target
+        + tp_text
+        + (" " if isinstance(sig, uni.EventSignature) else "");
     text = head + sig_text + " {}";
     (tokens, _comments, _diags, lex_errors) = tokenize_full(text, ab.loc.mod_path);
     parser = Parser(tokens=tokens, file_path=ab.loc.mod_path, source_code=text);

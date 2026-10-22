@@ -10747,12 +10747,6 @@ graph import compiler.backends {
         },
     ]
     es ++> es.client_kernel_cache._lower { estree as es }
-    native.posix_floor_ir ++> native.posix_floor {
-        POSIX_FLOOR_IR_LINUX_AARCH64,
-        POSIX_FLOOR_IR_LINUX_X86_64,
-        POSIX_FLOOR_IR_MACOS_AARCH64,
-        POSIX_FLOOR_IR_MACOS_X86_64
-    }
 }
 
 graph import compiler.backends.es {
@@ -11103,6 +11097,12 @@ graph import compiler.backends.native {
         wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
     ]
     posix_floor --> link_glue.link_glue_ir { posix_floor_ir }
+    posix_floor_ir ++> posix_floor {
+        POSIX_FLOOR_IR_LINUX_AARCH64,
+        POSIX_FLOOR_IR_LINUX_X86_64,
+        POSIX_FLOOR_IR_MACOS_AARCH64,
+        POSIX_FLOOR_IR_MACOS_X86_64
+    }
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,

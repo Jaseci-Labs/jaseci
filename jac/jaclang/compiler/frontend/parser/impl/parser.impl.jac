@@ -6634,6 +6634,16 @@ impl Parser.parse_impl_def -> ImplDef {
         target_names.append(self.parse_impl_target_name());
     }
 
+    impl_tp_list: (list[TypeParam] | None) = None;
+    impl_tp_lb_uni: Token | None = None;
+    impl_tp_rb_uni: Token | None = None;
+    impl_tp_comma_unis: list[Token] = [];
+    if self.match_tok(TokenKind.LSQUARE) {
+        impl_tp_lb_uni = self.make_uni_token(self.previous());
+        (impl_tp_list, impl_tp_comma_unis) = self.parse_type_params();
+        impl_tp_rb_uni = self.consume_uni(TokenKind.RSQUARE);
+    }
+
     spec_sig: UniNode | None = None;
     spec_is_inh = False;
     base_classes: list[Expr] = [];
@@ -6718,6 +6728,18 @@ impl Parser.parse_impl_def -> ImplDef {
             kid.append(dot_unis[i]);
         }
     }
+    if impl_tp_list is not None
+        and impl_tp_lb_uni is not None
+        and impl_tp_rb_uni is not None {
+        kid.append(impl_tp_lb_uni);
+        for (i, tp) in enumerate(impl_tp_list) {
+            if i > 0 {
+                kid.append(impl_tp_comma_unis[i - 1]);
+            }
+            kid.append(tp);
+        }
+        kid.append(impl_tp_rb_uni);
+    }
     if spec_sig is not None {
         kid.append(spec_sig);
     } elif spec_is_inh and len(base_classes) > 0 and impl_inh_lp_tok is not None {
@@ -6763,6 +6785,7 @@ impl Parser.parse_impl_def -> ImplDef {
     return ImplDef(
         decorators=decorators,
         target=target_names,
+        type_params=impl_tp_list,
         spec=spec_arg,
         body=impl_body_arg,
         kid=kid,

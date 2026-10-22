@@ -342,9 +342,14 @@ impl link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     if spec.needs_atexit_shim {
         parts.append(atexit_shim_ir());
     }
-    if spec.platform == "pe" {
+    floor_osarch = triple_osarch(spec.triple) if spec.triple else "";
+    if spec.platform == "pe"
+        or (spec.platform == "jit" and floor_osarch.startswith("windows")) {
         import from jaclang.compiler.backends.native.win_floor { win_floor_ir }
         parts.append(win_floor_ir());
+    } elif spec.platform in ["elf", "macho", "c", "jit"] and floor_osarch {
+        import from jaclang.compiler.backends.native.posix_floor { posix_floor_ir }
+        parts.append(posix_floor_ir(floor_osarch));
     }
     if spec.shared {
         if not spec.entry_lib {

@@ -37,10 +37,12 @@ searches **nearest-wins**:
    walked up to the filesystem root), then
 2. this bundled root (`native_stdlib_root()`), which is native **by
    location** -- its modules are plain `.jac` files. At either step a
-   per-architecture variant `<name>.<arch>.jac` (e.g.
-   `_math_fused.aarch64.jac`) is probed first, then a per-OS variant
-   `<name>.<os>.jac` (e.g. `_dirent_native.darwin.jac`), then the plain
-   `<name>.jac`.
+   per-architecture variant `<name>.<arch>.jac` is probed first, then a
+   per-OS variant `<name>.<os>.jac` (e.g. `errno.darwin.jac`), then the plain
+   `<name>.jac`. A module the compiler kernel imports has no variants: what
+   it needs from a C library per target comes from the runtime floor's
+   `__jac_*` functions (`compiler/backends/native/posix_floor.c`), so the
+   kernel is the same program on every target.
 
 So `import from os.path { normpath }` binds CPython's `posixpath` on the sv
 (Python) pathway and `na_stdlib/os/path.jac` on the na (native) pathway (the
@@ -607,7 +609,8 @@ native layout records the emitted name separately from its source-level key.
   `hypot`/`dist` port its `vector_norm` and `sumprod` its triple-length
   accumulator. Where CPython's C build fuses a multiply-add (clang contracts
   `a*b + c` into one rounding on aarch64, never on baseline x86-64),
-  `_math_fused.<arch>.jac` supplies the same fused or unfused `fmadd`. A
+  `_math_fused.jac`'s `fmadd` calls the runtime floor's `__jac_fmadd`, which
+  is fused or unfused the same way on each target. A
   randomized sv/na differential sweep over every real function is
   bit-identical on macOS arm64. `floor`/`ceil`/`trunc` return an `int`
   argument unchanged (no float round trip), `gcd`/`lcm`/`hypot` are truly
@@ -713,8 +716,9 @@ native layout records the emitted name separately from its source-level key.
 
 - **`time.jac`** (Mechanism F surface) + **`_time_common.jac`** (shared
   `clock_gettime` / `clock_settime` FFI and timespec loads) +
-  **`_time_native.linux.jac`** / **`_time_native.darwin.jac`** (per-OS clock
-  ids and the sleep floor: `clock_nanosleep` on Linux, `nanosleep` on Darwin) -- the clock half of CPython's
+  **`_time_native.jac`** (the target libc's clock ids and sleep, from the
+  runtime floor's `__jac_clock_id` and `__jac_sleep_ns`: an absolute
+  `clock_nanosleep` on Linux, a `nanosleep` loop on Darwin) -- the clock half of CPython's
   `time` module, replacing the former Mechanism-A intercept: `time`,
   `time_ns`, `monotonic`, `monotonic_ns`, `perf_counter`, `perf_counter_ns`,
   `process_time`, `process_time_ns`, `thread_time`, `thread_time_ns`,
@@ -822,6 +826,84 @@ native layout records the emitted name separately from its source-level key.
   `sigwait`/`sigwaitinfo`/`setitimer`/`getitimer` are not provided.
   Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
 
+- **`fcntl.jac`** (Mechanism F) + **`_fcntl_native.linux.jac`** /
+  **`_fcntl_native.darwin.jac`** (libc FFI floor: `fcntl(2)` and
+  `ioctl(2)`; per-OS `F_*`/`O_*` flag values) -- `fcntl(fd, cmd, arg=0)`
+  for the `F_GETFL`/`F_SETFL`/`F_GETFD`/`F_SETFD`/`F_SETOWN` family and
+  `ioctl(fd, request, arg)` with a `bytes` arg (e.g. the packed `winsize`
+  for `termios`'s `TIOCGWINSZ`). As in CPython, `ioctl` copies `arg` into a
+  private 1024-byte buffer followed by a guard, so the request writes
+  memory the call owns whatever size the caller passed, and answers fresh
+  `bytes` of `len(arg)`; the caller's object is never written. An `arg`
+  longer than 1024 bytes raises `ValueError`, and a request that writes
+  past `len(arg)` (a short buffer) is caught by the guard. Both calls
+  retry on `EINTR`, as CPython's do (PEP 475). The
+  `fcntl(2)` extern is declared at fixed arity (the flag word as `i64`),
+  the ABI shape the calls here make. DIVERGENCES: the short-buffer case
+  raises `RuntimeError("buffer overflow")` where CPython raises
+  `SystemError` (no native `SystemError`); an int or mutable-buffer `arg`
+  to `ioctl` is not accepted; errors
+  raise `ValueError` carrying CPython's `[Errno N] <strerror>` text where
+  CPython raises `OSError`; `flock`/`lockf` and the `struct flock`
+  commands are not provided. Pinned sv<->na congruent by
+  `prim_fcntl.jac`.
+- **`termios.jac`** (Mechanism F) + **`_termios_native.linux.jac`** /
+  **`_termios_native.darwin.jac`** (libc FFI floor: `tcgetattr(3)` /
+  `tcsetattr(3)` / `cfgetispeed(3)` / `cfgetospeed(3)` over an opaque
+  `struct termios` image; per-OS layout and constants) --
+  CPython-shaped `tcgetattr(fd)` / `tcsetattr(fd, when, attrs)` over the
+  `[iflag, oflag, cflag, lflag, ispeed, ospeed, cc]` form with `cc` as
+  `NCCS` ints (32 on glibc, 20 on darwin), plus the V*/I*/O*/C*/L*
+  constant groups, `TCSANOW`/`TCSADRAIN`/`TCSAFLUSH`, and `TIOCGWINSZ`.
+  The raw struct bytes travel opaquely through the floor, so a
+  save/restore pair is byte-exact for every byte the CPython shape
+  carries; speeds are read the way CPython reads them (`cfget*`).
+  `tcsetattr` packs over the fd's current `struct termios` (as CPython
+  does), so bytes outside the CPython shape (glibc's `c_line`) keep their
+  values, and it rejects malformed attributes with CPython's `TypeError`
+  before touching the terminal: a list that is not 7 elements, a `cc` list
+  that is not exactly `NCCS` entries, or a `cc` entry that is neither an
+  int nor a one-byte `bytes`. As in CPython, no `termios` call is retried
+  on `EINTR`. The
+  floor split is structural: glibc lays the struct out as four `u32` flag
+  words + `c_cc[32]` (60 bytes), Libsystem as four `u64` words +
+  `c_cc[20]` (72 bytes), and the surface parameterizes on the floor's
+  `_FLAG_BYTES`/offsets, so only the floor files differ. Constant values
+  are per-OS. DIVERGENCES: `VSWTC` (Linux-only in CPython) is not
+  exported, since the public surface is the same on every OS; errors raise `ValueError` carrying CPython's
+  `[Errno N] <strerror>` text where CPython raises `termios.error`; `cc` entries are ints (one-item `bytes` entries
+  are still accepted by `tcsetattr`, as there). Pinned sv<->na congruent
+  by `prim_termios.jac`.
+- **`tty.jac`** (Mechanism B over the bundled `termios`) -- `setraw(fd,
+  when=TCSAFLUSH)` / `setcbreak(fd, when=TCSAFLUSH)`, a direct port of
+  CPython's `tty.py` formulas over the bundled `termios` surface, sharing
+  its constants and error model. As in CPython 3.12+, the new mode gets
+  its own copy of the `cc` list, so the VMIN=1/VTIME=0 writes do not leak
+  into the returned original-mode list (pinned by `prim_tty.jac` from a
+  seeded VMIN). `cfmakeraw`/`cfmakecbreak` are not provided. Terminals
+  are the host's, so raw mode
+  behaves identically to CPython's by construction; the module is
+  per-OS only through what `termios` resolves to.
+- **`select.jac`** (Mechanism F) + **`_select_native.jac`** (libc FFI
+  floor: `poll(2)` -- one file, no per-OS split, since the `pollfd`
+  layout, `POLL*` values and timeout shape are identical on every POSIX
+  host) -- `select(rlist, wlist, xlist, timeout=-1.0)` merging the three
+  lists into one pollfd array and building each result by walking its own
+  input list, so order and repeated fds come back as CPython returns them.
+  A wait interrupted by a signal whose handler returns is retried, as in
+  CPython (PEP 475): a finite timeout is recomputed from the monotonic
+  clock, and a deadline already passed answers three empty lists. The
+  module also exports the `POLLIN`/`POLLOUT`/`POLLERR`/`POLLHUP`/`POLLNVAL`
+  constants.
+  DIVERGENCES: `-1.0` is the block-forever sentinel where CPython spells
+  `None` (any negative timeout other than the sentinel raises `ValueError`);
+  `POLLERR`/`POLLHUP` report the fd readable AND writable where CPython
+  reports the event that fired; the exceptional list is always empty (no
+  `xlist` events are polled); errors raise `ValueError` carrying
+  CPython's `[Errno N] <strerror>` text where CPython raises
+  `OSError`/`select.error`. Timeout is truncated to milliseconds.
+  Pinned sv<->na congruent by `prim_select.jac`.
+
 - **`subprocess.linux.jac`** (Mechanism F) +
   **`_subprocess_native.linux.jac`** (libc FFI floor: `posix_spawnp` and its
   file-actions API, `pipe`, `waitpid`, `poll`, `kill`) -- `Popen`, `run`,
@@ -848,24 +930,26 @@ native layout records the emitted name separately from its source-level key.
   the child was already reaped (CPython's `ChildProcessError` path).
   Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
 
-- **`hashlib.jac`** + **`hmac.jac`** (Mechanism F) + **`_hashlib_native.jac`**
-  (FFI floor over the bundled `libcrypto`) -- CPython's hash-object model over
-  OpenSSL EVP: `Hash` keeps a live `EVP_MD_CTX` (update feeds
-  `EVP_DigestUpdate` directly, `digest()` clones the ctx and finalizes the
-  clone, `copy()` clones it, a `drop` hook frees it -- the same
-  clone-finalize-free pattern CPython's `_hashopenssl` uses), so repeated
-  `digest()` is O(ctx) rather than re-hashing every retained chunk. Surface:
-  the named constructors (`md5`/`sha1`/`sha224`/`sha256`/`sha384`/`sha512`/
-  `sha3_224`/`sha3_256`/`sha3_384`/`sha3_512`/`blake2b`/`blake2s`), `new(name,
-  data)`, `update`/`digest`/`hexdigest`/`copy`, and the `digest_size`/
-  `block_size`/`name` attributes. `hmac.jac` mirrors it over `HMAC_CTX`
-  (`new(key, msg=None, digestmod)` -- `digestmod` is required and its absence
-  raises `TypeError` like CPython, as does a non-bytes `msg`; `key`/`msg`
-  also accept `bytearray`; `digest(key, msg, digest)`;
-  `compare_digest(a, b)`). Pinned sv<->na congruent by
-  `test_prim_equivalence.jac`. SCOPE: `shake_128`/`shake_256` (XOF digests need
-  `EVP_DigestFinalXOF` and a caller-supplied length) and `pbkdf2_hmac` are not
-  provided; the `usedforsecurity` kwarg and callable `digestmod` are not
+- **`hashlib.jac`** + **`hmac.jac`** + **`_digest.jac`** (pure Jac, no C
+  library) -- CPython's hash-object model over Jac digest cores: `Hash` keeps a
+  live `DigestCore` (update buffers bytes into blocks and compresses each full
+  block, `digest()` pads and finalizes a copy, `copy()` clones the core), so
+  repeated `digest()` is O(block) rather than re-hashing every retained chunk.
+  MD5, SHA-1, SHA-224/256, SHA-384/512, SHA3-224/256/384/512, BLAKE2b and
+  BLAKE2s are implemented in Jac with fixed-width wrapping arithmetic, so a
+  native program, and the compiler kernel, links no `libcrypto` for hashing.
+  Surface: the named constructors (`md5`/`sha1`/`sha224`/`sha256`/`sha384`/
+  `sha512`/`sha3_224`/`sha3_256`/`sha3_384`/`sha3_512`/`blake2b`/`blake2s`),
+  `new(name, data)`, `update`/`digest`/`hexdigest`/`copy`, and the
+  `digest_size`/`block_size`/`name` attributes. `hmac.jac` builds RFC 2104
+  HMAC over the same cores (`new(key, msg=None, digestmod)` -- `digestmod` is
+  required and its absence raises `TypeError` like CPython, as does a
+  non-bytes `msg`; `key`/`msg` also accept `bytearray`; `digest(key, msg,
+  digest)`; `compare_digest(a, b)`). Pinned against CPython at every block
+  boundary by `test_native_hashlib.jac` and sv<->na congruent by
+  `test_prim_equivalence.jac`. SCOPE: `shake_128`/`shake_256` (XOF digests
+  take a caller-supplied length), keyed or sized BLAKE2 and `pbkdf2_hmac` are
+  not provided; the `usedforsecurity` kwarg and callable `digestmod` are not
   accepted; algorithm lookup is the exact lowercase name (no case or alias
   normalization); `update`/`new` `data`/`compare_digest` take `bytes` only
   (no buffer protocol); `algorithms_*`
@@ -961,8 +1045,12 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 
 1. Drop `<name>.jac` (or `<pkg>/<name>.jac` for a dotted import) here,
    exporting its API with `def:pub`. If a module needs platform-specific
-   code, add a `<name>.<os>.jac` variant (e.g. `_dirent_native.darwin.jac`);
-   it wins over the plain file on that OS.
+   code, prefer a `__jac_*` function in the runtime floor
+   (`compiler/backends/native/posix_floor.c` and `win_floor.c`, regenerated
+   with `scripts/gen_posix_floor.jac` and `scripts/gen_win_floor.jac`): a
+   module the compiler kernel imports must not have variants. Otherwise add a
+   `<name>.<os>.jac` variant (e.g. `errno.darwin.jac`); it wins over the plain
+   file on that OS.
 2. Use only the native-supported subset; prefer typed containers
    (`list[str]`, `dict[str, any]`). A bare `list = []` defaults to `i64`
    elements. An empty `list[any] = []` then grown with `.append(x)` lowers and
@@ -993,7 +1081,7 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 - **F**: thin FFI wrappers over a system C library; native-host only. Examples:
   `_ssl_native.jac` -- the floor the verifying TLS client `ssl` is built on,
   over OpenSSL `libssl`/`libcrypto` (issue #6978 Phase 1); `_socket_native.jac`
-  over libc BSD sockets; `_hashlib_native.jac` over the bundled `libcrypto`.
+  over libc BSD sockets.
   An F module declares its C entry points with `import from <lib> { def ...; }`.
   `urllib/request.jac` (`urlopen`) is a pure-Jac surface over the `socket` +
   `ssl` floors -- it links no foreign C beyond libc/libssl/libcrypto (no

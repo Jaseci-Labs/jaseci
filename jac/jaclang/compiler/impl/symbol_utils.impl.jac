@@ -383,7 +383,7 @@ impl report_placement_warnings(reporter: CompilerPass, mod: Module) {
             and stmt.codespace_dual
             and idx in written_glob_idxs
         ) {
-            es = ps.elements[idx] if idx < len(ps.elements) else None;
+            es = ps.element_at(idx);
             gname = es.name if es is not None else 'glob';
             if not _already_reported(reporter.prog, reporter, W6006, stmt) {
                 reporter.ctx.emit(W6006, node_override=stmt, name=gname);
@@ -436,14 +436,6 @@ impl _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool {
     );
 }
 
-impl _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None) {
-    cur: (UniNode | None) = nd;
-    while (cur is not None and cur.parent is not mod) {
-        cur = cur.parent;
-    }
-    return cur;
-}
-
 impl client_bridged_endpoint(mod: Module, top: UniNode) -> bool {
     return (
         isinstance(top, Ability)
@@ -484,7 +476,7 @@ impl client_value_ref_targets(
             if decl is None {
                 continue;
             }
-            top = _module_top_element(mod, decl);
+            top = decl.element_in(mod);
             if (top is None or top is stmt or isinstance(top, Import)) {
                 continue;
             }

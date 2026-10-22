@@ -1158,10 +1158,14 @@ impl _forward_vite_output(
     ready_event: any,
     sys_module: any,
     output_buffer: list[str],
-    dispatch: any = None
+    dispatch: any = None,
+    closed_event: any = None
 ) -> None {
     stream = proc.stdout;
     if stream is None {
+        if closed_event is not None {
+            closed_event.set();
+        }
         return;
     }
     try {
@@ -1191,7 +1195,11 @@ impl _forward_vite_output(
                 output_buffer.append(line);
             }
         }
-    } except Exception {}
+    } except Exception {} finally {
+        if closed_event is not None {
+            closed_event.set();
+        }
+    }
 }
 
 impl ViteBundler._dispatch_client_event(self: ViteBundler, line: str) -> None {
@@ -1503,6 +1511,7 @@ impl ViteBundler._start_vite_with_output_capture(
         text=True
     );
     ready_event = threading.Event();
+    closed_event = threading.Event();
     output_buffer: list[str] = [];
     output_thread = threading.Thread(
         target=_forward_vite_output,
@@ -1511,13 +1520,20 @@ impl ViteBundler._start_vite_with_output_capture(
             ready_event,
             sys_module,
             output_buffer,
-            self._dispatch_client_event
+            self._dispatch_client_event,
+            closed_event
         ),
         daemon=True
     );
     output_thread.start();
 
-    is_ready = ready_event.`wait(timeout=VITE_READY_TIMEOUT_SECONDS);
+    deadline = time.monotonic() + VITE_READY_TIMEOUT_SECONDS;
+    while not ready_event.is_set()
+        and not closed_event.is_set()
+        and time.monotonic() < deadline {
+        ready_event.`wait(timeout=0.1);
+    }
+    is_ready = ready_event.is_set();
     if is_ready {
         port_file = build_dir / '.dev-port';
         for _ in range(40) {
@@ -1532,6 +1548,11 @@ impl ViteBundler._start_vite_with_output_capture(
         console.print("  ✔ Vite dev server ready", style="success");
     } else {
         exit_code = process.poll();
+        if exit_code is None and closed_event.is_set() {
+            try {
+                exit_code = process.`wait(timeout=5);
+            } except subprocess.TimeoutExpired {}
+        }
         if exit_code is not None {
             console.error("  ✖ Vite dev server failed to start");
             if output_buffer {
@@ -1541,6 +1562,15 @@ impl ViteBundler._start_vite_with_output_capture(
                 }
                 sys_module.stdout.flush();
             }
+            last = [
+                line.strip()
+                for line in output_buffer
+                if line.strip()
+            ];
+            raise ClientBundleError(
+                f"Vite exited with code {exit_code} before it was ready"
+                    + (f": {last[-1]}" if last else "")
+            );
         } else {
             console.warning(
                 f"  ⚠ Vite server may not be ready (timeout after {VITE_READY_TIMEOUT_SECONDS}s)"

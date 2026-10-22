@@ -49,7 +49,7 @@ impl list_directory(directory: str) -> (list[str] | None) {
 }
 
 impl style_annex_of(source_path: str) -> (str | None) {
-    src = os.path.realpath(source_path);
+    src = real_path(source_path);
     if not src.endswith(".jac") {
         return None;
     }
@@ -63,7 +63,7 @@ impl annex_files_of(
     suffix: str,
     listing: Callable[[str], (list[str] | None)]
 ) -> list[str] {
-    src = os.path.realpath(source_path);
+    src = real_path(source_path);
     name = os.path.basename(src);
     if not name.endswith(tables.jac_suffix) or name.endswith(suffix) {
         return [];
@@ -95,7 +95,7 @@ impl annex_files_of(
 }
 
 impl base_file_of(tables: LayoutTables, annex_path: str) -> (str | None) {
-    src = os.path.realpath(annex_path);
+    src = real_path(annex_path);
     name = os.path.basename(src);
     folder = os.path.dirname(src);
     parent = os.path.basename(folder);

@@ -104,6 +104,7 @@ impl build_serve_manifest(
             ) for application in [prepared, *prepared.applications]
             for (path, manifest) in application.manifests.items()
         };
+        result.update(serve_manifest_stamp());
         return result;
     } except Exception as e {
         console.error(f"Seal aborted: application preparation failed: {e}");

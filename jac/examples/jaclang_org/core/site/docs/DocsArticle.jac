@@ -7,7 +7,11 @@ import from "@hugeicons/core-free-icons" {
     ArrowRight01Icon
 }
 
-def:pub DocsArticleSkeleton -> JsxElement {
+def:pub DocsArticleSkeleton -> JsxElement;
+
+def:pub DocsArticle(page: DocPageView, version: str, loading: bool) -> JsxElement;
+
+impl DocsArticleSkeleton -> JsxElement {
     return
         <div className="flex flex-col gap-4 pt-2">
             <Skeleton className="h-9 w-2/3"/>
@@ -18,7 +22,7 @@ def:pub DocsArticleSkeleton -> JsxElement {
         </div>;
 }
 
-def:pub DocsArticle(page: DocPageView, version: str, loading: bool) -> JsxElement {
+impl DocsArticle(page: DocPageView, version: str, loading: bool) -> JsxElement {
     anchors = [t.anchor for t in page.toc];
     return
         <div className={"transition-opacity" + (" opacity-50" if loading else "")}>

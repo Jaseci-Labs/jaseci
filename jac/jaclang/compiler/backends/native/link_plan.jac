@@ -5,7 +5,8 @@ import os;
 import sys;
 import time;
 
-glob PLAN_DIGEST_FORMAT: int = 3;
+glob PLAN_DIGEST_FORMAT: int = 3,
+     PARTITION_FUNCTIONS: int = 4096;
 
 enum ArtifactKind {
     EXECUTABLE = "executable",

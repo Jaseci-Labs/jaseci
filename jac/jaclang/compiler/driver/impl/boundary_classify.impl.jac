@@ -87,25 +87,30 @@ impl is_server_anchored_module(module: (uni.Module | None)) -> bool {
         return True;
     }
     for arch in module.get_all_sub_nodes(uni.Archetype) {
-        if arch.arch_kind is not None {
+        if arch.arch_kind is not None and not ModuleFacts.is_test_code(arch) {
             return True;
         }
     }
-    if module.get_all_sub_nodes(uni.PyInlineCode) {
-        return True;
+    for inline_py in module.get_all_sub_nodes(uni.PyInlineCode) {
+        if not ModuleFacts.is_test_code(inline_py) {
+            return True;
+        }
     }
-    for stmt in module.body {
+    for stmt in ModuleFacts.iter_placement_stmts(module) {
         if isinstance(stmt, uni.TypedCtxBlock) {
             return True;
         }
     }
     for ab in module.get_all_sub_nodes(uni.Ability) {
-        if ability_delegates_to_model(ab) {
+        if ability_delegates_to_model(ab) and not ModuleFacts.is_test_code(ab) {
             return True;
         }
     }
     for imp in module.get_all_sub_nodes(uni.Import) {
-        if imp.has_clib_decls or imp.is_virtual_jac or imp.has_string_path {
+        if imp.has_clib_decls
+            or imp.is_virtual_jac
+            or imp.has_string_path
+            or ModuleFacts.is_test_code(imp) {
             continue;
         }
         if classify_import(imp).world == 'py' {
@@ -221,13 +226,7 @@ impl native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
 }
 
 impl _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
-    owner = stmt;
-    if isinstance(stmt, uni.ImplDef) and stmt.decl_link is not None {
-        owner = stmt.decl_link;
-        while owner.parent is not None and not isinstance(owner.parent, uni.Module) {
-            owner = owner.parent;
-        }
-    }
+    owner = stmt.top_element or stmt;
     if not isinstance(owner, uni.ContextAwareNode) {
         return True;
     }
