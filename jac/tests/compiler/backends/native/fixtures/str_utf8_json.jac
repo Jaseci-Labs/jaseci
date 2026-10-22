@@ -1,4 +1,4 @@
-"""json.dumps walks multibyte text once and escapes it the way CPython does."""
+"""json.dumps and json.loads walk multibyte text once and agree with CPython."""
 import json;
 
 def run -> int {
@@ -12,6 +12,21 @@ def run -> int {
     return len(big);
 }
 
+def run_loads -> int {
+    unit = "é\\\"x\\n\\u00e8";
+    doc = "{\"k\": \""
+        + unit * 30000
+        + "\", \"日本\": [\"a\\tb\", \"🙂\\u00e9\", \"plain é\", 1.5, -2, true, null]}";
+    raw: dict[str, any] = json.loads(doc);
+    k: str = raw["k"];
+    print(len(k), k[:10] == "é\"x\nè" * 2, k[-5:] == "é\"x\nè");
+    items: list[any] = raw["日本"];
+    print(json.dumps(items, ensure_ascii=False));
+    print(json.dumps(json.loads("[\"日本\", \"\\u65e5é\\\\\", \"🙂\"]")));
+    return len(k);
+}
+
 with entry {
     print(run());
+    print(run_loads());
 }

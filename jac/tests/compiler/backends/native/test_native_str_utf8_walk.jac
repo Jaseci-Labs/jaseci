@@ -9,9 +9,11 @@ read the ASCII flag from their root instead of probing their own data.
 
 `str_utf8_walk.jac` pins the output against the Python backend under the
 refcounting profiles, `str_utf8_walk_owned.jac` does the owned-world subset
-under every profile (nogc included), `str_utf8_json.jac` pins json.dumps,
-and `str_utf8_walk_leaks.jac` repeats the shapes under an RC debug build,
-whose live-object dump at exit must hold no leak.
+under every profile (nogc included), `str_utf8_json.jac` pins json.dumps and
+json.loads (which reads its source through a byte cursor, so a long non-ASCII
+document with escapes parses in one pass), and `str_utf8_walk_leaks.jac`
+repeats the shapes under an RC debug build, whose live-object dump at exit
+must hold no leak.
 """
 
 import from tests.support { assert_native_identity, jac_command }
@@ -37,11 +39,13 @@ test "owned-world loops over multibyte text agree under every profile" {
     assert "é 語 🙂x🙂 本語 a" in out , out[:400];
 }
 
-test "json.dumps escapes multibyte text the way CPython does" {
+test "json.dumps and json.loads handle multibyte text the way CPython does" {
     out = assert_native_identity(
         os.path.join(FIXTURES, "str_utf8_json.jac"), profiles=["managed"]
     );
     assert '"h\\u00e9llo" "héllo"' in out , out[:400];
+    assert "150000 True True" in out , out[-400:];
+    assert '["a\\tb", "🙂é", "plain é", 1.5, -2, true, null]' in out , out[-400:];
 }
 
 test "walking multibyte text leaves no character alive" {

@@ -21,7 +21,8 @@ obj _JsonStyle {
 
 
 obj _JsonParser {
-    has src: str,
+    has buf: bytes,
+        n: int,
         pos: int = 0;
 
     def _cc -> int;

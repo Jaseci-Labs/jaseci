@@ -1,5 +1,6 @@
 impl loads(s: str) -> any {
-    p: _JsonParser = _JsonParser(src=s);
+    raw: bytes = s.encode();
+    p: _JsonParser = _JsonParser(buf=raw, n=len(raw));
     return p._parse_value();
 }
 
@@ -23,10 +24,10 @@ impl dumps(
 }
 
 impl _JsonParser._cc -> int {
-    if self.pos >= len(self.src) {
+    if self.pos >= self.n {
         return -1;
     }
-    return ord(self.src[self.pos]);
+    return self.buf[self.pos];
 }
 
 impl _JsonParser._skip_ws {
@@ -69,12 +70,12 @@ impl _JsonParser._parse_value -> any {
 
 impl _JsonParser._parse_string -> str {
     self.pos += 1;
-    closing: int = self.src.find("\"", self.pos);
+    closing: int = self.buf.find(b"\"", self.pos);
     if closing >= 0 {
-        plain: str = self.src[self.pos:closing];
-        if plain.find("\\") < 0 {
+        plain: bytes = self.buf[self.pos:closing];
+        if plain.find(b"\\") < 0 {
             self.pos = closing + 1;
-            return plain;
+            return plain.decode();
         }
     }
     parts: list[str] = [];
@@ -83,18 +84,21 @@ impl _JsonParser._parse_string -> str {
         c: int = self._cc();
         if c == 34 or c == -1 {
             if self.pos > run_start {
-                parts.append(self.src[run_start:self.pos]);
+                parts.append(self.buf[run_start:self.pos].decode());
             }
             self.pos += 1;
             break;
         }
         if c == 92 {
             if self.pos > run_start {
-                parts.append(self.src[run_start:self.pos]);
+                parts.append(self.buf[run_start:self.pos].decode());
             }
             self.pos += 1;
             e: int = self._cc();
             self.pos += 1;
+            while self.pos < self.n and (self.buf[self.pos] & 192) == 128 {
+                self.pos += 1;
+            }
             if e == 34 {
                 parts.append("\"");
             } elif e == 92 {
@@ -173,7 +177,7 @@ impl _JsonParser._parse_number -> any {
             self.pos += 1;
         }
     }
-    numstr: str = self.src[start:self.pos];
+    numstr: str = self.buf[start:self.pos].decode();
     if is_float == 1 {
         return float(numstr);
     }
