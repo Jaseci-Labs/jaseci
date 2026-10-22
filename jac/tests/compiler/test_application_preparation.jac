@@ -1745,3 +1745,53 @@ test "a reload drops a restored module's errors from every app context" {
         shutil.rmtree(tmp, ignore_errors=True);
     }
 }
+
+"""A prepare that failed leaves its analysed modules in the program, the broken
+one among them with its errors already on record. A retry with no edit must
+analyse that module again and fail with its errors, rather than reuse it as
+fresh and pass over it. The host compile path is pinned, since that is where
+the program's modules are reused."""
+test "a retried prepare fails again on a module whose earlier analysis failed" {
+    import jaclang.project.kernel_compile as kernel_compile;
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-retry-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    try {
+        (base / 'jac.toml').write_text(
+            '[project]\nname="retry"\n[apps.web]\nkind="web-app"\nentry-point="main"\n'
+        );
+        (base / 'card.jac').write_text(
+            "def:pub Card(count: int) -> JsxElement {\n"
+                + "    return <b>{NOT_DEFINED.size + count}</b>;\n}\n"
+        );
+        path.write_text(
+            "import from card { Card }\n\n"
+                + "def:pub app -> JsxElement {\n"
+                + "    return <section><Card count={2}/></section>;\n}\n"
+        );
+        program = JacProgram();
+        recorded: list[int] = [];
+        with patch.object(
+            kernel_compile, 'kernel_route', return_value=(False, False)
+        ) {
+            for attempt in range(2) {
+                message = '';
+                try {
+                    prepare_application(str(path), program, tmp);
+                } except RuntimeError as err {
+                    message = str(err);
+                }
+                assert 'card.jac' in message , (
+                    f"attempt {attempt + 1} passed over the broken module"
+                );
+                recorded.append(len(program.errors_had));
+            }
+        }
+        assert recorded[0] == recorded[1] , (
+            f"the retry kept the first attempt's errors: {recorded}"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
