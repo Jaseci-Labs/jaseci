@@ -42,6 +42,8 @@ glob HDR_MAGIC: int = 44061,
      RC_SENTINEL: int = 0x7FFFFFFFFFFFFFFF;
 
 glob STR_LEN_TAG_BIT: int = 1,
+     STR_ASCII_TAG_BIT: int = -9223372036854775808,
+     STR_LEN_PAYLOAD_MASK: int = 9223372036854775807,
      STR_LEN_TAG_SHIFT: int = 1;
 
 glob JACSTR_DESC_FIELDS: dict[(str, tuple[str, ...])] = {
@@ -49,7 +51,7 @@ glob JACSTR_DESC_FIELDS: dict[(str, tuple[str, ...])] = {
          'jacstr2': ('data', 'len')
      };
 
-def str_len_tag(length: int) -> int;
+def str_len_tag(length: int, is_ascii: bool = False) -> int;
 
 obj NativeFieldInfo {
     has name: str,
@@ -309,7 +311,7 @@ def resolve_native_module(
 
 def native_wasm_stem(path: str) -> str;
 
-glob NATIVE_ABI_VERSION: int = 1;
+glob NATIVE_ABI_VERSION: int = 2;
 
 obj NativeModuleLayout {
     has abi_version: int = NATIVE_ABI_VERSION,
