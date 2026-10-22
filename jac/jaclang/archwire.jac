@@ -154,6 +154,7 @@ graph import {
     }
     byllm.visit_routing --> runtime.runtime.JacLLM.by_operator { route_visit }
     cache.home ++> cli.commands.cache { cache_home }
+    cache.locking ++> scale.admin.console_build.AdminConsole._run { FileLock }
     cache.policy ++> [
         cli.commands.cache { format_bytes },
         cli.format_cache {
@@ -177,6 +178,7 @@ graph import {
             | packages.sources._mirror_dir
             | packages.store.materialize
             | project.package_scope.store_root
+            | scale.admin.console_build.AdminConsole._note_hit
             | scale.injector.binary._scale_cache_root
             | server.session.shared_pg_data_dir
             | toolchains.android
@@ -185,7 +187,9 @@ graph import {
         compiler.types.stubcat.locate.StubcatArtifact.build
             | scale.injector.binary._fetch_verified_asset { maybe_sweep },
         dist.jab | toolchains.store { bucket, maybe_sweep },
-        packages.index.fetch_verified { bucket },
+        packages.index.fetch_verified | scale.admin.console_build.console_cache_dir {
+            bucket
+        },
     ]
     cache.registry --> [
         compiler.driver.jir._manifest_compiler_digest { bucket, maybe_sweep },
@@ -3881,7 +3885,6 @@ graph import {
         },
         scale.admin.admin_portal {
             FileResponse,
-            HTMLResponse,
             JSONResponse,
             RedirectResponse,
             Request,
@@ -3895,6 +3898,7 @@ graph import {
             | scale.tests.server.test_oauth_providers
             | scale.tests.server.test_registration_limits
             | scale.tests.server.test_static_fallback { Request },
+        scale.admin.console_build { HTMLResponse, Response },
         scale.admin.deploy_health
             | scale.admin.llm_telemetry
             | scale.admin.logs
@@ -30305,7 +30309,7 @@ graph import scale {
     ]
     _optdeps.prometheus --> tests.misc.test_optional_deps;
     admin ++> [
-        admin.admin_portal.JacAPIServerAdmin.build_admin_client { admin_portal },
+        admin.console_build.package_ui_dir { admin_portal },
         tests.misc.test_k8s_ops { k8s_ops },
     ]
     admin --> tests.server.test_admin;
@@ -30325,6 +30329,10 @@ graph import scale {
         _parse_prometheus_text,
         _percentile_from_buckets
     }
+    admin.console_build ++> runtime.gateway.microservice_gateway.MicroserviceGateway.serve_admin_asset {
+        resolve_console
+    }
+    admin.console_build --> tests.server.test_admin { AdminConsole, ConsoleState }
     admin.deploy_health ++> [
         runtime.gateway.microservice_gateway | server.extensions {
             JacAPIServerDeployHealth
@@ -31217,6 +31225,18 @@ graph import scale {
         },
     ]
     runtime.context.util ++> [
+        admin.console_build.build_with_jac
+            | deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle
+            | tests.deploy.test_client_build_deps
+            | tests.deploy.test_client_build_fail_fast
+            | tests.deploy.test_client_build_stage
+            | tests.deploy.test_dry_run_plan_rate_limit
+            | tests.server.test_acl_field_write._prewarm
+            | tests.server.test_app_tokens._prewarm
+            | tests.server.test_metrics_workers._serve_exported
+            | tests.server.test_root_bind_fail_closed._prewarm
+            | tests.server.test_serve
+            | tests.support.start_server { jac_executable },
         admin.k8s_ops
             | deploy.target.kubernetes.runtime_resolver.build_k8s_registry_routes {
             in_cluster_namespace
@@ -31230,17 +31250,6 @@ graph import scale {
             GATEWAY_NAME,
             k8s_safe_name
         },
-        deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle
-            | tests.deploy.test_client_build_deps
-            | tests.deploy.test_client_build_fail_fast
-            | tests.deploy.test_client_build_stage
-            | tests.deploy.test_dry_run_plan_rate_limit
-            | tests.server.test_acl_field_write._prewarm
-            | tests.server.test_app_tokens._prewarm
-            | tests.server.test_metrics_workers._serve_exported
-            | tests.server.test_root_bind_fail_closed._prewarm
-            | tests.server.test_serve
-            | tests.support.start_server { jac_executable },
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._peer_dns_url {
             k8s_service_dns_url
         },
@@ -31257,7 +31266,6 @@ graph import scale {
         },
         tests.microservices.test_gateway { http_forward_timeout },
         tests.microservices.test_k8s_health_probe
-            | tests.server.test_admin
             | tests.server.test_examples.JacScaleTestRunner.start_server
             | tests.server.test_metrics_workers { jac_executable },
     ]
@@ -31500,9 +31508,12 @@ graph import scale {
         tests.data.test_gateway_owned_identity { fleet_provisions_unknown_users },
         tests.server.test_auth_policy_startup { AdminExtension, MailExtension },
     ]
-    server.extensions --> tests.server.test_scheduler_multipod {
-        validate_events_url as _validate_events_url
-    }
+    server.extensions --> [
+        tests.server.test_admin { AdminExtension },
+        tests.server.test_scheduler_multipod {
+            validate_events_url as _validate_events_url
+        },
+    ]
     server.inprocess ++> tests.scale_test_client.ScaleTestClient._initialize {
         prepare_inprocess_runtime
     }
@@ -31623,6 +31634,7 @@ graph import scale._optdeps {
 }
 
 graph import scale.admin {
+    console_build ++> admin_portal { AdminConsole, resolve_console }
     k8s_ops ++> [
         deploy_health {
             api_error_detail,
