@@ -30408,6 +30408,7 @@ graph import scale {
             | tests.deploy.test_deploy_k8s
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_factories
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_pod_env
             | tests.deploy.test_show_yaml_autoscalers
@@ -30676,6 +30677,7 @@ graph import scale {
             | tests.deploy.test_ingress_tls_preservation
             | tests.deploy.test_memory_trigger_guard
             | tests.deploy.test_monitoring_switch
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_pod_env
             | tests.deploy.test_service_routing
@@ -30706,6 +30708,7 @@ graph import scale {
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_gateway_config_isolation
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_service_routing
             | tests.deploy.test_superseded_deployment_reap { ManifestBuilder },
         tests.deploy.test_client_build_stage {
@@ -30732,7 +30735,9 @@ graph import scale {
     ]
     deploy.target.kubernetes.ops_rbac ++> tests.deploy.test_ops_rbac {
         build_ops_rbac,
-        ops_role_name
+        ops_role_name,
+        ops_sa_is_ours,
+        ops_sa_name
     }
     deploy.target.kubernetes.runtime_bootstrap ++> tests.microservices.test_binary_injector {
         build_bootstrap_init_container,
@@ -31118,6 +31123,7 @@ graph import scale {
         StandardLogger
     }
     runtime.cli.diagnostics ++> tests.deploy.test_pdb_budget { PlanValidator }
+    runtime.cli.plan ++> tests.deploy.test_ops_rbac { Plan }
     runtime.context.auth_ctx ++> [
         server.extensions.ObservabilityExtension.register {
             reset_current_auth,
@@ -31215,7 +31221,9 @@ graph import scale {
             | deploy.target.kubernetes.runtime_resolver.build_k8s_registry_routes {
             in_cluster_namespace
         },
-        deploy.target.kubernetes.database_provisioner | sdk.client { k8s_safe_name },
+        deploy.target.kubernetes.database_provisioner
+            | deploy.target.kubernetes.ops_rbac
+            | sdk.client { k8s_safe_name },
         deploy.target.kubernetes.manifest_builder
             | deploy.target.kubernetes.target
             | tests.deploy.test_gateway_config_isolation {
@@ -31239,6 +31247,7 @@ graph import scale {
         deploy.target.kubernetes.runtime_resolver { DEFAULT_GATEWAY_PORT },
         tests.deploy.test_http_activation_microservices
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pod_env { GATEWAY_NAME },
     ]
     runtime.context.util --> [
@@ -31283,6 +31292,7 @@ graph import scale {
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_http_activation_microservices
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_show_yaml_autoscalers { fleet_of },
         tests.deploy.test_pod_env { FLEET_ENV, fleet_of },
@@ -31780,6 +31790,10 @@ graph import scale.deploy.target.kubernetes {
         with_config_revision
     }
     monitoring ++> target { MonitoringDeployer }
+    ops_rbac ++> [
+        manifest_builder { ops_sa_name },
+        target { ops_sa_is_ours, ops_sa_name },
+    ]
     ops_rbac --> manifest_builder.ManifestBuilder.generate_manifests { build_ops_rbac }
     runtime_bootstrap ++> [
         manifest_builder.ManifestBuilder._build_pod_spec {
