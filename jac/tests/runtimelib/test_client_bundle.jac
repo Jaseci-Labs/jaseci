@@ -403,7 +403,9 @@ test "a failed client compile reports the module's errors, not unrelated ones" {
             assert program.errors_had , "the unrelated module should leave errors";
             builder = ClientBundleBuilder(program=program);
             if entry_first {
-                builder._compile_to_js(main);
+                try {
+                    builder._compile_to_js(main);
+                } except ClientBundleError {}
             }
             for attempt in range(2) {
                 message = '';
