@@ -11,7 +11,8 @@ test "ninjaclaw mentions are found and stripped" {
     assert mentions_ninjaclaw("@NinjaClaw help");
     assert not mentions_ninjaclaw("email me at a@ninjaclaw.dev");
     assert not mentions_ninjaclaw("@ninjaclawfan hi");
-    assert strip_mention("hey @ninjaclaw  how do walkers work?") == "hey how do walkers work?";
+    assert strip_mention("hey @ninjaclaw  how do walkers work?")
+        == "hey how do walkers work?";
 }
 
 def make_client -> JacTestClient;
@@ -502,4 +503,3 @@ impl jid_of(reported: any) -> str {
     assert "_jac_id" in reported , f"expected a reported node, got {reported}";
     return str(reported["_jac_id"]);
 }
-

@@ -1255,7 +1255,7 @@ impl ViteBundler.start_dev_server(
     return process;
 }
 
-def _dev_head_scripts -> str;
+def _dev_head -> str;
 
 impl ViteBundler._ensure_dev_index_html(self: ViteBundler, build_dir: Path) -> None {
     index_html = build_dir / 'index.html';
@@ -1265,9 +1265,7 @@ impl ViteBundler._ensure_dev_index_html(self: ViteBundler, build_dir: Path) -> N
     index_content = '''<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jac App (Dev)</title>
+__JAC_DEV_HEAD__
   </head>
   <body>
     <div id="root"></div>
@@ -1324,9 +1322,7 @@ impl ViteBundler._ensure_dev_index_html(self: ViteBundler, build_dir: Path) -> N
     index_content = index_content.replace(
         '__JAC_DEV_ENTRY__', json.dumps('/' + entry_relative)
     );
-    if head_scripts := _dev_head_scripts() {
-        index_content = index_content.replace('  </head>', f'{head_scripts}  </head>');
-    }
+    index_content = index_content.replace('__JAC_DEV_HEAD__', _dev_head());
     index_html.write_text(index_content, encoding='utf-8');
 }
 
@@ -1664,10 +1660,11 @@ impl _is_vite_url_line(line: str) -> bool {
     return False;
 }
 
-impl _dev_head_scripts -> str {
+impl _dev_head -> str {
     config = get_config();
     client_cfg = config.get_plugin_config('client') if config else None;
-    meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};
-    tags = HeaderBuilder(meta_data, 'dev').build_scripts();
-    return ''.join(f'    {tag}\n' for tag in tags);
+    meta_data = dict(client_cfg.get('app_meta_data', {}) if client_cfg else {});
+    meta_data['title'] = str(meta_data.get('title') or 'Jac App') + ' (Dev)';
+    head = HeaderBuilder(meta_data, 'dev').build_head();
+    return '\n'.join('    ' + line.strip() for line in head.split('\n'));
 }

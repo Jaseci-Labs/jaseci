@@ -1901,7 +1901,7 @@ graph import {
             | client.targets.pwa_build
             | client.targets.registry.target_for_app
             | client.targets.web_target._get_app_meta_data
-            | client.vite_bundler._dev_head_scripts
+            | client.vite_bundler._dev_head
             | data.pg_dist._configured_dist
             | runtime.graph_utils.get_name
             | scale.plugin._resolve_deploy_target
@@ -5016,8 +5016,9 @@ graph import client {
             JAC_VIRTUAL_MODULE_SOURCES
         },
     ]
-    serving ++> targets.web_target._generate_index_html
-        | vite_bundler._dev_head_scripts { HeaderBuilder }
+    serving ++> targets.web_target._generate_index_html | vite_bundler._dev_head {
+        HeaderBuilder
+    }
     source_mapping ++> client_diagnostics { JacLocator, SourceLocation, _npm_specifier }
     source_mapping --> jac_client_compiler.JacClientCompiler._write_source_map {
         generate_source_map_json
