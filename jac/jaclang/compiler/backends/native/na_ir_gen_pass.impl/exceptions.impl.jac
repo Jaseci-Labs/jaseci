@@ -1508,7 +1508,10 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         read: set[int] = set();
         for blk in func.blocks[probe_at:] {
             for inst_value in blk.instructions {
-                for operand in getattr(inst_value, "operands", []) {
+                if not isinstance(inst_value, ir.Instruction) {
+                    continue;
+                }
+                for operand in inst_value.operands {
                     read.add(id(operand));
                 }
             }
@@ -1671,7 +1674,10 @@ impl NaIRGenPass._unwind_shadow_slots(
                     plain.pop(id(index), None);
                 }
             }
-            for operand in getattr(inst, "operands", []) {
+            if not isinstance(inst, ir.Instruction) {
+                continue;
+            }
+            for operand in inst.operands {
                 plain.pop(id(operand), None);
             }
         }
@@ -1706,11 +1712,10 @@ impl NaIRGenPass._unwind_shadow_slots(
         rebuilt: list[any] = [];
         for (pos, inst_value) in enumerate(blk.instructions) {
             rebuilt.append(inst_value);
-            if pos in marked {
-                store: any = inst_value;
+            if pos in marked and isinstance(inst_value, ir.StoreInstr) {
                 rebuilt.append(
                     ir.StoreInstr(
-                        blk, store.operands[0], shadows[id(store.operands[1])]
+                        blk, inst_value.operands[0], shadows[id(inst_value.operands[1])]
                     )
                 );
             }

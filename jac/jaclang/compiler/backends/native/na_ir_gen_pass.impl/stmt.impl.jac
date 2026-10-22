@@ -4734,6 +4734,7 @@ impl NaIRGenPass._codegen_for_indexed(
     _gen_stop_slot: (ir.Value | None) = None;
     _gen_step_slot: (ir.Value | None) = None;
     _gen_coll_slot: (ir.Value | None) = None;
+    _str_next_slot: (ir.Value | None) = None;
     if _gen_yield_loop and kind != "range" {
         _gen_coll_slot = self._entry_alloca(collection_val.type, "for.coll.slot");
         if not self._is_owned(collection_val) {
@@ -4766,7 +4767,11 @@ impl NaIRGenPass._codegen_for_indexed(
         }
     } else {
         if kind == "str" {
-            len_val = self._call_str_len(self.builder, collection_val, name="for.len");
+            len_val = self._call_str_len(self.builder, collection_val, name="for.blen");
+            if _gen_yield_loop {
+                _gen_stop_slot = self._entry_alloca(i64, "for.stop.slot");
+                self.builder.store(len_val, _gen_stop_slot);
+            }
         } elif kind == "bytes" {
             len_val = self._bytes_len_val(collection_val);
         } else {
@@ -4840,7 +4845,7 @@ impl NaIRGenPass._codegen_for_indexed(
             self.builder.load(_gen_coll_slot, name="for.coll")
         );
         if kind == "str" {
-            len_val = self._call_str_len(self.builder, collection_val, name="for.len");
+            len_val = self.builder.load(_gen_stop_slot, name="for.blen");
         } elif kind == "bytes" {
             len_val = self._bytes_len_val(collection_val);
         } else {
@@ -4903,10 +4908,57 @@ impl NaIRGenPass._codegen_for_indexed(
             self.builder.store(key_val, allocas[0]);
             self.builder.store(val_val, allocas[1]);
         } elif kind == "str" {
-            char_str = self._codegen_string_index(collection_val, body_idx);
-            if char_str is not None {
-                self.builder.store(char_str, allocas[0]);
-            }
+            _str_next_slot = self._entry_alloca(i64, "for.str.next");
+            _ch_w = self._call_utf8_cp_len_at(
+                self.builder, collection_val, len_val, body_idx, name="for.ch.w"
+            );
+            self.builder.store(
+                self.builder.add(body_idx, _ch_w, name="for.ch.next"), _str_next_slot
+            );
+            _ch_byte = self.builder.zext(
+                self.builder.load(
+                    self.builder.gep(collection_val, [body_idx], name="for.ch.p"),
+                    name="for.ch.b"
+                ),
+                i64,
+                name="for.ch.bv"
+            );
+            _ch_cached = self.builder.gep(
+                self._get_char_cache_gv(),
+                [
+                    ir.Constant(ir.IntType(32), 0),
+                    _ch_byte,
+                    ir.Constant(ir.IntType(32), 2),
+                    ir.Constant(ir.IntType(32), 0)
+                ],
+                name="for.ch.cached"
+            );
+            _ch_ascii_bb = self.builder.block;
+            _ch_wide_bb = func.append_basic_block(name="for.ch.wide");
+            _ch_done_bb = func.append_basic_block(name="for.ch.done");
+            self.builder.cbranch(
+                self.builder.and_(
+                    self.builder.icmp_unsigned(
+                        "<", _ch_byte, ir.Constant(i64, 0x80), name="for.ch.low"
+                    ),
+                    self.builder.icmp_signed(
+                        "==", _ch_w, ir.Constant(i64, 1), name="for.ch.one"
+                    ),
+                    name="for.ch.isasc"
+                ),
+                _ch_done_bb,
+                _ch_wide_bb
+            );
+            self.builder.position_at_end(_ch_wide_bb);
+            _ch_wide = self._call_utf8_char_at(
+                self.builder, collection_val, len_val, body_idx, name="for.ch.multi"
+            );
+            self.builder.branch(_ch_done_bb);
+            self.builder.position_at_end(_ch_done_bb);
+            _ch_val = self.builder.phi(_ch_cached.type, name="for.ch");
+            _ch_val.add_incoming(_ch_cached, _ch_ascii_bb);
+            _ch_val.add_incoming(_ch_wide, _ch_wide_bb);
+            self.builder.store(_ch_val, allocas[0]);
         } elif kind == "bytes" {
             _by_ptr = self.builder.gep(
                 self._bytes_data_ptr(collection_val), [body_idx], name="for.by.ptr"
@@ -4979,11 +5031,15 @@ impl NaIRGenPass._codegen_for_indexed(
     if _gen_step_slot is not None {
         range_step = self.builder.load(_gen_step_slot, name="for.step.inc");
     }
-    inc_idx = self.builder.load(idx_alloca, name="for.inc.idx");
-    _idx_delta = range_step
-        if kind == "range" and range_step is not None
-        else ir.Constant(i64, 1);
-    next_idx = self.builder.add(inc_idx, _idx_delta, name="for.next.idx");
+    if _str_next_slot is not None {
+        next_idx = self.builder.load(_str_next_slot, name="for.next.off");
+    } else {
+        inc_idx = self.builder.load(idx_alloca, name="for.inc.idx");
+        _idx_delta = range_step
+            if kind == "range" and range_step is not None
+            else ir.Constant(i64, 1);
+        next_idx = self.builder.add(inc_idx, _idx_delta, name="for.next.idx");
+    }
     self.builder.store(next_idx, idx_alloca);
     self.builder.branch(cond_bb);
 

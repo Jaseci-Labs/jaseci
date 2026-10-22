@@ -3594,7 +3594,19 @@ impl NaIRGenPass._emit_binary_op(
         self.builder.call(memcpy_cc, [buf, left, len1]);
         _cc_dst2 = self.builder.gep(buf, [len1], name="concat.dst2");
         self.builder.call(memcpy_cc, [_cc_dst2, right, len2]);
-        self._str_finish(self.builder, buf, total);
+        _cc_ascii: (ir.Value | None) = None;
+        if not self._nogc_headerless() {
+            _cc_ascii = self.builder.and_(
+                self._call_str_isascii(
+                    self.builder, left, left, len1, name="concat.isa1"
+                ),
+                self._call_str_isascii(
+                    self.builder, right, right, len2, name="concat.isa2"
+                ),
+                name="concat.isa"
+            );
+        }
+        self._str_finish(self.builder, buf, total, _cc_ascii);
 
         self._mark_owned(buf);
         return buf;
