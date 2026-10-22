@@ -6177,6 +6177,8 @@ graph import compiler {
             JACSTR_DESC_FIELDS,
             NativeFuncLayout,
             RC_SENTINEL,
+            STR_ASCII_TAG_BIT,
+            STR_LEN_PAYLOAD_MASK,
             STR_LEN_TAG_BIT,
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,

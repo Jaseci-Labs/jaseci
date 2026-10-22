@@ -119,8 +119,12 @@ impl CodeGenTarget.interop_manifest.setter(value: InteropManifest) -> None {
     self._interop_manifest = value;
 }
 
-impl str_len_tag(length: int) -> int {
-    return (length << STR_LEN_TAG_SHIFT) | STR_LEN_TAG_BIT;
+impl str_len_tag(length: int, is_ascii: bool = False) -> int {
+    return (
+        (length << STR_LEN_TAG_SHIFT)
+        | (STR_ASCII_TAG_BIT if is_ascii else 0)
+        | STR_LEN_TAG_BIT
+    );
 }
 
 impl native_safe_sym(src: str) -> str {
