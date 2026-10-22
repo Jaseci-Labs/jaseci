@@ -331,6 +331,7 @@ test "the dev proxy drops built-in prefixes the app claims as client routes" {
             entry_file,
             is_dev=True,
             api_port=8123,
+            api_paths=["/admin/{id}/data", "/admin/stats"],
             client_paths=[
                 "/admin/quotes",
                 "/admin/:id",
@@ -340,8 +341,13 @@ test "the dev proxy drops built-in prefixes the app claims as client routes" {
         );
         text = config_path.read_text(encoding="utf-8");
     }
-    assert '"/admin": {' in text , f"the prefix must stay proxied:\n{text}";
-    assert "bypass:" in text , f"a sub-route claim needs a bypass:\n{text}";
+    # A declared route under the prefix must not add a second "/admin" key: a
+    # later duplicate replaces the built-in entry and drops its bypass.
+    assert text.count('"/admin": {') == 1 , (
+        f"the prefix must be proxied once:\n{text}"
+    );
+    admin_entry = text.split('"/admin": {')[1].split("\n      },")[0];
+    assert "bypass:" in admin_entry , f"a sub-route claim needs a bypass:\n{text}";
     # A trailing wildcard also claims its bare parent, and a dynamic parent
     # segment claims the prefix too.
     for source in [

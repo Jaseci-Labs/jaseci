@@ -525,10 +525,12 @@ impl ViteBundler._generate_vite_config_content(
             if yielding_prefixes is None
             else yielding_prefixes;
         builtin_proxy_str: str = "";
+        builtin_keys: set[str] = set();
         for prefix in DEV_PROXY_PREFIXES {
             if prefix in claimed {
                 continue;
             }
+            builtin_keys.add(prefix);
             under = [
                 p
                 for p in claimed
@@ -550,7 +552,7 @@ impl ViteBundler._generate_vite_config_content(
             } else {
                 key = _exact_proxy_key(declared_path);
             }
-            if key in declared_seen {
+            if key in declared_seen or key in builtin_keys {
                 continue;
             }
             declared_seen.add(key);
