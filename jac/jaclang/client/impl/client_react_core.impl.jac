@@ -549,8 +549,6 @@ impl __jacIsExtensionError(stack: str, filename: str = "") -> bool {
         frame: any = text.match(__JAC_STACK_FRAME_RE);
         if frame {
             location = frame[1] or frame[2] or "";
-            # An engine-internal frame says nothing about whose code threw; any
-            # other location, extension or not, counts.
             if not __JAC_ENGINE_FRAME_RE.test(location) {
                 frame_urls.append(location);
             }
