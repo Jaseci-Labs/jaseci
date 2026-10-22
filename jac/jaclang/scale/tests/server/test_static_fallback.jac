@@ -132,6 +132,52 @@ test "a mount-owned asset miss 404s through full gateway dispatch (no leak, no S
 }
 
 
+test "a mount on a client-page path owns that exact path too (no early SPA shell)" {
+    import shutil;
+    project_root = tempfile.mkdtemp();
+    dist = tempfile.mkdtemp();
+    mount_dir = tempfile.mkdtemp();
+    try {
+        with open(os.path.join(dist, "index.html"), "w") as f {
+            f.write("<html>SPA</html>");
+        }
+        html = {"accept": "text/html"};
+        import from jaclang.testing.testkit { ServingTestClient as TestClient }
+
+        # Positive control: with no mount, /docs is the client app's own page,
+        # so the gateway answers it with the SPA shell.
+        plain = MicroserviceGateway(registry=ServiceRegistry(), client_dist_dir=dist);
+        plain.base_path = project_root;
+        plain.setup();
+        control = TestClient(plain.app).get("/docs", headers=html);
+        assert control.status_code == 200 and b"SPA" in control.content , (
+            f"without a mount /docs must be the SPA page; got {control.status_code}"
+        );
+
+        gw = MicroserviceGateway(
+            registry=ServiceRegistry(),
+            client_dist_dir=dist,
+            static_mounts=[{"url_prefix": "docs", "local_path": mount_dir}]
+        );
+        gw.base_path = project_root;
+        gw.setup();
+        client = TestClient(gw.app);
+        for path in ("/docs", "/docs/") {
+            resp = client.get(path, headers=html);
+            assert resp.status_code == 404 , (
+                f"the 'docs' mount owns {path} exclusively; the client-page branch "
+                f"must not answer it with the SPA shell; got {resp.status_code}"
+            );
+            assert b"SPA" not in resp.content;
+        }
+    } finally {
+        shutil.rmtree(project_root, ignore_errors=True);
+        shutil.rmtree(dist, ignore_errors=True);
+        shutil.rmtree(mount_dir, ignore_errors=True);
+    }
+}
+
+
 test "a genuinely missing /static asset still 404s (no false-positive serving)" {
     project_root = tempfile.mkdtemp();
     os.makedirs(os.path.join(project_root, "assets"), exist_ok=True);

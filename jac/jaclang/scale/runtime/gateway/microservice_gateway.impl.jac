@@ -703,7 +703,10 @@ impl MicroserviceGateway.setup -> ServingApp {
             } elif decision.kind == ROUTE_CLIENT_PAGE {
                 page_resp: Response | None = None;
                 root_svc = gw.root_member();
+                import from jaclang.server.serving.static_assets { mount_claims }
+                mount_owned: bool = mount_claims(gw._get_asset_table(), path);
                 if request.method == "GET"
+                    and not mount_owned
                     and (root_svc is None or not root_svc.owns_root()) {
                     page_resp = gw.serve_spa_fallback();
                     if page_resp is None {

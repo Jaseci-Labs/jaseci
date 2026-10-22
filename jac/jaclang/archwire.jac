@@ -4093,6 +4093,9 @@ graph import {
         scale.runtime.gateway.microservice_gateway.MicroserviceGateway.serve_admin_asset {
             asset_cache_policy
         },
+        scale.runtime.gateway.microservice_gateway.MicroserviceGateway.setup.dispatcher {
+            mount_claims
+        },
     ]
     server.serving.supervisor ++> cli.commands.execution.serve { worker_metrics_dir }
     server.serving.supervisor --> runtime.source_app.main { worker_metrics_dir }
