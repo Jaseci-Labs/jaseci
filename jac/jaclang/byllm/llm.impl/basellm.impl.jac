@@ -32,6 +32,12 @@ async def _aretry_sleep(attempt: int);
 def _retry_delay(attempt: int) -> float;
 
 
+def _close_stream(stream: any);
+
+
+async def _aclose_stream(stream: any);
+
+
 def _is_prompt_caching_eligible(model_name: str) -> bool;
 
 
@@ -1209,6 +1215,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
         mt_run._last_stream_chunks = [];
         reasoning_pending = "";
         self._arm_attempt(mt_run, params, True);
+        response: any = None;
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
@@ -1259,6 +1266,8 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
                 continue;
             }
             raise;
+        } finally {
+            _close_stream(response);
         }
     }
 
@@ -1305,6 +1314,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
             ),
             max_per_call=int(settings.get("max_per_call", _TOOL_DELTA_MAX_PER_CALL))
         );
+        _stream_resp: any = None;
         try {
             _stream_resp = self.model_call_with_stream(params);
             for chunk in _stream_resp {
@@ -1367,6 +1377,8 @@ impl BaseLLM.dispatch_streaming_with_tools(
                 continue;
             }
             raise;
+        } finally {
+            _close_stream(_stream_resp);
         }
     }
     if no_stream {
@@ -1508,6 +1520,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
         finish_reason = "";
         produced = False;
         self._arm_attempt(mt_run, params, True);
+        response: any = None;
         try {
             response = await self.model_call_with_stream_async(params);
             async for chunk in response {
@@ -1538,6 +1551,8 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 continue;
             }
             raise;
+        } finally {
+            await _aclose_stream(response);
         }
     }
 
@@ -2999,4 +3014,28 @@ impl _images_from_response(response: dict[str, any]) -> list[Image] {
         raise OutputConversionError("The model returned no image for this call.");
     }
     return images;
+}
+
+impl _close_stream(stream: any) {
+    source = stream?.completion_stream or stream;
+    close = source?.close;
+    if callable(close) {
+        try {
+            close();
+        } except Exception {}
+    }
+}
+
+impl _aclose_stream(stream: any) {
+    import inspect;
+    close = stream?.aclose or stream?.close;
+    if not callable(close) {
+        return;
+    }
+    try {
+        closing = close();
+        if inspect.isawaitable(closing) {
+            await closing;
+        }
+    } except Exception {}
 }

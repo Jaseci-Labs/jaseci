@@ -903,7 +903,7 @@ The original rejected text remains available on `raw_output` (see [`OutputConver
 |-------|------------------------|
 | before each request | sends it with what is left as its timeout; with nothing left, raises `LLMTimeout` |
 | a transient failure | retries (`[byllm.streaming] num_retries`) only if the backoff fits in what is left |
-| a streamed answer | caps the `[byllm.streaming]` connect, read, write and pool timeouts at what is left, and checks the deadline on every chunk |
+| a streamed answer | caps the `[byllm.streaming]` connect, read, write and pool timeouts at what is left, checks the deadline on every chunk, and closes the provider's stream however the stream ends |
 | the provider client | LiteLLM and the OpenAI client (`proxy` mode) send one request per attempt; byLLM owns every retry |
 
 A tool that is already running is not interrupted: the call ends before its next request. A request in flight is bounded by silence: it times out once the provider sends nothing for the time that was left when it was sent, so an endpoint that keeps sending bytes slowly can hold it past the deadline. A compaction summary, or a `by llm()` call made inside a tool, runs with its own deadline; the time it takes still counts against the calling `by llm()` call.

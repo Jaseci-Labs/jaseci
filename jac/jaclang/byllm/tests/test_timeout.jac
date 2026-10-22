@@ -8,7 +8,7 @@ import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
 import from jaclang.byllm.lib { MockLLM, Model, ModelPool }
 import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
 import from jaclang.testing.requires { require_module }
-import from support { call, mk_run, say }
+import from support { call, mk_run, say, text_chunk }
 
 
 """Run `work`, naming the error it raises in place of its result."""
@@ -202,6 +202,85 @@ test "one deadline covers everything a call does" {
         return (_outcome(read_slowly), len(llm.seen));
     }
 
+    def stream_closed(budget: float, is_async: bool) -> tuple[str, int] {
+        held: list[any] = [];
+        closed: list[int] = [];
+
+        def chunks -> any {
+            try {
+                for _ in range(100) {
+                    yield text_chunk("x");
+                }
+            } finally {
+                closed.append(1);
+            }
+        }
+
+        async def achunks -> any {
+            try {
+                for _ in range(100) {
+                    yield text_chunk("x");
+                }
+            } finally {
+                closed.append(1);
+            }
+        }
+
+        # The provider keeps its stream, so only an explicit close ends it.
+        def answer(**_kwargs: any) -> any {
+            held.append(chunks());
+            return held[0];
+        }
+
+        async def aanswer(**_kwargs: any) -> any {
+            held.append(achunks());
+            return held[0];
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+
+        def read_slowly -> str {
+            try {
+                for _piece in model.dispatch_streaming(mk_run(stream=True)) {
+                    time.sleep(0.3);
+                }
+            } except LLMTimeout {
+                return "closed" if closed else "left open";
+            }
+            return "read to the end";
+        }
+
+        # Checked before asyncio.run ends, since its shutdown closes every
+        # async generator still open.
+        async def aread_slowly -> str {
+            try {
+                async for _piece in model.adispatch_streaming(mk_run(stream=True)) {
+                    await asyncio.sleep(0.3);
+                }
+            } except LLMTimeout {
+                return "closed" if closed else "left open";
+            }
+            return "read to the end";
+        }
+        if is_async {
+            with mock.patch("litellm.acompletion", aanswer) {
+                got = _outcome(lambda { asyncio.run(aread_slowly()); });
+            }
+        } else {
+            with mock.patch("litellm.completion", answer) {
+                got = _outcome(read_slowly);
+            }
+        }
+        return (got, len(held));
+    }
+
+    def sync_stream_closed(budget: float) -> tuple[str, int] {
+        return stream_closed(budget, False);
+    }
+
+    def async_stream_closed(budget: float) -> tuple[str, int] {
+        return stream_closed(budget, True);
+    }
+
     # (label, scenario, call budget, outcome, requests sent)
     for (label, scenario, budget, outcome, requests) in [
         (
@@ -230,6 +309,20 @@ test "one deadline covers everything a call does" {
             slow_reader,
             0.5,
             "LLMTimeout",
+            1
+        ),
+        (
+            "a stream cut off at the deadline closes the provider's stream",
+            sync_stream_closed,
+            0.5,
+            "closed",
+            1
+        ),
+        (
+            "an async stream cut off at the deadline closes the provider's stream",
+            async_stream_closed,
+            0.5,
+            "closed",
             1
         )
     ] {
