@@ -317,16 +317,18 @@ impl MTRuntime.get_history_for_persist -> list[MessageType] {
             continue;
         }
         tool_calls = _tool_calls_of(msg);
-        if tool_calls and any(_is_finish_tool_call(tc) for tc in tool_calls) {
+        if tool_calls {
             kept = [
                 tc
                 for tc in tool_calls
                 if not _is_finish_tool_call(tc)
             ];
-            if kept {
-                out.append(_with_tool_calls(msg, kept));
+            if len(kept) < len(tool_calls) {
+                if kept {
+                    out.append(_with_tool_calls(msg, kept));
+                }
+                continue;
             }
-            continue;
         }
         out.append(msg);
     }
@@ -417,12 +419,10 @@ impl _tool_calls_of(msg: any) -> list[any] {
     return tool_calls or [];
 }
 
-
 impl _tool_call_id(tc: any) -> str {
     call_id: any = tc.get("id") if isinstance(tc, dict) else tc?.id;
     return str(call_id or "");
 }
-
 
 impl _with_tool_calls(msg: any, tool_calls: list[any]) -> any {
     if isinstance(msg, dict) {
@@ -438,7 +438,6 @@ impl _with_tool_calls(msg: any, tool_calls: list[any]) -> any {
     setattr(edited, "tool_calls", tool_calls or None);
     return edited;
 }
-
 
 impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
     out: list[any] = [];
@@ -468,7 +467,6 @@ impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
     return out;
 }
 
-
 impl _results_after(msgs: list[any], start: int) -> set[str] {
     answered: set[str] = set();
     for i in range(start, len(msgs)) {
@@ -484,7 +482,6 @@ impl _results_after(msgs: list[any], start: int) -> set[str] {
     }
     return answered;
 }
-
 
 impl _media_entries(value: any, semstr: str) -> list[any] {
     media = as_media_list(value);
