@@ -2447,9 +2447,7 @@ graph import {
     }
     runtime.constructs ++> [
         cli.commands.execution._invoke_entrypoint
-            | server.server.JacAPIServer._colocated_scheduled_targets {
-            WalkerArchetype
-        },
+            | server.server.ModuleIntrospector.scheduled_members { WalkerArchetype },
         data.serializer {
             Archetype,
             GenericEdge,
@@ -2470,7 +2468,6 @@ graph import {
         server.identity.identity_storage.IdentityStorage.reset_root { Root },
         server.server.ExecutionManager.spawn_walker_async { NodeArchetype },
         server.server.ExecutionManager.spawn_walker_sync { NodeArchetype },
-        server.server.ModuleIntrospector.scheduled_members { WalkerArchetype },
         server.server.ModuleIntrospector.target { WalkerArchetype },
         server.session._ancestry_of {
             Archetype,
@@ -4848,10 +4845,13 @@ graph import client {
         serving { client_output_dir },
     ]
     asset_processor ++> jac_client_compiler { AssetProcessor }
-    auth_contract ++> client_react_core
-        | client_runtime
-        | client_runtime_core
-        | solid_runtime { SignupResult }
+    auth_contract ++> [
+        client_react_core | client_runtime_core {
+            SignupResult,
+            __solveRegistrationChallenge
+        },
+        client_runtime | solid_runtime { SignupResult },
+    ]
     client_bundle ++> [
         compiler { ClientBuildInputs, ClientBundle, ClientBundleError },
         compiler.ViteCompiler._compile_wasm_module { client_program },
@@ -32196,6 +32196,10 @@ graph import server {
         register_auth_endpoints
     }
     endpoints.colocated ++> [
+        server.JacAPIServer._colocated_scheduled_targets {
+            colocated_providers,
+            provider_introspector
+        },
         server.JacAPIServer.register_endpoints { register_colocated_endpoints },
         server.print_endpoint_docs { colocated_providers, provider_route },
     ]
@@ -32471,8 +32475,8 @@ graph import server {
         server.JacAPIServer.__post_init__ { Scheduler },
         server.JacAPIServer._colocated_scheduled_targets { ScheduleSpec },
         server.JacAPIServer._register_scheduled_tasks { schedule_namespace },
-        server.JacAPIServer._scheduled_targets { ScheduleSpec },
         server.ModuleIntrospector.scheduled_members { ScheduleSpec },
+        server.ModuleIntrospector.scheduled_targets { ScheduleSpec },
     ]
     task_scheduler --> server.JacAPIServer._start_problems { schedule_problems }
     transport ++> [

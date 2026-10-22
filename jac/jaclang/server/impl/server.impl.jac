@@ -386,6 +386,32 @@ impl ModuleIntrospector.scheduled_members -> list[tuple[str, any, bool]] {
     return found;
 }
 
+impl ModuleIntrospector.scheduled_targets -> list[tuple[str, any, ScheduleSpec, bool]] {
+    found: list[tuple[str, any, ScheduleSpec, bool]] = [];
+    seen: set[str] = set();
+    for (name, member, is_walker) in self.scheduled_members() {
+        spec = member?.schedule_spec;
+        if isinstance(spec, ScheduleSpec) {
+            seen.add(name);
+            found.append((name, member, spec, is_walker));
+        }
+    }
+    for kind in ('walker', 'function') {
+        for rec in self.served(kind) {
+            if rec.name in seen or not self.is_scheduled(rec.name) {
+                continue;
+            }
+            member = self.target(rec.name);
+            spec = member?.schedule_spec;
+            if isinstance(spec, ScheduleSpec) {
+                seen.add(rec.name);
+                found.append((rec.name, member, spec, kind == 'walker'));
+            }
+        }
+    }
+    return found;
+}
+
 
 impl ModuleIntrospector._reset_targets -> None {
     self._functions = {};
@@ -1213,52 +1239,26 @@ impl JacAPIServer._ensure_internal_users -> None {
 }
 
 impl JacAPIServer._scheduled_targets -> list[tuple[str, any, bool]] {
-    found: list[tuple[str, any, bool]] = [];
-    seen: set[str] = set();
-    for (name, member, is_walker) in self.introspector.scheduled_members() {
-        spec = member?.schedule_spec;
-        if isinstance(spec, ScheduleSpec) {
-            seen.add(name);
-            found.append((name, spec, is_walker));
-        }
-    }
-    for kind in ('walker', 'function') {
-        for rec in self.introspector.served(kind) {
-            if rec.name in seen or not self.introspector.is_scheduled(rec.name) {
-                continue;
-            }
-            spec = self.introspector.target(rec.name)?.schedule_spec;
-            if isinstance(spec, ScheduleSpec) {
-                seen.add(rec.name);
-                found.append((rec.name, spec, kind == 'walker'));
-            }
-        }
-    }
-    return found;
+    return [
+        (name, spec, is_walker)
+        for (name, _member, spec, is_walker) in self.introspector.scheduled_targets()
+    ];
 }
 
 impl JacAPIServer._colocated_scheduled_targets -> list[
     tuple[str, str, any, ScheduleSpec, bool]
 ] {
-    import from jaclang.server { sv_client }
     found: list[tuple[str, str, any, ScheduleSpec, bool]] = [];
     if self.is_sv_sibling {
         return found;
     }
-    for (app, module) in sorted(sv_client._local_providers.items()) {
-        for (name, member) in inspect.getmembers(module) {
-            spec = member?.schedule_spec;
-            if not isinstance(spec, ScheduleSpec) {
-                continue;
-            }
-            if getattr(member, '__module__', '') != module.__name__ {
-                continue;
-            }
-            if isinstance(member, type) and issubclass(member, WalkerArchetype) {
-                found.append((app, name, member, spec, True));
-            } elif inspect.isfunction(member) {
-                found.append((app, name, member, spec, False));
-            }
+    for (app, module) in sorted(colocated_providers().items()) {
+        intro = provider_introspector(self, app, module);
+        if intro is None {
+            continue;
+        }
+        for (name, member, spec, is_walker) in intro.scheduled_targets() {
+            found.append((app, name, member, spec, is_walker));
         }
     }
     return found;

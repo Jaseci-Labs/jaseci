@@ -335,20 +335,26 @@ Colocated services are only registered for bridged calls, so their @schedule
 targets never reached the scheduler: a service's scheduled job (a repo sync, a
 digest) silently never ran under `jac run`, only in a fleet."""
 test "a colocated service's static schedules are registered under its app" {
-    import importlib;
-    import sys;
     import from tempfile { TemporaryDirectory }
+    import from jaclang { JacRuntime }
+    import from jaclang.runtime.build_services { build_services }
+    import from jaclang.runtime.prepared { load_prepared_module }
     import from jaclang.server { sv_client }
     import from jaclang.testing.testing { JacTestClient }
     with TemporaryDirectory() as tmpdir {
         client = JacTestClient.from_file(
             str(Path(FIXTURES) / "scheduled_tasks.jac"), base_path=tmpdir
         );
-        sys.path.insert(0, FIXTURES);
         try {
-            svc = importlib.import_module("colocated_scheduled_svc");
-            sv_client.register_local("colo", svc);
             server: any = client.server;
+            prepared = build_services().prepare_application(
+                str(Path(FIXTURES) / "colocated_scheduled_svc.jac"),
+                JacRuntime.get_program(),
+                FIXTURES,
+                default_codespace="server"
+            );
+            svc = load_prepared_module(prepared.entry, prepared);
+            sv_client.register_local("colo", svc);
             server._register_scheduled_tasks();
             names = {task.name for task in server.scheduler._tasks};
             assert "colo.svc_tick" in names , f"not registered: {sorted(names)}";
@@ -362,7 +368,67 @@ test "a colocated service's static schedules are registered under its app" {
             assert svc.TICKS == [1] , "the colocated schedule must run its own target";
         } finally {
             sv_client.unregister_local("colo");
-            sys.path.remove(FIXTURES);
+            client.close();
+        }
+    }
+}
+
+"""A colocated service schedules what it would schedule standalone, including a
+function it imports from another module. Discovery once kept only functions
+defined in the service's entry module, so a service that imported `tick` from
+`tasks.jac` ran it in a fleet but never under `jac run`."""
+test "a colocated service's schedule imported from another module is registered" {
+    import sys;
+    import from tempfile { TemporaryDirectory }
+    import from jaclang { JacRuntime }
+    import from jaclang.runtime.build_services { build_services }
+    import from jaclang.runtime.prepared { load_prepared_module }
+    import from jaclang.server { sv_client }
+    import from jaclang.testing.testing { JacTestClient }
+    with TemporaryDirectory() as tmpdir {
+        base = Path(tmpdir);
+        (base / "jac.toml").write_text(
+            '[project]\nname = "colo_imported"\ndefault-app = "api"\n\n'
+                + '[apps.api]\nkind = "service"\nentry-point = "main"\n\n'
+                + '[apps.jobs]\nkind = "service"\nentry-point = "jobs"\n'
+        );
+        (base / "tasks.jac").write_text(
+            "glob TICKS: list[int] = [];\n\n"
+            "@schedule(interval=3600, trigger=ScheduleTrigger.STATIC)\n"
+            "def:protect tick -> None {\n    TICKS.append(1);\n}\n"
+        );
+        (base / "jobs.jac").write_text(
+            "import from tasks { tick }\n\n"
+            "def:pub status -> str {\n    return \"ok\";\n}\n"
+        );
+        (base / "main.jac").write_text("def:pub ping -> int {\n    return 1;\n}\n");
+        client = JacTestClient.from_file(str(base / "main.jac"), base_path=tmpdir);
+        try {
+            server: any = client.server;
+            # What `jac run` does for each service app: prepare it, load its
+            # entry, and register it as a colocated provider.
+            prepared = build_services().prepare_application(
+                str(base / "jobs.jac"),
+                JacRuntime.get_program(),
+                tmpdir,
+                default_codespace="server"
+            );
+            jobs = load_prepared_module(prepared.entry, prepared);
+            sv_client.register_local("jobs", jobs);
+            server.scheduler._tasks.clear();
+            server._register_scheduled_tasks();
+            names = {task.name for task in server.scheduler._tasks};
+            assert "jobs.tick" in names , f"not registered: {sorted(names)}";
+            task = [
+                t
+                for t in server.scheduler._tasks
+                if t.name == "jobs.tick"
+            ][0];
+            server.scheduler._execute(task);
+            ticks = sys.modules[jobs.tick.__module__].TICKS;
+            assert ticks == [1] , "the imported schedule must run its own target";
+        } finally {
+            sv_client.unregister_local("jobs");
             client.close();
         }
     }

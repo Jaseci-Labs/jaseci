@@ -139,6 +139,7 @@ obj ModuleIntrospector {
     def route_spec(name: str) -> any;
     def is_scheduled(name: str) -> bool;
     def scheduled_members -> list[tuple[str, any, bool]];
+    def scheduled_targets -> list[tuple[str, any, ScheduleSpec, bool]];
     def _check_module_freshness -> None;
     def get_functions -> dict[str, Callable[(..., any)]];
     def get_walkers -> dict[str, type[WalkerArchetype]];
