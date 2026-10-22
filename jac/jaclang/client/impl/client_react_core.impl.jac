@@ -123,16 +123,17 @@ impl __doWalkerFetch(
         raise __bridgeErrorFromFetch(fetch_err, app, `walker);
     }
     if not response.ok {
-        if response.status == 401 and not app {
-            globalThis.__jacRemoveLocalStorage__("jac_token");
-            handler = globalThis.__jacHandleWalkerUnauthorized__;
-            if handler {
-                handler();
+        if response.status == 401 {
+            dropped = __jacDropRejectedToken(str(token or ""));
+            if not app {
+                if dropped {
+                    handler = globalThis.__jacHandleWalkerUnauthorized__;
+                    if handler {
+                        handler();
+                    }
+                }
+                return {};
             }
-            return {};
-        }
-        if response.status == 401 and token {
-            globalThis.__jacRemoveLocalStorage__("jac_token");
         }
         error_text = await response.text();
         walker_name = f"{`walker}/{nodeId}" if nodeId else `walker;
@@ -174,16 +175,17 @@ impl __doFuncFetch(
         raise __bridgeErrorFromFetch(fetch_err, app, function_name);
     }
     if not response.ok {
-        if response.status == 401 and not app {
-            globalThis.__jacRemoveLocalStorage__("jac_token");
-            handler = globalThis.__jacHandleWalkerUnauthorized__;
-            if handler {
-                handler();
+        if response.status == 401 {
+            dropped = __jacDropRejectedToken(str(token or ""));
+            if not app {
+                if dropped {
+                    handler = globalThis.__jacHandleWalkerUnauthorized__;
+                    if handler {
+                        handler();
+                    }
+                }
+                return {};
             }
-            return {};
-        }
-        if response.status == 401 and token {
-            globalThis.__jacRemoveLocalStorage__("jac_token");
         }
         error_text = await response.text();
         raise __bridgeErrorFor(
@@ -429,6 +431,14 @@ impl jacIsLoggedIn -> bool {
         globalThis.__jacRemoveLocalStorage__("jac_token");
         return False;
     }
+    return True;
+}
+
+impl __jacDropRejectedToken(sent: str) -> bool {
+    if str(globalThis.__jacGetLocalStorage__("jac_token") or "") != sent {
+        return False;
+    }
+    globalThis.__jacRemoveLocalStorage__("jac_token");
     return True;
 }
 
