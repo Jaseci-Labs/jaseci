@@ -8972,6 +8972,16 @@ graph import compiler {
             Module,
             UnaryExpr
         },
+        passes.wasm_contract._host_export {
+            Archetype,
+            Import,
+            Module,
+            ModuleItem,
+            Name,
+            ability_of_symbol,
+            import_chain_of,
+            resolved_decl_of
+        },
         passes.wasm_contract.check_host_call { Module, Name, ability_of_symbol },
         passes.wasm_contract.host_contracts { Import },
         symbol_utils {
