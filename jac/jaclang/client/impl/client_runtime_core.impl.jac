@@ -118,13 +118,14 @@ impl __doWalkerFetch(
         `walker
     );
     if not response.ok {
-        if response.status == 401 and not app {
-            __removeLocalStorage("jac_token");
-            window.location.reload();
-            return {};
-        }
-        if response.status == 401 and token {
-            __removeLocalStorage("jac_token");
+        if response.status == 401 {
+            dropped = __jacDropRejectedToken(str(token or ""));
+            if not app {
+                if dropped {
+                    window.location.reload();
+                }
+                return {};
+            }
         }
         error_text = await response.text();
         walker_name = f"{`walker}/{nodeId}" if nodeId else `walker;
@@ -159,13 +160,14 @@ impl __doFuncFetch(
         function_name
     );
     if not response.ok {
-        if response.status == 401 and not app {
-            __removeLocalStorage("jac_token");
-            window.location.reload();
-            return {};
-        }
-        if response.status == 401 and token {
-            __removeLocalStorage("jac_token");
+        if response.status == 401 {
+            dropped = __jacDropRejectedToken(str(token or ""));
+            if not app {
+                if dropped {
+                    window.location.reload();
+                }
+                return {};
+            }
         }
         error_text = await response.text();
         raise __bridgeErrorFor(
@@ -432,6 +434,14 @@ impl jacIsLoggedIn -> bool {
         __removeLocalStorage("jac_token");
         return False;
     }
+    return True;
+}
+
+impl __jacDropRejectedToken(sent: str) -> bool {
+    if str(__getLocalStorage("jac_token") or "") != sent {
+        return False;
+    }
+    __removeLocalStorage("jac_token");
     return True;
 }
 

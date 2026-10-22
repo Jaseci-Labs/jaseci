@@ -8,6 +8,7 @@ obj ClientUnit {
 
 obj ClientGraph {
     has modules: list[ClientUnit] = [],
+        refreshed: list[ClientUnit] = [],
         assets: list[Path] = [];
 }
 

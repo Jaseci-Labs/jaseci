@@ -93,7 +93,8 @@ glob RAW_MEM_IMPORTS = "import from c { def malloc(n: int) -> int; def free(p: i
          IntrinsicDispatch.MEM_STORE: "mem.p",
          IntrinsicDispatch.ATOMIC_XCHG: "atomicrmw xchg",
          IntrinsicDispatch.CALL_DTOR: "dtor.fn",
-         IntrinsicDispatch.ALLOCA: "alloca.buf"
+         IntrinsicDispatch.ALLOCA: "alloca.buf",
+         IntrinsicDispatch.LIST_DATA: "list.data.p"
      };
 
 """Probe source per dispatch kind; a new dispatch kind must add one here."""
@@ -141,6 +142,12 @@ def _probe_source(intr: any) -> str {
         return (
             "def probe(x: int) -> int { p = __alloca(8); "
             "__mem_store_i64(p, x + 7); return int(__mem_load_i64(p)); }\n"
+        );
+    }
+    if intr.dispatch == IntrinsicDispatch.LIST_DATA {
+        return (
+            "def probe(x: int) -> int { l: list[int] = [0, 0]; "
+            "__mem_store_i64(__list_data_ptr(l) + 8, x + 7); return l[1]; }\n"
         );
     }
     if intr.dispatch == IntrinsicDispatch.REGION_TLS {

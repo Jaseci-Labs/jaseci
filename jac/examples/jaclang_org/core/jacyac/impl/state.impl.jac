@@ -1,6 +1,8 @@
 impl useJacYac.onBridgeError(e: BridgeError) -> None {
     if isinstance(e, BridgeRejected) and e.status == 401 {
-        logout();
+        if not jacIsLoggedIn() {
+            logout();
+        }
         return;
     }
     bridgeMessage = bridge_error(e);
