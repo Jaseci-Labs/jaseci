@@ -5031,7 +5031,7 @@ graph import client {
     serving ++> targets.web_target._generate_index_html
         | vite_bundler._dev_head_scripts { HeaderBuilder }
     source_mapping ++> client_diagnostics { JacLocator, SourceLocation, _npm_specifier }
-    source_mapping --> jac_client_compiler.JacClientCompiler._write_source_map {
+    source_mapping --> jac_client_compiler.JacClientCompiler._write_js {
         generate_source_map_json
     }
     targets.node_tooling_common ++> vite_bundler._build_vite_command {
