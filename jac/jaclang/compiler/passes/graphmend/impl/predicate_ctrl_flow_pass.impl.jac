@@ -4,7 +4,8 @@ impl PredicateCtrlFlowPass.prepare with entry {
     if not self._enabled {
         disengage;
     }
-    self._autograd_reachable = module_reaches_autograd(self.module);
+    self._autograd_reachable = module_reaches_autograd(self.module)
+        or self._wrapped_from_training();
 }
 
 impl PredicateCtrlFlowPass.exit_if_stmt with uni.IfStmt exit {
@@ -13,6 +14,9 @@ impl PredicateCtrlFlowPass.exit_if_stmt with uni.IfStmt exit {
         return;
     }
     if facts_for(nd).breaks.get(nd) != GraphBreakKind.DYN_CTRL_FL {
+        return;
+    }
+    if not torch_binds_name(nd) {
         return;
     }
     if self._autograd_reachable and (not region_in_inference_ctx(nd)) {
@@ -75,6 +79,9 @@ impl PredicateCtrlFlowPass._rewrite_assignment(
     if self._provably_non_tensor(true_e) or self._provably_non_tensor(false_e) {
         return;
     }
+    if self._shape_divergent(true_e, false_e) {
+        return;
+    }
     (stmts, c_ref, t_ref, f_ref) = self._hoist(nd, nd.condition, true_e, false_e);
     where_call = torch_call(nd, 'where', [c_ref, t_ref, f_ref]);
     replace_stmt(nd, stmts + [self._assign(lhs, where_call)]);
@@ -87,6 +94,9 @@ impl PredicateCtrlFlowPass._rewrite_return(
         return;
     }
     if self._provably_non_tensor(true_e) or self._provably_non_tensor(false_e) {
+        return;
+    }
+    if self._shape_divergent(true_e, false_e) {
         return;
     }
     (stmts, c_ref, t_ref, f_ref) = self._hoist(nd, nd.condition, true_e, false_e);
@@ -140,6 +150,9 @@ impl PredicateCtrlFlowPass._merge_common_call(
         if self._provably_non_tensor(a_pos[i]) or self._provably_non_tensor(b_pos[i]) {
             return;
         }
+        if self._shape_divergent(a_pos[i], b_pos[i]) {
+            return;
+        }
     }
     for s in (list(true_setups) + list(false_setups)) {
         if self._is_eq_assert(s) {
@@ -182,6 +195,40 @@ impl PredicateCtrlFlowPass._has_none(a: uni.Expr, b: uni.Expr) -> bool {
 
 impl PredicateCtrlFlowPass._provably_non_tensor(e: uni.Expr) -> bool {
     return self._scalar_literal(e) or self._non_tensor_container(e);
+}
+
+impl PredicateCtrlFlowPass._shape_divergent(a: uni.Expr, b: uni.Expr) -> bool {
+    return self._subscript_texts(a) != self._subscript_texts(b);
+}
+
+impl PredicateCtrlFlowPass._subscript_texts(e: uni.Expr) -> set[str] {
+    out: set[str] = set();
+    for t in [e] + list(e.get_all_sub_nodes(uni.AtomTrailer)) {
+        if isinstance(t, uni.AtomTrailer) and isinstance(t.right, uni.IndexSlice) {
+            out.add(unparse_node(t).replace(' ', ''));
+        }
+    }
+    return out;
+}
+
+impl PredicateCtrlFlowPass._wrapped_from_training -> bool {
+    seen: set[str] = set();
+    for m in self.prog.mod.hub.values() {
+        if (m is self.module) or (not module_reaches_autograd(m)) {
+            continue;
+        }
+        for call in m.get_all_sub_nodes(uni.FuncCall) {
+            if not is_torch_attr_target(call.target, 'compile') {
+                continue;
+            }
+            `entry = resolve_wrapped_entry(self.prog, call, seen);
+            if (`entry is not None)
+                and (`entry.find_parent_of_type(uni.Module) is self.module) {
+                return True;
+            }
+        }
+    }
+    return False;
 }
 
 impl PredicateCtrlFlowPass._scalar_literal(e: uni.Expr) -> bool {

@@ -173,6 +173,23 @@ test "call-bearing branch values are declined" {
     assert "dyn_ctrl_fl" in _break_kinds("cond_assign.jac");
 }
 
+test "branch values with differing subscripts are declined" {
+    src = _pysrc("where_shape_branch.jac", True);
+    assert "torch.where(" not in src;
+    assert "return x[0]" in src;
+    assert "y = h[-1]" in src;
+    assert "dyn_ctrl_fl" in _break_kinds("where_shape_branch.jac");
+}
+
+test "a module that does not bind torch by name is not predicated" {
+    for name in ["where_aliased_torch.jac", "where_from_torch_nn.jac"] {
+        src = _pysrc(name, True);
+        assert "torch.where(" not in src , name;
+        assert "y = x * 2.0" in src , name;
+        assert "dyn_ctrl_fl" in _break_kinds(name) , name;
+    }
+}
+
 test "different callees in branches are left untouched" {
     src = _pysrc("different_callees.jac", True);
     assert "torch.where(" not in src;
@@ -373,7 +390,19 @@ glob WHERE_DECLINES = [
              "a hasattr-initialized attribute read outside the region",
              "guard_attr_escapes.jac"
          ),
-         ("an impure initializer in an existence-guarded init", "guard_impure_init.jac")
+         (
+             "an impure initializer in an existence-guarded init",
+             "guard_impure_init.jac"
+         ),
+         (
+             "an attribute callee bound outside the dispatch table",
+             "guard_bound_attr_init.jac"
+         ),
+         (
+             "a raise that fires when no extra keywords are passed",
+             "guard_varkw_inverted.jac"
+         ),
+         ("a raise in the else branch of a varkw check", "guard_varkw_else.jac")
      ],
      WHERE_LICENSED = [
          (
@@ -382,7 +411,11 @@ glob WHERE_DECLINES = [
          ),
          ("a twice-called helper is a diamond, not a cycle", "guard_diamond_init.jac"),
          ("a config read proven by a constructor invariant", "guard_config_get.jac"),
-         ("a constructor invariant one import away", "where_config_import.jac")
+         ("a constructor invariant one import away", "where_config_import.jac"),
+         (
+             "an attribute callee bound from the dispatch table",
+             "guard_table_bound_init.jac"
+         )
      ];
 
 def _where_declines(row: tuple[any, ...]) {

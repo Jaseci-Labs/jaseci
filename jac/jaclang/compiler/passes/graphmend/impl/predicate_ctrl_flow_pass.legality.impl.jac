@@ -95,6 +95,9 @@ impl PredicateCtrlFlowPass._call_speculatable(c: uni.FuncCall) -> bool {
         return self._body_pure_nonraising(fn, c, None, self._callsite_ctx(fn, c));
     }
     if isinstance(t, uni.AtomTrailer) and isinstance(t.right, uni.Name) {
+        if self._attr_bound_elsewhere(mod, t.right.value) {
+            return False;
+        }
         cands = [
             fn
             for fn in self._dispatch_table_fns(mod)
@@ -109,6 +112,45 @@ impl PredicateCtrlFlowPass._call_speculatable(c: uni.FuncCall) -> bool {
             }
         }
         return True;
+    }
+    return False;
+}
+
+impl PredicateCtrlFlowPass._attr_bound_elsewhere(mod: uni.Module, attr: str) -> bool {
+    for ab in mod.get_all_sub_nodes(uni.Ability) {
+        if (ab.sym_name == attr) and (ab.enclosing_decl(uni.Archetype) is not None) {
+            return True;
+        }
+    }
+    tables: set[str] = set();
+    for a in mod.get_all_sub_nodes(uni.Assignment) {
+        if isinstance(a.value, uni.DictVal) {
+            for t in a.target {
+                if isinstance(t, uni.Name) {
+                    tables.add(t.value);
+                }
+            }
+        }
+    }
+    for a in mod.get_all_sub_nodes(uni.Assignment) {
+        for t in a.target {
+            if not (
+                isinstance(t, uni.AtomTrailer)
+                and isinstance(t.right, uni.Name)
+                and (t.right.value == attr)
+            ) {
+                continue;
+            }
+            v = a.value;
+            if not (
+                isinstance(v, uni.AtomTrailer)
+                and isinstance(v.right, uni.IndexSlice)
+                and isinstance(v.target, uni.Name)
+                and (v.target.value in tables)
+            ) {
+                return True;
+            }
+        }
     }
     return False;
 }
@@ -574,29 +616,67 @@ impl PredicateCtrlFlowPass._passes_extra_kwargs(
 impl PredicateCtrlFlowPass._guarded_by_varkw(
     r: uni.RaiseStmt, varkw: str, fn: uni.Ability
 ) -> bool {
+    prev: uni.UniNode = r;
     cur = r.parent;
     while (cur is not None) and (cur is not fn) {
-        if isinstance(cur, uni.IfStmt) {
-            if self._mentions_name(cur.condition, varkw) {
-                return True;
-            }
+        if isinstance(cur, uni.IfStmt)
+            and (prev is not cur.else_body)
+            and self._varkw_nonempty(cur.condition, varkw) {
+            return True;
         }
+        prev = cur;
         cur = cur.parent;
     }
     return False;
 }
 
-impl PredicateCtrlFlowPass._mentions_name(e: (uni.Expr | None), nm: str) -> bool {
-    if e is None {
+impl PredicateCtrlFlowPass._varkw_nonempty(e: (uni.Expr | None), varkw: str) -> bool {
+    if isinstance(e, uni.AtomUnit) and isinstance(e.value, uni.Expr) {
+        return self._varkw_nonempty(e.value, varkw);
+    }
+    if isinstance(e, uni.Name) {
+        return e.value == varkw;
+    }
+    if isinstance(e, uni.BoolExpr) {
+        if e.op.name != Tok.KW_AND {
+            return False;
+        }
+        for v in e.values {
+            if isinstance(v, uni.Expr) and self._varkw_nonempty(v, varkw) {
+                return True;
+            }
+        }
         return False;
     }
-    if isinstance(e, uni.Name) and (e.value == nm) {
-        return True;
+    if isinstance(e, uni.FuncCall) and isinstance(e.target, uni.Name) {
+        args = split_params(e.params)[0];
+        return (e.target.value == 'bool')
+            and (len(args) == 1)
+            and isinstance(args[0], uni.Name)
+            and (args[0].value == varkw);
     }
-    for n in e.get_all_sub_nodes(uni.Name) {
-        if n.value == nm {
-            return True;
+    if isinstance(e, uni.CompareExpr) and (len(e.ops) == 1) and (len(e.rights) == 1) {
+        lhs = e.left;
+        rhs = e.rights[0];
+        if not (
+            isinstance(lhs, uni.FuncCall)
+            and isinstance(lhs.target, uni.Name)
+            and (lhs.target.value == 'len')
+            and isinstance(rhs, uni.Int)
+        ) {
+            return False;
         }
+        largs = split_params(lhs.params)[0];
+        if not (
+            (len(largs) == 1)
+            and isinstance(largs[0], uni.Name)
+            and (largs[0].value == varkw)
+        ) {
+            return False;
+        }
+        op = e.ops[0].value;
+        n = rhs.lit_value;
+        return ((op in ('>', '!=')) and (n == 0)) or ((op == '>=') and (n == 1));
     }
     return False;
 }

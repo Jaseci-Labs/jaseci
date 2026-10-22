@@ -33,7 +33,6 @@ walker TrapLoweringPass(TreePass) {
     def _assigned_tensor_provable(nm: uni.Name, site: uni.UniNode) -> bool;
     def _param_is_tensor(name: str, site: uni.UniNode) -> bool;
     def _binds_torch_tensor(ann: uni.Name) -> bool;
-    def _torch_binds_module(site: uni.UniNode) -> bool;
     def _raise_message(rs: uni.RaiseStmt) -> (uni.Expr | None);
     def _gen_name(at: uni.UniNode, value: str) -> uni.Name;
     def _str(at: uni.UniNode, text: str) -> uni.String;

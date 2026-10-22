@@ -54,6 +54,8 @@ def module_entry_forwards(
 
 def module_binds_torch(mod: uni.Module) -> bool;
 
+def torch_binds_name(site: uni.UniNode) -> bool;
+
 def module_reaches_autograd(mod: uni.Module) -> bool;
 
 def _optim_spelled(recv: (uni.Expr | None)) -> bool;
@@ -554,6 +556,16 @@ impl module_entry_forwards(
 
 impl module_binds_torch(mod: uni.Module) -> bool {
     return binds_torch_import(mod);
+}
+
+impl torch_binds_name(site: uni.UniNode) -> bool {
+    sym = site.sym_tab.lookup('torch');
+    decl = sym.decl if (sym is not None) else None;
+    mp = decl.find_parent_of_type(uni.ModulePath) if (decl is not None) else None;
+    if (mp is None) or mp.is_import_from or (mp.alias is not None) {
+        return False;
+    }
+    return mp.dot_path_str == 'torch';
 }
 
 impl module_reaches_autograd(mod: uni.Module) -> bool {

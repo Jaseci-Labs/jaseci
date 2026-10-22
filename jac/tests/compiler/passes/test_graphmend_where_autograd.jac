@@ -1,9 +1,14 @@
 """Predication autograd gate: torch.where evaluates both operands and routes
 the untaken one into the backward pass, so the rewrite must decline whenever
 the region is reachable under gradient tracking."""
+import os;
 import from jaclang.testing.test { parametrize }
+import from jaclang.compiler.driver.program { JacProgram }
+import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from tests.support {
+    GRAPHMEND_FIXTURES as FIXTURES,
     graphmend_break_kinds as _break_kinds,
+    graphmend_compile_opts as _compile_opts,
     graphmend_pysrc as _pysrc
 }
 
@@ -58,6 +63,18 @@ test "a no-arg inference_mode decorator on the entry still predicates" {
     assert "z = torch.where(" in src;
     assert "if x.sum() > 0:" not in src;
     assert "loss.backward()" in src;
+}
+
+test "a model trained from another loaded module declines predication" {
+    assert "torch.where(" in _pysrc("autograd_xmod_model.jac", True);
+    prog = JacProgram();
+    opts = CompileOptions(graphmend=True);
+    _compile_opts(os.path.join(FIXTURES, "autograd_xmod_entry.jac"), opts, prog);
+    src = _compile_opts(os.path.join(FIXTURES, "autograd_xmod_model.jac"), opts, prog)[
+        0
+    ];
+    assert "torch.where(" not in src;
+    assert "y = 1.0 / x" in src;
 }
 
 test "an autograd-free module still predicates (coverage guard)" {

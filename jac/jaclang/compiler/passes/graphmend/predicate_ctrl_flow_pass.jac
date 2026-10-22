@@ -75,6 +75,9 @@ walker PredicateCtrlFlowPass(TreePass) {
     def _has_call(e: uni.UniNode) -> bool;
     def _has_none(a: uni.Expr, b: uni.Expr) -> bool;
     def _provably_non_tensor(e: uni.Expr) -> bool;
+    def _shape_divergent(a: uni.Expr, b: uni.Expr) -> bool;
+    def _subscript_texts(e: uni.Expr) -> set[str];
+    def _wrapped_from_training -> bool;
     def _scalar_literal(e: uni.Expr) -> bool;
     def _non_tensor_container(e: uni.Expr) -> bool;
     def _same_lhs(a: uni.Assignment, b: uni.Assignment) -> (uni.Name | None);
@@ -98,6 +101,7 @@ walker PredicateCtrlFlowPass(TreePass) {
     def _is_existence_guard(s: uni.UniNode, region: uni.IfStmt) -> bool;
     def _init_value_safe(v: (uni.Expr | uni.YieldExpr | None)) -> bool;
     def _call_speculatable(c: uni.FuncCall) -> bool;
+    def _attr_bound_elsewhere(mod: uni.Module, attr: str) -> bool;
     def _signature_accepts(fn: uni.Ability, c: uni.FuncCall) -> bool;
     def _module_fn(mod: uni.Module, name: str) -> (uni.Ability | None);
     def _dispatch_table_fns(mod: uni.Module) -> list[uni.Ability];
@@ -129,7 +133,7 @@ walker PredicateCtrlFlowPass(TreePass) {
     def _varkw_name(fn: uni.Ability) -> (str | None);
     def _passes_extra_kwargs(fn: uni.Ability, c: uni.FuncCall) -> bool;
     def _guarded_by_varkw(r: uni.RaiseStmt, varkw: str, fn: uni.Ability) -> bool;
-    def _mentions_name(e: (uni.Expr | None), nm: str) -> bool;
+    def _varkw_nonempty(e: (uni.Expr | None), varkw: str) -> bool;
     def _pure_callee(t: (uni.Expr | None)) -> bool;
     def _pure_root(base: uni.Name) -> bool;
     def _pure_receiver(recv: (uni.Expr | None)) -> bool;
