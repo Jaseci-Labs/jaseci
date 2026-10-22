@@ -1,4 +1,5 @@
 import from "@jac/runtime" {
+    jacIsLoggedIn,
     __getLocalStorage,
     __setLocalStorage,
     BridgeError,

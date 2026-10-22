@@ -7,7 +7,7 @@ graph import {
     edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.*;
     edge Comptime: comptime --> byllm.* | cli.* | client.* | scale.* | server.*;
-    edge Data: data.* --> cli.* | compiler.* | runtime.* | scale.* | server.*;
+    edge Data: data.* --> cli.* | client.* | compiler.* | runtime.* | scale.* | server.*;
     edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
     edge Jac0: jac0 --> dist.*;
     edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
@@ -154,6 +154,7 @@ graph import {
     }
     byllm.visit_routing --> runtime.runtime.JacLLM.by_operator { route_visit }
     cache.home ++> cli.commands.cache { cache_home }
+    cache.locking ++> scale.admin.console_build.AdminConsole._run { FileLock }
     cache.policy ++> [
         cli.commands.cache { format_bytes },
         cli.format_cache {
@@ -177,6 +178,7 @@ graph import {
             | packages.sources._mirror_dir
             | packages.store.materialize
             | project.package_scope.store_root
+            | scale.admin.console_build.AdminConsole._note_hit
             | scale.injector.binary._scale_cache_root
             | server.session.shared_pg_data_dir
             | toolchains.android
@@ -185,7 +187,9 @@ graph import {
         compiler.types.stubcat.locate.StubcatArtifact.build
             | scale.injector.binary._fetch_verified_asset { maybe_sweep },
         dist.jab | toolchains.store { bucket, maybe_sweep },
-        packages.index.fetch_verified { bucket },
+        packages.index.fetch_verified | scale.admin.console_build.console_cache_dir {
+            bucket
+        },
     ]
     cache.registry --> [
         compiler.driver.jir._manifest_compiler_digest { bucket, maybe_sweep },
@@ -266,7 +270,9 @@ graph import {
             | project.config._apply_memory_native_placement
             | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._install_app_deps
             | server.server.JacAPIServer.start { console },
-        client.cli.run_client_setup | server.server.print_endpoint_docs { console },
+        client.cli.run_client_setup
+            | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._start_client_build
+            | server.server.print_endpoint_docs { console },
         client.cli.run_client_start { console },
         client.cli.run_npm_add { console },
         client.cli.run_npm_add_global { console },
@@ -287,7 +293,8 @@ graph import {
     cli.manifest_route ++> [
         scale.injector.binary.deploy_generation_refusal
             | scale.tests.deploy.test_client_build_fail_fast
-            | scale.tests.deploy.test_version_pin { resolve_cli_version },
+            | scale.tests.deploy.test_version_pin
+            | server.sealed_serve.serve_manifest_stamp { resolve_cli_version },
         scale.injector.binary.host_toolchain_path { resolve_cli_version },
     ]
     cli.manifest_route --> scale.observability.prometheus_metrics.PrometheusMetricsCollector.__post_init__
@@ -325,6 +332,9 @@ graph import {
             WorkPool,
             pool_available,
             resolve_jobs
+        },
+        scale.deploy.target.kubernetes.manifest_builder.client_build_alongside_seal {
+            memory_headroom_bytes
         },
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
@@ -533,9 +543,15 @@ graph import {
     compiler.backends.native.host_facts --> project.compiler_host.ProjectHost.native_fact {
         host_native_fact
     }
-    compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        kernel_lib_name
-    }
+    compiler.backends.native.kernel_resolve ++> [
+        dist.precompile_bytecode.adopt_kernel {
+            LAYOUT_SIDECAR_SUFFIX,
+            kernel_lib_name,
+            read_sidecar,
+            unit_drift
+        },
+        dist.precompile_bytecode.seal_native { kernel_lib_name },
+    ]
     compiler.backends.native.kernel_resolve --> [
         project.kernel_check.analysis_kernel { KernelLoadError },
         project.kernel_check.kernel_check | project.kernel_compile.kernel_route {
@@ -1017,6 +1033,7 @@ graph import {
     compiler.frontend.codeinfo --> [
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
+        project.compiler_host.ProjectHost.ct_environment { effective_native_target },
     ]
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
@@ -1252,6 +1269,7 @@ graph import {
             kernel_root_path,
             native_scope_paths
         },
+        dist.precompile_bytecode.adopt_kernel { in_native_scope_path },
         dist.precompile_bytecode.seal_native { in_native_scope_path },
     ]
     compiler.native_scope --> dist.precompile_bytecode.native_roots { kernel_root_path }
@@ -1309,6 +1327,11 @@ graph import {
     compiler.placement.placement_solver ++> dist.seal.bake_native_payloads {
         native_default_path_ok
     }
+    compiler.target_spec ++> [
+        dist.precompile_bytecode._shared_suffix { host_target_spec },
+        dist.precompile_bytecode.adopt_kernel { host_target_spec },
+    ]
+    compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
@@ -1415,6 +1438,10 @@ graph import {
         server.session.own_child_databases { process_alive, this_host },
     ]
     data.pg_dist ++> cli.commands.db._db_fetch { download_dist }
+    data.pg_dist --> client.targets.desktop.desktop_build.stage_postgres {
+        bundled_dist_dir,
+        cached_dist_dir
+    }
     data.pgembed ++> [
         cli.commands.db._catalog_runtime
             | scale.tests.data.test_pg_stream
@@ -1432,6 +1459,7 @@ graph import {
         },
     ]
     data.pgembed --> [
+        client.targets.desktop.native.host_boot._stop_embedded_store { stop_cluster },
         scale.deploy.database.kubernetes_postgres.KubernetesPostgresProvider.deploy {
             pg_tuning_settings
         },
@@ -1875,7 +1903,9 @@ graph import {
         compiler.driver.application._prepare_revision { client_input_dirs },
     ]
     project.config ++> [
-        artifacts.router._provision | toolchains.store.offline { offline_mode },
+        artifacts.router._provision
+            | data.pg_dist.bundled_dist_dir
+            | toolchains.store.offline { offline_mode },
         cache.registry.project_bucket
             | cli.commands.analysis._configured_check_excludes
             | cli.commands.architecture
@@ -2051,9 +2081,10 @@ graph import {
             | client.jac_client_compiler.JacClientCompiler._client_app_dir
             | client.vite_bundler.ViteBundler._get_client_dir { get_config },
         client.jac_client_compiler.JacClientCompiler._get_client_dir { get_config },
-        client.targets.desktop.desktop_build.stage_program
+        client.targets.desktop.desktop_build.desktop_storage_identifier
             | scale.server.inprocess.prepare_inprocess_runtime
             | server.hmr.HotReloader._reload_server_module { get_config_for_dir },
+        client.targets.desktop.desktop_build.stage_program { get_config_for_dir },
         runtime.runtime.JacRuntime.reset_process_state { set_config },
         runtime.source_app.main { JacConfig, set_config },
         scale.runtime.fleet.fleet_member_names { get_config, get_config_for_dir },
@@ -3682,9 +3713,9 @@ graph import {
             | dist.seal.bake_native_payloads { NATIVE_DIR_REL },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
-        compiler.driver.application._prepare_sealed | dist.seal.bake_serve_payloads {
+        compiler.driver.application._prepare_sealed {
             CLIENT_DIST_REL,
-            SERVE_MANIFEST_REL
+            read_serve_manifest
         },
         dist.precompile_bytecode.app_metadata { CLIENT_DIST_REL, NATIVE_DIR_REL },
         dist.precompile_bytecode.collect_payloads {
@@ -3693,6 +3724,8 @@ graph import {
             SERVE_MANIFEST_REL
         },
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
+        dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
+        dist.seal.build_serve_manifest { serve_manifest_stamp },
     ]
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
@@ -3855,7 +3888,6 @@ graph import {
         },
         scale.admin.admin_portal {
             FileResponse,
-            HTMLResponse,
             JSONResponse,
             RedirectResponse,
             Request,
@@ -3869,6 +3901,7 @@ graph import {
             | scale.tests.server.test_oauth_providers
             | scale.tests.server.test_registration_limits
             | scale.tests.server.test_static_fallback { Request },
+        scale.admin.console_build { HTMLResponse, Response },
         scale.admin.deploy_health
             | scale.admin.llm_telemetry
             | scale.admin.logs
@@ -5003,7 +5036,7 @@ graph import client {
     serving ++> targets.web_target._generate_index_html
         | vite_bundler._dev_head_scripts { HeaderBuilder }
     source_mapping ++> client_diagnostics { JacLocator, SourceLocation, _npm_specifier }
-    source_mapping --> jac_client_compiler.JacClientCompiler._write_source_map {
+    source_mapping --> jac_client_compiler.JacClientCompiler._write_js {
         generate_source_map_json
     }
     targets.node_tooling_common ++> vite_bundler._build_vite_command {
@@ -5176,6 +5209,8 @@ graph import client.targets.desktop {
             _stage_fused_runtime,
             build_cef_dispatch,
             build_cef_subprocess,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
         native.cef.build { build_cef_dispatch, build_cef_subprocess },
@@ -5185,6 +5220,8 @@ graph import client.targets.desktop {
             _jac_bin,
             _jac_subprocess_env,
             _stage_fused_runtime,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
     ]
@@ -5667,12 +5704,12 @@ graph import compiler {
             classify_cross_app_import
         },
         placement.placement._element_reqs { classify_import },
+        placement.placement._scan_blockers_under { ability_delegates_to_model },
         placement.placement.module_anchor_reasons {
             ability_delegates_to_model,
             classify_import,
             is_service_app_entry
         },
-        placement.placement.native_blocker_scan { ability_delegates_to_model },
         placement.placement_export.collect_placement_rows {
             ClientImportVerdict,
             classify_client_import_item,
@@ -6147,6 +6184,8 @@ graph import compiler {
             JACSTR_DESC_FIELDS,
             NativeFuncLayout,
             RC_SENTINEL,
+            STR_ASCII_TAG_BIT,
+            STR_LEN_PAYLOAD_MASK,
             STR_LEN_TAG_BIT,
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
@@ -6369,7 +6408,7 @@ graph import compiler {
         passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
-        placement.placement.native_blocker_scan {
+        placement.placement._scan_blockers_under {
             NATIVE_SUPPORTED_STDLIB,
             is_bundled_native_module,
             resolve_native_module
@@ -7308,7 +7347,7 @@ graph import compiler {
         backends.es.esast_gen_pass
             | backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
-            | driver.boundary_classify.python_side_name_refs
+            | driver.boundary_classify.is_server_anchored_module
             | driver.module_compile
             | driver.program.JacProgram.stamp_native_import_facts
             | native_bindings
@@ -7320,6 +7359,7 @@ graph import compiler {
             | passes.placement_pass
             | passes.rc_facts_pass
             | passes.type_checker_pass.TypeCheckPass._is_generator
+            | placement.placement
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7329,14 +7369,13 @@ graph import compiler {
             ModuleFacts,
             client_capability_violations
         },
+        driver.boundary_classify.python_side_name_refs
+            | types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
         passes.placement_pass.client_refused_elements { client_capability_violations },
-        types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
-        parse as rd_parse
-    }
     frontend.parser.frontend ++> [
-        driver.wiring.WiringSpec.wire_import { parse_woven },
+        driver.compiler.JacCompiler._prepare_tool_program
+            | driver.wiring.WiringSpec.wire_import { parse_woven },
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
         driver.wiring.prune_wiring_source { parse_woven },
@@ -9957,6 +9996,10 @@ graph import compiler {
             refresh_placement_module,
             solve_module_placement
         },
+        passes.placement_pass._demote_unreached_imports {
+            placement_work,
+            refresh_placement_module
+        },
         passes.placement_pass.build_native_legality { native_closure_blocker },
         passes.placement_pass.settle_native_module { invalidate_importers_es },
         passes.placement_pass.uncrossable_native {
@@ -10064,6 +10107,12 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
+    target_spec ++> [
+        backends.native.kernel_resolve { host_target_spec, target_spec, triple_osarch },
+        backends.native.link_glue.link_glue_ir { triple_osarch },
+    ]
+    type target_spec ++> backends.native.kernel_resolve
+        | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
     tools.code_intel ++> tests.test_code_intel { CodeIntelligence }
     tools.comment_attach_pass ++> [
@@ -10940,7 +10989,6 @@ graph import compiler.backends.native {
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
             FACT_IMPORT_PATHS,
-            FACT_OS,
             FACT_PACKAGE_STORE,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
@@ -10958,7 +11006,6 @@ graph import compiler.backends.native {
             EXC_LINEAGE_SLOTS,
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
-            FACT_OS,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
             FACT_SEP,
@@ -11005,6 +11052,13 @@ graph import compiler.backends.native {
         },
         wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
     ]
+    posix_floor --> link_glue.link_glue_ir { posix_floor_ir }
+    posix_floor_ir ++> posix_floor {
+        POSIX_FLOOR_IR_LINUX_AARCH64,
+        POSIX_FLOOR_IR_LINUX_X86_64,
+        POSIX_FLOOR_IR_MACOS_AARCH64,
+        POSIX_FLOOR_IR_MACOS_X86_64
+    }
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -11083,7 +11137,6 @@ graph import compiler.backends.native.llvm.binding {
         module | targets | value { _decode_string, _encode_string },
     ]
     context ++> module { get_global_context }
-    initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
     value ++> [
         module { ValueRef },
@@ -12251,6 +12304,7 @@ graph import compiler.frontend {
             ModuleCode,
             ModuleItem,
             Name,
+            Test,
             TupleVal,
             UniNode,
             YieldExpr,
@@ -13748,7 +13802,7 @@ graph import compiler.placement {
         },
     ]
     placement_pins --> [
-        placement.native_blocker_scan { config_module_pin as _cmp, config_pin_for },
+        placement._scan_blockers_under { config_module_pin as _cmp, config_pin_for },
         placement.project_kind_name { config_project_kind },
         placement.summarize_module {
             config_element_pin,
@@ -15303,6 +15357,11 @@ graph import runtime {
 }
 
 graph import runtime.na_stdlib {
+    _ascii ++> [
+        datetime { is_digit, is_space },
+        re { hexv, is_alpha, is_digit, is_space, is_word, swapcase },
+        string { is_id_start, is_word },
+    ]
     _bz2_native ++> bz2 { bz2_compress, bz2_decompress }
     _csprng_native ++> secrets | uuid { csprng_bytes }
     _datetime_native ++> datetime {
@@ -15317,6 +15376,8 @@ graph import runtime.na_stdlib {
         dt_tm_gmtoff,
         dt_tm_zone
     }
+    _digest ++> hashlib | hmac { new_core }
+    type _digest ++> hashlib | hmac { DigestCore }
     _directory_native ++> [
         glob | shutil | uuid | zoneinfo { try_directory_names },
         pathlib { directory_names },
@@ -15330,37 +15391,29 @@ graph import runtime.na_stdlib {
         _directory_native { clear_errno, last_errno, raise_os_error },
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
+        _time_native { raise_errno },
+        fcntl | select { EINTR, errno_message, last_errno },
+        termios { errno_message, last_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fcntl_native ++> fcntl {
+        _F_GETFD,
+        _F_GETFL,
+        _F_SETFD,
+        _F_SETFL,
+        _F_SETOWN,
+        _O_APPEND,
+        _O_ASYNC,
+        _O_NONBLOCK,
+        do_fcntl,
+        do_ioctl
+    }
+    _fd_native ++> _replace_native { AT_FDCWD }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
     ]
     _glob_native ++> glob { glob_lexists }
-    _hashlib_native ++> [
-        hashlib {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_ctx_clone,
-            evp_ctx_digest,
-            evp_ctx_free,
-            evp_ctx_new,
-            evp_ctx_update,
-            evp_md_for
-        },
-        hmac {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_md_for,
-            hmac_ctx_clone,
-            hmac_ctx_digest,
-            hmac_ctx_free,
-            hmac_ctx_new,
-            hmac_ctx_update
-        },
-    ]
     _hex ++> hashlib | hmac | secrets { to_hex }
     _locale_tables ++> locale { _load_alias, _load_encalias }
     _logging_native ++> logging {
@@ -15434,8 +15487,20 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
-    _passwd_layout ++> _user_home { PASSWD_DIR, PASSWD_SIZE }
     _replace_native ++> _os_native { replace_file }
+    _repr ++> [
+        difflib { str_gt },
+        pprint | reprlib { repr_str, sorted_str_keys },
+    ]
+    _select_native ++> select {
+        _FD_SETSIZE,
+        _POLLERR,
+        _POLLHUP,
+        _POLLIN,
+        _POLLNVAL,
+        _POLLOUT,
+        do_poll
+    }
     _socket_abi ++> [
         _socket_native {
             ADDRINFO_ADDRLEN_OFFSET,
@@ -15513,12 +15578,94 @@ graph import runtime.na_stdlib {
         tar_utime,
         tar_write
     }
+    _termios_native ++> termios {
+        _BRKINT,
+        _CREAD,
+        _CS7,
+        _CS8,
+        _CSIZE,
+        _CSTOPB,
+        _ECHO,
+        _ECHOE,
+        _ECHOK,
+        _ECHONL,
+        _HUPCL,
+        _ICANON,
+        _ICRNL,
+        _IEXTEN,
+        _IGNBRK,
+        _IGNCR,
+        _IGNPAR,
+        _INLCR,
+        _INPCK,
+        _ISIG,
+        _ISTRIP,
+        _IXANY,
+        _IXOFF,
+        _IXON,
+        _NCCS,
+        _NOFLSH,
+        _OFF_CC,
+        _OFF_CFLAG,
+        _OFF_IFLAG,
+        _OFF_LFLAG,
+        _OFF_OFLAG,
+        _ONLCR,
+        _OPOST,
+        _PARENB,
+        _PARMRK,
+        _PARODD,
+        _TCSADRAIN,
+        _TCSAFLUSH,
+        _TCSANOW,
+        _TIOCGWINSZ,
+        _TOSTOP,
+        _VDISCARD,
+        _VEOF,
+        _VEOL,
+        _VEOL2,
+        _VERASE,
+        _VINTR,
+        _VKILL,
+        _VLNEXT,
+        _VMIN,
+        _VQUIT,
+        _VREPRINT,
+        _VSTART,
+        _VSTOP,
+        _VSUSP,
+        _VTIME,
+        _VWERASE,
+        get_attrs,
+        in_speed,
+        out_speed,
+        put_word,
+        set_attrs,
+        set_speeds,
+        word_at
+    }
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
     ]
+    _time_native ++> [
+        _datetime_native { CLK_REALTIME },
+        time {
+            CLK_MONOTONIC,
+            CLK_MONOTONIC_RAW,
+            CLK_PROCESS_CPUTIME,
+            CLK_PY_MONOTONIC,
+            CLK_REALTIME,
+            CLK_THREAD_CPUTIME,
+            time_sleep_ns
+        },
+    ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
+    _utf8 ++> [
+        re { cps_str, utf8_cps },
+        reprlib { cp_len, cpslice_str },
+    ]
     _zlib_native ++> [
         gzip {
             ZInflateResult,
@@ -15572,6 +15719,38 @@ graph import runtime.na_stdlib {
     }
     datetime ++> zoneinfo { _MAXORDINAL, _ord2ymd }
     http.client ++> urllib.request { HTTPResponse }
+    termios ++> tty {
+        BRKINT,
+        CS8,
+        CSIZE,
+        ECHO,
+        ECHOE,
+        ECHOK,
+        ECHONL,
+        ICANON,
+        ICRNL,
+        IEXTEN,
+        IGNBRK,
+        IGNCR,
+        IGNPAR,
+        INLCR,
+        INPCK,
+        ISIG,
+        ISTRIP,
+        IXANY,
+        IXOFF,
+        IXON,
+        NOFLSH,
+        OPOST,
+        PARENB,
+        PARMRK,
+        TCSAFLUSH,
+        TOSTOP,
+        VMIN,
+        VTIME,
+        tcgetattr,
+        tcsetattr
+    }
 }
 
 graph import runtime.python {
@@ -30085,6 +30264,7 @@ graph import scale {
             | deploy.target.kubernetes.ingress
             | deploy.target.kubernetes.monitoring
             | deploy.target.kubernetes.target
+            | deploy.target.kubernetes.utils.kubernetes_utils
             | injector.pvc_injector.PvcInjector.seed { ApiException, client },
         deploy.autoscale.hpa_autoscaler | deploy.autoscale.keda_autoscaler {
             ApiException,
@@ -30102,12 +30282,6 @@ graph import scale {
             ConfigException,
             client,
             config as k8s_cluster_config
-        },
-        deploy.target.kubernetes.utils.kubernetes_utils {
-            ApiException,
-            ConfigException,
-            client,
-            config
         },
         tests.deploy.observer_transition_recorder { ApiException, config },
         tests.misc.test_optional_deps { HAS_KUBERNETES, client as k8s_client },
@@ -30133,7 +30307,7 @@ graph import scale {
     ]
     _optdeps.prometheus --> tests.misc.test_optional_deps;
     admin ++> [
-        admin.admin_portal.JacAPIServerAdmin.build_admin_client { admin_portal },
+        admin.console_build.package_ui_dir { admin_portal },
         tests.misc.test_k8s_ops { k8s_ops },
     ]
     admin --> tests.server.test_admin;
@@ -30153,6 +30327,10 @@ graph import scale {
         _parse_prometheus_text,
         _percentile_from_buckets
     }
+    admin.console_build ++> runtime.gateway.microservice_gateway.MicroserviceGateway.serve_admin_asset {
+        resolve_console
+    }
+    admin.console_build --> tests.server.test_admin { AdminConsole, ConsoleState }
     admin.deploy_health ++> [
         runtime.gateway.microservice_gateway | server.extensions {
             JacAPIServerDeployHealth
@@ -30236,6 +30414,7 @@ graph import scale {
             | tests.deploy.test_deploy_k8s
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_factories
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_pod_env
             | tests.deploy.test_show_yaml_autoscalers
@@ -30504,6 +30683,7 @@ graph import scale {
             | tests.deploy.test_ingress_tls_preservation
             | tests.deploy.test_memory_trigger_guard
             | tests.deploy.test_monitoring_switch
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_pod_env
             | tests.deploy.test_service_routing
@@ -30534,6 +30714,7 @@ graph import scale {
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_gateway_config_isolation
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_service_routing
             | tests.deploy.test_superseded_deployment_reap { ManifestBuilder },
         tests.deploy.test_client_build_stage {
@@ -30560,7 +30741,9 @@ graph import scale {
     ]
     deploy.target.kubernetes.ops_rbac ++> tests.deploy.test_ops_rbac {
         build_ops_rbac,
-        ops_role_name
+        ops_role_name,
+        ops_sa_is_ours,
+        ops_sa_name
     }
     deploy.target.kubernetes.runtime_bootstrap ++> tests.microservices.test_binary_injector {
         build_bootstrap_init_container,
@@ -30744,6 +30927,7 @@ graph import scale {
     injector.bundle ++> [
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle {
             _stage_app,
+            client_build_sources,
             release_binary_env,
             remove_stage_root,
             source_filter_for
@@ -30945,6 +31129,7 @@ graph import scale {
         StandardLogger
     }
     runtime.cli.diagnostics ++> tests.deploy.test_pdb_budget { PlanValidator }
+    runtime.cli.plan ++> tests.deploy.test_ops_rbac { Plan }
     runtime.context.auth_ctx ++> [
         server.extensions.ObservabilityExtension.register {
             reset_current_auth,
@@ -31038,18 +31223,8 @@ graph import scale {
         },
     ]
     runtime.context.util ++> [
-        admin.k8s_ops
-            | deploy.target.kubernetes.runtime_resolver.build_k8s_registry_routes {
-            in_cluster_namespace
-        },
-        deploy.target.kubernetes.database_provisioner | sdk.client { k8s_safe_name },
-        deploy.target.kubernetes.manifest_builder
-            | deploy.target.kubernetes.target
-            | tests.deploy.test_gateway_config_isolation {
-            GATEWAY_NAME,
-            k8s_safe_name
-        },
-        deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle
+        admin.console_build.build_with_jac
+            | deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle
             | tests.deploy.test_client_build_deps
             | tests.deploy.test_client_build_fail_fast
             | tests.deploy.test_client_build_stage
@@ -31060,12 +31235,26 @@ graph import scale {
             | tests.server.test_root_bind_fail_closed._prewarm
             | tests.server.test_serve
             | tests.support.start_server { jac_executable },
+        admin.k8s_ops
+            | deploy.target.kubernetes.runtime_resolver.build_k8s_registry_routes {
+            in_cluster_namespace
+        },
+        deploy.target.kubernetes.database_provisioner
+            | deploy.target.kubernetes.ops_rbac
+            | sdk.client { k8s_safe_name },
+        deploy.target.kubernetes.manifest_builder
+            | deploy.target.kubernetes.target
+            | tests.deploy.test_gateway_config_isolation {
+            GATEWAY_NAME,
+            k8s_safe_name
+        },
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._peer_dns_url {
             k8s_service_dns_url
         },
         deploy.target.kubernetes.runtime_resolver { DEFAULT_GATEWAY_PORT },
         tests.deploy.test_http_activation_microservices
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pod_env { GATEWAY_NAME },
     ]
     runtime.context.util --> [
@@ -31075,7 +31264,6 @@ graph import scale {
         },
         tests.microservices.test_gateway { http_forward_timeout },
         tests.microservices.test_k8s_health_probe
-            | tests.server.test_admin
             | tests.server.test_examples.JacScaleTestRunner.start_server
             | tests.server.test_metrics_workers { jac_executable },
     ]
@@ -31110,6 +31298,7 @@ graph import scale {
             | tests.deploy.test_dry_run_purity
             | tests.deploy.test_http_activation_microservices
             | tests.deploy.test_memory_trigger_guard
+            | tests.deploy.test_ops_rbac
             | tests.deploy.test_pdb_budget
             | tests.deploy.test_show_yaml_autoscalers { fleet_of },
         tests.deploy.test_pod_env { FLEET_ENV, fleet_of },
@@ -31317,9 +31506,12 @@ graph import scale {
         tests.data.test_gateway_owned_identity { fleet_provisions_unknown_users },
         tests.server.test_auth_policy_startup { AdminExtension, MailExtension },
     ]
-    server.extensions --> tests.server.test_scheduler_multipod {
-        validate_events_url as _validate_events_url
-    }
+    server.extensions --> [
+        tests.server.test_admin { AdminExtension },
+        tests.server.test_scheduler_multipod {
+            validate_events_url as _validate_events_url
+        },
+    ]
     server.inprocess ++> tests.scale_test_client.ScaleTestClient._initialize {
         prepare_inprocess_runtime
     }
@@ -31440,6 +31632,7 @@ graph import scale._optdeps {
 }
 
 graph import scale.admin {
+    console_build ++> admin_portal { AdminConsole, resolve_console }
     k8s_ops ++> [
         deploy_health {
             api_error_detail,
@@ -31607,6 +31800,10 @@ graph import scale.deploy.target.kubernetes {
         with_config_revision
     }
     monitoring ++> target { MonitoringDeployer }
+    ops_rbac ++> [
+        manifest_builder { ops_sa_name },
+        target { ops_sa_is_ours, ops_sa_name },
+    ]
     ops_rbac --> manifest_builder.ManifestBuilder.generate_manifests { build_ops_rbac }
     runtime_bootstrap ++> [
         manifest_builder.ManifestBuilder._build_pod_spec {

@@ -23,7 +23,7 @@ impl HomeHero -> JsxElement {
                 </h1>
                 <div className="anim-fade-up anim-d2 mt-10 max-w-xl">
                     <p className="text-lg leading-8 text-muted-foreground sm:text-xl">
-                        The quickest way to experience Jac is to install it with this command:
+                        Install Jac's single binary with this command:
                     </p>
                     <CopyCommand command={HOME_INSTALL} className="mt-4 w-full"/>
                     <p
