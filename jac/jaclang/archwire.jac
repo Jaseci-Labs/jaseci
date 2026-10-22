@@ -30628,6 +30628,7 @@ graph import scale {
     ]
     deploy.target.kubernetes.target as target_mod --> tests.deploy.test_superseded_deployment_reap;
     deploy.target.kubernetes.utils.kubernetes_utils ++> [
+        injector.injector | injector.pvc_injector { KubectlCluster },
         injector.pvc_injector.PvcInjector.seed {
             run_kubectl_command,
             wait_for_pod_deletion,
@@ -30644,6 +30645,9 @@ graph import scale {
             privileged_pss_labels
         },
     ]
+    deploy.target.kubernetes.utils.kubernetes_utils --> tests.deploy.test_dry_run_purity {
+        KubectlCluster
+    }
     deploy.target.registry ++> config.validation { DeploymentTargetRegistry }
     deploy.target.registry --> tests.misc.test_config_validation {
         BUILTIN_TARGET_TYPES
@@ -31633,15 +31637,17 @@ graph import scale.deploy.target.kubernetes {
     ]
     utils.kubernetes_utils ++> [
         database_provisioner { ensure_namespace_exists },
-        ingress { delete_if_exists },
+        ingress { KubectlCluster, delete_if_exists },
         kubernetes_target {
             COMPANION_DEFS,
+            KubectlCluster,
             create_k8s_secret,
             get_cluster_provider,
             resize_pvc_if_needed
         },
         kubernetes_target.KubernetesTargetBase._load_cluster_config {
-            kubectl_cluster_args
+            in_cluster_kubectl,
+            kubectl_cluster
         },
         monitoring { delete_if_exists, delete_k8s_secret },
         target {

@@ -243,7 +243,7 @@ impl PvcInjector.prepare(app_name: str, namespace: str, project_dir: str) {
     self._bundle_bytes = raw;
 }
 
-impl PvcInjector.seed(app_name: str, namespace: str, cluster_args: list[str]) {
+impl PvcInjector.seed(app_name: str, namespace: str, kubectl: KubectlCluster) {
     if not self._bundle_bytes {
         raise ValueError(
             "PvcInjector.seed() called before prepare(); there are no bundle "
@@ -290,7 +290,7 @@ impl PvcInjector.seed(app_name: str, namespace: str, cluster_args: list[str]) {
                         "-c",
                         f"test -f '{bundle_path}'"
                     ],
-                    cluster_args=cluster_args
+                    kubectl=kubectl
                 );
                 logger.info(
                     f"pvc-injector: {object_key} already seeded "
@@ -319,7 +319,7 @@ impl PvcInjector.seed(app_name: str, namespace: str, cluster_args: list[str]) {
                         "-c",
                         f"mkdir -p '{parent_dir}'"
                     ],
-                    cluster_args=cluster_args
+                    kubectl=kubectl
                 );
                 run_kubectl_command(
                     [
@@ -330,7 +330,7 @@ impl PvcInjector.seed(app_name: str, namespace: str, cluster_args: list[str]) {
                         f"{loader_pod}:{staging_path}"
                     ],
                     cwd=tmp_path.parent,
-                    cluster_args=cluster_args
+                    kubectl=kubectl
                 );
 
                 run_kubectl_command(
@@ -344,7 +344,7 @@ impl PvcInjector.seed(app_name: str, namespace: str, cluster_args: list[str]) {
                         "-c",
                         "mv -f '" + staging_path + "' '" + bundle_path + "'"
                     ],
-                    cluster_args=cluster_args
+                    kubectl=kubectl
                 );
                 logger.info(
                     f"pvc-injector: seeded {len(raw)} bytes to "

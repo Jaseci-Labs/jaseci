@@ -4,7 +4,7 @@ import subprocess;
 obj IngressDeployer {
     has k8s_config: KubernetesConfig,
         logger: (Logger | None) = None,
-        cluster_args: list[str] = [];
+        kubectl: KubectlCluster = KubectlCluster();
 
     def _deploy_nginx_controller(
         app_name: str,
