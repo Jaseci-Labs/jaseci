@@ -195,7 +195,10 @@ impl ninjaclaw_work_tick {
     }
     RUNNER.ack(applied);
     (spec, _steps) = RUNNER.live();
-    requeue_stale(spec.job_id if spec is not None else "");
+    if spec is not None {
+        renew_job(spec.job_id);
+    }
+    requeue_stale();
     (ok, _why) = ninjaclaw_enabled();
     if not ok or RUNNER.busy() {
         return;
@@ -214,8 +217,7 @@ impl ninjaclaw_work_tick {
         );
         return;
     }
-    job.status = "working";
-    job.started_at = stamp();
+    claim_job(job);
     RUNNER.start(
         JobSpec(
             job_id=jid(job),
@@ -232,6 +234,9 @@ impl ninjaclaw_work_tick {
 
 impl ninjaclaw_upkeep_tick {
     finish_chore();
+    if CHORE.busy() {
+        renew_chore();
+    }
     pruned = prune_jobs(JOB_RETENTION);
     if pruned {
         log.info("ninjaclaw: pruned " + str(pruned) + " old job(s)");
@@ -278,6 +283,7 @@ impl finish_chore {
         apply_pr_state(result or "");
     }
     claw_hub().applied_chore = run_id;
+    release_chore();
 }
 
 impl start_sweep(version: str) -> bool {
@@ -285,6 +291,9 @@ impl start_sweep(version: str) -> bool {
     if not items {
         apply_sweep({}, version, "");
         return False;
+    }
+    if not claim_chore() {
+        return True;
     }
     log.info(
         "ninjaclaw: re-verifying " + str(len(items)) + " tutorial(s) on jac " + version
@@ -308,7 +317,9 @@ impl start_promotion {
         def poll(note: Callable) -> str {
             return pr_state(number, config, github);
         }
-        CHORE.start("pr-poll", poll);
+        if claim_chore() {
+            CHORE.start("pr-poll", poll);
+        }
         return;
     }
     if pr_cooling() {
@@ -317,11 +328,12 @@ impl start_promotion {
     pick = eligible(
         promote_candidates(), resolve_cli_version(), config, datetime.now(UTC)
     );
-    if pick is None {
+    if pick is None or not claim_chore() {
         return;
     }
     if config.dry_run {
         apply_pr(pick.slug, open_docs_pr(pick, config, github));
+        release_chore();
         return;
     }
     log.info("ninjaclaw: opening a docs PR for " + pick.slug);

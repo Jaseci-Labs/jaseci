@@ -140,6 +140,8 @@ graph import core {
         apply_pr,
         apply_pr_state,
         apply_sweep,
+        claim_chore,
+        claim_job,
         claw_gaps,
         claw_hub,
         claw_jobs,
@@ -154,6 +156,9 @@ graph import core {
         promote_candidates,
         prune_jobs,
         record_outcome,
+        release_chore,
+        renew_chore,
+        renew_job,
         replies_for,
         requeue_stale,
         sweep_inputs,
@@ -189,13 +194,7 @@ graph import core {
         promote_config,
         promote_ready
     }
-    ninjaclaw.runner ++> knowledge_service {
-        JobSpec,
-        Outcome,
-        RUNNER,
-        run_pipeline,
-        stamp
-    }
+    ninjaclaw.runner ++> knowledge_service { JobSpec, Outcome, RUNNER, run_pipeline }
     ninjaclaw.secret ++> [
         knowledge_service { secret_ok },
         social_graph { service_secret },
@@ -438,7 +437,7 @@ graph import core.ninjaclaw {
         upkeep | verify { BlockView },
     ]
     promote ++> graph { PrResult, PromoteCandidate }
-    runner ++> graph { Outcome, stamp }
+    runner ++> graph { Outcome, WORKER_ID, stamp }
     tools ++> [
         brain { list_jac_guides, read_jac_file, read_jac_guide, search_jac },
         runner { agent_catalog, open_toolbox },

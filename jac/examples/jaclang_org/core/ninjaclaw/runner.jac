@@ -1,3 +1,5 @@
+import os;
+import socket;
 import threading;
 import from uuid { uuid4 }
 import from pathlib { Path }
@@ -58,7 +60,12 @@ glob MIN_CONFIDENCE: float = 0.6,
      MAX_REPAIRS: int = 2,
      CANDIDATES: int = 12,
      REPLY_LIMIT: int = 280,
-     RUNNER: Runner = Runner();
+     RUNNER: Runner = Runner(),
+     WORKER_ID: str = socket.gethostname()
+         + ":"
+         + str(os.getpid())
+         + ":"
+         + uuid4().hex[:8];
 
 def stamp -> str;
 

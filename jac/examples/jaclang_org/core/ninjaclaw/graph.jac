@@ -25,7 +25,9 @@ node ClawHub(ClawNode) {
         pr_number: int = 0,
         pr_slug: str = "",
         pr_checked_at: str = "",
-        applied_chore: str = "";
+        applied_chore: str = "",
+        chore_owner: str = "",
+        chore_until: str = "";
 }
 
 node ClawJob(ClawNode) {
@@ -38,6 +40,8 @@ node ClawJob(ClawNode) {
         attempts: int = 0,
         removed: bool = False,
         applied_run: str = "",
+        lease_owner: str = "",
+        lease_until: str = "",
         outcome: str = "",
         reply: str = "",
         detail: str = "",
@@ -87,6 +91,8 @@ edge Answered(ClawEdge): ClawTutorial --> ClawJob {}
 
 glob DAILY_JOBS: int = int(os.environ.get("NINJACLAW_DAILY_JOBS", "200") or 200),
      STALE_WORKING_S: float = 900.0,
+     JOB_LEASE_S: float = 120.0,
+     CHORE_LEASE_S: float = 300.0,
      MAX_ATTEMPTS: int = 2,
      RECENT_LIMIT: int = 30,
      PR_POLL_S: float = 3600.0,
@@ -112,7 +118,19 @@ def next_queued -> ClawJob | None;
 
 def take_budget -> bool;
 
-def requeue_stale(running: str);
+def stamp_in(seconds: float) -> str;
+
+def claim_job(job: ClawJob);
+
+def renew_job(job_id: str);
+
+def requeue_stale;
+
+def claim_chore -> bool;
+
+def renew_chore;
+
+def release_chore;
 
 def record_outcome(job: ClawJob, outcome: Outcome);
 
@@ -254,20 +272,48 @@ impl take_budget -> bool {
     return True;
 }
 
-impl requeue_stale(running: str) {
-    cutoff = (datetime.now(UTC) - timedelta(seconds=STALE_WORKING_S)).replace(
+impl stamp_in(seconds: float) -> str {
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).replace(
         tzinfo=None
     ).isoformat()
         + "Z";
+}
+
+impl claim_job(job: ClawJob) {
+    job.status = "working";
+    job.started_at = stamp();
+    job.lease_owner = WORKER_ID;
+    job.lease_until = stamp_in(JOB_LEASE_S);
+}
+
+impl renew_job(job_id: str) {
+    job = jobj(job_id);
+    if isinstance(job, ClawJob)
+        and job.status == "working"
+        and job.lease_owner == WORKER_ID
+        and job.lease_until < stamp_in(JOB_LEASE_S / 2) {
+        job.lease_until = stamp_in(JOB_LEASE_S);
+    }
+}
+
+impl requeue_stale {
+    now = stamp();
+    legacy_cutoff = stamp_in(-STALE_WORKING_S);
     for j in claw_jobs() {
-        if j.status == "working" and jid(j) != running and j.started_at < cutoff {
+        if j.status != "working" {
+            continue;
+        }
+        lapsed = j.lease_until < now if j.lease_until else j.started_at < legacy_cutoff;
+        if lapsed {
             j.status = "queued";
+            j.lease_owner = "";
+            j.lease_until = "";
             j.steps = j.steps
                 + [
                     StepView(
                         at=stamp(),
                         phase="requeue",
-                        text="the worker restarted mid-job; queued again"
+                        text="the worker running it stopped; queued again"
                     )
                 ];
         }
@@ -573,4 +619,31 @@ impl prune_jobs(keep: int) -> int {
         count += 1;
     }
     return count;
+}
+
+impl claim_chore -> bool {
+    hub = claw_hub();
+    if hub.chore_owner and hub.chore_owner != WORKER_ID and hub.chore_until > stamp() {
+        return False;
+    }
+    hub.chore_owner = WORKER_ID;
+    hub.chore_until = stamp_in(CHORE_LEASE_S);
+    return True;
+}
+
+impl renew_chore {
+    hub = find_hub();
+    if hub is not None
+        and hub.chore_owner == WORKER_ID
+        and hub.chore_until < stamp_in(CHORE_LEASE_S / 2) {
+        hub.chore_until = stamp_in(CHORE_LEASE_S);
+    }
+}
+
+impl release_chore {
+    hub = find_hub();
+    if hub is not None and hub.chore_owner == WORKER_ID {
+        hub.chore_owner = "";
+        hub.chore_until = "";
+    }
 }

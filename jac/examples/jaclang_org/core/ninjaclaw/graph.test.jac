@@ -85,3 +85,39 @@ test "a removed job's finished attempt publishes nothing and records no gap" {
     assert job.outcome == "removed" and job.reply == "";
     assert len([hub->:HasGap:->[?:ClawGap]]) == gaps_before;
 }
+
+test "a job leased by another worker is left alone until its lease lapses" {
+    ids = enqueue_asks(
+        [
+            AskInput(
+                ask_key="lease-1",
+                tweet_id="t-l1",
+                asker="dee",
+                question="what is a walker"
+            )
+        ]
+    );
+    job = _job(ids[0]);
+    job.status = "working";
+    job.started_at = stamp_in(-5000.0);
+    job.lease_owner = "other-host:1:abcd";
+    job.lease_until = stamp_in(60.0);
+    requeue_stale();
+    assert job.status == "working" , "a live lease must not be requeued, however old the job";
+    job.lease_until = stamp_in(-1.0);
+    requeue_stale();
+    assert job.status == "queued" and job.lease_owner == "";
+    claim_job(job);
+    assert job.status == "working" and job.lease_owner == WORKER_ID;
+}
+
+test "a chore claim excludes other workers until it expires or is released" {
+    hub = claw_hub();
+    hub.chore_owner = "other-host:2:ef01";
+    hub.chore_until = stamp_in(60.0);
+    assert not claim_chore();
+    hub.chore_until = stamp_in(-1.0);
+    assert claim_chore() and hub.chore_owner == WORKER_ID;
+    release_chore();
+    assert hub.chore_owner == "";
+}
