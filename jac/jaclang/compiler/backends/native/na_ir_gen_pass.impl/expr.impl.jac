@@ -2436,6 +2436,10 @@ impl NaIRGenPass._codegen_if_else_expr(nd: uni.IfElseExpr) -> (ir.Value | None) 
     if then_val is None or else_val is None {
         return None;
     }
+    if isinstance(then_val.type, ir.VoidType)
+        and isinstance(else_val.type, ir.VoidType) {
+        return then_val;
+    }
     phi = self.builder.phi(then_val.type, name="ternary.result");
     phi.add_incoming(then_val, then_end_bb);
     phi.add_incoming(else_val, else_end_bb);

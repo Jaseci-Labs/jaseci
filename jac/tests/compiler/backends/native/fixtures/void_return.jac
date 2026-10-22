@@ -46,6 +46,7 @@ def free_fn -> None {
 
 def discard_forms {
     (bump());
+    bump() if COUNTER > 99 else bump();
 }
 
 async def abump {
@@ -88,6 +89,6 @@ def run -> int {
 }
 
 with entry {
-    assert run() == 304;
+    assert run() == 305;
     print("ok");
 }
