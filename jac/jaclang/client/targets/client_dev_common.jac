@@ -20,7 +20,9 @@ def setup_android_port_reverse_common(ports: list[int], timeout: int = 5) -> Non
 
 def ensure_watchdog_common(target_name: str) -> bool;
 
-def start_backend_server_common(entry_file: Path, project_dir: Path, port: int) -> any;
+def start_backend_server_common(
+    entry_file: Path, project_dir: Path, port: int, bind_host: str = ""
+) -> any;
 
 def prepare_vite_dev_compilation(
     project_dir: Path, entry_file: Path
@@ -160,12 +162,17 @@ impl ensure_watchdog_common(target_name: str) -> bool {
 }
 
 impl start_backend_server_common(
-    entry_file: Path, project_dir: Path, port: int
+    entry_file: Path, project_dir: Path, port: int, bind_host: str = ""
 ) -> any {
     import sys;
+    env = dict(os.environ);
+    if bind_host and not env.get("JAC_SERVE_HOST") {
+        env["JAC_SERVE_HOST"] = bind_host;
+    }
     return subprocess.Popen(
         [sys.executable, "-m", "jaclang"] + headless_start_args(str(entry_file), port),
         cwd=str(project_dir),
+        env=env,
         stdout=None,
         stderr=None
     );

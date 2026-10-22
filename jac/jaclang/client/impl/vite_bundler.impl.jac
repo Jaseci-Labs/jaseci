@@ -513,7 +513,7 @@ impl ViteBundler._generate_vite_config_content(
         compiled_reload_plug_in: str = "\n    jacCompiledReload(),"
             if reload_enabled
             else "";
-        host_value = '"127.0.0.1"' if for_desktop_dev else 'true';
+        host_value = '"127.0.0.1"';
         claimed = {p for p in (client_paths or [])};
         builtin_proxy_str: str = "";
         for prefix in DEV_PROXY_PREFIXES {
@@ -1145,6 +1145,10 @@ def _toml_config_to_js(config_data: dict[str, any]) -> str;
 
 def _toml_config_from_raw(config_data: dict[str, any]) -> str;
 
+def _vite_host_arg(vite_config: dict[str, any], serve_host: str) -> str;
+
+def _vite_listen_host(vite_config: dict[str, any], serve_host: str) -> str;
+
 def _build_vite_dev_command(
     build_dir: Path, config_rel: Path, port: int, host: str = ""
 ) -> list[str];
@@ -1643,6 +1647,23 @@ impl _toml_config_to_js(config_data: dict[str, any]) -> str {
 impl _toml_config_from_raw(config_data: dict[str, any]) -> str {
     content = str(config_data.get('raw', '')).strip();
     return content + '\n' if content else '';
+}
+
+impl _vite_host_arg(vite_config: dict[str, any], serve_host: str) -> str {
+    server = vite_config.get('server');
+    if isinstance(server, dict) and server.get('host') {
+        return '';
+    }
+    return serve_host;
+}
+
+impl _vite_listen_host(vite_config: dict[str, any], serve_host: str) -> str {
+    server = vite_config.get('server');
+    configured = server.get('host') if isinstance(server, dict) else None;
+    if configured is True {
+        return '0.0.0.0';
+    }
+    return str(configured) if configured else serve_host;
 }
 
 impl _is_vite_ready_line(line: str) -> bool {

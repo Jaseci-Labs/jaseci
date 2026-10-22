@@ -8,6 +8,8 @@ glob JAC_RN_METRO_PORT_ENV: str = "JAC_RN_METRO_PORT",
      JAC_RN_DEV_HOST_ENV: str = "JAC_RN_DEV_HOST",
      DEFAULT_METRO_PORT: int = 8081;
 
+def backend_bind_host(visible_host: str) -> str;
+
 def resolve_metro_port(cli_port: int = DEFAULT_METRO_PORT) -> int;
 
 def setup_android_port_reverse(metro_port: int, api_port: int);
@@ -30,6 +32,14 @@ def build_expo_start_argv(
 ) -> list[str];
 
 def run_expo_start(rn_dir: Path, metro_port: int, clear_cache: bool = True) -> int;
+
+impl backend_bind_host(visible_host: str) -> str {
+    host = (visible_host or "").strip();
+    if not host or is_loopback_host(host) {
+        return "";
+    }
+    return "0.0.0.0";
+}
 
 impl resolve_metro_port(cli_port: int = DEFAULT_METRO_PORT) -> int {
     raw = os.environ.get(JAC_RN_METRO_PORT_ENV, "");

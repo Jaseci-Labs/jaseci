@@ -147,8 +147,6 @@ impl _build_vite_dev_command(
     if host {
         cmd.append('--host');
         cmd.append(host);
-    } else {
-        cmd.append('--host');
     }
     return cmd;
 }
