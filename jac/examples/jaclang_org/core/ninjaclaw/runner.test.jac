@@ -87,3 +87,25 @@ impl _catalog -> list[IndexDoc] {
 impl _steps -> list[str] {
     return [];
 }
+
+test "a finished run stays pending until it is acknowledged" {
+    runner = Runner();
+    spec = JobSpec(job_id="j9", question="q");
+    assert runner.start(
+        spec,
+        [],
+        lambda (s: JobSpec, c: list[IndexDoc], n: Callable) { Outcome(
+            outcome="linked_docs"
+        ); }
+    );
+    import time;
+    deadline = time.time() + 5;
+    while runner.busy() and time.time() < deadline {
+        time.sleep(0.01);
+    }
+    first = runner.pending();
+    assert len(first) == 1 and first[0].job_id == "j9" and first[0].run_id;
+    assert len(runner.pending()) == 1 , "a retried tick must still see the result";
+    runner.ack([first[0].run_id]);
+    assert runner.pending() == [];
+}

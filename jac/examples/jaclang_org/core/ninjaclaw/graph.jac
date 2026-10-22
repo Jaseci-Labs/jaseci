@@ -24,7 +24,8 @@ node ClawHub(ClawNode) {
         pr_note: str = "",
         pr_number: int = 0,
         pr_slug: str = "",
-        pr_checked_at: str = "";
+        pr_checked_at: str = "",
+        applied_chore: str = "";
 }
 
 node ClawJob(ClawNode) {
@@ -36,6 +37,7 @@ node ClawJob(ClawNode) {
         status: str = "queued",
         attempts: int = 0,
         removed: bool = False,
+        applied_run: str = "",
         outcome: str = "",
         reply: str = "",
         detail: str = "",
@@ -310,6 +312,12 @@ impl record_outcome(job: ClawJob, outcome: Outcome) {
     job.blocks = outcome.blocks;
     job.steps = job.steps + outcome.steps;
     job.finished_at = stamp();
+    if job.removed {
+        job.reply = "";
+        job.outcome = "removed";
+        job.detail = "the post was removed";
+        return;
+    }
     slug = outcome.tutorial_slug;
     draft = outcome.tutorial;
     if draft is not None {

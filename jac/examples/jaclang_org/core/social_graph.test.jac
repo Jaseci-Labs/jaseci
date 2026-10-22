@@ -503,3 +503,26 @@ impl jid_of(reported: any) -> str {
     assert "_jac_id" in reported , f"expected a reported node, got {reported}";
     return str(reported["_jac_id"]);
 }
+
+test "the desk never asks an old question twice, however many posts follow" {
+    desk = NinjaclawDesk(started_at="2026-01-01T00:00:00Z");
+    help = Channel(name="help");
+    tweets = {
+        "t1": Tweet(
+            content="@ninjaclaw how do walkers work?",
+            author_username="ann",
+            created_at="2026-01-01T00:01:00Z"
+        )
+    };
+    assert len(desk_asks(desk, help, tweets)) == 1;
+    assert desk_asks(desk, help, tweets) == [];
+    tweets["t2"] = Tweet(
+        content="@ninjaclaw what is a node?",
+        author_username="bob",
+        created_at="2026-01-01T01:00:00Z"
+    );
+    later = desk_asks(desk, help, tweets);
+    assert [a.question for a in later] == ["what is a node?"];
+    assert "t1" not in desk.recent_keys , "keys older than the scan window are dropped";
+    assert desk_asks(desk, help, tweets) == [] , "an aged-out key must not become new again";
+}

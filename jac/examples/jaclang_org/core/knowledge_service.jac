@@ -61,6 +61,8 @@ def:pub ninjaclaw_results(secret: str, job_ids: list[str]) -> list[JobReply];
 
 def:pub ninjaclaw_forget(secret: str, job_ids: list[str]) -> int;
 
+def:pub ninjaclaw_retained(secret: str, job_ids: list[str]) -> list[str];
+
 def:pub ninjaclaw_activity -> Activity;
 
 def:pub ninjaclaw_job(job_id: str) -> JobView | None;
@@ -181,12 +183,17 @@ impl public_view(job: ClawJob, live: list[StepView] | None = None) -> JobView {
 }
 
 impl ninjaclaw_work_tick {
-    for (job_id, outcome) in RUNNER.drain() {
-        job = jobj(job_id);
-        if isinstance(job, ClawJob) {
-            record_outcome(job, outcome);
+    applied: list[str] = [];
+    for res in RUNNER.pending() {
+        job = jobj(res.job_id);
+        if not isinstance(job, ClawJob) or job.applied_run == res.run_id {
+            applied.append(res.run_id);
+            continue;
         }
+        record_outcome(job, res.outcome);
+        job.applied_run = res.run_id;
     }
+    RUNNER.ack(applied);
     (spec, _steps) = RUNNER.live();
     requeue_stale(spec.job_id if spec is not None else "");
     (ok, _why) = ninjaclaw_enabled();
@@ -242,11 +249,15 @@ impl ninjaclaw_upkeep_tick {
 }
 
 impl finish_chore {
-    finished = CHORE.take();
+    finished = CHORE.peek();
     if finished is None {
         return;
     }
-    (kind, result, error) = finished;
+    (run_id, kind, result, error) = finished;
+    if claw_hub().applied_chore == run_id {
+        CHORE.ack(run_id);
+        return;
+    }
     if kind == "sweep" {
         (version, results) = result if result is not None else ("", {});
         if error {
@@ -266,6 +277,7 @@ impl finish_chore {
         }
         apply_pr_state(result or "");
     }
+    claw_hub().applied_chore = run_id;
 }
 
 impl start_sweep(version: str) -> bool {
@@ -332,6 +344,18 @@ impl ninjaclaw_forget(secret: str, job_ids: list[str]) -> int {
         return 0;
     }
     return forget_jobs(job_ids);
+}
+
+impl ninjaclaw_retained(secret: str, job_ids: list[str]) -> list[str] {
+    if not secret_ok(secret) {
+        return list(job_ids);
+    }
+    wanted = set(job_ids);
+    return [
+        jid(j)
+        for j in claw_jobs()
+        if jid(j) in wanted
+    ];
 }
 
 impl ninjaclaw_results(secret: str, job_ids: list[str]) -> list[JobReply] {

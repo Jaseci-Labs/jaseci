@@ -115,7 +115,7 @@ graph import core {
             export_docs,
             read_status
         },
-        ninjaclaw.secret { knowledge_dir },
+        ninjaclaw.secret | ninjaclaw.verify { knowledge_dir },
     ]
     knowledge_service ++> [
         docs.sync { release_doc_lines, release_docs },
@@ -125,7 +125,12 @@ graph import core {
             ninjaclaw_tutorial,
             ninjaclaw_tutorials
         },
-        social_graph { ninjaclaw_forget, ninjaclaw_results, ninjaclaw_submit },
+        social_graph {
+            ninjaclaw_forget,
+            ninjaclaw_results,
+            ninjaclaw_retained,
+            ninjaclaw_submit
+        },
     ]
     ninjaclaw.graph ++> knowledge_service {
         ClawHub,

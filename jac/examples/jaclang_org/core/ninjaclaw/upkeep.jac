@@ -1,4 +1,5 @@
 import threading;
+import from uuid { uuid4 }
 
 obj SweepItem {
     has slug: str = "",
@@ -8,6 +9,7 @@ obj SweepItem {
 obj Chore {
     has lock: threading.Lock = threading.Lock(),
         kind: str = "",
+        run_id: str = "",
         progress: str = "",
         result: any = None,
         error: str = "",
@@ -17,7 +19,8 @@ obj Chore {
     def start(kind: str, work: Callable) -> bool;
     def note(phase: str, text: str) -> None;
     def status -> tuple[str, str];
-    def take -> tuple[str, any, str] | None;
+    def peek -> tuple[str, str, any, str] | None;
+    def ack(run_id: str) -> None;
 }
 
 glob CHORE: Chore = Chore();
@@ -42,6 +45,7 @@ impl Chore.start(kind: str, work: Callable) -> bool {
             return False;
         }
         self.kind = kind;
+        self.run_id = uuid4().hex;
         self.progress = "";
         self.result = None;
         self.error = "";
@@ -78,17 +82,25 @@ impl Chore.status -> tuple[str, str] {
     }
 }
 
-impl Chore.take -> tuple[str, any, str] | None {
+impl Chore.peek -> tuple[str, str, any, str] | None {
     with self.lock {
         if not self.kind or not self.finished {
             return None;
         }
-        out = (self.kind, self.result, self.error);
+        return (self.run_id, self.kind, self.result, self.error);
+    }
+}
+
+impl Chore.ack(run_id: str) -> None {
+    with self.lock {
+        if not self.finished or self.run_id != run_id {
+            return;
+        }
         self.kind = "";
+        self.run_id = "";
         self.result = None;
         self.error = "";
         self.finished = False;
-        return out;
     }
 }
 

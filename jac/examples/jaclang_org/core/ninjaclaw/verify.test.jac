@@ -22,3 +22,84 @@ test "a correct program passes and a broken one reports why" {
     assert not bad.ok;
     assert bad.detail != "";
 }
+
+def _sandboxed -> bool;
+
+impl _sandboxed -> bool {
+    import shutil;
+    import sys;
+    return (sys.platform == "darwin" and shutil.which("sandbox-exec") is not None)
+        or (sys.platform.startswith("linux") and shutil.which("bwrap") is not None);
+}
+
+test "generated code cannot read or write outside its work dir or reach the network" {
+    import os;
+    import tempfile;
+    if os.environ.get(SANDBOX_ENV, "") == "none" {
+        return;
+    }
+    secret = tempfile.NamedTemporaryFile(
+        "w", suffix=".txt", prefix="ninjaclaw-secret-", delete=False
+    );
+    secret.write("TOP-SECRET-VALUE");
+    secret.close();
+    escape = os.path.join(tempfile.gettempdir(), "ninjaclaw-escape-check.txt");
+    try {
+        read = verify_block(
+            0, 'with entry {\n    print(open("' + secret.name + '").read());\n}'
+        );
+        wrote = verify_block(
+            1,
+            'with entry {\n    open("'
+                + escape
+                + '", "w").write("x");\n    print("wrote");\n}'
+        );
+        net = verify_block(
+            2,
+            'import socket;\n\nwith entry {\n    s = socket.create_connection(("1.1.1.1", 80), timeout=5);\n    print("connected");\n}'
+        );
+        if _sandboxed() {
+            assert not read.ok and "TOP-SECRET-VALUE" not in read.detail , read.detail;
+            assert not wrote.ok and not os.path.exists(escape) , wrote.detail;
+            assert not net.ok , net.detail;
+        } else {
+            for b in [read, wrote, net] {
+                assert not b.ok and "no sandbox is available" in b.detail , b.detail;
+            }
+        }
+    } finally {
+        os.unlink(secret.name);
+        if os.path.exists(escape) {
+            os.unlink(escape);
+        }
+    }
+}
+
+test "the linux sandbox shares nothing writable but the work dir and its cache" {
+    import from pathlib { Path }
+    work = Path("/tmp/ninjaclaw-w");
+    cache = Path("/srv/knowledge/sandbox-cache");
+    args = bwrap_args(work, cache);
+    assert "--unshare-all" in args and "--die-with-parent" in args;
+    binds = [
+        args[i + 1]
+        for i in range(len(args) - 1)
+        if args[i] == "--bind"
+    ];
+    assert sorted(binds) == sorted([str(cache), str(work)]) , binds;
+    assert "/"
+        not in [
+            args[i + 1]
+            for i in range(len(args) - 1)
+            if args[i] in ("--bind", "--ro-bind")
+        ];
+}
+
+test "the macOS profile lets the work dir and cache win over the hidden examples" {
+    import from pathlib { Path }
+    profile = seatbelt_profile(Path("/w"), Path("/c"));
+    lines = profile.splitlines();
+    assert lines[1] == "(deny default)";
+    assert "network" not in profile;
+    assert '(subpath "/w")' in lines[-1] and '(subpath "/c")' in lines[-1];
+}

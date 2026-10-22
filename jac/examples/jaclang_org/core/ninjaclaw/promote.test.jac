@@ -5,17 +5,25 @@ import from datetime { datetime, UTC, timedelta }
 obj FakeGithub {
     has calls: list[tuple[str, str]] = [],
         puts: dict[str, str] = {},
-        ref_exists: bool = False;
+        ref_exists: bool = False,
+        open_prs: list[dict[str, any]] = [],
+        fail_fragment: bool = False;
 
     def call(
         method: str, path: str, token: str, payload: dict[str, any] | None = None
-    ) -> dict[str, any];
+    ) -> any;
 }
 
 impl FakeGithub.call(
     method: str, path: str, token: str, payload: dict[str, any] | None = None
-) -> dict[str, any] {
+) -> any {
     self.calls.append((method, path));
+    if method == "GET" and "/pulls?state=open" in path {
+        return self.open_prs;
+    }
+    if method == "PUT" and "release_notes/" in path and self.fail_fragment {
+        raise RuntimeError("PUT " + path + " failed: 500 boom");
+    }
     if method == "POST" and path.endswith("/git/refs") and self.ref_exists {
         raise RuntimeError("POST " + path + " failed: 422 Reference already exists");
     }
@@ -141,4 +149,24 @@ test "merged and closed PRs are told apart" {
         }; }
     )
         == "closed";
+}
+
+test "an open PR from an earlier attempt is picked up instead of opened again" {
+    fake = FakeGithub(
+        open_prs=[{"number": 77, "html_url": "https://github.com/up/jac/pull/77"}]
+    );
+    out = open_docs_pr(
+        _candidate("again", 5), PromoteConfig(upstream="up/jac", token="t"), fake.call
+    );
+    assert out.state == "open" and out.number == 77;
+    assert not any([m == "POST" for (m, p) in fake.calls]);
+}
+
+test "a failed release fragment keeps the PR that was opened" {
+    fake = FakeGithub(fail_fragment=True);
+    out = open_docs_pr(
+        _candidate("frag", 5), PromoteConfig(upstream="up/jac", token="t"), fake.call
+    );
+    assert out.state == "open" and out.number == 9001;
+    assert "release fragment" in out.note;
 }

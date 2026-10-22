@@ -51,6 +51,10 @@ test "ensure_repo clones once, checks out the serving tag and exports older docs
             again = ensure_repo("0.38.0");
             assert again.phase == "ready" and again.fetched_at == status.fetched_at;
             assert read_status().checked_out == "v0.38.0";
+            moved = ensure_repo("0.37.2");
+            assert moved.phase == "ready" and moved.checked_out == "v0.37.2" , (
+                "a new serving release must check out its own tag, not wait for the next fetch"
+            );
         } finally {
             for (k, v) in saved.items() {
                 if v is None {
@@ -87,4 +91,32 @@ impl _origin(base: Path) -> Path {
     _sh(["git", "clone", "-q", "--bare", str(work), str(bare)], base);
     _sh(["git", "config", "uploadpack.allowFilter", "true"], bare);
     return bare;
+}
+
+test "a relative knowledge directory still reaches ready" {
+    with tempfile.TemporaryDirectory() as tmp {
+        base = Path(tmp);
+        origin = _origin(base);
+        saved = {k: os.environ.get(k) for k in [REPO_URL_ENV, DIR_ENV]};
+        cwd = os.getcwd();
+        os.environ[REPO_URL_ENV] = "file://" + str(origin);
+        os.environ[DIR_ENV] = "knowledge";
+        os.chdir(base);
+        try {
+            assert knowledge_dir().is_absolute();
+            status = ensure_repo("0.38.0");
+            assert status.phase == "ready" , status.detail;
+            assert "release 0.37.2"
+                in (exported_docs(status.lines[0]) / "index.md").read_text();
+        } finally {
+            os.chdir(cwd);
+            for (k, v) in saved.items() {
+                if v is None {
+                    os.environ.pop(k, None);
+                } else {
+                    os.environ[k] = v;
+                }
+            }
+        }
+    }
 }

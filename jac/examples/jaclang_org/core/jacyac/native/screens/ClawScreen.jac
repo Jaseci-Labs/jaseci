@@ -243,7 +243,7 @@ impl ClawScreen -> JsxElement {
                         }}
                     </View>
                 }}
-                {if a and a.recent {
+                {if a and (a.queue or a.recent) {
                     for j in a.queue + a.recent {
                         <Pressable
                             accessibilityRole="button"

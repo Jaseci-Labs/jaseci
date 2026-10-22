@@ -64,7 +64,8 @@ edge HasAvatar: Profile --> Avatar {}
 
 node NinjaclawDesk {
     has started_at: str = "",
-        handled: list[str] = [],
+        seen_until: str = "",
+        recent_keys: dict[str, str] = {},
         pending: dict[str, str] = {},
         asked: dict[str, str] = {},
         recent_asks: dict[str, list[str]] = {};
@@ -74,7 +75,7 @@ glob NINJACLAW: str = "ninjaclaw",
      HELP_CHANNEL: str = "help",
      DESK_TICK_S: float = 15.0,
      ASKS_PER_HOUR: int = int(os.environ.get("NINJACLAW_ASKS_PER_HOUR", "3") or 3),
-     HANDLED_LIMIT: int = 5000,
+     SCAN_GRACE_S: float = 600.0,
      ASKED_LIMIT: int = 2000,
      MENTION_RE: str = r"(?<![\w@])@ninjaclaw\b";
 
@@ -87,6 +88,8 @@ def ninjaclaw_profile -> Profile;
 def help_channel(claw: Profile) -> Channel;
 
 def live_tweets -> dict[str, Tweet];
+
+def scan_floor(desk: NinjaclawDesk) -> str;
 
 def desk_asks(
     desk: NinjaclawDesk, help: Channel, tweets: dict[str, Tweet]
@@ -920,18 +923,21 @@ impl live_tweets -> dict[str, Tweet] {
 impl desk_asks(
     desk: NinjaclawDesk, help: Channel, tweets: dict[str, Tweet]
 ) -> list[AskInput] {
-    seen = set(desk.handled);
+    floor = scan_floor(desk);
+    seen = dict(desk.recent_keys);
+    newest = desk.seen_until;
     asks: list[AskInput] = [];
-    fresh: list[str] = [];
 
     def consider(
         key: str, tweet: Tweet, author: str, text: str, created: str, source: str
     ) {
-        if key in seen or created < desk.started_at or author == NINJACLAW {
+        if key in seen or created < floor or author == NINJACLAW {
             return;
         }
-        seen.add(key);
-        fresh.append(key);
+        seen[key] = created;
+        if created > newest {
+            newest = created;
+        }
         question = strip_mention(text);
         if not question or throttled(desk, author) {
             return;
@@ -975,10 +981,26 @@ impl desk_asks(
             }
         }
     }
-    if fresh {
-        desk.handled = (desk.handled + fresh)[-HANDLED_LIMIT:];
-    }
+    desk.seen_until = newest;
+    keep_from = scan_floor(desk);
+    desk.recent_keys = {
+        k: c
+        for (k, c) in seen.items()
+        if c >= keep_from
+    };
     return asks;
+}
+
+impl scan_floor(desk: NinjaclawDesk) -> str {
+    if not desk.seen_until {
+        return desk.started_at;
+    }
+    grace = (
+        datetime.datetime.fromisoformat(desk.seen_until.rstrip("Z"))
+        - datetime.timedelta(seconds=SCAN_GRACE_S)
+    ).isoformat()
+        + "Z";
+    return max(desk.started_at, grace);
 }
 
 impl post_reply(tweet_id: str, reply: str) -> bool {
@@ -1010,7 +1032,15 @@ impl ninjaclaw_desk.run with Root entry {
             }
         }
         desk.pending = pending;
-        desk.asked = dict(list(asked.items())[-ASKED_LIMIT:]);
+        desk.asked = asked;
+    }
+    if len(desk.asked) > ASKED_LIMIT {
+        kept = set(await ninjaclaw_retained(secret=secret, job_ids=list(desk.asked)));
+        desk.asked = {
+            k: v
+            for (k, v) in desk.asked.items()
+            if k in kept
+        };
     }
     gone = [
         job_id

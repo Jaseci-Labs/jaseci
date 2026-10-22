@@ -1,8 +1,8 @@
 impl knowledge_dir -> Path {
     configured = os.environ.get(DIR_ENV, "").strip();
-    base = Path(configured)
-        if configured
-        else Path.cwd() / ".jac" / "data" / "knowledge";
+    base = (
+        Path(configured) if configured else Path.cwd() / ".jac" / "data" / "knowledge"
+    ).resolve();
     base.mkdir(parents=True, exist_ok=True);
     return base;
 }
@@ -227,6 +227,7 @@ impl ensure_repo(serving: str) -> RepoStatus {
             return read_status();
         }
         status = read_status();
+        same_release = status.serving_version == serving;
         status.serving_version = serving;
         target = repo_dir();
         fresh = not (target / ".git").is_dir();
@@ -241,7 +242,11 @@ impl ensure_repo(serving: str) -> RepoStatus {
                 stale = True;
             }
         }
-        if not fresh and not stale and status.phase == "ready" and status.checked_out {
+        if not fresh
+            and not stale
+            and same_release
+            and status.phase == "ready"
+            and status.checked_out {
             return status;
         }
         try {

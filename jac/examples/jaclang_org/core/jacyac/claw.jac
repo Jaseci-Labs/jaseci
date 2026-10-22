@@ -1,4 +1,4 @@
-import from "react" { useEffect }
+import from "react" { useEffect, useRef }
 import from "@jac/runtime" { BridgeError }
 
 obj ClawModel {
@@ -22,33 +22,44 @@ impl useClaw(view: str, focus: str) -> ClawModel {
         tutorial: TutorialView | None = None,
         loading: bool = False,
         error: str = "";
+    latest = useRef("");
 
     async def refresh {
+        asked = view + "|" + focus;
+        latest.current = asked;
         try {
             if view == "ninjaclaw" {
-                activity = await ninjaclaw_activity();
-                if focus {
-                    job = await ninjaclaw_job(job_id=focus);
-                } else {
-                    job = None;
+                got_activity = await ninjaclaw_activity();
+                got_job = await ninjaclaw_job(job_id=focus) if focus else None;
+                if latest.current != asked {
+                    return;
                 }
+                activity = got_activity;
+                job = got_job;
             } elif view == "tutorials" {
-                if focus {
-                    tutorial = await ninjaclaw_tutorial(slug=focus);
-                } else {
-                    tutorial = None;
+                got_tutorial = await ninjaclaw_tutorial(slug=focus) if focus else None;
+                got_tutorials = await ninjaclaw_tutorials();
+                if latest.current != asked {
+                    return;
                 }
-                tutorials = await ninjaclaw_tutorials();
+                tutorial = got_tutorial;
+                tutorials = got_tutorials;
             }
             error = "";
         } except BridgeError {
-            error = "Can't reach ninjaclaw right now. Try again in a moment.";
+            if latest.current == asked {
+                error = "Can't reach ninjaclaw right now. Try again in a moment.";
+            }
         } finally {
-            loading = False;
+            if latest.current == asked {
+                loading = False;
+            }
         }
     }
 
     async can with (view, focus) entry {
+        job = None;
+        tutorial = None;
         if view == "ninjaclaw" or view == "tutorials" {
             loading = True;
             await refresh();

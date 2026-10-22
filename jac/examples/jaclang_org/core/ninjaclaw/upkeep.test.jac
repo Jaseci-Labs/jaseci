@@ -19,7 +19,19 @@ test "a tutorial passes only when every block passes" {
     assert not sweep_passed([]);
 }
 
-test "a chore runs once, reports progress, and hands back its result" {
+def _wait_peek(chore: Chore) -> tuple[str, str, any, str] | None;
+
+impl _wait_peek(chore: Chore) -> tuple[str, str, any, str] | None {
+    deadline = time.time() + 5;
+    seen = chore.peek();
+    while seen is None and time.time() < deadline {
+        time.sleep(0.01);
+        seen = chore.peek();
+    }
+    return seen;
+}
+
+test "a chore keeps its result until it is acknowledged" {
     chore = Chore();
 
     def work(note: Callable) -> int {
@@ -28,20 +40,18 @@ test "a chore runs once, reports progress, and hands back its result" {
     }
     assert chore.start("sweep", work);
     assert not chore.start("sweep", work);
-    deadline = time.time() + 5;
-    taken = chore.take();
-    while taken is None and time.time() < deadline {
-        time.sleep(0.01);
-        taken = chore.take();
-    }
-    assert taken == ("sweep", 42, "");
-    assert not chore.busy();
+    seen = _wait_peek(chore);
+    assert seen is not None and seen[1:] == ("sweep", 42, "");
+    assert chore.peek() == seen , "an unacknowledged result must survive a retried tick";
+    assert not chore.start("pr", lambda (note: Callable) { 1; });
+    chore.ack("not-this-run");
+    assert chore.peek() == seen;
+    chore.ack(seen[0]);
+    assert chore.peek() is None and not chore.busy();
     assert chore.start("pr", lambda (note: Callable) { 1 / 0; });
-    deadline = time.time() + 5;
-    taken = chore.take();
-    while taken is None and time.time() < deadline {
-        time.sleep(0.01);
-        taken = chore.take();
-    }
-    assert taken is not None and taken[0] == "pr" and "ZeroDivisionError" in taken[2];
+    failed = _wait_peek(chore);
+    assert failed is not None
+        and failed[1] == "pr"
+        and "ZeroDivisionError" in failed[3];
+    assert failed[0] != seen[0];
 }

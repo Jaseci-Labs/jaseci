@@ -1,4 +1,5 @@
 import threading;
+import from uuid { uuid4 }
 import from pathlib { Path }
 import from datetime { datetime, UTC }
 
@@ -8,7 +9,8 @@ obj JobSpec {
         asker: str = "",
         source: str = "",
         repo_root: str = "",
-        version: str = "";
+        version: str = "",
+        run_id: str = "";
 }
 
 obj TutorialDraft {
@@ -32,17 +34,24 @@ obj Outcome {
         tutorial_slug: str = "";
 }
 
+obj RunResult {
+    has run_id: str,
+        job_id: str,
+        outcome: Outcome;
+}
+
 obj Runner {
     has lock: threading.Lock = threading.Lock(),
         spec: JobSpec | None = None,
         steps: list[StepView] = [],
-        done: list[tuple[str, Outcome]] = [];
+        done: list[RunResult] = [];
 
     def busy -> bool;
     def start(spec: JobSpec, catalog: list[IndexDoc], work: Callable) -> bool;
     def note(phase: str, text: str) -> None;
     def live -> tuple[JobSpec | None, list[StepView]];
-    def drain -> list[tuple[str, Outcome]];
+    def pending -> list[RunResult];
+    def ack(run_ids: list[str]) -> None;
 }
 
 glob MIN_CONFIDENCE: float = 0.6,
@@ -160,6 +169,9 @@ impl Runner.start(spec: JobSpec, catalog: list[IndexDoc], work: Callable) -> boo
         if self.spec is not None {
             return False;
         }
+        if not spec.run_id {
+            spec.run_id = uuid4().hex;
+        }
         self.spec = spec;
         self.steps = [];
     }
@@ -178,7 +190,9 @@ impl Runner.start(spec: JobSpec, catalog: list[IndexDoc], work: Callable) -> boo
         }
         with self.lock {
             outcome.steps = list(self.steps);
-            self.done.append((spec.job_id, outcome));
+            self.done.append(
+                RunResult(run_id=spec.run_id, job_id=spec.job_id, outcome=outcome)
+            );
             self.spec = None;
         }
     }
@@ -200,11 +214,20 @@ impl Runner.live -> tuple[JobSpec | None, list[StepView]] {
     }
 }
 
-impl Runner.drain -> list[tuple[str, Outcome]] {
+impl Runner.pending -> list[RunResult] {
     with self.lock {
-        finished = list(self.done);
-        self.done = [];
-        return finished;
+        return list(self.done);
+    }
+}
+
+impl Runner.ack(run_ids: list[str]) -> None {
+    gone = set(run_ids);
+    with self.lock {
+        self.done = [
+            r
+            for r in self.done
+            if r.run_id not in gone
+        ];
     }
 }
 

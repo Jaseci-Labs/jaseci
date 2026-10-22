@@ -53,7 +53,7 @@ def nav_with_page(nav: dict[str, any], page: str, title: str) -> dict[str, any];
 
 def github(
     method: str, path: str, token: str, payload: dict[str, any] | None = None
-) -> dict[str, any];
+) -> any;
 
 def open_docs_pr(
     c: PromoteCandidate, config: PromoteConfig, http: Callable
@@ -139,7 +139,7 @@ impl nav_with_page(nav: dict[str, any], page: str, title: str) -> dict[str, any]
 
 impl github(
     method: str, path: str, token: str, payload: dict[str, any] | None = None
-) -> dict[str, any] {
+) -> any {
     data = json.dumps(payload).encode("utf-8") if payload is not None else None;
     req = urllib.request.Request(
         API + path,
@@ -191,6 +191,25 @@ impl open_docs_pr(
     head_repo = config.fork or config.upstream;
     head_owner = head_repo.split("/")[0];
     branch = "ninjaclaw/" + c.slug;
+    existing: any = http(
+        "GET",
+        "/repos/"
+            + config.upstream
+            + "/pulls?state=open&head="
+            + head_owner
+            + ":"
+            + branch,
+        config.token,
+        None
+    );
+    if isinstance(existing, list) and existing {
+        return PrResult(
+            state="open",
+            url=str(existing[0]["html_url"]),
+            number=int(existing[0]["number"]),
+            note="picked up the docs PR an earlier attempt opened"
+        );
+    }
     if config.fork {
         http(
             "POST",
@@ -269,12 +288,17 @@ impl open_docs_pr(
         }
     );
     number = int(pr["number"]);
-    put(
-        "release_notes/unreleased/jaclang/" + str(number) + ".docs.md",
-        "- **New tutorial, " + c.title + "**: " + c.summary + "\n",
-        "release notes: " + str(number) + " docs fragment"
-    );
-    return PrResult(state="open", url=str(pr["html_url"]), number=number);
+    opened = PrResult(state="open", url=str(pr["html_url"]), number=number);
+    try {
+        put(
+            "release_notes/unreleased/jaclang/" + str(number) + ".docs.md",
+            "- **New tutorial, " + c.title + "**: " + c.summary + "\n",
+            "release notes: " + str(number) + " docs fragment"
+        );
+    } except RuntimeError as e {
+        opened.note = "the release fragment was not added: " + str(e)[:200];
+    }
+    return opened;
 }
 
 impl promote_ready(config: PromoteConfig) -> bool {

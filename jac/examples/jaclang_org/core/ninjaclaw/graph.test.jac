@@ -59,3 +59,29 @@ test "pruning keeps the newest finished jobs and any job that wrote a tutorial" 
     assert jobj(ids[0]) is not None;
     assert ids[1] not in [jid(j) for j in claw_jobs()];
 }
+
+test "a removed job's finished attempt publishes nothing and records no gap" {
+    ids = enqueue_asks(
+        [
+            AskInput(
+                ask_key="rm-gap",
+                tweet_id="t-rm",
+                asker="cy",
+                question="how do edges work"
+            )
+        ]
+    );
+    job = _job(ids[0]);
+    job.status = "working";
+    forget_jobs([ids[0]]);
+    hub = claw_hub();
+    gaps_before = len([hub->:HasGap:->[?:ClawGap]]);
+    record_outcome(
+        job,
+        Outcome(
+            status="done", outcome="gap", reply="no answer yet: /jacyac/ninjaclaw/x"
+        )
+    );
+    assert job.outcome == "removed" and job.reply == "";
+    assert len([hub->:HasGap:->[?:ClawGap]]) == gaps_before;
+}
