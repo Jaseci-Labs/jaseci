@@ -4,6 +4,8 @@ import re;
 import from pathlib { Path }
 import from jaclang.cli.guide_store { nav_pages, parse_guide }
 
+glob BUILD_FORMAT: str = "2";
+
 obj NavEntry {
     has page: str = "",
         title: str = "",
@@ -31,7 +33,7 @@ impl label_of(version: str) -> str {
 
 impl bundle_from(ddir: Path, jac_version: str) -> DocBundle {
     bundle = DocBundle(jac_version=jac_version);
-    digest = hashlib.sha1(jac_version.encode("utf-8"));
+    digest = hashlib.sha1((BUILD_FORMAT + "\x00" + jac_version).encode("utf-8"));
     for path in sorted(ddir.rglob("*.md"), key=lambda (p: Path) { str(p); }) {
         rel = str(path.relative_to(ddir)).replace(os.sep, "/");
         g = parse_guide(path);

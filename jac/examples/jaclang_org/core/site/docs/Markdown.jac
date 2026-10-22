@@ -201,6 +201,10 @@ impl _parse_blocks(
             level = _count_hashes(s);
             if level <= 6 and level < len(s) and s[level] == " " {
                 text = s[level + 1:].strip();
+                attr_at = text.rfind(" {#");
+                if attr_at >= 0 and text.endswith("}") {
+                    text = text[:attr_at].rstrip();
+                }
                 anchor = "";
                 if level == 2 or level == 3 {
                     if anchors is not None and seen_headings < len(anchors) {
@@ -469,11 +473,11 @@ impl MDSpans(text: str) -> JsxElement {
                     </code>
                 } elif sp["k"] == "strong" {
                     <strong key={str(i)} className="font-semibold text-foreground">
-                        <MDLabel text={sp["t"] as str}/>
+                        <MDSpans text={sp["t"] as str}/>
                     </strong>
                 } elif sp["k"] == "em" {
                     <em key={str(i)}>
-                        <MDLabel text={sp["t"] as str}/>
+                        <MDSpans text={sp["t"] as str}/>
                     </em>
                 } elif sp["k"] == "icon" {
                     if (sp["name"] as str) in _ICON_MAP {
