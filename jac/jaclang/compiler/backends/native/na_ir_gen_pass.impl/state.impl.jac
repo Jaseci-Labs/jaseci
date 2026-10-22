@@ -100,33 +100,55 @@ impl NaIRGenPass._loop_exit_blocks(
 impl NaIRGenPass._emit_loop_else(
     nd: (uni.WhileStmt | uni.InForStmt | uni.IterForStmt),
     else_bb: (ir.Block | None),
-    end_bb: ir.Block,
-    release: (Callable[[], None] | None) = None
+    end_bb: ir.Block
 ) -> None {
-    if else_bb is None {
-        self.builder.position_at_end(end_bb);
-        if release is not None {
-            release();
+    if else_bb is not None {
+        self.builder.position_at_end(else_bb);
+        loop_else = nd.else_body;
+        if loop_else is not None and isinstance(loop_else.body, (list, tuple)) {
+            self._codegen_body(loop_else.body);
         }
-        return;
+        if not self.builder.block.is_terminated {
+            self.builder.branch(end_bb);
+        }
     }
-    join_bb = end_bb;
-    if release is not None {
-        join_bb = self.builder.function.append_basic_block(name=f"{end_bb.name}.join");
-        self.builder.position_at_end(end_bb);
-        release();
-        self.builder.branch(join_bb);
+    self.builder.position_at_end(end_bb);
+}
+
+impl NaIRGenPass._release_iter_end(
+    spill: (ir.Value | None),
+    slot_var: (str | None),
+    owns_iter: bool,
+    iter_val: ir.Value,
+    loc: str
+) -> None {
+    if spill is not None {
+        _it_end = self._mark_owned(self.builder.load(spill, name="iterf.it.end"));
+        self._emit_rc_release_simple(_it_end, op="iter_end", loc=loc);
+        self.builder.store(ir.Constant(_it_end.type, None), spill);
+    } elif slot_var is not None {
+        self._release_loop_coll_slot(slot_var, op="iter_end", loc=loc);
+    } elif owns_iter {
+        self._emit_rc_release_simple(iter_val, op="iter_end", loc=loc);
     }
-    self.builder.position_at_end(else_bb);
-    if release is not None {
-        release();
+}
+
+impl NaIRGenPass._release_for_coll(
+    spill: (ir.Value | None),
+    slot_var: (str | None),
+    release_op: str,
+    collection_val: ir.Value,
+    loc: str
+) -> None {
+    if spill is not None {
+        _coll_end = self.builder.load(spill, name="for.coll.end");
+        self._emit_rc_release_simple(_coll_end, op=release_op or "for_coll", loc=loc);
+        self.builder.store(ir.Constant(_coll_end.type, None), spill);
+    } elif slot_var is not None {
+        self._release_loop_coll_slot(slot_var, op=release_op, loc=loc);
+    } elif release_op
+        and isinstance(collection_val.type, ir.PointerType)
+        and self._is_owned(collection_val) {
+        self._emit_rc_release_simple(collection_val, op=release_op, loc=loc);
     }
-    loop_else = nd.else_body;
-    if loop_else is not None and isinstance(loop_else.body, (list, tuple)) {
-        self._codegen_body(loop_else.body);
-    }
-    if not self.builder.block.is_terminated {
-        self.builder.branch(join_bb);
-    }
-    self.builder.position_at_end(join_bb);
 }

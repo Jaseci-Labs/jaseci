@@ -4949,27 +4949,24 @@ impl NaIRGenPass._codegen_for_indexed(
     self.builder.branch(cond_bb);
 
     self.loop_stack.pop();
-
-    def release_coll {
-        if _gen_coll_slot is not None {
-            _coll_end = self.builder.load(_gen_coll_slot, name="for.coll.end");
-            self._emit_rc_release_simple(
-                _coll_end, op=coll_release_op or "for_coll", loc=_for_loc
-            );
-            self.builder.store(ir.Constant(_coll_end.type, None), _gen_coll_slot);
-        } elif _coll_slot_var is not None {
-            self._release_loop_coll_slot(
-                _coll_slot_var, op=coll_release_op, loc=_for_loc
-            );
-        } elif coll_release_op
-            and isinstance(collection_val.type, ir.PointerType)
-            and self._is_owned(collection_val) {
-            self._emit_rc_release_simple(
-                collection_val, op=coll_release_op, loc=_for_loc
-            );
-        }
+    if else_bb is None {
+        self.builder.position_at_end(end_bb);
+        self._release_for_coll(
+            _gen_coll_slot, _coll_slot_var, coll_release_op, collection_val, _for_loc
+        );
+    } else {
+        join_bb = self.builder.function.append_basic_block(name="for.join");
+        self.builder.position_at_end(end_bb);
+        self._release_for_coll(
+            _gen_coll_slot, _coll_slot_var, coll_release_op, collection_val, _for_loc
+        );
+        self.builder.branch(join_bb);
+        self.builder.position_at_end(else_bb);
+        self._release_for_coll(
+            _gen_coll_slot, _coll_slot_var, coll_release_op, collection_val, _for_loc
+        );
+        self._emit_loop_else(nd, else_bb, join_bb);
     }
-    self._emit_loop_else(nd, else_bb, end_bb, release_coll);
 }
 
 impl NaIRGenPass._na_chunks_shape(expr: object) -> (tuple[uni.Expr, uni.Expr] | None) {
