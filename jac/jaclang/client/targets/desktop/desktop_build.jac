@@ -348,23 +348,27 @@ impl serving_app_for(config: any, entry_file: Path, backend: str) -> str {
         return "";
     }
     selected_app = config.app_for_path(str(entry_file.resolve()));
+    if selected_app is not None {
+        return selected_app.name;
+    }
     if backend != "embedded" {
-        return selected_app.name if selected_app is not None else "";
+        return "";
     }
     try {
         chosen = config.resolve_app("");
     } except ValueError {
         chosen = None;
     }
-    if chosen is not None and chosen.has_server {
+    serving = config.serving_apps();
+    if chosen is not None and any(app.name == chosen.name for app in serving) {
         return chosen.name;
     }
-    for app in config.serving_apps() {
+    for app in serving {
         if app.kind == "web-app" {
             return app.name;
         }
     }
-    return selected_app.name if selected_app is not None else "";
+    return "";
 }
 
 impl stage_program(

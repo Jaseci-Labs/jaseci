@@ -225,7 +225,7 @@ test "sealed remote desktop does not prepare or initialize workspace services" {
                 + '[apps.api]\nkind="service"\nentry-point="api"\n'
         );
         (Path(proj) / 'main.jac').write_text('with entry {}\n');
-        (Path(proj) / 'api.jac').write_text('this service must not be compiled');
+        (Path(proj) / 'api.jac').write_text('with entry {}\n');
         app_dir = _app_dir(tmp);
         config = JacConfig.load(Path(proj) / 'jac.toml');
         jab = build_jab(
@@ -255,6 +255,136 @@ test "sealed remote desktop does not prepare or initialize workspace services" {
         } else {
             sys.modules['hostapp'] = previous;
         }
+        set_config(None);
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "desktop entry and colocated service match in dev and sealed boots" {
+    os.environ["JAC_SCALE_RUNTIME"] = "1";
+    proj = _project();
+    tmp = os.path.dirname(proj);
+    dev_ctx: any = None;
+    sealed_ctx: any = None;
+    try {
+        import from jaclang.dist.seal { build_jab }
+        import from jaclang.client.targets.desktop.desktop_build { serving_app_for }
+        api_dir = Path(proj) / "api";
+        web_dir = Path(proj) / "web";
+        api_dir.mkdir();
+        web_dir.mkdir();
+        full_toml = (
+            "[project]\nname=\"hostapp\"\ndefault-app=\"web\"\n"
+            + "[apps.desktop]\nkind=\"desktop\"\nentry-point=\"main\"\n"
+            + "[apps.api]\nkind=\"service\"\nentry-point=\"api.main\"\n"
+            + "[apps.web]\nkind=\"web-app\"\nentry-point=\"web.main\"\n"
+        );
+        (Path(proj) / "jac.toml").write_text(full_toml);
+        (api_dir / "main.jac").write_text(_APP_SRC);
+        (web_dir / "main.jac").write_text("with entry {}\n");
+        config = JacConfig.load(Path(proj) / "jac.toml");
+        assert serving_app_for(config, Path(proj) / "main.jac", "embedded")
+            == "desktop";
+        (Path(proj) / "jac.toml").write_text(
+            "[project]\nname=\"hostapp\"\ndefault-app=\"desktop\"\n"
+                + "[apps.desktop]\nkind=\"desktop\"\nentry-point=\"main\"\n"
+                + "[apps.api]\nkind=\"service\"\nentry-point=\"api.main\"\n"
+        );
+        no_web_config = JacConfig.load(Path(proj) / "jac.toml");
+        assert serving_app_for(no_web_config, Path(proj) / "main.jac", "embedded")
+            == "desktop";
+        (Path(proj) / "jac.toml").write_text(full_toml);
+        config = JacConfig.load(Path(proj) / "jac.toml");
+
+        app_dir = _app_dir(tmp);
+        os.environ["JAC_DATA_PATH"] = os.path.join(tmp, "data");
+        dev_ctx = host_boot.boot(
+            _config(app_dir, {"entry": str(Path(proj) / "main.jac")})
+        );
+        origin = f"http://127.0.0.1:{dev_ctx.port}";
+        (dev_code, dev_body) = _post(f"{origin}/walker/greet", {"name": "service"});
+        assert dev_code == 200 and "hello service" in dev_body , (dev_code, dev_body);
+        dev_ctx.shutdown();
+        dev_ctx = None;
+
+        jab = build_jab(
+            config,
+            Path(app_dir) / "app.jab",
+            app=serving_app_for(config, Path(proj) / "main.jac", "embedded"),
+            bake_client=False
+        );
+        set_config(None);
+        sealed_ctx = host_boot.boot(_config(app_dir, {"jab": str(jab)}));
+        origin = f"http://127.0.0.1:{sealed_ctx.port}";
+        (sealed_code, sealed_body) = _post(
+            f"{origin}/walker/greet", {"name": "service"}
+        );
+        assert sealed_code == dev_code and "hello service" in sealed_body , (
+            f"dev={dev_code} {dev_body}; sealed={sealed_code} {sealed_body}"
+        );
+    } finally {
+        if dev_ctx is not None {
+            dev_ctx.shutdown();
+        }
+        if sealed_ctx is not None {
+            sealed_ctx.shutdown();
+        }
+        os.environ.pop("JAC_DATA_PATH", None);
+        os.environ.pop("JAC_SCALE_RUNTIME", None);
+        set_config(None);
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "desktop release colocates services without an unrelated web app" {
+    os.environ["JAC_SCALE_RUNTIME"] = "1";
+    proj = _project();
+    tmp = os.path.dirname(proj);
+    dev_ctx: any = None;
+    sealed_ctx: any = None;
+    try {
+        import from jaclang.dist.seal { build_jab }
+        api_dir = Path(proj) / "api";
+        api_dir.mkdir();
+        (Path(proj) / "jac.toml").write_text(
+            "[project]\nname=\"hostapp\"\ndefault-app=\"desktop\"\n"
+                + "[apps.desktop]\nkind=\"desktop\"\nentry-point=\"main\"\n"
+                + "[apps.api]\nkind=\"service\"\nentry-point=\"api.main\"\n"
+        );
+        (api_dir / "main.jac").write_text(_APP_SRC);
+        config = JacConfig.load(Path(proj) / "jac.toml");
+        app_dir = _app_dir(tmp);
+        os.environ["JAC_DATA_PATH"] = os.path.join(tmp, "data");
+        dev_ctx = host_boot.boot(
+            _config(app_dir, {"entry": str(Path(proj) / "main.jac")})
+        );
+        origin = f"http://127.0.0.1:{dev_ctx.port}";
+        (dev_code, dev_body) = _post(f"{origin}/walker/greet", {"name": "service"});
+        assert dev_code == 200 and "hello service" in dev_body , (dev_code, dev_body);
+        dev_ctx.shutdown();
+        dev_ctx = None;
+
+        jab = build_jab(
+            config, Path(app_dir) / "app.jab", app="desktop", bake_client=False
+        );
+        set_config(None);
+        sealed_ctx = host_boot.boot(_config(app_dir, {"jab": str(jab)}));
+        origin = f"http://127.0.0.1:{sealed_ctx.port}";
+        (sealed_code, sealed_body) = _post(
+            f"{origin}/walker/greet", {"name": "service"}
+        );
+        assert sealed_code == dev_code and "hello service" in sealed_body , (
+            f"dev={dev_code} {dev_body}; sealed={sealed_code} {sealed_body}"
+        );
+    } finally {
+        if dev_ctx is not None {
+            dev_ctx.shutdown();
+        }
+        if sealed_ctx is not None {
+            sealed_ctx.shutdown();
+        }
+        os.environ.pop("JAC_DATA_PATH", None);
+        os.environ.pop("JAC_SCALE_RUNTIME", None);
         set_config(None);
         shutil.rmtree(tmp, ignore_errors=True);
     }
