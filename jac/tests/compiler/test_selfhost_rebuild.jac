@@ -46,6 +46,7 @@ glob SYMTAB_PER_MODULE: float = 1.75,
          "    usage = [resource.getrusage(w).ru_maxrss\n"
          "             for w in (resource.RUSAGE_SELF, resource.RUSAGE_CHILDREN)]\n"
          "    print('PEAK_RSS=' + str(max(usage)), flush=True)\n"
+         "    print('PEAK_SPLIT=' + json.dumps(usage), flush=True)\n"
          "    from jaclang.runtime.runtime import JacRuntime\n"
          "    a = JacRuntime.get_selfhost().program.analysis\n"
          "    print('SELFHOST=' + json.dumps({\n"
@@ -125,6 +126,11 @@ def _cold_rebuild -> tuple[int, dict[str, any], int] {
         }
     }
     assert payload is not None , f"no SELFHOST= line in stdout:\n{proc.stdout[-1500:]}";
+    for line in proc.stdout.splitlines() {
+        if line.startswith("PEAK_SPLIT=") {
+            payload["split"] = json.loads(line[len("PEAK_SPLIT="):]);
+        }
+    }
     return (compiled, payload, _peak_mb(proc.stdout), );
 }
 
@@ -150,5 +156,7 @@ test "a cold compiler rebuild ingests each dependency about once and collects on
     );
     assert peak_mb <= PEAK_RSS_CEILING_MB , (
         f"the rebuild peaked at {peak_mb} MB of RSS, above the {PEAK_RSS_CEILING_MB} MB ceiling"
+        f" (self and children max RSS: {payload.get('split')}; {compiled} modules"
+        f" compiled; pass runs: {runs}; events: {events})"
     );
 }

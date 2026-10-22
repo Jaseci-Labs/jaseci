@@ -40,7 +40,9 @@ obj ClientBundleBuilder {
 def emitted_tree_digest(tree_root: Path) -> str;
 
 
-def client_program(program: JacProgram | None) -> JacProgram {
+def client_program(program: JacProgram | None) -> JacProgram;
+
+impl client_program(program: JacProgram | None) -> JacProgram {
     if program is not None {
         return program;
     }
