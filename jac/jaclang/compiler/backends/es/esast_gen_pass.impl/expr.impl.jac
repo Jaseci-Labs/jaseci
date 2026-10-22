@@ -6,6 +6,11 @@ impl EsastGenPass.exit_name with uni.Name exit {
 }
 
 impl EsastGenPass._exit_name_impl(nd: uni.Name) -> None {
+    link = self.loop_links.of_name(nd);
+    if link is not None and not self._pass_link_native(link) {
+        nd.gen.es_ast = self._pass_link_ref(link, nd);
+        return;
+    }
     if self._is_ct_type_param(nd) and not self._in_identifier_slot(nd) {
         nd.gen.es_ast = self.sync_loc(
             es.MemberExpression(
@@ -30,8 +35,7 @@ impl EsastGenPass._exit_name_impl(nd: uni.Name) -> None {
         );
         return;
     }
-    import from jaclang.runtime.scalars { is_sized }
-    import from jaclang.compiler.types.types { ClassType as _ClassType }
+
     if (
         is_sized(nd.sym_name)
         and isinstance(nd.type, _ClassType)
@@ -112,7 +116,6 @@ impl EsastGenPass._is_call_target(nd: uni.UniNode) -> bool {
 impl EsastGenPass._primitive_type_ref(
     name: str, jac_node: uni.UniNode
 ) -> (es.Expression | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     self._ensure_emitters();
     if (
         name not in self._builtin_emitter.static_names()

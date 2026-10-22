@@ -21,7 +21,7 @@ def:pub capwords(s: str, sep: (str | None) = None) -> str {
         j: int = 0;
         i: int = 0;
         while i < n {
-            c: int = __mem_load_i8(src + i);
+            c: int = int(__mem_load_i8(src + i));
             if c == 32 or (c >= 9 and c <= 13) {
                 inword = 0;
                 i += 1;
@@ -30,7 +30,7 @@ def:pub capwords(s: str, sep: (str | None) = None) -> str {
             if not inword {
                 inword = 1;
                 if not first {
-                    __mem_store_i8(src + j, 32);
+                    __mem_store_i8(src + j, i8(32));
                     j += 1;
                 }
                 first = 0;
@@ -40,7 +40,7 @@ def:pub capwords(s: str, sep: (str | None) = None) -> str {
             } elif c >= 65 and c <= 90 {
                 c += 32;
             }
-            __mem_store_i8(src + j, c);
+            __mem_store_i8(src + j, i8.wrap(c));
             j += 1;
             i += 1;
         }
@@ -142,10 +142,10 @@ def _expand(template: str, mapping: (dict[str, any] | None), safe: bool) -> str 
     i: int = 0;
     n: int = len(bv);
     while i < n {
-        c: int = __mem_load_i8(src + i);
+        c: int = int(__mem_load_i8(src + i));
         if c != 36 {
             j0: int = i;
-            while j0 < n and __mem_load_i8(src + j0) != 36 {
+            while j0 < n and int(__mem_load_i8(src + j0)) != 36 {
                 j0 += 1;
             }
             out += bv[i:j0].decode();
@@ -160,7 +160,7 @@ def _expand(template: str, mapping: (dict[str, any] | None), safe: bool) -> str 
             }
             _invalid(template, i);
         }
-        nx: int = __mem_load_i8(src + i + 1);
+        nx: int = int(__mem_load_i8(src + i + 1));
         if nx == 36 {
             out += "$";
             i += 2;
@@ -233,7 +233,7 @@ obj:pub Template {
         i: int = 0;
         n: int = len(bv);
         while i < n {
-            c: int = __mem_load_i8(src + i);
+            c: int = int(__mem_load_i8(src + i));
             if c != 36 {
                 i += 1;
                 continue;
@@ -242,7 +242,7 @@ obj:pub Template {
                 i += 1;
                 continue;
             }
-            if __mem_load_i8(src + i + 1) == 36 {
+            if int(__mem_load_i8(src + i + 1)) == 36 {
                 i += 2;
                 continue;
             }

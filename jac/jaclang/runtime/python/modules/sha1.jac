@@ -4,27 +4,6 @@ See ../LICENSE.cpython. The HACL* library stays C: CPython's
 Modules/_hacl/libHacl_Hash_SHA1.a, which the registry links for _sha1.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyErr_NoMemory,
-    PyObject,
-    Py_TYPE,
-    jacpy_offset,
-    jacpy_release
-}
-import from jaclang.runtime.python.bindings.module { jacpy_binding_state_get }
-import from jaclang.runtime.python.bindings.state { NativeState }
-import from jaclang.runtime.python.bindings.converters { ClassToken }
-import from jaclang.runtime.python.modules.hashlib {
-    HashLock,
-    UINT32_MAX,
-    data_argument,
-    hash_digest,
-    hash_initial_data,
-    hash_object_new,
-    hash_state_of,
-    hash_update
-}
 import from c {
     def _Py_LibHacl_Hacl_Hash_SHA1_malloc -> ptr;  def _Py_LibHacl_Hacl_Hash_SHA1_update(
         state: ptr, chunk: ptr, chunk_len: u32
@@ -62,7 +41,7 @@ def:priv sha1_update(hacl: ptr, address: ptr, size: i64) {
     while remaining > UINT32_MAX {
         _Py_LibHacl_Hacl_Hash_SHA1_update(hacl, cursor, u32(UINT32_MAX));
         remaining -= UINT32_MAX;
-        cursor = jacpy_offset(cursor, UINT32_MAX);
+        cursor += UINT32_MAX;
     }
     _Py_LibHacl_Hacl_Hash_SHA1_update(hacl, cursor, u32(remaining));
 }

@@ -120,6 +120,13 @@ never reaches a user. Outside a demotion window a suppressed lowering error
 still withholds the unit: suppression silences the report, not the fact that
 the body did not lower, and the unit's failure names the diagnostic.
 
+Refusals live on one table, `NativeLegality`. The static rules fill it during
+analysis, and a unit they refuse is stubbed without lowering its body. A
+diagnostic the generator records while lowering a unit the static rules
+accepted is moved onto the same table as a late refusal: it is the list of
+what the static rules do not yet predict. An exception raised by the
+generator is not a refusal; it is reported as a compiler error.
+
 ## The link plan
 
 One plan produces every artifact: `jac build --native`, native app builds,
@@ -234,10 +241,10 @@ Two rules keep the glue honest about what the units define:
   definition before the plan ever sees it.
 
 Weak cells every unit carries (the region TLS slot, the GC switches,
-`__jac_str_new`) become one cell per artifact: the Mach-O linker keeps the
+`__jac_str_new`) become one cell per artifact: the linker (LLD) keeps the
 first definition of an external name and binds later references to it,
 letting a strong definition replace a weak one, exactly as a fused module
-or a system linker would have it.
+would have it.
 
 ### Names across units
 
@@ -274,30 +281,35 @@ setting, and stay inert unless the application calls them.
 
 The native compiler kernel is the plan rooted at `jc_unit` with the
 frontend scope compiled as native units, linked as a shared library in
-bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup,
-with a fixed precedence:
+bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup.
+It only ever loads a kernel; nothing but `jac native build kernel` and the seal
+builds one. Its precedence is fixed:
 
-1. Explicit switches. `JAC_COMPILER_LIB` as a path is used as given and
-   must carry its layout sidecar. `off` selects the store parser only in a
-   process that builds the kernel, which carries `JAC_KERNEL_BUILDING`;
-   anywhere else it is refused, because the kernel compiles and checks
-   every program. `JAC_STUBCAT_BUILDING` keeps the store parser during the
-   catalog build.
-2. Sealed image. The manifest's `native` record names the artifact, its
+1. Sealed image. The manifest's `native` record names the artifact, its
    sha256, layout digest and plan digest; missing or mismatched is a startup
-   error. The one image without an artifact is a pull request's CI kit: its
-   record says `"kernel": "none"` and names the kit it ships in, and the
-   store parser serves every process that runs on it, sealed or rerouted.
-3. Source tree. The kernel beside `native_compiler.jac` is accepted when the
-   inputs its sidecar records are the ones the sources have now.
-   Otherwise, under a lock, the checkout first looks at the kernel the
-   running kit carries: a rerouted checkout runs on a kit's interpreter,
-   and when that kit was built from these very sources its kernel's inputs
-   match, so the kernel is copied beside the loader and accepted.
-   Only a checkout whose compiler differs from every kernel in reach has a
-   child `jac` process rebuild one, with the store parser pinned for the
-   build.
-4. No native toolchain: the store parser serves, silently.
+   error. A sealed image runs its own kernel and never looks at a checkout.
+   The one image without an artifact is a pull request's CI kit: its
+   manifest's `omits` lists `kernel`, and the store parser serves every
+   process that runs on it, sealed or rerouted, without a notice. (While the
+   stub catalog builds, its build mark in the handoff record keeps the store
+   parser ahead of every step.)
+2. The checkout's kernel. The kernel beside `native_compiler.jac` is loaded
+   when the inputs its sidecar records are the ones the sources have now.
+3. The kit's kernel. A rerouted checkout runs on a kit's interpreter; when
+   that kit was built from these very sources, its kernel's inputs match and
+   it is loaded where the kit keeps it. Nothing is copied.
+4. Bytecode. Otherwise the compiler runs from bytecode with the store
+   parser, and the process says so once on stderr: why the kernel is not
+   usable (none built, the first source that moved, or no native toolchain)
+   and that `jac native build kernel` builds it.
+
+`jac native status kernel` prints what resolution sees: the checkout's kernel and
+every input that moved since it was built, the kit's kernel, and which one
+this process runs. `jac native build kernel` builds the kernel the sources describe
+in its own process, on whatever compiler resolved for it (bytecode when the
+kernel is stale), and reuses every unit whose inputs have not moved, so a
+build after a small edit relinks in seconds. `jac native build kernel --force
+--exact` rebuilds every unit with the compiler as edited.
 
 The sidecar records the kernel's inputs one by one: the compiler digest,
 the codegen identity every unit shares, the target triple, the interpreter
@@ -306,45 +318,86 @@ identity, a digest of its source, annexes and wiring, and whether the build's
 placement policy required that unit natively. Nothing in them is a path or an
 environment fingerprint, which is what lets a kernel built at the kit's
 staging directory be accepted in a checkout elsewhere; acceptance finds
-each unit where this process's jaclang lives and compares its digest. The
-folded `source_key` the sidecar also carries is the module-key form an
-in-tree build records for itself; a module key of a file outside the
-running package fingerprints that file's project, so a kit's folded key is
-never the checkout's and only decides for sidecars that predate the
-per-unit record. Accepting a kernel therefore costs one content hash per
-unit and no plan, which is what makes a warm `jac run` in a source tree
-start in well under a second. The derivation runs in a child
-on purpose: the first parse of a checkout happens inside the compiler's own
-import chain, where half the checker is not importable yet, and a rebuild
-must not depend on the state of the process that asked for it. The kernel
-build and the seal use the same in-process build session as applications.
+each unit where this process's jaclang lives and compares its digest.
+Accepting a kernel therefore costs one content hash per unit and no plan,
+which is what makes a warm `jac run` in a source tree start in well under a
+second.
 
-CI holds the adoption path to account on every reroute lane. The
-`jac-kit` action's warm step is the lane's first `jac run`, and a fresh
-checkout has no kernel (`libjac_*` is gitignored). Since the kit was built
-from the same commit, that run must leave a byte-for-byte copy of the kit's
-kernel beside the loader, with a sidecar that carries a plan digest, and a
-second run must leave that file in place (same inode and mtime). A kernel
-derived there instead would cost every reroute lane a relink, so the step
-fails rather than letting a lane quietly pay it. Sealed lanes skip the check:
+A build links into a private file and publishes the library, then its
+sidecar, each on a new inode. The sidecar carries the library's sha256, so a
+process that reads between the two writes sees them disagree and runs from
+bytecode for that one run, and a process already running the old kernel
+keeps its mapping. Builds run unlocked and readers never lock; only the two
+publishing writes hold the kernel's `.lock`, so concurrent builds publish
+whole pairs and the last one wins instead of leaving one build's library
+beside another's sidecar.
+
+CI holds the kit path to account on every reroute lane. The `jac-kit`
+action's warm step is the lane's first `jac run`, and a fresh checkout has
+no kernel (`libjac_*` is gitignored). Since the kit was built from the same
+commit, that run must load the kit's kernel in place, print no bytecode
+notice, and leave nothing beside the loader. Sealed lanes skip the check:
 they boot from the payload's own image.
 
 A pull request's kit is built without the kernel. The kernel is most of a
 kit's build time (24 to 64 minutes of a build that otherwise takes about 15),
 and it is the same compiler lowered to native code, so a pull request runs
 its lanes on the bytecode the kit precompiles: the path every kernel build
-compiles through. `JAC_PR_KIT_KERNEL=none` asks the seal for such a kit, and
-the seal refuses it outside a `pull_request` CI build, so main, nightly and
-release kits always carry a kernel; the release smoke test asserts one is
-loaded. On such a kit the warm step checks the opposite of adoption: the
-first run must leave no kernel beside the loader, because a lane that derived
-its own would pay the build the kit skipped. A pull request that changes what
-the kernel is built from can ask for the full kit with the `build-kernel`
-label; otherwise the first build with a kernel is the one on main.
+compiles through. The seal leaves the kernel out only when the build's environment
+says so (`JAC_KIT_OMIT=kernel`, which the `setup-jac` action sets for a pull
+request; `pr_kit_omits` in `artifacts/kit.jac` reads it), so main,
+nightly and release kits always carry a kernel; the release smoke test
+asserts one is loaded. On such a kit the warm step checks that the first run
+resolves no kernel and leaves none beside the loader. A pull request that
+changes what the kernel is built from can ask for the full kit with the
+`native:kernel` label; otherwise the first build with a kernel is the one on
+main.
 
-The kernel is always the host's. `kernel_options()` pins the target to the
-host whatever `JAC_NATIVE_TARGET` says, so a cross-compiled artifact's units
-parse with a kernel the process can load.
+### One builder, every target
+
+A kernel is built for a target, and the build does not depend on the host
+that runs it. `compiler/target_spec.jac` holds one `TargetSpec` per release
+target: its canonical triple (`x86_64-unknown-linux-gnu`,
+`aarch64-unknown-linux-gnu`, `arm64-apple-macosx11.0.0`,
+`x86_64-apple-macosx10.15.0`), osarch, object format and library naming.
+`kernel_options(spec)` compiles for that triple, so a host's own default
+triple, which carries its OS version, never reaches a kernel.
+`jac native build kernel` builds the host's kernel beside
+`native_compiler.jac`; `jac native build kernel@<osarch>` builds another
+target's into `compiler/kernels/<osarch>/`. The in-process linkers write ELF
+and Mach-O for any target and the kernel links no C archive of its target,
+so one x86 Linux runner can build every release platform's kernel.
+
+That is how releases are built. `build-binaries.yml`'s `kernel` job builds
+each leg's kernel on x86 Linux and uploads it, and each leg builds with
+`zig build -Dkernel=DIR`. mkpayload hands the directory to the seal
+(`JAC_SEAL_KERNEL_DIR`), and `adopt_kernel` copies the kernel in instead of
+building one. Adoption applies the check the kit tier applies at load: every
+unit source digest, the codegen identity, the compiler, the target and the
+Python version must match the tree being sealed, so a stale or foreign kernel
+is refused before anything is copied. A sealed image also refuses, at load, a
+kernel built for another osarch or Python.
+
+### The runtime floor
+
+Lowered code is the same for every 64-bit target: whatever a C library
+spells, lays out or numbers differently per target sits behind the
+`__jac_*` functions of the runtime floor. `posix_floor.c` defines them for
+ELF and Mach-O targets (errno, the standard streams, the platform id, stat,
+directories, `AT_FDCWD`, home directories, clock ids, sleep, malloc sizes,
+fused multiply-add and `va_list` access) and is compiled once per target
+against that target's own headers into `posix_floor_ir.jac`
+(`jac run scripts/gen_posix_floor.jac`). `win_floor.c` defines the same
+functions for Windows. The link glue of every artifact, the JIT included,
+carries its target's floor IR, so a native build needs no C toolchain.
+
+The generated code calls these functions instead of testing the triple, and
+the bundled stdlib units the kernel imports are single units over them, so
+the kernel's unit set and its IR are the same on every target apart from the
+`target triple` and `target datalayout` lines. `test_target_neutral_ir.jac`
+holds the IR to that, and `test_target_checks.jac` names the few places the
+IR generator may still read its triple (wasm, which has no floor, C library
+file names, Windows' setjmp pair and C struct passing).
 
 The toolchain units (the OSP kernel, the format kernel, the region arena)
 are ordinary native units pulled in by dependency edge. The region arena
@@ -398,14 +451,16 @@ frontend analysis, lowering visits and final code generation.
 Linux AArch64 floor libraries call outline-atomic helpers supplied by compiler-rt.
 The payload vendor builds the pinned upstream LLVM implementations into
 `libclang_rt.atomics.a`, with one helper per archive member and a separate CPU
-detection member. The ordinary archive selection code follows undefined
-symbols to select the helpers and their feature flag, without bringing in
+detection member. The link passes the archive whole and LLD loads only the
+helpers the program reaches and their feature flag, without bringing in
 unrelated libc definitions. The upstream helpers use LSE where available and
 fall back to LL/SC. No handwritten atomic ABI implementation is emitted in glue.
 
-The ELF linker preserves input constructors and their priority order for shared
-and executable artifacts, so the runtime's CPU detection runs before application
-initializers. Runtime archive bytes participate in artifact invalidation.
+Input constructors keep their priority order in shared and executable
+artifacts, so the runtime's CPU detection runs before application initializers:
+a shared library lists `__jac_shared_init` in `.init_array` after every input
+constructor, and an executable hands `__libc_start_main` an init hook that runs
+the whole array. Runtime archive bytes participate in artifact invalidation.
 
 ## Sealed applications
 

@@ -3,19 +3,49 @@ import from "radix-ui" { DropdownMenu as DropdownMenuPrimitive }
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { Tick02Icon, ArrowRight01Icon }
 
-def:pub DropdownMenu(props: any) -> JsxElement {
+def:pub DropdownMenu(props: any) -> JsxElement;
+
+def:pub DropdownMenuPortal(props: any) -> JsxElement;
+
+def:pub DropdownMenuTrigger(props: any) -> JsxElement;
+
+def:pub DropdownMenuContent(props: any) -> JsxElement;
+
+def:pub DropdownMenuGroup(props: any) -> JsxElement;
+
+def:pub DropdownMenuItem(props: any) -> JsxElement;
+
+def:pub DropdownMenuCheckboxItem(props: any) -> JsxElement;
+
+def:pub DropdownMenuRadioGroup(props: any) -> JsxElement;
+
+def:pub DropdownMenuRadioItem(props: any) -> JsxElement;
+
+def:pub DropdownMenuLabel(props: any) -> JsxElement;
+
+def:pub DropdownMenuSeparator(props: any) -> JsxElement;
+
+def:pub DropdownMenuShortcut(props: any) -> JsxElement;
+
+def:pub DropdownMenuSub(props: any) -> JsxElement;
+
+def:pub DropdownMenuSubTrigger(props: any) -> JsxElement;
+
+def:pub DropdownMenuSubContent(props: any) -> JsxElement;
+
+impl DropdownMenu(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {**props}/>
 }
 
-def:pub DropdownMenuPortal(props: any) -> JsxElement {
+impl DropdownMenuPortal(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {**props}/>
 }
 
-def:pub DropdownMenuTrigger(props: any) -> JsxElement {
+impl DropdownMenuTrigger(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {**props}/>
 }
 
-def:pub DropdownMenuContent(props: any) -> JsxElement {
+impl DropdownMenuContent(props: any) -> JsxElement {
     align = props["align"] or "start";
     sideOffset = props["sideOffset"] or 4;
     <DropdownMenuPrimitive.Portal>
@@ -32,11 +62,11 @@ def:pub DropdownMenuContent(props: any) -> JsxElement {
     </DropdownMenuPrimitive.Portal>
 }
 
-def:pub DropdownMenuGroup(props: any) -> JsxElement {
+impl DropdownMenuGroup(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {**props}/>
 }
 
-def:pub DropdownMenuItem(props: any) -> JsxElement {
+impl DropdownMenuItem(props: any) -> JsxElement {
     variant = props["variant"] or "default";
     <DropdownMenuPrimitive.Item
         {**props}
@@ -50,7 +80,7 @@ def:pub DropdownMenuItem(props: any) -> JsxElement {
     />
 }
 
-def:pub DropdownMenuCheckboxItem(props: any) -> JsxElement {
+impl DropdownMenuCheckboxItem(props: any) -> JsxElement {
     <DropdownMenuPrimitive.CheckboxItem
         {**props}
         data-slot="dropdown-menu-checkbox-item"
@@ -73,11 +103,11 @@ def:pub DropdownMenuCheckboxItem(props: any) -> JsxElement {
     </DropdownMenuPrimitive.CheckboxItem>
 }
 
-def:pub DropdownMenuRadioGroup(props: any) -> JsxElement {
+impl DropdownMenuRadioGroup(props: any) -> JsxElement {
     <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {**props}/>
 }
 
-def:pub DropdownMenuRadioItem(props: any) -> JsxElement {
+impl DropdownMenuRadioItem(props: any) -> JsxElement {
     <DropdownMenuPrimitive.RadioItem
         {**props}
         data-slot="dropdown-menu-radio-item"
@@ -99,7 +129,7 @@ def:pub DropdownMenuRadioItem(props: any) -> JsxElement {
     </DropdownMenuPrimitive.RadioItem>
 }
 
-def:pub DropdownMenuLabel(props: any) -> JsxElement {
+impl DropdownMenuLabel(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Label
         {**props}
         data-slot="dropdown-menu-label"
@@ -111,7 +141,7 @@ def:pub DropdownMenuLabel(props: any) -> JsxElement {
     />
 }
 
-def:pub DropdownMenuSeparator(props: any) -> JsxElement {
+impl DropdownMenuSeparator(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Separator
         {**props}
         data-slot="dropdown-menu-separator"
@@ -121,7 +151,7 @@ def:pub DropdownMenuSeparator(props: any) -> JsxElement {
     />
 }
 
-def:pub DropdownMenuShortcut(props: any) -> JsxElement {
+impl DropdownMenuShortcut(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <span
         {**attrs}
@@ -133,11 +163,11 @@ def:pub DropdownMenuShortcut(props: any) -> JsxElement {
     />
 }
 
-def:pub DropdownMenuSub(props: any) -> JsxElement {
+impl DropdownMenuSub(props: any) -> JsxElement {
     <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {**props}/>
 }
 
-def:pub DropdownMenuSubTrigger(props: any) -> JsxElement {
+impl DropdownMenuSubTrigger(props: any) -> JsxElement {
     <DropdownMenuPrimitive.SubTrigger
         {**props}
         data-slot="dropdown-menu-sub-trigger"
@@ -152,7 +182,7 @@ def:pub DropdownMenuSubTrigger(props: any) -> JsxElement {
     </DropdownMenuPrimitive.SubTrigger>
 }
 
-def:pub DropdownMenuSubContent(props: any) -> JsxElement {
+impl DropdownMenuSubContent(props: any) -> JsxElement {
     <DropdownMenuPrimitive.SubContent
         {**props}
         data-slot="dropdown-menu-sub-content"

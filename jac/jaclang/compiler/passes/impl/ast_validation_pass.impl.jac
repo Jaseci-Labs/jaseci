@@ -301,7 +301,7 @@ impl ASTValidationPass.enter_import with Import entry {
 }
 
 impl ASTValidationPass.enter_yield_expr with YieldExpr entry {
-    if here.find_parent_of_type(Ability) is None
+    if here.enclosing_decl(Ability) is None
         and here.find_parent_of_type(ImplDef) is None {
         self.ctx.emit(E0055, node_override=here);
     }
@@ -343,6 +343,9 @@ impl ASTValidationPass.enter_ctrl_stmt with CtrlStmt entry {
 impl ASTValidationPass.enter_global_vars with GlobalVars entry {
     valid_parents = (Module, );
     if here.is_frozen and isinstance(here.parent, Archetype) {
+        return;
+    }
+    if isinstance(here.parent, Import) and here.parent.clib_decls {
         return;
     }
     if not isinstance(here.parent, valid_parents) {

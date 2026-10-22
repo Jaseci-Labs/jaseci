@@ -186,6 +186,7 @@ The link points at `verify_url_template` (for example `https://app.example.com/v
 - Post-login navigation uses `useNavigate()` from `jac-cl-routing` - `nav = useNavigate(); ... nav("/dashboard");` after a successful login.
 - **`jacSignup` does NOT establish a session.** ALWAYS follow with a `jacLogin` call using the same credentials - signup alone leaves the user unauthenticated.
 - **`jacLogin`, `jacSignup`, `jacSsoLogin` are `async` - always `await`. `jacLogout` and `jacIsLoggedIn` are sync - NEVER `await` them.** `await jacLogout()` type-errors; missing `await` on `jacLogin` silently returns a coroutine instead of the result.
+- **`jacIsLoggedIn()` checks the stored token locally, not with the server.** It drops an expired token and returns `False`, but a token the server no longer accepts (another app's token on the same origin, a rotated secret) still reads as logged in until a call comes back 401. The runtime then drops the token; a call to a service app also raises `BridgeRejected` with `status == 401`. Catch that and reset your signed-in state (`jacLogout()` + show the login form), or the UI stays "logged in" with no way to sign in.
 - **Pre-declare any var that holds an `await` result before the assignment.** In client Jac, `var = await fn()` can compile to a JS `let var = ...` whose scope is tighter than the surrounding function, so a later `if not var { ... }` throws `ReferenceError: var is not defined` at runtime. Compile passes; the page just blanks. Fix: declare the var with a default at the top, then assign.
 
 ```

@@ -8,11 +8,31 @@ import from "@hugeicons/core-free-icons" {
     ArrowDownIcon
 }
 
-def:pub Select(props: any) -> JsxElement {
+def:pub Select(props: any) -> JsxElement;
+
+def:pub SelectGroup(props: any) -> JsxElement;
+
+def:pub SelectValue(props: any) -> JsxElement;
+
+def:pub SelectTrigger(props: any) -> JsxElement;
+
+def:pub SelectContent(props: any) -> JsxElement;
+
+def:pub SelectLabel(props: any) -> JsxElement;
+
+def:pub SelectItem(props: any) -> JsxElement;
+
+def:pub SelectSeparator(props: any) -> JsxElement;
+
+def:pub SelectScrollUpButton(props: any) -> JsxElement;
+
+def:pub SelectScrollDownButton(props: any) -> JsxElement;
+
+impl Select(props: any) -> JsxElement {
     return <SelectPrimitive.Root data-slot="select" {**props}/>;
 }
 
-def:pub SelectGroup(props: any) -> JsxElement {
+impl SelectGroup(props: any) -> JsxElement {
     return
         <SelectPrimitive.Group
             {**props}
@@ -21,7 +41,7 @@ def:pub SelectGroup(props: any) -> JsxElement {
         />;
 }
 
-def:pub SelectValue(props: any) -> JsxElement {
+impl SelectValue(props: any) -> JsxElement {
     return
         <SelectPrimitive.Value
             data-slot="select-value"
@@ -30,7 +50,7 @@ def:pub SelectValue(props: any) -> JsxElement {
         />;
 }
 
-def:pub SelectTrigger(props: any) -> JsxElement {
+impl SelectTrigger(props: any) -> JsxElement {
     size = props["size"] or "default";
     return
         <SelectPrimitive.Trigger
@@ -53,7 +73,7 @@ def:pub SelectTrigger(props: any) -> JsxElement {
         </SelectPrimitive.Trigger>;
 }
 
-def:pub SelectContent(props: any) -> JsxElement {
+impl SelectContent(props: any) -> JsxElement {
     position = props["position"] or "item-aligned";
     align = props["align"] or "center";
     popperClass = "";
@@ -88,7 +108,7 @@ def:pub SelectContent(props: any) -> JsxElement {
         </SelectPrimitive.Portal>;
 }
 
-def:pub SelectLabel(props: any) -> JsxElement {
+impl SelectLabel(props: any) -> JsxElement {
     return
         <SelectPrimitive.Label
             {**props}
@@ -100,7 +120,7 @@ def:pub SelectLabel(props: any) -> JsxElement {
         />;
 }
 
-def:pub SelectItem(props: any) -> JsxElement {
+impl SelectItem(props: any) -> JsxElement {
     return
         <SelectPrimitive.Item
             {**props}
@@ -125,7 +145,7 @@ def:pub SelectItem(props: any) -> JsxElement {
         </SelectPrimitive.Item>;
 }
 
-def:pub SelectSeparator(props: any) -> JsxElement {
+impl SelectSeparator(props: any) -> JsxElement {
     return
         <SelectPrimitive.Separator
             {**props}
@@ -137,7 +157,7 @@ def:pub SelectSeparator(props: any) -> JsxElement {
         />;
 }
 
-def:pub SelectScrollUpButton(props: any) -> JsxElement {
+impl SelectScrollUpButton(props: any) -> JsxElement {
     return
         <SelectPrimitive.ScrollUpButton
             {**props}
@@ -151,7 +171,7 @@ def:pub SelectScrollUpButton(props: any) -> JsxElement {
         </SelectPrimitive.ScrollUpButton>;
 }
 
-def:pub SelectScrollDownButton(props: any) -> JsxElement {
+impl SelectScrollDownButton(props: any) -> JsxElement {
     return
         <SelectPrimitive.ScrollDownButton
             {**props}

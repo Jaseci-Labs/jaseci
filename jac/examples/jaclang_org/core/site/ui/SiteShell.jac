@@ -1,6 +1,10 @@
 import from "@jac/runtime" { Outlet, useLocation }
 
-def init_theme {
+def init_theme;
+
+def:pub SiteShell -> JsxElement;
+
+impl init_theme {
     saved = localStorage.getItem("jac-theme");
     if saved == "light" {
         document.documentElement.classList.remove("dark");
@@ -9,7 +13,7 @@ def init_theme {
     }
 }
 
-def:pub SiteShell -> JsxElement {
+impl SiteShell -> JsxElement {
     init_theme();
     location = useLocation();
     in_app = (
