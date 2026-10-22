@@ -373,6 +373,27 @@ impl build_native_legality(
                 }
             }
         }
+        for (dep_test, test_imp, test_dep) in scan.test_dep_imports {
+            if legality.unit_refused(dep_test) {
+                continue;
+            }
+            (test_closure, _test_bridged) = native_closure_blocker(
+                judging, mod_path, [test_dep]
+            );
+            if test_closure {
+                legality.refuse_unit(
+                    dep_test,
+                    NativeRefusal(
+                        kind="test",
+                        name=test_closure,
+                        site=test_imp,
+                        help="A module this test imports cannot be placed native, so "
+                        "the test is placed on the server and the module it tests "
+                        "is not."
+                    )
+                );
+            }
+        }
         for (imp, dep) in scan.dep_imports {
             top = imp.element_in(mod);
             if top is None or id(top) in refused_imports or legality.blockers {

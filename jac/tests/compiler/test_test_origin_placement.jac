@@ -202,6 +202,43 @@ test "an inline test block touching root does not push its module off native" {
 }
 
 
+test "a test whose import cannot be native is placed on the server" {
+    d = _proj(CALC, "");
+    try {
+        with open(os.path.join(d, "server_helper.jac"), "w") as f {
+            f.write(
+                "async def ping() -> int { return 1; }\n"
+                    + "def two() -> int { return 2; }\n"
+            );
+        }
+        with open(os.path.join(d, "only_tests.jac"), "w") as f {
+            f.write(
+                "test \"uses a server helper\" {\n"
+                    + "    import from server_helper { two }\n"
+                    + "    assert two() == 2;\n"
+                    + "}\n"
+            );
+        }
+        prog = JacProgram();
+        mod = prog.compile(
+            os.path.join(d, "only_tests.jac"), options=CompileOptions(no_ir_cache=True)
+        );
+        assert not prog.errors_had , [str(e) for e in prog.errors_had];
+        tests = _tests_of(mod);
+        assert len(tests) == 1 , tests;
+        assert tests[0].code_context == uni.CodeContext.SERVER , (
+            f"a test importing a server-only module was placed {tests[0].code_context}"
+        );
+        assert not ModuleFacts.has_native_context_stmts(mod) , (
+            "a test-only module whose tests run on the server still has native code"
+        );
+        assert mod.decided_codespace != "native" , mod.decided_codespace;
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
 test "a native-required module still reports a test that cannot be native" {
     (prog, mod, d) = _compile(CALC, ROOT_TEST, native_required=True);
     try {

@@ -475,6 +475,10 @@ impl native_blocker_scan(
             why = probe.first();
             if why {
                 scan.tests.append((stmt, why));
+                continue;
+            }
+            for (dep_imp, dep_path) in probe.dep_imports {
+                scan.test_dep_imports.append((stmt, dep_imp, dep_path));
             }
         }
     }

@@ -28,7 +28,8 @@ obj NativeBlockerScan {
         sites: list[tuple[uni.UniNode, str]] = [],
         deps: list[str] = [],
         dep_imports: list[tuple[uni.Import, str]] = [],
-        tests: list[tuple[uni.Test, str]] = [];
+        tests: list[tuple[uni.Test, str]] = [],
+        test_dep_imports: list[tuple[uni.Test, uni.Import, str]] = [];
 
     def first -> str;
 }
