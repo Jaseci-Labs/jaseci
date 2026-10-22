@@ -2052,7 +2052,7 @@ impl KubernetesTarget._wait_for_namespace_deletion(
 
 impl KubernetesTarget._reclaim_namespace(namespace: str, core_v1: any) -> bool {
     try {
-        delete_namespace(namespace);
+        delete_namespace(core_v1, namespace);
     } except ApiException as e {
         if e.status != 403 {
             raise;

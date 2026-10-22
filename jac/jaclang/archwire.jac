@@ -30261,6 +30261,7 @@ graph import scale {
             | deploy.target.kubernetes.ingress
             | deploy.target.kubernetes.monitoring
             | deploy.target.kubernetes.target
+            | deploy.target.kubernetes.utils.kubernetes_utils
             | injector.pvc_injector.PvcInjector.seed { ApiException, client },
         deploy.autoscale.hpa_autoscaler | deploy.autoscale.keda_autoscaler {
             ApiException,
@@ -30278,12 +30279,6 @@ graph import scale {
             ConfigException,
             client,
             config as k8s_cluster_config
-        },
-        deploy.target.kubernetes.utils.kubernetes_utils {
-            ApiException,
-            ConfigException,
-            client,
-            config
         },
         tests.deploy.observer_transition_recorder { ApiException, config },
         tests.misc.test_optional_deps { HAS_KUBERNETES, client as k8s_client },
