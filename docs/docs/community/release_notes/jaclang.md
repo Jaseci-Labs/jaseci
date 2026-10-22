@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.27 (Latest Release)
+## jaclang 0.34.28 (Latest Release)
+
+### Bug Fixes
+
+- **A component edit in dev mode no longer reloads the page through the unchanged prelude**: every HMR recompile rewrote `jac_prelude.js` even when its content was identical, and Vite answered the new timestamp on that non-boundary module with a full page reload, so Fast Refresh never kept component state. The prelude is now written only when its content changes.
+
+## jaclang 0.34.27
 
 ### Bug Fixes
 
