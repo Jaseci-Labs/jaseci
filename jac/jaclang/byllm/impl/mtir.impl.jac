@@ -294,6 +294,9 @@ def _with_tool_calls(msg: any, tool_calls: list[any]) -> any;
 def _drop_unanswered_calls(msgs: list[any]) -> list[any];
 
 
+def _results_after(msgs: list[any], start: int) -> set[str];
+
+
 impl MTRuntime.get_history_for_persist -> list[MessageType] {
     scaff_ids = set(self._scaffolding_ids);
     out: list[any] = [];
@@ -320,10 +323,10 @@ impl MTRuntime.get_history_for_persist -> list[MessageType] {
                 for tc in tool_calls
                 if not _is_finish_tool_call(tc)
             ];
-            if not kept {
-                continue;
+            if kept {
+                out.append(_with_tool_calls(msg, kept));
             }
-            msg = _with_tool_calls(msg, kept);
+            continue;
         }
         out.append(msg);
     }
@@ -439,22 +442,14 @@ impl _with_tool_calls(msg: any, tool_calls: list[any]) -> any {
 
 
 impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
-    answered: set[str] = set();
-    for msg in msgs {
-        result_id: any = msg.get("tool_call_id")
-            if isinstance(msg, dict)
-            else msg?.tool_call_id;
-        if result_id {
-            answered.add(str(result_id));
-        }
-    }
     out: list[any] = [];
-    for msg in msgs {
+    for (i, msg) in enumerate(msgs) {
         tool_calls = _tool_calls_of(msg);
+        answered = _results_after(msgs, i + 1) if tool_calls else set();
         kept = [
             tc
             for tc in tool_calls
-            if _tool_call_id(tc) in answered
+            if _tool_call_id(tc) == "" or _tool_call_id(tc) in answered
         ];
         if len(kept) == len(tool_calls) {
             out.append(msg);
@@ -467,6 +462,22 @@ impl _drop_unanswered_calls(msgs: list[any]) -> list[any] {
         out.append(_with_tool_calls(msg, kept));
     }
     return out;
+}
+
+
+impl _results_after(msgs: list[any], start: int) -> set[str] {
+    answered: set[str] = set();
+    for msg in msgs[start:] {
+        role: any = msg.get("role") if isinstance(msg, dict) else msg?.role;
+        if role != MessageRole.TOOL {
+            break;
+        }
+        result_id: any = msg.get("tool_call_id")
+            if isinstance(msg, dict)
+            else msg?.tool_call_id;
+        answered.add(str(result_id or ""));
+    }
+    return answered;
 }
 
 

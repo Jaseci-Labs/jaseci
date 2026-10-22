@@ -5,7 +5,13 @@ after it are answered as not executed, finish_tool itself is plumbing and is not
 persisted, and every other call keeps its result in the saved conversation.
 """
 
+import from jaclang.byllm.exceptions { FinishToolError }
 import from jaclang.byllm.types { ToolCallResultMsg }
+import from litellm.types.utils {
+    ChatCompletionMessageToolCall,
+    Function,
+    Message as LiteLLMMessage
+}
 import from jaclang.byllm.lib { MockLLM }
 import from support { calls, finish, mk_run, say, sent_messages }
 
@@ -232,6 +238,129 @@ test "a turn that ended before its results arrived does not persist the dangling
         kept = [str(tc["id"]) for m in persisted for tc in (m.get("tool_calls") or [])];
         assert kept == kept_ids , f"{label}: kept calls {kept}, expected {kept_ids}";
     }
+}
+
+
+"""A tool call, as an assistant message carries it."""
+def _tool_call_dict(call_id: str, name: str = "mul") -> dict[str, any] {
+    return {
+        "id": call_id,
+        "type": "function",
+        "function": {"name": name, "arguments": "{}"}
+    };
+}
+
+
+"""The persisted history of `messages`, as the dicts that land in the caller's list."""
+def _persisted(messages: list[any]) -> list[dict[str, any]] {
+    run = mk_run(tools=[mul], messages=messages);
+    return [
+        m if isinstance(m, dict) else m.to_dict() for m in run.get_history_for_persist()
+    ];
+}
+
+
+test "an earlier turn's result does not answer a call that reuses its id" {
+    answered_turn = _turn_messages(["c1"], ["c1"]);
+    cut_short = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [_tool_call_dict("c1")]
+    };
+    persisted = _persisted(
+        answered_turn + [{"role": "user", "content": "again"}, cut_short]
+    );
+
+    assert unanswered(persisted) == [] , (
+        f"a reused id was taken as answered: {unanswered(persisted)}"
+    );
+    assert [m["role"] for m in persisted] == ["user", "assistant", "tool", "user"] , (
+        f"only the cut-short call should be gone, got {persisted}"
+    );
+}
+
+
+test "a call with no id is left alone, since no result can be matched to it" {
+    anonymous = _turn_messages([""], [""]);
+    persisted = _persisted(anonymous);
+    assert len(persisted) == len(anonymous) , f"an id-less call was dropped: {persisted}";
+}
+
+
+"""One turn in which finish_tool fails once while a call follows it, then succeeds."""
+def _failed_finish_turn(stream: bool) -> tuple[any, ...] {
+    RAN.clear();
+    attempts = [0];
+
+    def finish_tool(final_output: str) -> str {
+        attempts[0] += 1;
+        if attempts[0] == 1 {
+            raise FinishToolError("simulated finish invocation failure");
+        }
+        return final_output;
+    }
+
+    replies = [calls([_finish_entry(), _call(4, 5, "c2")]), finish("second try")]
+        + ([say("FINAL")] if stream else []);
+    llm = MockLLM(outputs=replies);
+
+    def ask(q: str) -> str by llm(tools=[mul, finish_tool], stream=stream);
+
+    answer = ask("go");
+    answer_text = "".join(answer) if stream else answer;
+    return (llm, answer_text, list(RAN));
+}
+
+
+test "a failed finish_tool retries with the call after it answered" {
+    for stream in [False, True] {
+        (llm, answer, ran) = _failed_finish_turn(stream);
+        retry = sent_messages(llm, 1);
+
+        assert unanswered(retry) == [] , (
+            f"stream={stream}: the retry request leaves {unanswered(retry)} unanswered"
+        );
+        results = {
+            str(m.get("tool_call_id")): str(m.get("content"))
+            for m in retry
+            if m.get("role") == "tool"
+        };
+        assert "not executed" in results.get("c2", "").lower() , (
+            f"stream={stream}: the trailing call needs its not-executed result: {results}"
+        );
+        assert "simulated finish invocation failure" in results.get("cf", "") , (
+            f"stream={stream}: the failed finish call needs its error result: {results}"
+        );
+        assert ran == [] , f"stream={stream}: a call after finish_tool ran: {ran}";
+        assert answer == ("FINAL" if stream else "second try") , (
+            f"stream={stream}: got {answer!r}"
+        );
+    }
+}
+
+test "a message object is edited on a copy, like a dict" {
+    asked = [
+        ChatCompletionMessageToolCall(
+            id=cid, function=Function(name=name, arguments="{}")
+        ) for (cid, name) in [("a", "mul"), ("f1", "finish_tool"), ("z", "mul")]
+    ];
+    live = LiteLLMMessage(role="assistant", content="", tool_calls=asked);
+    run = mk_run(
+        tools=[mul],
+        messages=[
+            live,
+            ToolCallResultMsg(content="r", tool_call_id="a", name="mul"),
+            ToolCallResultMsg(content="r", tool_call_id="f1", name="finish_tool")
+        ]
+    );
+    persisted = run.get_history_for_persist();
+
+    assert [tc.id for tc in persisted[0].tool_calls] == ["a"] , (
+        f"expected only the answered real call, got {persisted[0].tool_calls}"
+    );
+    assert [tc.id for tc in live.tool_calls] == ["a", "f1", "z"] , (
+        f"the run's own message was edited: {live.tool_calls}"
+    );
 }
 
 
