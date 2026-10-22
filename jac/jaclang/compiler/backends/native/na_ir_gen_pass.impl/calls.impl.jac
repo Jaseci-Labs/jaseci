@@ -1916,22 +1916,20 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                             len(list(self._str_desc_ty.elements)) - 2,
                             name="s.len.data"
                         );
+                        _droot = _ddata
+                            if self._nogc_headerless()
+                            else self.builder.extract_value(
+                                arg_val, 0, name="s.len.root"
+                            );
                         _len_result = self._call_utf8_cplen(
                             self.builder,
                             _ddata,
                             _dlen,
                             self._call_str_isascii(
-                                self.builder,
-                                _ddata
-                                    if self._nogc_headerless()
-                                    else self.builder.extract_value(
-                                        arg_val, 0, name="s.len.root"
-                                    ),
-                                _ddata,
-                                _dlen,
-                                name="str.isa"
+                                self.builder, _droot, _ddata, _dlen, name="str.isa"
                             ),
-                            name="str.cplen"
+                            name="str.cplen",
+                            base=_droot
                         );
                     }
 
@@ -2003,7 +2001,8 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                             self._call_str_isascii(
                                 self.builder, arg_val, arg_val, _sblen, name="str.isa"
                             ),
-                            name="str.len"
+                            name="str.len",
+                            base=arg_val
                         );
                     }
                     if _len_result is not None {
