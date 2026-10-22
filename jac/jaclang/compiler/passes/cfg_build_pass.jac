@@ -1,60 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    Ability,
-    Archetype,
-    AssertStmt,
-    AstElseBodyNode,
-    AtomUnit,
-    AwaitingClause,
-    BoolExpr,
-    CfgExpr,
-    CodeBlockStmt,
-    CtrlStmt,
-    DictCompr,
-    DisengageStmt,
-    ElseIf,
-    ElseStmt,
-    Except,
-    Expr,
-    FinallyStmt,
-    ForeverStmt,
-    GenCompr,
-    GlobalVars,
-    IfElseExpr,
-    IfStmt,
-    ImplDef,
-    InForStmt,
-    InnerCompr,
-    IterForStmt,
-    JsxSlot,
-    LambdaExpr,
-    ListCompr,
-    MatchCase,
-    MatchStmt,
-    ModuleCode,
-    Name,
-    OpenStmt,
-    RaiseStmt,
-    ReturnStmt,
-    SemDef,
-    Semi,
-    SetCompr,
-    SwitchCase,
-    SwitchStmt,
-    Test,
-    Token,
-    TryStmt,
-    TypeAlias,
-    TypedCtxBlock,
-    UniCFGNode,
-    WhileStmt,
-    WithStmt
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from typing { cast }
 
 walker CFGBuildPass(TreePass) {
@@ -152,19 +95,8 @@ walker CFGBuildPass(TreePass) {
 
 def is_structural_child(nd: UniNode) -> bool;
 
-def _unwrap_parens(expr: Expr) -> Expr {
-    while isinstance(expr, AtomUnit) and isinstance(expr.value, Expr) {
-        expr = expr.value;
-    }
-    return expr;
-}
+def _unwrap_parens(expr: Expr) -> Expr;
 
-def unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None {
-    inner = _unwrap_parens(cfg.expr);
-    return inner if isinstance(inner, BoolExpr) else None;
-}
+def unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None;
 
-def _bool_is_and(expr: BoolExpr) -> bool {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
-    return isinstance(expr.op, Token) and expr.op.name == Tok.KW_AND;
-}
+def _bool_is_and(expr: BoolExpr) -> bool;

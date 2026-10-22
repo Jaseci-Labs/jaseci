@@ -42,12 +42,7 @@ glob _NOGC_OSP_ENGINE_STRUCTS: tuple[str, ...] = (
          "ctor_leftover"
      );
 
-def _named_struct_name(t: (ir.Type | None)) -> str {
-    if isinstance(t, ir.IdentifiedStructType) {
-        return t.name;
-    }
-    return "";
-}
+def _named_struct_name(t: (ir.Type | None)) -> str;
 
 impl NaIRGenPass._gc_mode -> str {
     _mode = self.prog.options.na_gc_mode;
@@ -444,6 +439,9 @@ impl NaIRGenPass._emit_rc_helpers -> None {
     }
     b = ir.IRBuilder(done_bb);
     b.ret_void();
+    if not self._rc_debug_codegen {
+        retain_fn.attributes.add("alwaysinline");
+    }
     self.rc_retain_fn = retain_fn;
 
     release_fnty = ir.FunctionType(ir.VoidType(), [i8_ptr, ir.IntType(1)]);
@@ -698,8 +696,80 @@ impl NaIRGenPass._emit_rc_helpers -> None {
     _pub_fn.args[0].name = "ptr";
     _pub_bb = _pub_fn.append_basic_block("entry");
     _pub_b = ir.IRBuilder(_pub_bb);
-    _pub_b.call(release_fn, [_pub_fn.args[0], ir.Constant(ir.IntType(1), 1)]);
-    _pub_b.ret_void();
+    if _cycles_on or self._rc_debug_codegen or self._gc_mode() == "none" {
+        _pub_b.call(release_fn, [_pub_fn.args[0], ir.Constant(ir.IntType(1), 1)]);
+        _pub_b.ret_void();
+    } else {
+        _fp_arg = _pub_fn.args[0];
+        _fp_done = _pub_fn.append_basic_block("done");
+        _fp_chk = _pub_fn.append_basic_block("gc_dis_check");
+        _fp_rc = _pub_fn.append_basic_block("check_sentinel");
+        _fp_mc = _pub_fn.append_basic_block("magic_check");
+        _fp_mode = _pub_fn.append_basic_block("check_last");
+        _fp_dec = _pub_fn.append_basic_block("decrement");
+        _fp_slow = _pub_fn.append_basic_block("release_impl");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned(
+                "==", _fp_arg, ir.Constant(i8_ptr, None), name="is.null"
+            ),
+            _fp_done,
+            _fp_chk
+        );
+        _pub_b = ir.IRBuilder(_fp_chk);
+        _fp_dis = _pub_b.load(self.rc_gc_disabled_gv, name="gc.dis");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned("!=", _fp_dis, ir.Constant(i8, 0), name="gc.dis.on"),
+            _fp_done,
+            _fp_rc
+        );
+        _pub_b = ir.IRBuilder(_fp_rc);
+        _fp_rc_ptr = _pub_b.bitcast(
+            _pub_b.gep(_fp_arg, [ir.Constant(i64, HDR_RC_OFF)], name="rc.slot"),
+            i64_ptr,
+            name="rc.ptr"
+        );
+        _fp_old = _pub_b.load(_fp_rc_ptr, name="old.rc");
+        _pub_b.cbranch(
+            _pub_b.icmp_unsigned(
+                "==", _fp_old, ir.Constant(i64, RC_SENTINEL), name="is.static"
+            ),
+            _fp_done,
+            _fp_mc
+        );
+        _pub_b = ir.IRBuilder(_fp_mc);
+        _pub_b.cbranch(
+            self._emit_magic_check(_pub_b, _fp_arg, name_prefix="mc"),
+            _fp_mode,
+            _fp_done
+        );
+        _pub_b = ir.IRBuilder(_fp_mode);
+        _fp_last = _pub_b.icmp_unsigned(
+            "<=", _fp_old, ir.Constant(i64, 1), name="is.last"
+        );
+        if self.rc_threaded_gv is not None {
+            _fp_mt = _pub_b.load_atomic(
+                self.rc_threaded_gv, "monotonic", 1, name="rc.mt.flag"
+            );
+            _fp_last = _pub_b.or_(
+                _fp_last,
+                _pub_b.icmp_unsigned("!=", _fp_mt, ir.Constant(i8, 0), name="rc.mt.on"),
+                name="needs.impl"
+            );
+        }
+        _pub_b.cbranch(_fp_last, _fp_slow, _fp_dec);
+        _pub_b = ir.IRBuilder(_fp_dec);
+        _pub_b.store(
+            _pub_b.sub(_fp_old, ir.Constant(i64, 1), name="new.rc"), _fp_rc_ptr
+        );
+        _pub_b.branch(_fp_done);
+        _pub_b = ir.IRBuilder(_fp_slow);
+        _pub_b.call(release_fn, [_fp_arg, ir.Constant(ir.IntType(1), 1)]);
+        _pub_b.branch(_fp_done);
+        _pub_b = ir.IRBuilder(_fp_done);
+        _pub_b.ret_void();
+        _pub_fn.attributes.add("alwaysinline");
+        release_fn.attributes.add("noinline");
+    }
     self.rc_release_simple_fn = _pub_fn;
 
     for (_abi_name, _target) in (("jac_retain", retain_fn), ("jac_release", _pub_fn)) {
@@ -765,7 +835,7 @@ impl NaIRGenPass._opt_result_owned(val: ir.Value, expr: object) -> bool {
     if self._opt_ptr_payload_of(val.type) is None {
         return False;
     }
-    import from jaclang.compiler.passes.rc_facts_pass { Ownership, result_ownership }
+
     return isinstance(expr, uni.Expr) and result_ownership(expr) == Ownership.OWNED;
 }
 
@@ -809,7 +879,6 @@ impl NaIRGenPass._can_native_move_lower(nd: object) -> bool {
 }
 
 impl NaIRGenPass._nogc_consume_assigned_local(nd: uni.Assignment) -> bool {
-    import from jaclang.compiler.frontend.constant { OwnershipKind, is_borrow_kind }
     if nd.aug_op is not None
         or len(nd.target) != 1
         or not isinstance(nd.target[0], uni.Name)
@@ -860,7 +929,7 @@ impl NaIRGenPass._nogc_borrow_local_assign(nd: object) -> bool {
     if len(nd.target) != 1 or not isinstance(nd.target[0], uni.Name) {
         return False;
     }
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
+
     _sym = nd.target[0].sym;
     if _sym is not None and is_borrow_kind(_sym.ownership) {
         return True;
@@ -1791,8 +1860,10 @@ impl NaIRGenPass._emit_rc_release_typed(
         return;
     }
     _tn = self._struct_ptr_pointee_name(val);
+
     if (
         _tn is not None
+        and self._gc_mode() == "cycles"
         and self._arch_is_acyclic(_tn)
         and self.rc_release_impl_fn is not None
         and isinstance(val.type, ir.PointerType)
@@ -1810,19 +1881,16 @@ impl NaIRGenPass._emit_rc_release_typed(
 }
 
 impl NaIRGenPass._arch_is_acyclic(arch_name: str) -> bool {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     lay = get_layout_registry(self.module, self.prog).get_layout(arch_name);
     return lay is not None and lay.is_acyclic;
 }
 
 impl NaIRGenPass._arch_is_osp_name(arch_name: str) -> bool {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     lay = get_layout_registry(self.module, self.prog).get_layout(arch_name);
     return lay is not None and lay.is_osp;
 }
 
 impl NaIRGenPass._arch_is_walker_name(arch_name: str) -> bool {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     lay = get_layout_registry(self.module, self.prog).get_layout(arch_name);
     return lay is not None and lay.arch_type == "walker";
 }
@@ -1948,14 +2016,9 @@ impl NaIRGenPass._drop_dispatches(type_name: str) -> bool {
     if not self._devirt_closed_world(type_name) {
         return True;
     }
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+
     reg = get_layout_registry(self.module, self.prog);
-    for cand in reg.mro_order {
-        if cand != type_name and type_name in self._mro_of(cand) {
-            return True;
-        }
-    }
-    return False;
+    return any(cand != type_name for cand in reg.descendants_of([type_name]));
 }
 
 impl NaIRGenPass._emit_nogc_field_drops(
@@ -2051,10 +2114,10 @@ impl NaIRGenPass._drop_hook_for(type_name: str) -> (ir.Function | None) {
         if member is not None and (not member.is_def or member.is_static) {
             return None;
         }
-        hook = self.func_symtab.get(f"{owner}.drop");
+        hook = self.scope.function(f"{owner}.drop");
         if hook is None and member is not None {
             self._forward_declare_method(owner, member);
-            hook = self.func_symtab.get(f"{owner}.drop");
+            hook = self.scope.function(f"{owner}.drop");
         }
         if hook is not None {
             if len(hook.args) != 1 {
@@ -2072,8 +2135,8 @@ impl NaIRGenPass._drop_member_of(owner: str) -> (uni.Ability | None) {
     if arch is None or arch.body is None {
         return None;
     }
-    for ability in arch.get_all_sub_nodes(uni.Ability) {
-        if ability.find_parent_of_type(uni.Archetype) is arch
+    for ability in arch.element_sub_nodes(uni.Ability) {
+        if ability.enclosing_decl(uni.Archetype) is arch
             and ability.name_ref is not None
             and ability.name_ref.sym_name == "drop" {
             return ability;
@@ -2270,7 +2333,7 @@ impl NaIRGenPass._nogc_type_arg_mangles(expr: uni.UniNode | None) -> list[str] {
     if not isinstance(expr, uni.Expr) or expr.type is None {
         return [];
     }
-    import from jaclang.compiler.passes.layout_pass { native_type_key }
+
     return self._nogc_type_arg_mangles_of_str(native_type_key(expr.type));
 }
 
@@ -2388,7 +2451,7 @@ impl NaIRGenPass._emit_jacval_slot_drop_fn(elem_mangle: str) -> (ir.Function | N
     if _key in self.container_drop_fns {
         return self.container_drop_fns[_key];
     }
-    import from jaclang.compiler.frontend.codeinfo { native_safe_sym }
+
     i8 = ir.IntType(8);
     i8p = i8.as_pointer();
     i32 = ir.IntType(32);
@@ -2581,7 +2644,11 @@ impl NaIRGenPass._nogc_elem_prep(
     if isinstance(expr, uni.FString) or self._is_owned(val) {
         return val;
     }
-    if isinstance(expr, uni.AtomTrailer) and isinstance(expr.right, uni.IndexSlice) {
+    """A slice of a string is fresh text; an index is a character from the
+    static per-byte cache, which an owner must copy.""";
+    if isinstance(expr, uni.AtomTrailer)
+        and isinstance(expr.right, uni.IndexSlice)
+        and expr.right.is_range {
         _bm = "";
         try {
             _bm = expr.target.type.mangle() if expr.target.type is not None else "";
@@ -2726,7 +2793,7 @@ impl NaIRGenPass._nogc_osp_skip(val: ir.Value) -> bool {
     if _tn is None {
         return False;
     }
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+
     lay = get_layout_registry(self.module, self.prog).get_layout(_tn);
     return lay is not None and lay.is_osp;
 }
@@ -3261,6 +3328,106 @@ impl NaIRGenPass._str_cmp_parts_of(
     return None;
 }
 
+impl NaIRGenPass._emit_memcmp_nz(
+    a: ir.Value, b: ir.Value, n: ir.Value, name: str
+) -> ir.Value {
+    i8p = ir.IntType(8).as_pointer();
+    i32 = ir.IntType(32);
+    i64 = ir.IntType(64);
+    bld = self.builder;
+    func = bld.basic_block.function;
+    memcmp_fn = self._get_or_declare_extern("memcmp", i32, [i8p, i8p, i64]);
+    entry_bb = bld.basic_block;
+    call_bb = func.append_basic_block(name=f"{name}.call");
+    done_bb = func.append_basic_block(name=f"{name}.done");
+
+    bld.cbranch(
+        bld.icmp_signed(">", n, ir.Constant(i64, 0), name=f"{name}.has"),
+        call_bb,
+        done_bb
+    );
+    bld.position_at_end(call_bb);
+    r = bld.call(memcmp_fn, [a, b, n], name=f"{name}.memcmp");
+    call_end_bb = bld.basic_block;
+    bld.branch(done_bb);
+    bld.position_at_end(done_bb);
+    res = bld.phi(i32, name=name);
+    res.add_incoming(ir.Constant(i32, 0), entry_bb);
+    res.add_incoming(r, call_end_bb);
+    return res;
+}
+
+impl NaIRGenPass._emit_str_parts_cmp(
+    op: str, l_data: ir.Value, l_len: ir.Value, r_data: ir.Value, r_len: ir.Value
+) -> ir.Value {
+    i1 = ir.IntType(1);
+    i32 = ir.IntType(32);
+    bld = self.builder;
+    func = bld.basic_block.function;
+    zero32 = ir.Constant(i32, 0);
+    if op == Tok.EE or op == Tok.NE {
+        entry_bb = bld.basic_block;
+        cmp_bb = func.append_basic_block(name="seq.cmp");
+        done_bb = func.append_basic_block(name="seq.done");
+        bld.cbranch(
+            bld.icmp_signed("==", l_len, r_len, name="seq.len"), cmp_bb, done_bb
+        );
+        bld.position_at_end(cmp_bb);
+        c = self._emit_memcmp_nz(l_data, r_data, r_len, "seq.mc");
+        data_eq = bld.icmp_signed("==", c, zero32, name="seq.data");
+        cmp_end_bb = bld.basic_block;
+        bld.branch(done_bb);
+        bld.position_at_end(done_bb);
+        res = bld.phi(i1, name="seq");
+        res.add_incoming(ir.Constant(i1, 0), entry_bb);
+        res.add_incoming(data_eq, cmp_end_bb);
+        if op == Tok.NE {
+            return bld.not_(res, name="sne");
+        }
+        return res;
+    }
+    ge_bb = func.append_basic_block(name="sord.ge");
+    lt_bb = func.append_basic_block(name="sord.lt");
+    done_bb = func.append_basic_block(name="sord.done");
+    bld.cbranch(bld.icmp_signed(">=", l_len, r_len, name="sord.lge"), ge_bb, lt_bb);
+
+    bld.position_at_end(ge_bb);
+    c_ge = self._emit_memcmp_nz(l_data, r_data, r_len, "sord.mg");
+    tie_ge = bld.zext(
+        bld.icmp_signed(">", l_len, r_len, name="sord.gt"), i32, name="sord.gt32"
+    );
+    s_ge = bld.select(
+        bld.icmp_signed("!=", c_ge, zero32, name="sord.gne"),
+        c_ge,
+        tie_ge,
+        name="sord.sg"
+    );
+    ge_end_bb = bld.basic_block;
+    bld.branch(done_bb);
+
+    bld.position_at_end(lt_bb);
+    c_lt = self._emit_memcmp_nz(l_data, r_data, l_len, "sord.ml");
+    s_lt = bld.select(
+        bld.icmp_signed("!=", c_lt, zero32, name="sord.lne"),
+        c_lt,
+        ir.Constant(i32, -1),
+        name="sord.sl"
+    );
+    lt_end_bb = bld.basic_block;
+    bld.branch(done_bb);
+    bld.position_at_end(done_bb);
+    sign = bld.phi(i32, name="sord");
+    sign.add_incoming(s_ge, ge_end_bb);
+    sign.add_incoming(s_lt, lt_end_bb);
+    comparisons: dict[str, str] = {
+        Tok.LT: "<",
+        Tok.GT: ">",
+        Tok.LTE: "<=",
+        Tok.GTE: ">="
+    };
+    return bld.icmp_signed(comparisons[op], sign, zero32, name="scmp3");
+}
+
 impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
     _d = val;
     if self._str_desc_ty is not None and val.type == self._str_desc_ty {
@@ -3272,4 +3439,11 @@ impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
     i8p = ir.IntType(8).as_pointer();
     _free_fn = self._get_or_declare_extern("free", ir.VoidType(), [i8p]);
     self.builder.call(_free_fn, [self.builder.bitcast(_d, i8p, name="osf.cast")]);
+}
+
+impl _named_struct_name(t: (ir.Type | None)) -> str {
+    if isinstance(t, ir.IdentifiedStructType) {
+        return t.name;
+    }
+    return "";
 }

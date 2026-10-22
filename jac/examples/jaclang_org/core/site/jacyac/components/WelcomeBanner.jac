@@ -1,6 +1,8 @@
 import from "lucide-react" { Sparkles, X }
 
-def:pub WelcomeBanner(onDismiss: Callable[[], None]) -> JsxElement {
+def:pub WelcomeBanner(onDismiss: Callable[[], None]) -> JsxElement;
+
+impl WelcomeBanner(onDismiss: Callable[[], None]) -> JsxElement {
     <div
         className="lx-fade-up relative m-4 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-5"
     >

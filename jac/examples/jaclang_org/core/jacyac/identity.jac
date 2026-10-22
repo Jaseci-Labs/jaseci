@@ -10,14 +10,20 @@ glob PROJECT_ERRORS: dict[str, str] = {
      };
 
 
-def:pub name_of(display_name: str, username: str) -> str {
+def:pub name_of(display_name: str, username: str) -> str;
+
+def:pub avatar_of(avatars: dict[str, str], username: str) -> str;
+
+def:pub project_error_message(code: str) -> str;
+
+impl name_of(display_name: str, username: str) -> str {
     return display_name or handle_of(username);
 }
 
-def:pub avatar_of(avatars: dict[str, str], username: str) -> str {
+impl avatar_of(avatars: dict[str, str], username: str) -> str {
     return avatars.get(username) or "";
 }
 
-def:pub project_error_message(code: str) -> str {
+impl project_error_message(code: str) -> str {
     return PROJECT_ERRORS.get(code) or ("Something went wrong (" + code + ").");
 }

@@ -1,26 +1,4 @@
-import from jaclang.compiler.passes.context { Alert, CompilerPass }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    AtomTrailer,
-    ContextAwareNode,
-    ImplDef,
-    Import,
-    Module,
-    ModuleCode,
-    ModuleItem,
-    ModulePath,
-    Name,
-    Test,
-    UniNode
-}
-import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS, E5090, E5116 }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.placement.placement_facts { native_placement_soft }
-import type from jaclang.compiler.driver.program { JacProgram }
 
 class NativeRefused(Exception) {}
 
@@ -79,7 +57,6 @@ def build_native_legality(
     mod: Module, prog: (JacProgram | None) = None
 ) -> NativeLegality;
 
-def top_element_of(mod: Module, nd: UniNode) -> (UniNode | None);
 def import_bindings(imp: Import) -> set[str];
 def bridged_use_crosses(nm: Name) -> (str | None);
 def binds_module_name(mod: Module, nm: Name) -> bool;
@@ -156,7 +133,7 @@ impl NativeLegality.refuse_module(refusal: NativeRefusal) -> None {
 }
 
 impl NativeLegality.refuse_site(mod: Module, refusal: NativeRefusal) -> None {
-    top = top_element_of(mod, refusal.site) if refusal.site is not None else None;
+    top = refusal.site.element_in(mod) if refusal.site is not None else None;
     if top is None {
         self.module.append(refusal);
         return;
@@ -168,7 +145,7 @@ impl NativeLegality.refuse_site(mod: Module, refusal: NativeRefusal) -> None {
 }
 
 impl NativeLegality.prefer_against(mod: Module, refusal: NativeRefusal) -> None {
-    top = top_element_of(mod, refusal.site) if refusal.site is not None else None;
+    top = refusal.site.element_in(mod) if refusal.site is not None else None;
     if top is not None and id(top) not in self.preferences {
         self.preferences[id(top)] = refusal;
     }
@@ -182,7 +159,7 @@ impl NativeLegality.refused_elements(mod: Module) -> set[int] {
         }
     }
     if self.module {
-        for elem in mod.body {
+        for elem in mod.elements {
             out.add(id(elem));
         }
     }
@@ -202,8 +179,6 @@ impl NativeLegality.module_refused -> bool {
 }
 
 impl NativeLegality.settle -> None {
-    import from jaclang.compiler.boundary_rules { ability_crossing }
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, TARGET_SERVER }
     def blocked_by(target: int) -> (str | None) {
         callee = self.owners[target];
         if not isinstance(callee, Ability) {
@@ -324,25 +299,10 @@ impl native_unit_name(owner: UniNode) -> str {
 
 impl native_enclosing_unit(nd: UniNode) -> (UniNode | None) {
     owner: (UniNode | None) = nd if isinstance(nd, Ability) else None;
-    cur: UniNode = nd;
-    while True {
-        nxt: (UniNode | None) = cur.find_parent_of_type(Ability);
-        if nxt is None {
-            impl_def = cur.find_parent_of_type(ImplDef);
-            if impl_def is None and isinstance(cur, ImplDef) {
-                impl_def = cur;
-            }
-            if impl_def is not None
-                and isinstance(impl_def.decl_link, Ability)
-                and impl_def.decl_link is not cur {
-                nxt = impl_def.decl_link;
-            }
-        }
-        if nxt is None {
-            break;
-        }
+    nxt = nd.enclosing_decl(Ability);
+    while nxt is not None {
         owner = nxt;
-        cur = nxt;
+        nxt = nxt.enclosing_decl(Ability);
     }
     if owner is not None {
         return owner;
@@ -350,7 +310,7 @@ impl native_enclosing_unit(nd: UniNode) -> (UniNode | None) {
     if isinstance(nd, Test) {
         return nd;
     }
-    return nd.find_parent_of_type(Test);
+    return nd.enclosing_decl(Test);
 }
 
 impl refusal_from_alert(alert: Alert) -> NativeRefusal {
@@ -367,43 +327,11 @@ impl refusal_from_alert(alert: Alert) -> NativeRefusal {
     );
 }
 
-def _reference_targets(nm: Name) -> list[UniNode] {
-    sym = nm.sym;
-    if sym is None or sym.decl is None {
-        return [];
-    }
-    declared = sym.decl.name_of;
-    if isinstance(declared, Ability) {
-        return [declared];
-    }
-    if isinstance(declared, Archetype) {
-        found: list[UniNode] = [];
-        body = ModuleFacts.unwrap_body(declared);
-        if body is not None {
-            for member in body {
-                if isinstance(member, Ability)
-                    and member.name_ref is not None
-                    and member.name_ref.sym_name in ("init", "postinit", "__init__") {
-                    found.append(member);
-                }
-            }
-        }
-        return found;
-    }
-    return [];
-}
+def _reference_targets(nm: Name) -> list[UniNode];
 
 impl build_native_legality(
     mod: Module, prog: (JacProgram | None) = None
 ) -> NativeLegality {
-    import from jaclang.compiler.passes.capability_check_pass {
-        native_capability_demotion_owner,
-        native_capability_violations
-    }
-    import from jaclang.compiler.placement.placement { native_blocker_scan }
-    import from jaclang.compiler.placement.placement_solver { native_closure_blocker }
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, capability_notes_of }
-    import from jaclang.compiler.native_bindings { binding_gaps }
     legality = NativeLegality();
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     base_dir = os.path.dirname(os.path.abspath(mod_path)) if mod_path else ".";
@@ -423,7 +351,7 @@ impl build_native_legality(
             legality.blockers.append(NativeRefusal(kind="module", name=why, site=site));
         }
         import from jaclang.compiler.native_bindings { import_gaps }
-        for elem in mod.body {
+        for elem in mod.elements {
             if isinstance(elem, Import) and not legality.blockers {
                 for gap in import_gaps(judging, elem, base_dir) {
                     legality.blockers.append(
@@ -434,7 +362,7 @@ impl build_native_legality(
             }
         }
         for (imp, dep) in scan.dep_imports {
-            top = top_element_of(mod, imp);
+            top = imp.element_in(mod);
             if top is None or id(top) in refused_imports or legality.blockers {
                 continue;
             }
@@ -469,8 +397,7 @@ impl build_native_legality(
                 text=f"error[{note.code}]: {note.text}"
             );
             if note.requires {
-                unit = native_enclosing_unit(note.site)
-                    or top_element_of(mod, note.site);
+                unit = native_enclosing_unit(note.site) or note.site.element_in(mod);
                 if unit is None {
                     legality.module_requires.append(noted);
                 } else {
@@ -507,7 +434,7 @@ impl build_native_legality(
             );
         }
     }
-    for elem in mod.body {
+    for elem in mod.elements {
         if isinstance(elem, Import) and id(elem) in refused_imports {
             for bound_name in import_bindings(elem) {
                 refused_names[bound_name] = refused_imports[id(elem)];
@@ -521,7 +448,7 @@ impl build_native_legality(
         if isinstance(stmt, Import) {
             continue;
         }
-        for nm in stmt.get_all_sub_nodes(Name) {
+        for nm in stmt.element_sub_nodes(Name) {
             cause = refused_names.get(nm.value) if refused_names else None;
             why: (str | None) = "";
             if cause is not None and nm.value in bridged_names {
@@ -568,7 +495,7 @@ impl build_native_legality(
                 }
                 legality.owners[id(target)] = target;
                 if source is None {
-                    top = top_element_of(mod, nm);
+                    top = nm.element_in(mod);
                     if top is not None {
                         legality.tops[id(top)] = top;
                         if id(top) not in legality.anchored_by {
@@ -625,8 +552,6 @@ impl binds_module_name(mod: Module, nm: Name) -> bool {
 }
 
 impl bridged_use_crosses(nm: Name) -> (str | None) {
-    import from jaclang.compiler.boundary_rules { ability_crossing }
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, TARGET_SERVER }
     decl = nm.sym.decl if nm.sym is not None else None;
     target = decl.name_of if decl is not None else None;
     if isinstance(target, Archetype) {
@@ -638,21 +563,7 @@ impl bridged_use_crosses(nm: Name) -> (str | None) {
     return ability_crossing(target, TARGET_NATIVE, TARGET_SERVER);
 }
 
-impl top_element_of(mod: Module, nd: UniNode) -> (UniNode | None) {
-    cur: (UniNode | None) = nd;
-    while cur is not None and cur.parent is not mod {
-        cur = cur.parent;
-    }
-    return cur;
-}
-
 impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str, str]] {
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, capability_notes_of }
-    import from jaclang.compiler.placement.placement { element_display_name }
-    import from jaclang.compiler.placement.placement_pins {
-        config_element_pin,
-        config_pin_for
-    }
     out: dict[int, tuple[str, str]] = {};
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     declared = prog.declared_codespace(mod_path) if mod_path else "";
@@ -660,7 +571,7 @@ impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str,
     if preferred {
         declared = "";
     }
-    for elem in mod.body {
+    for elem in mod.elements {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
@@ -684,7 +595,7 @@ impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str,
         if not note.requires {
             continue;
         }
-        top = top_element_of(mod, note.site);
+        top = note.site.element_in(mod);
         if top is not None and id(top) not in out {
             out[id(top)] = (note.target, note.text);
         }
@@ -693,10 +604,9 @@ impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str,
 }
 
 impl client_refused_elements(mod: Module) -> dict[int, list[tuple[UniNode, str]]] {
-    import from jaclang.compiler.frontend.module_facts { client_capability_violations }
     out: dict[int, list[tuple[UniNode, str]]] = {};
     for (vnode, vkind) in client_capability_violations(mod) {
-        top = top_element_of(mod, vnode);
+        top = vnode.element_in(mod);
         if top is None {
             continue;
         }
@@ -709,17 +619,10 @@ impl client_refused_elements(mod: Module) -> dict[int, list[tuple[UniNode, str]]
 }
 
 impl uncrossable_native(mod: Module, prog: JacProgram, held: set[int]) -> set[int] {
-    import from jaclang.compiler.boundary_rules { ability_crossing }
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, TARGET_SERVER }
-    import from jaclang.compiler.placement.placement_solver {
-        placement_work,
-        refresh_placement_module
-    }
-    import from jaclang.compiler.driver.boundary_classify { _stamp_context_element }
     refresh_placement_module(mod, prog);
     refs = placement_work(prog).refs(mod);
     tops: dict[int, ContextAwareNode] = {};
-    for elem in mod.body {
+    for elem in mod.elements {
         if isinstance(elem, ContextAwareNode) and not isinstance(elem, Import) {
             tops[id(elem)] = elem;
         }
@@ -779,7 +682,7 @@ impl uncrossable_native(mod: Module, prog: JacProgram, held: set[int]) -> set[in
 
 impl stamp_native(mod: Module, held: set[int]) -> list[ContextAwareNode] {
     stamped: list[ContextAwareNode] = [];
-    for elem in mod.body {
+    for elem in mod.elements {
         if not isinstance(elem, ContextAwareNode)
             or elem.code_context != CodeContext.SERVER
             or id(elem) in held {
@@ -820,10 +723,7 @@ impl settle_native_module(
             }
         }
     }
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.placement.placement_facts { settle_server }
-    import from jaclang.compiler.placement.placement_solver { invalidate_importers_es }
-    import from jaclang.compiler.driver.session_compile { drop_native_bindings }
+
     refusal = refusal_from_alert(pending[0]);
     del pending[:];
     del warnings[:];
@@ -838,7 +738,7 @@ impl settle_native_module(
     gen.native_layout = None;
     gen.native_deps = [];
     settle_server(mod);
-    import from jaclang.compiler.placement.placement { record_decided }
+
     record_decided(prog, mod);
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     resolved = os.path.realpath(mod_path);
@@ -908,19 +808,11 @@ impl PlacementPass._run_impl(ir_in: Module) -> Module {
 }
 
 impl PlacementPass._run_decided(ir_in: Module) -> Module {
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.frontend.diagnostics { E5096 }
-    import from jaclang.compiler.symbol_utils { report_serverless_kind_errors }
-    import from jaclang.compiler.placement.placement_solver {
-        placement_work,
-        refresh_placement_module,
-        solve_module_placement
-    }
     mod_path = ir_in.loc.mod_path if ir_in.loc is not None else "";
     self.prog.analysis.placement_refusals.pop(os.path.realpath(mod_path), None);
     client_refused = client_refused_elements(ir_in);
     placed: list[CodeContext] = [];
-    for elem in ir_in.body {
+    for elem in ir_in.elements {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
@@ -972,28 +864,17 @@ impl PlacementPass._run_decided(ir_in: Module) -> Module {
 }
 
 impl PlacementPass._run_undecided(ir_in: Module) -> Module {
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.frontend.diagnostics { E5096 }
-    import from jaclang.compiler.driver.boundary_classify { _stamp_context_element }
-    import from jaclang.compiler.symbol_utils { report_serverless_kind_errors }
-    import from jaclang.compiler.placement.placement_solver {
-        native_placement_candidate,
-        placement_work,
-        refresh_placement_module,
-        solve_module_placement
-    }
     spaces: dict[str, CodeContext] = {
         'server': CodeContext.SERVER,
         'client': CodeContext.CLIENT,
         'native': CodeContext.NATIVE
     };
-    import from jaclang.compiler.placement.placement_facts { contexts_of }
-    import from jaclang.compiler.capability_notes { capability_notes_of }
+
     mod_path = ir_in.loc.mod_path if ir_in.loc is not None else "";
     given = contexts_of(ir_in);
 
     required = element_requirements(ir_in, self.prog);
-    for elem in ir_in.body {
+    for elem in ir_in.elements {
         need = required.get(id(elem));
         if need is not None and need[0] in spaces {
             _stamp_context_element(elem, spaces[need[0]]);
@@ -1017,7 +898,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     inferred_refused: set[int] = set(native_refused);
     inferred_refused.update(legality.preferences.keys());
     for elem in tentative {
-        owner = top_element_of(ir_in, elem);
+        owner = elem.element_in(ir_in);
         if legality.blockers or (owner is not None and id(owner) in inferred_refused) {
             elem.code_context = CodeContext.SERVER;
         }
@@ -1032,7 +913,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
         'client': set(client_refused.keys())
     };
     carries_native = False;
-    for elem in ir_in.body {
+    for elem in ir_in.elements {
         if isinstance(elem, ContextAwareNode)
             and elem.code_context == CodeContext.NATIVE
             and not isinstance(elem, Import) {
@@ -1051,7 +932,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     if carries_native and inferred_refused {
         refs = placement_work(self.prog).refs(ir_in);
         reached: set[int] = set();
-        for elem in ir_in.body {
+        for elem in ir_in.elements {
             if isinstance(elem, ContextAwareNode)
                 and elem.code_context == CodeContext.NATIVE
                 and not isinstance(elem, Import) {
@@ -1074,7 +955,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
 
     placed: list[CodeContext] = [];
     seen: set[int] = set();
-    for elem in ir_in.body {
+    for elem in ir_in.elements {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
@@ -1104,7 +985,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
             for (uid, owner) in legality.owners.items() {
                 if uid == id(elem)
                     or uid not in legality.units
-                    or top_element_of(ir_in, owner) is not elem {
+                    or owner.element_in(ir_in) is not elem {
                     continue;
                 }
                 for refusal in legality.units[uid] {
@@ -1158,7 +1039,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     }
     report_serverless_kind_errors(self, ir_in);
     ir_in.gen.placement_mode = 'inferred';
-    import from jaclang.compiler.placement.placement { record_decided }
+
     record_decided(self.prog, ir_in);
     return ir_in;
 }
@@ -1169,12 +1050,7 @@ impl PlacementPass._check_conformance(ir_in: Module) -> None {
         and os.path.basename(mod_path).count(".") < 2 {
         return;
     }
-    import from jaclang.compiler.native_bindings {
-        conformance_mismatches,
-        native_library_module_name,
-        typeshed_stub_path,
-        variant_mismatches
-    }
+
     for (decl, why) in variant_mismatches(ir_in, self.prog) {
         self.ctx.emit(E5116, node_override=decl, reason=why);
     }
@@ -1192,13 +1068,7 @@ impl PlacementPass._check_conformance(ir_in: Module) -> None {
     }
 }
 
-def unmet_label(need: NativeRefusal) -> tuple[str, str] {
-    site = need.site;
-    if isinstance(site, Name) {
-        return ("this use of native-only builtin", site.value);
-    }
-    return ("native-only construct", need.name);
-}
+def unmet_label(need: NativeRefusal) -> tuple[str, str];
 
 impl PlacementPass._report_unmet(legality: NativeLegality, why: str) -> None {
     for (need, blocked) in legality.unmet() {

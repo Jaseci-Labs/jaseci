@@ -1,155 +1,5 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.passes.context { Alert, CompileContext, CompilerPass }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
-import from jaclang.compiler.driver.native_iface { NativeIface, NativeExport }
-import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.compiler.backends.native.na_constants {
-    FACT_CODEC_NAME,
-    FACT_CODEC_TABLES,
-    FACT_OS,
-    FACT_PRIMITIVE_METHODS,
-    FACT_SEALED_RUNTIME,
-    FACT_SEP,
-    FACT_STRUCT_LAYOUTS,
-    FACT_TARGET
-}
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.loop_links {
-    LoopLinks,
-    LoopStmt,
-    PassLink,
-    enclosing_loop,
-    frame_owns
-}
 import os;
 import sys;
-import jaclang.compiler.backends.native.llvm.ir as ir;
-import from jaclang.compiler.backends.native.primitives_native {
-    NativeEmitCtx,
-    NativeSetEmitter,
-    NativeDictEmitter
-}
-import from jaclang.compiler.backends.common.primitives { PrimitiveEmitter }
-import from jaclang.compiler.backends.native.lowering {
-    NativeLoweringIssue,
-    NativeLoweringKind
-}
-import from jaclang.runtime.scalars { ScalarShape }
-
-import from jaclang.compiler.frontend.codeinfo {
-    HDR_ALLOC_ID_OFF,
-    HDR_DTOR_OFF,
-    HDR_MAGIC,
-    HDR_MAGIC_SHIFT_BASE,
-    HDR_RC_OFF,
-    HDR_TAG_OFF,
-    HDR_TOTAL,
-    JACSTR_DESC_FIELDS,
-    NativeFuncLayout,
-    RC_SENTINEL,
-    is_package_keyed_path,
-    native_unit_identity,
-    str_len_tag,
-    STR_LEN_TAG_BIT,
-    STR_LEN_TAG_SHIFT
-}
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    OwnershipKind,
-    SymbolAccess,
-    Tokens as Tok
-}
-import from jaclang.compiler.frontend.diagnostics {
-    DiagnosticInfo,
-    E5026,
-    E5088,
-    E5089,
-    E5113,
-    E5090,
-    E5091,
-    E1158,
-    E5092,
-    E5095,
-    E5114,
-    E1145,
-    E9001,
-    E9002
-}
-import from jaclang.compiler.intrinsic_registry { IntrinsicEntry }
-import from jaclang.compiler.passes.layout_pass {
-    accessor_slot_name,
-    ACCESSOR_SLOT_SUFFIX,
-    archetype_accessors,
-    ArchetypeLayout,
-    EnumLayout,
-    VTABLE_DROP_SLOT,
-    VTABLE_HEADER_SLOTS
-}
-import from jaclang.compiler.type_registry { JacTypeEntry }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.passes.placement_pass {
-    NativeLegality,
-    NativeRefusal,
-    NativeRefused
-}
-import from jaclang.compiler.types.types {
-    ClassType,
-    ModuleType,
-    Parameter,
-    TypeBase,
-    UnionType,
-    FunctionType as SemanticFunctionType
-}
-import from jaclang.compiler.frontend.const_fold { fold_const }
-import from jaclang.compiler.types.ct_value {
-    CtBool,
-    CtBytes,
-    CtFloat,
-    CtInt,
-    CtNone,
-    CtStr,
-    CtValue,
-    ct_iter,
-    ct_mangle,
-    ct_truthy
-}
-import type from jaclang.compiler.types.ct_eval { CtEvaluator }
-import type from jaclang.compiler.passes.osp_analysis { OspSlot }
-import from jaclang.runtime.osp_tag { stable_osp_tag }
-import from jaclang.compiler.backends.native.na_constants {
-    CLASS_DISPLAY_OFF,
-    CLASS_RECORD_ANCESTRY,
-    CLASS_RECORD_STATICS,
-    CLASS_RECORD_STATICS_COUNT,
-    VTABLE_SET_BUCKETS,
-    VTABLE_SET_SYMBOL,
-    EXC_LINEAGE_BITS,
-    EXC_LINEAGE_MIX,
-    EXC_LINEAGE_SLOTS,
-    JACVAL_ELLIPSIS_TAG,
-    LIVE_NODE_NEXT_OFF,
-    LIVE_NODE_RC_OFF,
-    LIVE_NODE_SIZE,
-    LIVE_NODE_TAG_OFF,
-    LIVE_NODE_USER_OFF,
-    NATIVE_CONTAINER_CODES,
-    NATIVE_COPY_FUNCS,
-    NATIVE_OS_FUNCS,
-    NATIVE_OSPATH_FUNCS,
-    NATIVE_RANDOM_FUNCS,
-    NATIVE_STRUCT_FUNCS,
-    RC_BUFFERED_BIT,
-    RC_COLOR_BLACK,
-    RC_COLOR_GRAY,
-    RC_COLOR_PURPLE,
-    RC_COLOR_SHIFT,
-    RC_COLOR_WHITE,
-    RC_CYCLE_PACE,
-    RC_CYCLE_THRESHOLD,
-    RC_UNTRACED_BIT,
-    UNBOUND_CAUGHT,
-    stdlib_intercepted
-}
 
 glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_TYPE_OFF: int = 16,
@@ -157,19 +7,9 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_MSG_OFF: int = 32,
      GEN_FRAME_HEADER: int = 40;
 
-def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
-    if not isinstance(semantic, UnionType) {
-        return semantic;
-    }
-    present = [
-        member
-        for member in semantic.types
-        if not (
-            isinstance(member, ClassType) and member.shared.class_name == "NoneType"
-        )
-    ];
-    return present[0] if len(present) == 1 else None;
-}
+def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
+
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -253,9 +93,7 @@ obj NativeBindingState {
 obj NativeFunctionState {
     has bindings: NativeBindingState,
         _builder: ir.IRBuilder | None,
-        func_symtab: dict[str, ir.Function],
-        nested_captures: dict[str, tuple[ir.Function, list[tuple[str, str]]]],
-        lambda_captures: dict[str, list[tuple[str, ir.Value]]],
+        scope: LexicalScope,
         region_open_stack: list[int],
         loop_stack: list[tuple[ir.Block, ir.Block]],
         _self_owned: bool,
@@ -267,6 +105,23 @@ obj NativeFunctionState {
         _finally_stack: list[NativeFinalizer],
         _caught_error_stack:
             list[tuple[ir.Function, tuple[ir.Value, ir.Value, ir.Value]]];
+}
+
+obj PendingImport {
+    has decl: uni.Ability,
+        layout: (NativeModuleLayout | None),
+        module_key: tuple[str, str],
+        binds_bare: bool;
+}
+
+obj ImportedFunctions(FunctionSource) {
+    has lowering: NaIRGenPass,
+        by_name: dict[str, PendingImport] = {},
+        by_key: dict[tuple[str, str], PendingImport] = {};
+
+    override def provides(name: str) -> bool;
+    override def resolve(name: str) -> (ir.Function | None);
+    def forget(pending: PendingImport, owner_name: str);
 }
 
 walker NaIRGenPass(CompilerPass) {
@@ -289,7 +144,7 @@ walker NaIRGenPass(CompilerPass) {
         _slice_struct_type: (ir.IdentifiedStructType | None) = None,
         _jacval_type: (ir.IdentifiedStructType | None) = None,
         _builder: (ir.IRBuilder | None) = None,
-        func_symtab: dict[str, ir.Function] = {},
+        scope: LexicalScope = LexicalScope(),
         borrow_param_args: dict[str, set[int]] = {},
         local_vars: dict[str, ir.Value] = {},
         param_vars: set[str] = set(),
@@ -396,6 +251,9 @@ walker NaIRGenPass(CompilerPass) {
         _legality: (NativeLegality | None) = None,
         _claimed_units: set[int] = set(),
         _internal_errors: list[Alert] = [],
+        _deps_deferred: bool = False,
+        _native_import_walk: list[tuple[str, uni.Module]] = [],
+        _native_imports_walked: bool = False,
         _sig_decl_kind: (str | None) = None,
         _class_name_consts: dict[str, ir.Constant] = {},
         _isa_fn: (ir.Function | None) = None,
@@ -577,12 +435,11 @@ walker NaIRGenPass(CompilerPass) {
         _func_loc: dict[str, int] = {},
         _func_def_mod: dict[str, str] = {},
         _module_functions: dict[tuple[str, str], ir.Function] = {},
+        _imports: (ImportedFunctions | None) = None,
         _linked_fn_decls: dict[int, tuple[ir.Function | None, uni.Ability]] = {},
         _pyb_base_memo: dict[str, tuple[str, str] | None] = {},
         _pyb_helper_fns: dict[str, ir.Function] = {},
-        lambda_captures: dict[str, list[tuple[str, ir.Value]]] = {},
         _pending_lambda_captures: (list[tuple[str, ir.Value]] | None) = None,
-        nested_captures: dict[str, tuple[ir.Function, list[tuple[str, str]]]] = {},
         _nested_predecl:
             dict[
                 uni.Ability,
@@ -890,6 +747,10 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
 
+    def _emit_intrinsic_list_data(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
+
     def _native_module_call_target(nd: uni.FuncCall) -> tuple[str, str] | None;
     def _stdlib_intercept_covers(module_name: str, func_name: str) -> bool;
     def _emit_stdlib_intercept(
@@ -1063,8 +924,6 @@ walker NaIRGenPass(CompilerPass) {
     def _c_lent_address(arg: uni.UnaryExpr, elem: any) -> (ir.Value | None);
     def _final_variant_value(nd: uni.Name, value: uni.Expr) -> (uni.Expr | None);
     def _final_scalar_value(nd: uni.Name, value_type: ir.Type) -> (ir.Value | None);
-    def _va_abi -> str;
-    def _va_storage_type(abi: str) -> ir.Type;
     def _c_va_start(nd: uni.UniNode) -> (ir.Value | None);
     def _c_va_arg(nd: uni.FuncCall, recv: uni.Expr) -> (ir.Value | None);
     def _c_vararg_value(val: ir.Value, arg: uni.Expr) -> (ir.Value | None);
@@ -1327,6 +1186,11 @@ walker NaIRGenPass(CompilerPass) {
     can run_walk with uni.Module entry;
     def _publish_lowering_failure(here: uni.Module) -> None;
     def _register_imported_struct_types -> None;
+    def _native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]];
+    def _settle_dep_ifaces -> None;
+    def _has_own_code(mod: (uni.Module | None)) -> bool;
+    def _declares_native_visible(mod: uni.Module) -> bool;
+    def _defer_missing_deps -> bool;
     def _permuted_walk_order(
         mods: list[tuple[str, uni.Module]]
     ) -> list[tuple[str, uni.Module]];
@@ -1356,6 +1220,7 @@ walker NaIRGenPass(CompilerPass) {
     def _is_catalog_module(mod: uni.Module) -> bool;
     def _full_ast_of(full_path: str) -> (uni.Module | None);
     def _dep_iface(imported_mod: uni.Module) -> (NativeIface | None);
+    def _discover_kernel_deps(imported_mods: list[tuple[str, uni.Module]]) -> None;
     def _dep_is_native_unit(imported_mod: uni.Module, path: str) -> bool;
     def _load_native_unit_module(path: str) -> (uni.Module | None);
     def _is_kernel_unit -> bool;
@@ -1379,6 +1244,11 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.Ability, unavailable: (set | None) = None, imp_layout: any = None
     ) -> None;
 
+    def _declares_lazily(nd: uni.Ability) -> bool;
+    def _defer_import(pending: PendingImport, owner_name: str) -> None;
+    def _declare_import(pending: PendingImport) -> (ir.Function | None);
+    def _module_function(key: tuple[str, str]) -> (ir.Function | None);
+    def _module_function_known(key: tuple[str, str]) -> bool;
     def _record_linked_decl(func: (ir.Function | None), decl: uni.Ability) -> None;
     def _ensure_dep_inference(dep_mod: uni.Module) -> None;
     def _imported_function_demotions(imported_mod: uni.Module) -> (set | None);
@@ -2085,7 +1955,24 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.FuncCall, func_name: str, mod_qual: (str | None)
     ) -> bool;
 
-    def _target_fuses_fp -> bool;
+    def _target_is_wasm -> bool;
+    def _floor_call(
+        name: str,
+        ret: ir.Type,
+        args: list[ir.Value],
+        call_name: str = "",
+        builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_stdio_handle(
+        fd: int, name: str, builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_platform_name -> ir.Value;
+    def _emit_stat_fields(
+        path: ir.Value, prefix: str
+    ) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value];
+
     def _emit_fmadd(a: ir.Value, b: ir.Value, c: ir.Value) -> ir.Value;
     def _fp_fabs(v: ir.Value) -> ir.Value;
     def _fp_copysign(mag: ir.Value, sgn: ir.Value) -> ir.Value;
@@ -2234,6 +2121,7 @@ walker NaIRGenPass(CompilerPass) {
         _given_recv_cls: (str | None)
     ) -> (ir.Value | None);
 
+    def _codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None);
     def _receiver_routed_method_fn(
         nd: uni.UniNode, _sfull: str, _mnames: list[str], _recv_cls: (str | None)
     ) -> (ir.Function | None);
@@ -2503,7 +2391,10 @@ walker NaIRGenPass(CompilerPass) {
         kw: uni.KWPair, edge_arch: (str | None)
     ) -> (str | None);
 
-    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
+    def _osp_connect_assign_value(
+        kw: uni.KWPair, keep: bool = False
+    ) -> (ir.Value | None);
+
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);
@@ -2655,6 +2546,11 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Value;
 
     def _str_cmp_parts_of(val: ir.Value) -> (tuple[ir.Value, ir.Value] | None);
+    def _emit_memcmp_nz(a: ir.Value, b: ir.Value, n: ir.Value, name: str) -> ir.Value;
+    def _emit_str_parts_cmp(
+        op: str, l_data: ir.Value, l_len: ir.Value, r_data: ir.Value, r_len: ir.Value
+    ) -> ir.Value;
+
     def _emit_str_dup_helper -> None;
     def _call_str_dup(b: ir.IRBuilder, ptr: ir.Value, name: str = "s.dup") -> ir.Value;
     def _emit_str_len_raw_helper -> None;
@@ -2870,6 +2766,10 @@ walker NaIRGenPass(CompilerPass) {
 
     def _unwind_node_type -> ir.Type;
     def _register_unwind_cleanup -> None;
+    def _unwind_shadow_slots(
+        func: ir.Function, slots: list[tuple[str, ir.Value]]
+    ) -> dict[int, ir.Value];
+
     def _hoist_entry_allocas(entry_blk: ir.Block) -> None;
     def _codegen_tail_return(nd: uni.ReturnStmt) -> None;
     def _thunk_tail_callable(cfunc: ir.Function, jac_fn: ir.Function) -> bool;
@@ -3566,4 +3466,12 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
 }

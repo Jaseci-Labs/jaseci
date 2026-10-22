@@ -1,4 +1,3 @@
-import from jaclang.server.build_status { BuildMonitor }
 import json;
 import logging;
 import os;
@@ -6,16 +5,10 @@ import sys;
 import time;
 import shutil;
 import from pathlib { Path }
-import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.compiler.driver.bccache { discover_base_file }
-import from jaclang.cli.console { console }
 
 glob logger = logging.getLogger(__name__);
 
-def _syntax_error_line(file_path: str, err: SyntaxError) -> str {
-    where = f":{err.lineno}" if err?.lineno and err.lineno else "";
-    return f"Syntax error in {file_path}{where}: {err?.msg or str(err)}";
-}
+def _syntax_error_line(file_path: str, err: SyntaxError) -> str;
 
 impl HotReloader.start -> None {
     if self._running {
@@ -76,8 +69,6 @@ impl HotReloader.attach_client_bundler(bundler: any) -> None {
 impl HotReloader.record_client_event(
     slot: str, payload: (dict[str, any] | None)
 ) -> None {
-    import from jaclang.client.client_diagnostics { classify_client_payload }
-    import from jaclang.client.source_mapping { _error_rate_limiter }
     if slot not in ('vite', 'client', 'runtime', 'ready') {
         return;
     }
@@ -126,10 +117,6 @@ impl HotReloader.record_error(
     line: int = 0,
     column: int = 0
 ) -> None {
-    import from jaclang.client.client_diagnostics {
-        build_failure_diagnostic,
-        diagnostics_from_alerts
-    }
     diags = diagnostics_from_alerts(alerts, self.base_path) if alerts else [];
     if not diags {
         diags = [
@@ -201,7 +188,6 @@ impl HotReloader._process_change(file_path: str, is_directory: bool = False) -> 
 }
 
 impl HotReloader._dispatch_change(file_path: str, is_directory: bool = False) -> None {
-    import from jaclang.runtime.prepared { application_for }
     if Path(file_path).resolve().is_relative_to(self._compiled_root().resolve()) {
         return;
     }
@@ -231,7 +217,6 @@ impl HotReloader._dispatch_change(file_path: str, is_directory: bool = False) ->
         return;
     }
 
-    import from jaclang.jac0core.ext_registry { is_impl }
     target_path = file_path;
     if is_impl(file_path) {
         base = discover_base_file(file_path);
@@ -426,7 +411,6 @@ impl HotReloader._refresh_routing(file_path: str) -> None {
 }
 
 impl HotReloader._reload_server_module(file_path: str) -> None {
-    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     with PREPARATION_LOCK {
         import from jaclang.runtime.runtime { JacRuntime as Jac }
         import from jaclang.runtime.prepared { application_for }
@@ -509,8 +493,6 @@ impl HotReloader._reload_server_module(file_path: str) -> None {
 }
 
 impl HotReloader._recompile_client_unified(file_path: str) -> None {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.client.client_bundle { ClientBundleError }
     try {
         source_path = Path(file_path).resolve();
         if not source_path.exists() {
@@ -611,7 +593,6 @@ impl HotReloader._signal_full_reload -> None {
 impl HotReloader._recompile_client_code(
     file_path: str, visited: set | None = None, force: bool = True
 ) -> None {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
     if self.client_compiler {
         self._recompile_client_unified(file_path);
         return;
@@ -713,14 +694,12 @@ impl HotReloader._recompile_client_code(
 }
 
 impl HotReloader._get_js_filename(file_path: str) -> str {
-    import from jaclang.jac0core.ext_registry { base_stem }
     path = Path(file_path);
 
     return base_stem(path.name) + ".js";
 }
 
 impl HotReloader._classify_declarations(file_path: str) -> tuple[bool, bool, bool] {
-    import from jaclang.compiler.driver.program { JacProgram }
     has_client = False;
     has_server = False;
     has_native = False;
@@ -756,8 +735,6 @@ impl HotReloader._classify_declarations(file_path: str) -> tuple[bool, bool, boo
 }
 
 impl HotReloader._path_to_module(file_path: str) -> str {
-    import from jaclang.jac0core.ext_registry { base_stem }
-
     path = Path(file_path);
     base = Path(self.base_path).resolve();
     try {
@@ -800,4 +777,9 @@ impl HotReloader._copy_frontend_files(file_path: str) -> None {
         console.error(f"Copy error in {file_path}: {e}");
         self.record_error(file_path, f"Copy error: {e}");
     }
+}
+
+impl _syntax_error_line(file_path: str, err: SyntaxError) -> str {
+    where = f":{err.lineno}" if err?.lineno and err.lineno else "";
+    return f"Syntax error in {file_path}{where}: {err?.msg or str(err)}";
 }

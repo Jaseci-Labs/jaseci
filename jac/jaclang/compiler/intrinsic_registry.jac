@@ -7,7 +7,8 @@ enum IntrinsicDispatch {
     ATOMIC_XCHG = "atomic_xchg",
     CALL_DTOR = "call_dtor",
     REGION_TLS = "region_tls",
-    ALLOCA = "alloca"
+    ALLOCA = "alloca",
+    LIST_DATA = "list_data"
 }
 
 obj IntrinsicEntry {
@@ -17,29 +18,16 @@ obj IntrinsicEntry {
         dispatch: IntrinsicDispatch,
         gc_mode_gate: str | None = None;
 
-    def arity -> int {
-        return len(self.param_specs);
-    }
+    def arity -> int;
 }
 
 obj IntrinsicRegistry {
     has _entries: dict[str, IntrinsicEntry];
 
-    def get(name: str) -> IntrinsicEntry | None {
-        return self._entries.get(name, None);
-    }
-
-    def is_intrinsic(name: str) -> bool {
-        return name in self._entries;
-    }
-
-    def names -> list[str] {
-        return list(self._entries.keys());
-    }
-
-    def entries -> list[IntrinsicEntry] {
-        return list(self._entries.values());
-    }
+    def get(name: str) -> IntrinsicEntry | None;
+    def is_intrinsic(name: str) -> bool;
+    def names -> list[str];
+    def entries -> list[IntrinsicEntry];
 }
 
 glob INTRINSIC_REGISTRY = IntrinsicRegistry(
@@ -134,6 +122,12 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  param_specs=["i64", "i64"],
                  result_spec="none",
                  dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__list_data_ptr": IntrinsicEntry(
+                 name="__list_data_ptr",
+                 param_specs=["list"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.LIST_DATA
              ),
              "__atomic_xchg_i64": IntrinsicEntry(
                  name="__atomic_xchg_i64",

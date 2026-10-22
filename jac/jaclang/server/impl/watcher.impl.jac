@@ -4,16 +4,10 @@ import logging;
 import threading;
 import time;
 import from pathlib { Path }
-import from jaclang.cli.console { console }
 
 glob logger = logging.getLogger(__name__);
 
 impl annex_folders_of(module_path: str) -> list[str] {
-    import from jaclang.jac0core.ext_registry {
-        ANNEX_FOLDER,
-        JAC_SUFFIX,
-        shared_annex_folder
-    }
     stem = module_path[:-len(JAC_SUFFIX)]
         if module_path.endswith(JAC_SUFFIX)
         else module_path;
@@ -25,8 +19,6 @@ impl annex_folders_of(module_path: str) -> list[str] {
 }
 
 impl watch_roots(base: str, app_root: str, sources: list[str]) -> list[str] {
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
-    import from jaclang.runtime.prepared { holds_application_code }
     base_real = os.path.realpath(base);
     root_real = os.path.realpath(app_root);
     roots: set[str] = set();
@@ -162,7 +154,6 @@ impl JacFileWatcher.remove_callback(
 }
 
 impl JacFileWatcher._beside_watched_file(path: str) -> bool {
-    import from jaclang.jac0core.ext_registry { is_annex_path_of }
     changed = os.path.realpath(path);
     files: list[str] = [];
     for watch_path in self.watch_paths {
@@ -184,12 +175,6 @@ impl JacFileWatcher._beside_watched_file(path: str) -> bool {
 }
 
 impl JacFileWatcher._foreign_shared_annex(path: str) -> bool {
-    import from jaclang.jac0core.ext_registry {
-        ANNEX_FOLDER,
-        JAC_SUFFIX,
-        is_annex_path_of,
-        shared_annex_folder
-    }
     changed = os.path.realpath(path);
     folder = os.path.dirname(changed);
     suffix = next(
@@ -232,7 +217,7 @@ impl JacFileWatcher._on_change(
     if '/.jac/' in path or '\\.jac\\' in path {
         return;
     }
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+
     if self._beside_watched_file(path)
         or self._foreign_shared_annex(path)
         or is_compiler_source_path(path) {

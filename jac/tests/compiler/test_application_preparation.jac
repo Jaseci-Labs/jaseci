@@ -15,8 +15,59 @@ import from jaclang.runtime.prepared {
     initialize_application
 }
 
+glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
+         3: {
+             'manifest': {
+                 'app',
+                 'client',
+                 'endpoint_effects',
+                 'format',
+                 'jaclang_version',
+                 'module_manifests',
+                 'persistence',
+                 'private_declarations',
+                 'spa_routes',
+                 'surface'
+             },
+             'module': {
+                 'app',
+                 'client',
+                 'endpoint_effects',
+                 'persistence',
+                 'private_declarations',
+                 'spa_routes',
+                 'surface'
+             },
+             'surface': {
+                 'explicit_access',
+                 'exposure',
+                 'kind',
+                 'placement',
+                 'reflect',
+                 'route',
+                 'scheduled',
+                 'src'
+             }
+         }
+     };
+
+"""Collect the key names of a serve manifest, its module records, and their surface entries."""
+def serve_manifest_shape(manifest: dict[str, any]) -> dict[str, set[str]] {
+    modules = list(manifest['module_manifests'].values());
+    return {
+        'manifest': set(manifest),
+        'module': {key for record in modules for key in record},
+        'surface': {
+            key for record in modules for rec in (record.get('surface') or {}).values()
+            for key in rec
+        }
+    };
+}
+
 test "sealing retains each colocated service's access metadata" {
     import from jaclang.dist.seal { build_serve_manifest }
+    import from jaclang.server.sealed_serve { SERVE_MANIFEST_FORMAT }
+    import from jaclang.cli.manifest_route { resolve_cli_version }
     with tempfile.TemporaryDirectory() as tmp {
         base = Path(tmp);
         (base / 'jac.toml').write_text(
@@ -33,6 +84,14 @@ test "sealing retains each colocated service's access metadata" {
         try {
             manifest = build_serve_manifest(path, base);
             assert manifest is not None;
+            assert manifest['format'] == SERVE_MANIFEST_FORMAT;
+            assert manifest['jaclang_version'] == resolve_cli_version();
+            shape = serve_manifest_shape(manifest);
+            assert shape == SERVE_MANIFEST_SHAPES.get(SERVE_MANIFEST_FORMAT) , (
+                f'serve manifest shape changed under format {SERVE_MANIFEST_FORMAT}: '
+                + f'{shape}. If older readers cannot handle the change, bump '
+                + 'SERVE_MANIFEST_FORMAT; then record the new shape in SERVE_MANIFEST_SHAPES.'
+            );
             modules = manifest['module_manifests'];
             assert modules['main.jac']['app'] == 'web';
             assert modules['scoring.jac']['app'] == 'scoring';
@@ -248,6 +307,252 @@ test "a prepare after an edit reads only the edited module's imports again" {
 }
 
 
+"""Prepare `app_entry` on the in-process kernel, recording the modules it analysed."""
+def kernel_prepare(app_entry: Path, `root: str, analysed: list[str]) -> any {
+    import jaclang.project.kernel_compile as kernel_compile;
+    real_compile = kernel_compile.kernel_compile_application;
+    def counting_compile(*args: any, **kwargs: any) -> any {
+        compiled = real_compile(*args, **kwargs);
+        if compiled is not None {
+            analysed.extend(
+                sorted(os.path.basename(mod.path) for mod in compiled.analysis.modules)
+            );
+        }
+        return compiled;
+    }
+    with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]), patch.object(
+        kernel_compile, "kernel_compile_application", counting_compile
+    ) {
+        return prepare_application(str(app_entry), JacProgram(), `root);
+    }
+}
+
+"""Write a three-module app whose `b` calls into `a` with the signature `a_sig`."""
+def write_layered_app(base: Path, a_sig: str, a_body: str) {
+    (base / 'mods').mkdir(exist_ok=True);
+    (base / 'mods' / 'a.jac').write_text(
+        f"def:pub a_value{a_sig} -> int {{ {a_body} }}\n"
+    );
+    (base / 'mods' / 'b.jac').write_text(
+        "import from mods.a { a_value }\n"
+            + "node Item { has n: int = 0; }\n"
+            + "def:pub b_value -> int { return a_value(1) + Item(n=2).n; }\n"
+    );
+    (base / 'main.jac').write_text(
+        "import from mods.b { b_value }\n"
+            + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+    );
+}
+
+test "an edit prepare analyses only the edited module and matches a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-edit-");
+    path = Path(tmp) / 'main.jac';
+    try {
+        write_layered_app(Path(tmp), "(x: int)", "return x;");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_layered_app(Path(tmp), "(x: int)", "return x + 1;");
+        analysed: list[str] = [];
+        edited = kernel_prepare(path, tmp, analysed);
+        assert sorted(set(analysed)) == ['a.jac', 'main.jac'] , (
+            f"a body edit to a.jac made the kernel analyse {analysed}"
+        );
+        forget(str(path));
+        shutil.rmtree(Path(tmp) / '.jac' / 'cache' / 'applications');
+        cold_analysed: list[str] = [];
+        cold = kernel_prepare(path, tmp, cold_analysed);
+        assert sorted(set(cold_analysed)) == ['a.jac', 'b.jac', 'main.jac'] , (
+            f"a cold prepare analysed {cold_analysed}"
+        );
+        assert edited.manifests == cold.manifests , (
+            "the edit prepare's manifests differ from a cold prepare's"
+        );
+        assert edited.code == cold.code , "the edit prepare loaded different code";
+        assert sorted(edited.sources) == sorted(cold.sources) , (
+            f"inputs differ: {sorted(edited.sources)} vs {sorted(cold.sources)}"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "an edit reached through a plain import and an empty helper match a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-plain-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    def write_a(body: str) {
+        (base / 'mods' / 'a.jac').write_text(
+            "node Thing { has n: int = 0; }\n" + f"def:pub make -> int {{ {body} }}\n"
+        );
+    }
+    try {
+        (base / 'mods').mkdir();
+        write_a("return 1;");
+        (base / 'mods' / 'b.jac').write_text(
+            "import mods.a;\n"
+                + "def noop {}\n"
+                + "def:pub b_value -> int { noop(); return mods.a.make(); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_a("Thing(n=1); return 1;");
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "an edit reached through `import mods.a;` left stale metadata"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "an edit through a re-exported name matches a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-reexport-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    def write_app(a_sig: str, call: str) {
+        (base / 'mods').mkdir(exist_ok=True);
+        (base / 'mods' / 'a.jac').write_text(
+            f"def:pub a_value{a_sig} -> int {{ return 3; }}\n"
+        );
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.a { a_value }\n"
+                + "def:pub b_value -> int { return 1; }\n"
+        );
+        path.write_text(
+            "import from mods.b { a_value, b_value }\n"
+                + f"walker:pub Total {{ can go with Root entry {{ report {call} + b_value(); }} }}\n"
+        );
+    }
+    try {
+        write_app("(x: int)", "a_value(2)");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_app("", "a_value()");
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "a valid edit through a re-exported name must prepare like a cold prepare"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "a module whose import now resolves elsewhere is analysed again" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-moved-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    try {
+        (base / 'mods').mkdir();
+        (base / 'mods' / 'a.jac').write_text(
+            "def:pub a_value(x: int) -> int { return x; }\n"
+        );
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.a { a_value }\n"
+                + "def:pub b_value -> int { return a_value(1); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        (base / 'mods' / 'a.jac').unlink();
+        (base / 'mods' / 'a').mkdir();
+        (base / 'mods' / 'a' / '__init__.jac').write_text(
+            "node Thing { has n: int = 0; }\n"
+                + "def:pub a_value(x: int) -> int { Thing(n=x); return x; }\n"
+        );
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "b.jac's import moved to a package; reusing its saved row left stale metadata"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "a changed Python import is not served from the last prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-python-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    try {
+        (base / 'mods').mkdir();
+        (base / 'mods' / 'helper.py').write_text(
+            "def scale(x: int) -> int:\n    return x * 2\n"
+        );
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.helper { scale }\n"
+                + "def:pub b_value -> int { return scale(1); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        (base / 'mods' / 'helper.py').write_text(
+            "def scale(x: int, y: int) -> int:\n    return x * y\n"
+        );
+        analysed: list[str] = [];
+        failed = False;
+        try {
+            kernel_prepare(path, tmp, analysed);
+        } except Exception {
+            failed = True;
+        }
+        assert 'b.jac' in analysed , (
+            f"b.jac imports a Python file that changed; it must be analysed again: {analysed}"
+        );
+        assert failed , "b.jac calls scale(1) after scale gained a required parameter";
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "an edit that changes a module's interface re-checks its importers" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-iface-");
+    path = Path(tmp) / 'main.jac';
+    try {
+        write_layered_app(Path(tmp), "(x: int)", "return x;");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_layered_app(Path(tmp), "", "return 1;");
+        analysed: list[str] = [];
+        failed = False;
+        try {
+            kernel_prepare(path, tmp, analysed);
+        } except Exception {
+            failed = True;
+        }
+        assert 'b.jac' in analysed , (
+            f"the importer of a changed signature was not re-checked: {analysed}"
+        );
+        assert failed , "b.jac calls a_value(1) after a_value lost its parameter";
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
 test "a prepare resolves an unchanged module's imports against the files as they are now" {
     tmp = tempfile.mkdtemp(prefix="jac-prepared-moved-");
     path = Path(tmp) / 'main.jac';
@@ -323,7 +628,7 @@ test "sealed preparation consumes baked artifacts without compiling retained sou
     site_before = sys.modules['site'];
     images_before = list(sealed._images);
     import from jaclang.compiler.driver.jir { get_module_cache_path }
-    import from jaclang.server.sealed_serve { client_dist_for }
+    import from jaclang.server.sealed_serve { client_dist_for, serve_manifest_stamp }
     import from jaclang.cli.console { console }
     for package_name in ['prepared_sealed_test', 'site'] {
         with tempfile.TemporaryDirectory(prefix='jac-prepared-sealed-') as raw_tmp {
@@ -425,6 +730,7 @@ test "sealed preparation consumes baked artifacts without compiling retained sou
                     json.dumps(
                         {
                             ** first.manifests[str(path)],
+                            ** serve_manifest_stamp(),
                             'module_manifests': {
                                 os.path.relpath(source, tmp): metadata
                                 for application in [first, *first.applications]
@@ -501,14 +807,35 @@ test "sealed preparation consumes baked artifacts without compiling retained sou
                 assert prepared.client_compiler is None;
                 assert client_dist_for(str(path)) == dist;
                 assert (dist / 'arena.wasm').read_bytes() == b'baked wasm';
-                (base / '.jac' / 'serve_manifest.json').unlink();
-                caught = '';
-                try {
-                    prepare_application(str(path), JacProgram(), tmp, dev=False);
-                } except RuntimeError as e {
-                    caught = str(e);
+                serve_manifest = base / '.jac' / 'serve_manifest.json';
+                for (stale, expected) in [
+                    (
+                        {'module_manifests': {}},
+                        'built by an older jac (serve manifest format unstamped)'
+                    ),
+                    (
+                        {
+                            'format': 2,
+                            'jaclang_version': '0.37.11',
+                            'module_manifests': {}
+                        },
+                        'built by jac 0.37.11 (serve manifest format 2)'
+                    ),
+                    (None, 'Sealed application has no serving manifest')
+                ] {
+                    if stale is None {
+                        serve_manifest.unlink();
+                    } else {
+                        serve_manifest.write_text(json.dumps(stale));
+                    }
+                    caught = '';
+                    try {
+                        prepare_application(str(path), JacProgram(), tmp, dev=False);
+                    } except RuntimeError as e {
+                        caught = str(e);
+                    }
+                    assert expected in caught , caught;
                 }
-                assert 'Sealed application has no serving manifest' in caught , caught;
             } finally {
                 for (name, loaded) in list(sys.modules.items()) {
                     if str(getattr(loaded, '__file__', '') or '').startswith(
@@ -868,6 +1195,35 @@ def _join_all(threads: list[any]) -> list[str] {
         for thread in threads
         if thread.is_alive()
     ];
+}
+
+"""The dev reloader imports a module it re-executes through
+`prepare_dynamic_module`. For a module the application already prepares, like
+its entry, that is the same preparation, so the prepared revision is restored
+rather than compiled again."""
+test "a dynamic import of the application's own entry restores the prepared application" {
+    import contextlib;
+    import io;
+    import jaclang.compiler.driver.application as application;
+    tmp = tempfile.mkdtemp(prefix='jac-prepare-entry-reimport-');
+    path = Path(tmp) / 'main.jac';
+    service = Path(tmp) / 'worker.jac';
+    try {
+        path.write_text("def:pub hello -> int { return 1; }\n");
+        service.write_text("def:pub other -> int { return 2; }\n");
+        program = JacProgram();
+        first = prepare_application(str(path), program, tmp, services=[str(service)]);
+        err = io.StringIO();
+        with contextlib.redirect_stderr(err) {
+            second = application.prepare_dynamic_module(str(path), program, first);
+        }
+        assert err.getvalue().count('Restoring prepared application') == 2 , err.getvalue();
+        assert sorted(second.code) == sorted(first.code);
+        assert second.services == first.services;
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
 }
 
 test "a preparation on another thread neither breaks nor wedges an in-process prepare" {
