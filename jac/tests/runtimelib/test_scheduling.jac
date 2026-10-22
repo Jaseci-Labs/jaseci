@@ -377,9 +377,18 @@ test "a served scheduled walker runs each tick without an error record" {
             ][0];
             served_log = sys.modules[walker_cls.__module__].execution_log;
             before = served_log.count("interval-walker");
-            server.scheduler._execute(task);
-            server.scheduler._execute(task);
+            import io;
+            import from contextlib { redirect_stdout }
+            printed = io.StringIO();
+            with redirect_stdout(printed) {
+                server.scheduler._execute(task);
+                server.scheduler._execute(task);
+            }
             assert served_log.count("interval-walker") == before + 2 , served_log;
+            assert "interval-walker-report" not in printed.getvalue() , (
+                "a scheduled run inside the server printed its report to stdout, "
+                "the server log"
+            );
             errors = [
                 m
                 for m in records.messages
@@ -625,7 +634,7 @@ test "the namespace is the fleet service name, else the served module" {
 }
 
 
-test "a tick whose claim cannot be checked is skipped, and logged once" {
+test "a claim or run hold that cannot be checked is logged once" {
     # #9030: a failed lease check used to return True on every worker of
     # every pod, so a database blip ran the task everywhere at once.
     calls: list[int] = [];
@@ -664,4 +673,288 @@ test "a tick whose claim cannot be checked is skipped, and logged once" {
     ];
     assert len(warnings) == 1 , records.messages;
     assert len(recovered) == 1 , records.messages;
+
+    renewals: list[int] = [];
+    def lost(key: str, ttl: int, owner: str) -> bool {
+        renewals.append(ttl);
+        if len(renewals) == 1 {
+            raise ConnectionError("database is restarting");
+        }
+        return len(renewals) == 2;
+    }
+    sched.hold = lost;
+    sched.hold_ttl = 1;
+    records.messages.clear();
+    beat = threading.Event();
+    keeper = threading.Thread(target=sched._keep_hold, args=(task, beat));
+    log.addHandler(records);
+    try {
+        keeper.start();
+        deadline = time.monotonic() + 5.0;
+        while len(renewals) < 5 and time.monotonic() < deadline {
+            time.sleep(0.02);
+        }
+    } finally {
+        beat.set();
+        keeper.join();
+        log.removeHandler(records);
+    }
+    assert len(renewals) >= 5 , renewals;
+    lost_each_time = [
+        m
+        for m in records.messages
+        if m.startswith("WARNING") and "lost its run hold" in m
+    ];
+    back = [
+        m
+        for m in records.messages
+        if m.startswith("INFO") and "run hold back" in m
+    ];
+    assert len(lost_each_time) == 2 , records.messages;
+    assert len(back) == 1 , records.messages;
+    assert len(records.messages) == 3 , records.messages;
+}
+
+
+"""Make `threading.Thread.start` refuse the thread named `name`, as the OS does when it is out of threads."""
+def _start_refusing(
+    name: str, real: Callable[[threading.Thread], None]
+) -> Callable[[threading.Thread], None] {
+    def start(thread: threading.Thread) {
+        if thread.name == name {
+            raise RuntimeError("can't start new thread");
+        }
+        real(thread);
+    }
+    return start;
+}
+
+
+test "a run whose thread cannot start gives its hold back and skips the run" {
+    # Either thread failing to start used to leave the hold held until its TTL,
+    # and a failed run thread escaped the tick loop and ended the scheduler.
+    real_start = threading.Thread.start;
+    for refused in ["jac-schedule-mailer", "jac-schedule-hold-mailer"] {
+        probe = _Probe();
+        released: list[str] = [];
+        def grant(key: str, ttl: int, owner: str) -> bool {
+            return True;
+        }
+        def give_back(key: str, owner: str, into: list[str] = released) -> bool {
+            into.append(key);
+            return True;
+        }
+        sched = fresh_scheduler();
+        sched.hold = grant;
+        sched.release = give_back;
+        sched.namespace = "orders";
+        sched.register(
+            "mailer", _slow_run(probe, 0.0), ScheduleSpec(interval=60), False
+        );
+        task = sched._tasks[0];
+        sched._running = True;
+        records = _Records();
+        log = logging.getLogger("jaclang.server.task_scheduler");
+        log.addHandler(records);
+        threading.Thread.start = _start_refusing(refused, real_start);
+        try {
+            sched._launch(task);
+            with sched._flight_lock {
+                flights = list(sched._in_flight.values());
+            }
+            for (_name, thread) in flights {
+                thread.join(timeout=5.0);
+            }
+        } finally {
+            threading.Thread.start = real_start;
+            log.removeHandler(records);
+        }
+        assert probe.started == 0 , (refused, probe.started);
+        assert released == [sched._run_key(task)] , (refused, released);
+        assert sched._in_flight == {} , (refused, sched._in_flight);
+        refusals = [
+            m
+            for m in records.messages
+            if m.startswith("WARNING") and "could not start a thread for 'mailer'" in m
+        ];
+        assert len(refusals) == 1 , (refused, records.messages);
+    }
+}
+
+
+obj _Probe {
+    has started: int = 0,
+        finished: int = 0,
+        running: int = 0,
+        peak: int = 0,
+        lock: threading.Lock = threading.Lock();
+
+    def slow(seconds: float) {
+        with self.lock {
+            self.started += 1;
+            self.running += 1;
+            self.peak = max(self.peak, self.running);
+        }
+        time.sleep(seconds);
+        with self.lock {
+            self.running -= 1;
+            self.finished += 1;
+        }
+    }
+}
+
+
+test "a static task never runs alongside an earlier run of itself" {
+    # #9029: every tick started a new thread whatever was still running, so
+    # a task slower than its interval piled up concurrent copies.
+    probe = _Probe();
+    claims: list[str] = [];
+    def claim(key: str, tick: int) -> bool {
+        claims.append(key);
+        return True;
+    }
+    sched = fresh_scheduler();
+    sched.claim = claim;
+    sched.register(
+        "slow_fn", lambda { probe.slow(0.7); }, ScheduleSpec(interval=0.2), False
+    );
+    records = _Records();
+    log = logging.getLogger("jaclang.server.task_scheduler");
+    log.addHandler(records);
+    sched.start();
+    try {
+        time.sleep(2.0);
+    } finally {
+        sched.stop(timeout=2.0);
+        log.removeHandler(records);
+    }
+    assert probe.started >= 2 , probe.started;
+    assert probe.peak == 1 , f"{probe.peak} runs overlapped";
+    # A tick this worker skips while busy is left unclaimed, not spent.
+    assert len(claims) == probe.started , (len(claims), probe.started);
+    overlaps = [
+        m
+        for m in records.messages
+        if "still running" in m
+    ];
+    assert 1 <= len(overlaps) <= probe.started , records.messages;
+}
+
+
+"""A scheduled function that holds `probe` busy for `seconds`."""
+def _slow_run(probe: _Probe, seconds: float) -> Callable[[], None] {
+    return lambda { probe.slow(seconds); };
+}
+
+test "stopping past its budget returns on time and names the runs it abandons" {
+    for (name, budget, limit) in [("stuck_fn", 0.3, 1.0), ("late_fn", 0.0, 0.5)] {
+        probe = _Probe();
+        sched = fresh_scheduler();
+        sched.register(name, _slow_run(probe, 2.0), ScheduleSpec(interval=0.2), False);
+        records = _Records();
+        log = logging.getLogger("jaclang.server.task_scheduler");
+        log.addHandler(records);
+        sched.start();
+        try {
+            deadline = time.monotonic() + 3.0;
+            while probe.started == 0 and time.monotonic() < deadline {
+                time.sleep(0.02);
+            }
+            began = time.monotonic();
+            sched.stop(timeout=budget);
+            waited = time.monotonic() - began;
+        } finally {
+            log.removeHandler(records);
+        }
+        assert waited < limit , f"{name}: {waited}";
+        assert probe.finished == 0 , name;
+        assert any(name in m and "still running" in m for m in records.messages) , records.messages;
+    }
+}
+
+
+test "stopping keeps one deadline even when the loop is slow to stop" {
+    # The loop was joined for up to 5 s and the runs then got the full budget
+    # again, so a loop held in a slow claim pushed shutdown past its drain.
+    probe = _Probe();
+    claiming = threading.Event();
+    def claim(key: str, tick: int) -> bool {
+        if "slow_claim" in key {
+            claiming.set();
+            time.sleep(1.5);
+        }
+        return True;
+    }
+    sched = fresh_scheduler();
+    sched.claim = claim;
+    sched.register(
+        "long_run", lambda { probe.slow(3.0); }, ScheduleSpec(interval=0.2), False
+    );
+    sched.register("slow_claim", lambda { None; }, ScheduleSpec(interval=0.2), False);
+    sched.start();
+    deadline = time.monotonic() + 5.0;
+    while (probe.started == 0 or not claiming.is_set())
+        and time.monotonic() < deadline {
+        time.sleep(0.02);
+    }
+    claiming.clear();
+    while not claiming.is_set() and time.monotonic() < deadline {
+        time.sleep(0.02);
+    }
+    assert probe.started == 1 and claiming.is_set() , "the loop never reached a slow claim";
+    began = time.monotonic();
+    sched.stop(timeout=1.0);
+    waited = time.monotonic() - began;
+    assert waited < 2.0 , f"stop took {waited:.2f}s against a 1.0s budget";
+}
+
+
+test "a served worker starts no runs once draining, and stops after its run in flight" {
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.server.settings { ServeSettings }
+    import from jaclang.testing.testing { JacTestClient }
+    long_run = _Probe();
+    quick = _Probe();
+    with TemporaryDirectory() as tmpdir {
+        client = JacTestClient.from_file(
+            str(Path(FIXTURES) / "scheduled_tasks.jac"), base_path=tmpdir
+        );
+        server: any = client.server;
+        server.settings = ServeSettings.load(tmpdir, {"host": "127.0.0.1", "port": 0});
+        server.scheduler._tasks.clear();
+        server.scheduler.register(
+            "long_run",
+            lambda { long_run.slow(1.5); },
+            ScheduleSpec(interval=0.2),
+            False
+        );
+        server.scheduler.register(
+            "quick", lambda { quick.slow(0.0); }, ScheduleSpec(interval=0.2), False
+        );
+        store: any = server.user_manager._identity_storage.store;
+        lease = f"lease:sched-run:{schedule_namespace(server.module_name)}:long_run";
+        stop = server.serve_background(no_client=True);
+        try {
+            deadline = time.monotonic() + 5.0;
+            while (long_run.started == 0 or quick.finished == 0)
+                and time.monotonic() < deadline {
+                time.sleep(0.02);
+            }
+            server.drain.start("test");
+            before = quick.started;
+            time.sleep(0.6);
+            assert quick.started == before , f"{quick.started
+                - before} run(s) started while draining";
+            assert long_run.finished < long_run.started , "no run was in flight at stop";
+            holder = store.kv_get(lease);
+        } finally {
+            stop();
+            released = store.kv_get(lease);
+            server.scheduler._tasks.clear();
+            client.close();
+        }
+    }
+    assert long_run.finished == long_run.started , "the run in flight was abandoned";
+    assert holder == server.scheduler._hold_owner() , f"run hold held by {holder}";
+    assert released is None , f"run hold left behind by {released}";
 }

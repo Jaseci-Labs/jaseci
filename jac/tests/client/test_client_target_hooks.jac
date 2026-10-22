@@ -43,7 +43,8 @@ test "every client kind maps onto a registered target" {
         get_target_registry,
         target_for_kind
     }
-    import from jaclang.project.kinds { KIND_SPECS, kind_has_client }
+    import from jaclang.project.kinds { KIND_SPECS }
+    import from jaclang.project.app_kinds { kind_has_client }
     import from pathlib { Path }
 
     registry = get_target_registry();
@@ -155,6 +156,14 @@ test "ensure_ready on the base target consults requires_setup" {
     }
 }
 
+"""A stand-in `setup` that records the target it ran for."""
+def _recording_setup(calls: list[str], name: str) -> Callable[[Path], None] {
+    def _fake_setup(project_dir: Path) {
+        calls.append(name);
+    }
+    return _fake_setup;
+}
+
 """Web, static and desktop provision inline (Vite, the webview host); none of
 them needs a setup step, so `ensure_ready` must never call `setup()` on them."""
 test "web, static and desktop ensure_ready are no-ops" {
@@ -170,11 +179,9 @@ test "web, static and desktop ensure_ready are no-ops" {
             assert target is not None , name;
             assert target.requires_setup == False , f"{name} needs no setup step";
             calls: list[str] = [];
-
-            def _fake_setup(project_dir: Path) {
-                calls.append(name);
-            }
-            with unittest.mock.patch.object(target, "setup", _fake_setup) {
+            with unittest.mock.patch.object(
+                target, "setup", _recording_setup(calls, name)
+            ) {
                 target.ensure_ready(proj);
             }
             assert calls == [] , f"{name}.ensure_ready must not provision: {calls}";
@@ -188,10 +195,10 @@ target that flips `requires_setup` gets lazy provisioning without further
 wiring. The explicit `jac setup` path stays on `target.setup(...)`."""
 test "the client dispatcher calls ensure_ready before build, dev and start" {
     content = _cli_jac.read_text().replace("\r\n", "\n");
-    build_section = content.split("def run_client_build(")[1].split(
-        "def run_client_start("
+    build_section = content.split("impl run_client_build(")[1].split(
+        "impl run_client_start("
     )[0];
-    start_section = content.split("def run_client_start(")[1].split("def get_config")[
+    start_section = content.split("impl run_client_start(")[1].split("impl get_config")[
         0
     ];
     for (label, section, dispatch) in [
@@ -207,8 +214,8 @@ test "the client dispatcher calls ensure_ready before build, dev and start" {
             f"run_client_{label}: ensure_ready must run before {dispatch}"
         );
     }
-    setup_section = content.split("def run_client_setup(")[1].split(
-        "def _place_bundle("
+    setup_section = content.split("impl run_client_setup(")[1].split(
+        "impl _place_bundle("
     )[0];
     assert "target_obj.setup(project_dir)" in setup_section , (
         "jac setup stays the explicit pre-provision entry"

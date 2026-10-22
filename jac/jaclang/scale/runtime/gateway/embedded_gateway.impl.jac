@@ -69,12 +69,6 @@ impl EmbeddedGateway._get_asset_table -> list[AssetRoot] {
 impl EmbeddedGateway._serve_static(
     request: Request, path: str, accept: str
 ) -> Response {
-    import from jaclang.server.serving.static_assets {
-        resolve_asset,
-        mount_claims,
-        asset_cache_policy
-    }
-    import from jaclang.server.serving.files { file_response }
     table = self._get_asset_table();
     hit = resolve_asset(table, path);
     if hit is not None {
@@ -157,9 +151,7 @@ impl EmbeddedGateway.setup -> None {
 }
 
 
-def _log_embedded_ready(host: str, bound: int) {
-    _logger.info(f"Embedded gateway serving in-process on {host}:{bound}");
-}
+def _log_embedded_ready(host: str, bound: int);
 
 
 impl EmbeddedGateway.serve(on_ready: any = None) -> None {
@@ -167,7 +159,7 @@ impl EmbeddedGateway.serve(on_ready: any = None) -> None {
         self.setup();
     }
     import from functools { partial }
-    import from jaclang.server.serving.server { ServingServer, PORT_RETRY_LIMIT }
+
     pinned = self.port_pinned;
     serving = ServingServer(app=self.app, host=self.host, port=self.port);
     ready: any = on_ready;
@@ -175,4 +167,8 @@ impl EmbeddedGateway.serve(on_ready: any = None) -> None {
         ready = partial(_log_embedded_ready, self.host);
     }
     serving.run(on_ready=ready, port_retries=0 if pinned else PORT_RETRY_LIMIT);
+}
+
+impl _log_embedded_ready(host: str, bound: int) {
+    _logger.info(f"Embedded gateway serving in-process on {host}:{bound}");
 }

@@ -276,8 +276,178 @@ impl Scheduler._may_fire(task: ScheduledTask, due: datetime.datetime) -> bool {
     return won;
 }
 
-impl Scheduler.stop -> None {
-    self._running = False;
+impl Scheduler._run_key(task: ScheduledTask) -> str {
+    return f"sched-run:{self.namespace}:{task.name}";
+}
+
+impl Scheduler._hold_owner -> str {
+    if not self._owner {
+        self._owner = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex}";
+    }
+    return self._owner;
+}
+
+impl Scheduler._take_hold(task: ScheduledTask) -> bool {
+    hold_fn: any = self.hold;
+    return bool(hold_fn(self._run_key(task), self.hold_ttl, self._hold_owner()));
+}
+
+impl Scheduler._hold_run(task: ScheduledTask) -> bool {
+    if self.hold is None {
+        return True;
+    }
+    key = self._run_key(task);
+    try {
+        held = self._take_hold(task);
+    } except Exception as e {
+        if key not in self._failing_claims {
+            self._failing_claims.add(key);
+            logger.warning(
+                f"could not take the run hold of '{task.name}': {e}; "
+                "skipping its ticks until a hold succeeds"
+            );
+        }
+        return False;
+    }
+    if key in self._failing_claims {
+        self._failing_claims.discard(key);
+        logger.info(f"run holds for '{task.name}' are succeeding again");
+    }
+    return held;
+}
+
+impl Scheduler._keep_hold(task: ScheduledTask, beat: threading.Event) -> None {
+    lost = False;
+    while not beat.`wait(self.hold_ttl / 3) {
+        try {
+            held = self._take_hold(task);
+            reason = "";
+        } except Exception as e {
+            held = False;
+            reason = f" ({e})";
+        }
+        if held and lost {
+            lost = False;
+            logger.info(f"'{task.name}' has its run hold back while still running");
+        } elif not held and not lost {
+            lost = True;
+            logger.warning(
+                f"'{task.name}' lost its run hold while still running{reason}; "
+                "another replica may start it"
+            );
+        }
+    }
+}
+
+impl Scheduler._release_run(task: ScheduledTask) -> None {
+    if self.release is None {
+        return;
+    }
+    release_fn: any = self.release;
+    try {
+        release_fn(self._run_key(task), self._hold_owner());
+    } except Exception as e {
+        logger.warning(
+            f"could not release the run hold of '{task.name}': {e}; "
+            f"it expires within {self.hold_ttl}s"
+        );
+    }
+}
+
+impl Scheduler._still_running(task: ScheduledTask) -> bool {
+    with self._flight_lock {
+        flight = self._in_flight.get(id(task));
+    }
+    if flight is not None and flight[1].is_alive() {
+        if task.name not in self._overlapping {
+            self._overlapping.add(task.name);
+            logger.warning(
+                f"'{task.name}' is still running from an earlier tick; skipping its "
+                "ticks until that run finishes"
+            );
+        }
+        return True;
+    }
+    if task.name in self._overlapping {
+        self._overlapping.discard(task.name);
+        logger.info(f"'{task.name}' finished its long run; its ticks run again");
+    }
+    return False;
+}
+
+impl Scheduler._start(thread: threading.Thread, task: ScheduledTask) -> bool {
+    try {
+        thread.start();
+    } except RuntimeError as e {
+        logger.warning(
+            f"could not start a thread for '{task.name}': {e}; skipping this run"
+        );
+        return False;
+    }
+    return True;
+}
+
+impl Scheduler._launch(task: ScheduledTask) -> None {
+    thread = threading.Thread(
+        target=self._run_tracked,
+        args=(task, ),
+        daemon=True,
+        name=f"jac-schedule-{task.name}"
+    );
+    with self._flight_lock {
+        refused = not self._running;
+        if not refused {
+            self._in_flight[id(task)] = (task.name, thread);
+        }
+    }
+    if refused {
+        self._release_run(task);
+        return;
+    }
+    if not self._start(thread, task) {
+        with self._flight_lock {
+            del self._in_flight[id(task)];
+        }
+        self._release_run(task);
+    }
+}
+
+impl Scheduler._run_tracked(task: ScheduledTask) -> None {
+    beat = threading.Event();
+    keeper: (threading.Thread | None) = None;
+    if self.hold is not None {
+        keeper = threading.Thread(
+            target=self._keep_hold,
+            args=(task, beat),
+            daemon=True,
+            name=f"jac-schedule-hold-{task.name}"
+        );
+    }
+    try {
+        if keeper is None or self._start(keeper, task) {
+            self._execute(task);
+        }
+    } finally {
+        beat.set();
+        if keeper is not None and keeper.ident is not None {
+            keeper.join();
+        }
+        self._release_run(task);
+        with self._flight_lock {
+            flight = self._in_flight.get(id(task));
+            if flight is not None and flight[1] is threading.current_thread() {
+                del self._in_flight[id(task)];
+            }
+        }
+    }
+}
+
+impl Scheduler.stop(timeout: (float | None) = None) -> None {
+    budget = max(0.0, timeout) if timeout is not None else None;
+    deadline = time.monotonic() + (budget if budget is not None else 5.0);
+    with self._flight_lock {
+        self._running = False;
+    }
     if self._stop_event is not None {
         self._stop_event.set();
     }
@@ -285,7 +455,33 @@ impl Scheduler.stop -> None {
         self._done_event.set();
     }
     if self._thread is not None and self._thread.is_alive() {
-        self._thread.join(timeout=5);
+        self._thread.join(timeout=max(0.0, deadline - time.monotonic()));
+    }
+    with self._flight_lock {
+        running = [
+            flight
+            for flight in self._in_flight.values()
+            if flight[1].is_alive()
+        ];
+    }
+    if not running or budget is None {
+        return;
+    }
+    for (_name, thread) in running {
+        thread.join(timeout=max(0.0, deadline - time.monotonic()));
+    }
+    left = sorted(
+        [
+            name
+            for (name, thread) in running
+            if thread.is_alive()
+        ]
+    );
+    if left {
+        logger.warning(
+            f"scheduled task(s) {', '.join(left)} still running when the "
+            f"{budget:.1f}s drain budget ran out; the worker exits without them"
+        );
     }
 }
 
@@ -339,10 +535,16 @@ impl Scheduler._run_loop -> None {
         now = datetime.datetime.now(datetime.timezone.utc);
         due = task.next_run;
         task.last_run = now;
-        if due is not None and self._may_fire(task, due) {
-            threading.Thread(target=self._execute, args=(task, ), daemon=True).start();
-        } else {
-            logger.debug(f"'{task.name}' fired elsewhere this tick; skipping");
+        draining = self.drain is not None and self.drain.draining;
+        if not draining and not self._still_running(task) {
+            if due is None or not self._hold_run(task) {
+                logger.debug(f"'{task.name}' is running elsewhere; skipping this tick");
+            } elif self._may_fire(task, due) {
+                self._launch(task);
+            } else {
+                self._release_run(task);
+                logger.debug(f"'{task.name}' fired elsewhere this tick; skipping");
+            }
         }
         new_next = self._compute_next_run(task.spec, now);
         task.next_run = new_next;
@@ -409,16 +611,21 @@ impl Scheduler._compute_date(
 }
 
 impl Scheduler._execute(task: ScheduledTask) -> None {
+    import from jaclang { JacRuntimeInterface as Jac }
+
+    ctx = Jac.get_context();
+    token = ctx.call_state.set(CallState());
     try {
         result = task.target();
         if task.is_walker {
             import from jaclang.runtime.constructs { WalkerArchetype }
             if isinstance(result, WalkerArchetype) {
-                import from jaclang { JacRuntimeInterface as Jac }
                 Jac.`spawn(result, Jac.root());
             }
         }
     } except Exception as e {
         logger.error(f"Error executing task '{task.name}': {e}");
+    } finally {
+        ctx.call_state.reset(token);
     }
 }

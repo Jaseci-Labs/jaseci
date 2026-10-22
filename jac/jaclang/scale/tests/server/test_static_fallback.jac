@@ -1,14 +1,5 @@
 import os;
 import tempfile;
-import from jaclang.server.serving.datatypes { Request, Response }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.server { ServingServer }
-import from jaclang.scale.runtime.gateway.microservice_gateway { MicroserviceGateway }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceEntry,
-    ServiceRegistry,
-    ServiceStatus
-}
 
 
 """A root stub that answers every request with a fixed marker body, so a test
@@ -28,7 +19,6 @@ def _spawn_root_stub(marker: bytes) -> tuple[any, int] {
 
 
 def _get_request -> Request {
-    import from jaclang.server.serving.datatypes { URL }
     return Request(method="GET", url=URL(path="/static/assets/logo.svg"));
 }
 

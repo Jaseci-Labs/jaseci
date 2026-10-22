@@ -790,6 +790,57 @@ Cannot assign Literal["a"] | Literal["b"] | Literal["c"] to Literal["c"]
              ]
          ),
          (
+             "equality_keeps_type",
+             "checker",
+             "checker_equality_keeps_type.jac",
+             6,
+             True,
+             [
+                 (
+                     0,
+                     """
+Cannot return str | NoneType, expected int
+        return v;  # <-- Error: neither str nor None equals 1, so v is not narrowed
+    """
+                 ),
+                 (
+                     1,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: 1 == True, so n is int, not bool
+    """
+                 ),
+                 (
+                     2,
+                     """
+Cannot return float, expected int
+    return f;  # <-- Error: 1.0 == 1, so f is float, not int
+    """
+                 ),
+                 (
+                     3,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `and` keeps the equality rule
+    """
+                 ),
+                 (
+                     4,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `not` keeps the equality rule
+    """
+                 ),
+                 (
+                     5,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `in` compares with ==, so n is int, not bool
+    """
+                 )
+             ]
+         ),
+         (
              "literal_ne_does_not_over_narrow",
              "checker",
              "checker_literal_ne_no_over_narrow.jac",
@@ -856,6 +907,23 @@ Cannot assign Literal["a"] | Literal["b"] | Literal["c"] to Literal["c"]
                      """Not all required parameters were provided in the function call: 'skill'"""
                  ),
                  (3, """Cannot assign int to parameter 'owner' of type str""")
+             ]
+         ),
+         (
+             "exception_obj_constructs_through_field_init",
+             "checker",
+             "checker_exception_fields_init.jac",
+             2,
+             True,
+             [
+                 (
+                     0,
+                     """Cannot assign Literal["not a code"] to parameter 'code' of type int"""
+                 ),
+                 (
+                     1,
+                     """Cannot assign Literal["not a code either"] to parameter 'code' of type int"""
+                 )
              ]
          ),
          (
@@ -1155,6 +1223,14 @@ Cannot assign Literal["a"] | Literal["b"] | Literal["c"] to Literal["c"]
              "walrus_operator_narrowing",
              "checker",
              "checker_walrus_narrowing.jac",
+             0,
+             True,
+             []
+         ),
+         (
+             "assert_own_condition_narrowing",
+             "checker",
+             "checker_assert_own_condition_narrowing.jac",
              0,
              True,
              []
@@ -2245,7 +2321,7 @@ test "lambda_param_unresolved_requires_annotation" {
     # is checked in place instead; deferring it would drop the checks on its
     # other statements entirely, which is what this assertion guards. (The
     # rationale lives here because jaclang source is deslopped: jac.toml's
-    # `[check.lint]` selects `strip-comments`/`strip-docstrings`, and
+    # `[check.lint]` selects `all`, which strips comments and docstrings, and
     # `*/tests/*` is the exclusion that lets a note like this survive.)
     e1053 = [
         e
@@ -4620,6 +4696,29 @@ test "jsx_intrinsic_tag_names_do_not_emit_w1051" {
     ]}";
 }
 
+test "jsx_svg_and_less_common_html_tags_are_intrinsic" {
+    path = os.path.join(CHECKER_FIXTURES, "checker_jsx_svg_and_html_intrinsics.jac");
+    program = JacProgram();
+    program.compile(path);
+    lines = Path(path).read_text().splitlines();
+    def opening_tag(w: any) -> bool {
+        return lines[w.loc.first_line - 1][w.loc.col_start - 2] == "<";
+    }
+    flagged = [
+        w
+        for w in program.warnings_had
+        if w.code
+            and (w.code.code == "W1050" or (w.code.code == "W2001" and opening_tag(w)))
+    ];
+    assert len(flagged) == 0 , f"Expected SVG and HTML tags to resolve as intrinsic elements, got {len(
+        flagged
+    )}:\n"
+        + "\n---\n".join(w.pretty_print() for w in flagged);
+    assert len(program.errors_had) == 0 , f"Unexpected errors: {[
+        e.pretty_print() for e in program.errors_had
+    ]}";
+}
+
 test "dom_browser_globals_resolve_to_storage" {
     # `localStorage` / `sessionStorage` are ambient browser globals typed as
     # `Storage` (dom_types.pyi). Their real API surface must type-check with
@@ -4962,6 +5061,43 @@ test "pipe_forward_typing_matches_call_form" {
     assert err.code and err.code.code == "E1053" , f"Expected E1053, got {err.code.code
         if err.code
         else 'no-code'}:\n{err.pretty_print()}";
+}
+
+test "pipe operands keep the pipe expression as their only parent" {
+    # A pipe is typed and emitted through a temporary call over its operands.
+    # A temporary left linked only goes away at a cycle collection, so
+    # collection stays off while the graph is read.
+    import gc;
+    import from jaclang.compiler.frontend.roles { Kid }
+    path = os.path.join(CHECKER_FIXTURES, "checker_pipe_operand_parents.jac");
+    collecting = gc.isenabled();
+    gc.disable();
+    try {
+        program = JacProgram();
+        mod = program.compile(path, options=NO_TC);
+        assert not program.errors_had;
+        assert mod.gen.py_ast;
+        pipes = [
+            expr
+            for expr in mod.get_all_sub_nodes(uni.BinaryExpr)
+            if isinstance(expr.op, uni.Token)
+                and expr.op.value in ("|>", ":>", "<|", "<:")
+        ];
+        assert len(pipes) == 8;
+        for expr in pipes {
+            for operand in (expr.left, expr.right) {
+                holders = [operand<-:Kid:<-];
+                assert len(holders) == 1 and holders[0] is expr , f"line {expr.loc.first_line}: a pipe operand is held by {[
+                    type(h).__name__ for h in holders
+                ]}";
+                assert operand.parent is expr;
+            }
+        }
+    } finally {
+        if collecting {
+            gc.enable();
+        }
+    }
 }
 
 test "as_cast_resolves_any_assignment" {
@@ -5316,7 +5452,7 @@ test "mobui_project_forbids_html_intrinsic_tags" {
     # D17: in a mobui (React Native) project, raw HTML host tags are
     # forbidden — JsxIntrinsicGuardPass emits E1105 for each lowercase tag,
     # with a fix-it pointing at the @jac/mobui / RN component. Uppercase user
-    # components (<Card>) are allowed. The pass runs in get_ir_gen_sched, so
+    # components (<Card>) are allowed. The pass runs in the IR product, so
     # it fires even with type_check=False (the .jac / build path).
     path = os.path.join(CHECKER_FIXTURES, "checker_jsx_mobui_html_forbidden.jac");
     program = JacProgram();

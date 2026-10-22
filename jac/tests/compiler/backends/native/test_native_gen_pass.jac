@@ -666,8 +666,10 @@ test "context isolation native excluded from python" {
     ir = prog.compile(str(os.path.join(FIXTURES, "mixed_contexts.jac")));
     # Python source should NOT contain native_add
     py_src = generated_python(ir.gen);
-    assert "native_add" not in py_src;
-    # Python source should contain server_hello
+    assert "return a + b" not in py_src , "the native body must not be in the Python output";
+    assert "get_function_address" in py_src , (
+        "a Python importer reaches native_add through its native call stub"
+    );
     assert "server_hello" in py_src;
 }
 
@@ -4223,25 +4225,12 @@ test "aarch64 static-musl binary runs (cross vendor-musl, #7626 C1)" {
     # + static ELF emission for a non-host arch.
     import shutil;
     import tempfile;
-    import jaclang;
     qemu = shutil.which("qemu-aarch64-static") or shutil.which("qemu-aarch64");
-    _musl_env = os.environ.get("JAC_NATIVE_MUSL_DIR", "");
-    musl_a64 = os.path.join(_musl_env, "libc.a")
-        if _musl_env
-        else os.path.join(
-            os.path.dirname(jaclang.__file__),
-            "..",
-            ".pbs-build",
-            "linux-aarch64",
-            "musl",
-            "lib",
-            "libc.a"
-        );
-    if not qemu or not os.path.exists(musl_a64) {
+    import from jaclang.compiler.backends.native.native_link { musl_lib_dir }
+    if not qemu or musl_lib_dir("aarch64-unknown-linux-musl") is None {
         testskip(
-            "aarch64 qemu-user or cross vendored musl not present "
-            "(run `zig build vendor-musl-linux-aarch64`, or set "
-            "JAC_NATIVE_MUSL_DIR)"
+            "aarch64 qemu-user or the aarch64 musl runtime is not present "
+            "(run `jac native build musl@linux-aarch64`)"
         );
     }
     fixture = str(os.path.join(FIXTURES, "aarch64_global_roundtrip.jac"));
@@ -4279,86 +4268,47 @@ test "aarch64 static-musl binary runs (cross vendor-musl, #7626 C1)" {
     }
 }
 
-test "elf linker rejects unhandled relocation (issue #6366 guard)" {
-    # Defense-in-depth: the linker must refuse to emit a binary when a
-    # relocation targeting an emitted section has no handler, rather than
-    # silently leaving the reference pointing at NULL (the #6366 failure mode).
-    # Pure link-time check -- no execution, so it runs without qemu.
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
-    import from jaclang.compiler.backends.native.elf_linker { ElfLinker }
-    llvm.initialize_all_targets();
-    llvm.initialize_all_asmprinters();
-    # A function that loads a module global forces an address-materialization
-    # relocation into .text against the global.
-    ir = "target triple = \"aarch64-unknown-linux-gnu\"\n"
-        + "@g = global i64 0\n"
-        + "define i64 @f() {\n  %v = load i64, i64* @g\n  ret i64 %v\n}\n";
-    mod = llvm.parse_assembly(ir);
-    tm = llvm.Target.from_triple("aarch64-unknown-linux-gnu").create_target_machine(
-        opt=2
-    );
-    obj_bytes = tm.emit_object(mod);
-    linker = ElfLinker(
-        obj_data=obj_bytes,
-        sections=[],
-        symbols=[],
-        relocations=[],
-        needed_libs=["libc.so.6"]
-    );
-    assert linker.parse_object() , "parse_object failed on aarch64 object";
-    assert len(linker.relocations) > 0 , "expected at least one relocation";
-    # Corrupt a relocation that patches the emitted code section to an unknown
-    # type; the linker must raise instead of emitting an unrelocated binary.
-    target = None;
-    for r in linker.relocations {
-        if r.target_sec and "text" in r.target_sec {
-            target = r;
-            break;
-        }
-    }
-    assert target is not None , "no .text relocation found to corrupt";
-    _corrupt: any = target;
-    _corrupt.rtype = 9999;
-    raised = False;
-    try {
-        linker.build_executable();
-    } except ValueError as e {
-        raised = True;
-        assert "relocation type" in str(e) , f"unexpected message: {e}";
-    }
-    assert raised , "linker silently accepted an unhandled relocation";
-}
-
-test "elf linker emits DT_RUNPATH=$ORIGIN (issue #6353 gap 4)" {
+test "an ELF executable carries DT_RUNPATH=$ORIGIN (issue #6353 gap 4)" {
     # A standalone binary must find a sibling shared library regardless of the
-    # launch directory. The linker emits DT_RUNPATH=$ORIGIN so the loader
+    # launch directory. The link sets DT_RUNPATH=$ORIGIN so the loader
     # resolves needed libraries relative to the executable. Pure link-time
     # check -- no execution, so it runs without qemu.
     import jaclang.compiler.backends.native.llvm.binding as llvm;
+    import os;
     import struct;
-    import from jaclang.compiler.backends.native.elf_linker { ElfLinker }
+    import tempfile;
+    import from jaclang.compiler.backends.native.native_link {
+        NativeLinkJob,
+        link_native
+    }
     llvm.initialize_all_targets();
     llvm.initialize_all_asmprinters();
     ir = "target triple = \"x86_64-unknown-linux-gnu\"\n"
-        + "define i64 @f() {\n  ret i64 0\n}\n";
+        + "define void @_start() {\n  ret void\n}\n";
     mod = llvm.parse_assembly(ir);
     tm = llvm.Target.from_triple("x86_64-unknown-linux-gnu").create_target_machine(
-        opt=2
+        opt=2, reloc="pic"
     );
-    obj_bytes = tm.emit_object(mod);
-    linker = ElfLinker(
-        obj_data=obj_bytes,
-        sections=[],
-        symbols=[],
-        relocations=[],
-        needed_libs=["libc.so.6", "libfoo.so"]
-    );
-    assert linker.parse_object() , "parse_object failed";
-    out = linker.build_executable();
+    with tempfile.TemporaryDirectory() as work {
+        out_path = os.path.join(work, "runpath_probe");
+        link_native(
+            NativeLinkJob(
+                platform="elf",
+                triple="x86_64-unknown-linux-gnu",
+                output_path=out_path,
+                objects=[tm.emit_object(mod)],
+                needed_libs=["libc.so.6", "libfoo.so"]
+            )
+        );
+        with open(out_path, "rb") as f {
+            out = f.read();
+        }
+    }
     # The $ORIGIN runpath string is emitted into .dynstr ...
     assert b"$ORIGIN\x00" in out , "DT_RUNPATH $ORIGIN string not emitted";
     # ... and referenced by a DT_RUNPATH (tag 29) dynamic entry.
     assert struct.pack("<q", 29) in out , "DT_RUNPATH (tag 29) dynamic entry missing";
+    assert b"libfoo.so\x00" in out , "DT_NEEDED libfoo.so not recorded";
 }
 
 test "list_bugs pop local removes element" {
@@ -6491,12 +6441,29 @@ test "restore-failure falls back to recompile for inferred modules (item #19)" {
         bc1 = comp.get_bytecode(fx, JacProgram());
         assert bc1 is not None , "warm-up compile must produce bytecode";
         prog2 = JacProgram();
-        with patch.object(
-            JacCompiler, '_load_native_from_cache', side_effect=RuntimeError('boom')
-        ) {
+        # The recompile builds its engine through the same loader, so only
+        # the restore (the first call) fails.
+        real_load: any = JacCompiler._load_native_from_cache;
+        loads: list[int] = [];
+
+        def restore_fails(compiler: JacCompiler, *args: object, **kwargs: object) {
+            loads.append(1);
+            if len(loads) == 1 {
+                raise RuntimeError('boom');
+            }
+            real_load(compiler, *args, **kwargs);
+        }
+        with patch.object(JacCompiler, '_load_native_from_cache', restore_fails) {
             bc2 = comp.get_bytecode(fx, prog2);
         }
         assert bc2 is not None;
+        # Without a kernel the host recompiles and builds the engine in the
+        # pass itself, so the loader sees only the failed restore.
+        import from jaclang.compiler.native_compiler { ensure_loaded }
+        rebuilds = 2 if ensure_loaded() is not None else 1;
+        assert len(loads) == rebuilds , (
+            f"expected {rebuilds} loader call(s), saw {len(loads)}"
+        );
         (eng, _) = comp.get_native_interop_setup(fx, prog2);
         assert eng is not None , (
             "restore failure must trigger recompile for inferred modules"

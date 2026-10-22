@@ -1,6 +1,8 @@
 import from "@jac/runtime" { Link }
 
-def:pub NotFound -> JsxElement {
+def:pub NotFound -> JsxElement;
+
+impl NotFound -> JsxElement {
     return
         <section
             className="relative flex min-h-[80vh] items-center justify-center overflow-hidden pt-16"

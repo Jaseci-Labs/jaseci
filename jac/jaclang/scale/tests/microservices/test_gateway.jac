@@ -1,16 +1,6 @@
 import os;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceRegistry,
-    ServiceEntry,
-    ServiceStatus
-}
-import from jaclang.scale.runtime.gateway.microservice_gateway { MicroserviceGateway }
-import from jaclang.scale.runtime.gateway.process_gateway { ProcessGateway }
-import from jaclang.runtime.runtime { JacRuntime as Jac }
-import from jaclang.server.serving.datatypes { Headers, Request, URL }
-import from jaclang.scale.tests.support { get_free_port }
 
 test "resolve strips prefix and preserves walker path" {
     reg = ServiceRegistry();
@@ -588,7 +578,7 @@ test "service-down returns standardized envelope with SERVICE_UNAVAILABLE + Retr
     assert resp.headers.get("retry-after") == "2";
 }
 
-test "service-timeout returns GATEWAY_TIMEOUT (502) without Retry-After" {
+test "an unreachable service returns BAD_GATEWAY (502) without Retry-After" {
     reg = ServiceRegistry();
     reg.register(
         ServiceEntry(
@@ -609,9 +599,52 @@ test "service-timeout returns GATEWAY_TIMEOUT (502) without Retry-After" {
 
     assert resp.status_code == 502;
     body = resp.json();
-    assert body["error"]["code"] == "GATEWAY_TIMEOUT";
+    assert body["error"]["code"] == "BAD_GATEWAY";
     assert body["error"]["service"] == "orders";
     assert resp.headers.get("retry-after") is None;
+}
+
+test "a service that accepts but never answers returns GATEWAY_TIMEOUT (504)" {
+    import socket;
+    import shutil;
+    import from jaclang.scale.config.config_loader {
+        get_scale_config,
+        reset_scale_config
+    }
+    silent = socket.socket();
+    silent.bind(("127.0.0.1", 0));
+    silent.listen(4);
+    port = silent.getsockname()[1];
+    project = tempfile.mkdtemp(prefix="jac-gw-timeout-");
+    (Path(project) / "jac.toml").write_text(
+        '[project]\nname = "shop"\n\n[scale.gateway]\nhttp_forward_timeout = 1\n',
+        encoding="utf-8"
+    );
+    reset_scale_config();
+    try {
+        get_scale_config(project_dir=Path(project));
+        reg = ServiceRegistry();
+        reg.register(
+            ServiceEntry(
+                name="orders",
+                file="orders.jac",
+                prefix="/api/orders",
+                port=port,
+                url=f"http://127.0.0.1:{port}",
+                status=ServiceStatus.HEALTHY
+            )
+        );
+        gw = MicroserviceGateway(registry=reg);
+        gw.setup();
+        import from jaclang.testing.testkit { ServingTestClient as TestClient }
+        resp = TestClient(gw.app).get("/api/orders/walker/list");
+    } finally {
+        silent.close();
+        reset_scale_config();
+        shutil.rmtree(project, ignore_errors=True);
+    }
+    assert resp.status_code == 504;
+    assert resp.json()["error"]["code"] == "GATEWAY_TIMEOUT";
 }
 
 test "unmatched path returns NOT_FOUND envelope" {
@@ -1268,7 +1301,6 @@ obj _FakeScaleConfig {
 
 
 def _with_cors_config(cfg: dict[str, any], fn: any) -> any {
-    import jaclang.scale.config.config_loader as config_loader;
     orig = config_loader.get_scale_config;
     fake = _FakeScaleConfig(_cors=cfg);
     def fake_factory(project_dir: object = None) -> object {
@@ -2043,7 +2075,6 @@ test "learn skips bare builtin API roots so one service cannot capture them" {
 
 
 def gw_route_table_for_poison_test -> any {
-    import from jaclang.scale.runtime.gateway.route_table { ServiceRouteTable }
     table = ServiceRouteTable();
     table.learn(
         "core_app",
@@ -2122,9 +2153,13 @@ test "forward headers append the peer to the forwarded chain" {
     h = Headers();
     h.append("x-forwarded-for", "203.0.113.7");
     h.append("X-Forwarded-For", "198.51.100.9");
+    h.append("Expect", "100-continue");
+    h.append("X-Ordinary", "kept");
     req = Request(url=URL(path="/api/x"), headers=h, client_host="10.0.0.1");
     fwd = gw.build_forward_headers(req);
     assert fwd["X-Forwarded-For"] == "203.0.113.7, 198.51.100.9, 10.0.0.1";
+    assert all(k.lower() != "expect" for k in fwd.keys());
+    assert fwd["X-Ordinary"] == "kept";
     xff_keys = [
         k
         for k in fwd.keys()
@@ -2139,4 +2174,64 @@ test "forward headers stamp the peer when no chain is present" {
     req = Request(url=URL(path="/api/x"), headers=Headers(), client_host="10.0.0.1");
     fwd = gw.build_forward_headers(req);
     assert fwd["X-Forwarded-For"] == "10.0.0.1";
+}
+
+
+test "a session cookie crosses the gateway to the service, for safe requests only" {
+    import from jaclang.scale.tests.scale_test_client { extract_data, make_client }
+    env_name = "JAC_SERVE_AUTH_SESSION_COOKIE";
+    # The gateway is assembled first: identity settings are per process, and
+    # the service, a real served app on a real port, must be the one that
+    # reads the opt-in.
+    reg = ServiceRegistry();
+    gw = MicroserviceGateway(registry=reg);
+    gw.setup();
+    prior = os.environ.get(env_name);
+    os.environ[env_name] = "1";
+    try {
+        service = make_client("restspec_fixtures.jac");
+    } finally {
+        if prior is None {
+            os.environ.pop(env_name, None);
+        } else {
+            os.environ[env_name] = prior;
+        }
+    }
+    try {
+        port = service.raw_client._ensure_live_server();
+        reg.register(_entry("svc_a", "/api/a", port));
+        import from jaclang.testing.testkit { ServingTestClient as TestClient }
+        client = TestClient(gw.app);
+        credentials = {"type": "password", "password": "Pass!99"};
+        who = {"type": "username", "value": "gw_cookie_user"};
+        registered = client.post(
+            "/api/a/user/register",
+            json={"identities": [who], "credential": credentials}
+        );
+        assert registered.status_code == 201 , registered.text;
+        user_id = extract_data(registered.json())["user_id"];
+        login = client.post(
+            "/api/a/user/login", json={"identity": who, "credential": credentials}
+        );
+        assert login.status_code == 200 , login.text;
+        token = extract_data(login.json())["token"];
+        # The service's Set-Cookie survives the hop back to the browser.
+        set_cookie = str(login.headers.get("Set-Cookie"));
+        assert set_cookie.startswith(f"jac_session={token};") , set_cookie;
+        assert "HttpOnly" in set_cookie and "SameSite=Strict" in set_cookie;
+
+        cookie = {"Cookie": f"jac_session={token}"};
+        me = client.get("/api/a/user/me", headers=cookie);
+        assert me.status_code == 200 , me.text;
+        assert extract_data(me.json())["user_id"] == user_id;
+        func = client.get("/api/a/function/get_func", headers=cookie);
+        assert func.status_code == 200 , f"{func.status_code} {func.text}";
+        assert client.get("/api/a/function/get_func").status_code == 401;
+        assert client.post(
+            "/api/a/function/post_func", json={}, headers=cookie
+        ).status_code
+            == 401;
+    } finally {
+        service.close();
+    }
 }

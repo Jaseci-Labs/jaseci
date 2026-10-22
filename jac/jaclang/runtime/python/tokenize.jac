@@ -1,49 +1,7 @@
 """Python's streaming token iterator backed by the shared Jac scanner."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyLong_FromLongLong,
-    PyObject,
-    PyTuple_New,
-    jacpy_readline,
-    jacpy_release,
-    jacpy_tuple_set_owned
-}
 import type from typing { Never }
-import from jaclang.compiler.frontend.python.compiler_diagnostics {
-    report_token_warnings
-}
-import from jaclang.compiler.frontend.python.tokenizer {
-    tok_state,
-    token_source,
-    tokenizer_next
-}
-import from jaclang.compiler.frontend.python.token_model {
-    ENDMARKER,
-    NEWLINE,
-    INDENT,
-    DEDENT,
-    NUMBER,
-    STRING,
-    OP,
-    FSTRING_MIDDLE,
-    TSTRING_MIDDLE,
-    NL,
-    tok_diag
-}
 
-import from jaclang.runtime.python.capi {
-    boundary_failure,
-    checked,
-    required,
-    text_object
-}
-import from jaclang.runtime.python.native_services {
-    take_buffer,
-    parse_integer,
-    parse_float
-}
-import from jaclang.compiler.frontend.python.syntax_error { syntax_failure }
 obj native_token {
     has kind: int,
         spelling: str,
@@ -99,10 +57,21 @@ obj token_iterator_state(token_source) {
             self.input_finished = True;
             return False;
         }
+        first = len(self.lines);
         parts = line.split("\n");
         self.lines.extend(part + "\n" for part in parts[:-1]);
         if parts[-1] {
             self.lines.append(parts[-1]);
+        }
+        # tok_nextc(): a line holding a NUL ends the stream with this error.
+        if "\x00" in line {
+            for index in range(first, len(self.lines)) {
+                if "\x00" in self.lines[index] {
+                    self.syntax_error(
+                        "source code cannot contain null bytes", index + 1, 0
+                    );
+                }
+            }
         }
         decoded = line.replace("\r\n", "\n");
         if not decoded.endswith("\n") {
@@ -127,7 +96,8 @@ obj token_iterator_state(token_source) {
             lineno=lineno,
             offset=offset,
             text=line,
-            kind=kind
+            kind=kind,
+            open_end=True
         );
     }
 
@@ -245,9 +215,12 @@ obj token_iterator_state(token_source) {
             } elif ("." in spelling or "e" in spelling or "E" in spelling) {
                 parse_float(spelling);
             } else {
+                # The tokenize module accepts leading zeros (0_7, 09_99;
+                # gh-105549): the literal is checked as if it began with 1,
+                # which keeps its underscore rules.
                 parse_integer(
-                    spelling.lstrip("0") or "0"
-                        if self.scanner.extra_tokens
+                    "1" + spelling[1:]
+                        if self.scanner.extra_tokens and spelling.startswith("0")
                         else spelling
                 );
             }
