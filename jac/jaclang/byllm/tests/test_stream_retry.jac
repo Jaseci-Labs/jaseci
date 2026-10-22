@@ -180,3 +180,39 @@ test "a typed call with a stream_handler parses only the retried attempt" {
         f"the failed attempt must reach the handler before the reset: {kinds}"
     );
 }
+
+
+test "a stream that fails mid-answer leaves no fragment in the conversation" {
+    for mode in ["plain", "events"] {
+        history: list[dict[str, any]] = [];
+        llm = MockLLM(
+            outputs=[
+                finish("COMMITTED"),
+                fail(_dropped(), content="partial text here", after=1)
+            ]
+        );
+
+        def ask(task: str) -> str by llm(
+            tools=[save_data],
+            stream=True,
+            logging=(mode == "events"),
+            stream_num_retries=0,
+            conversation=history
+        );
+
+        error: any = None;
+        try {
+            list(ask("go"));
+        } except Exception as e {
+            error = e;
+        }
+        assert isinstance(error, InternalServerError) , f"{mode}: got {error!r}";
+        assert history , f"{mode}: the conversation was not written back";
+        fragments = [
+            m
+            for m in history
+            if m.get("role") == "assistant" and "partial" in str(m.get("content"))
+        ];
+        assert not fragments , f"{mode}: the conversation kept {fragments}";
+    }
+}

@@ -1685,6 +1685,9 @@ impl BaseLLM._stream_final_answer(
         }
         accumulated = fallback;
         yield fallback;
+    } except Exception {
+        accumulated = "";
+        raise;
     } finally {
         mt_run._call_kind = original_call_kind;
         mt_run.call_params.pop("tool_choice", None);
