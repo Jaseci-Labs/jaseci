@@ -2581,6 +2581,116 @@ test "a [serve] table without a worker count leaves the count unset" {
 }
 
 
+"""A JAC_SERVE_* variable that is empty leaves jac.toml in charge, and a boolean
+one takes only the true/false words; anything else stops the load instead of
+switching a surface on (#10051)."""
+test "an empty JAC_SERVE_* variable is unset and a boolean one refuses other words" {
+    import from operator { attrgetter }
+    import from unittest.mock { patch }
+    import from jaclang.project.config { JacConfig }
+    import from jaclang.server.settings { ServeConfigError }
+    switches = {
+        name: attrgetter(path)
+        for (name, path) in [
+            ("JAC_SERVE_DOCS", "docs_enabled"),
+            ("JAC_SERVE_GRAPH", "graph_enabled"),
+            ("JAC_SERVE_ACCESS_LOG", "access_log.enabled"),
+            (
+                "JAC_SERVE_ACCESS_LOG_SUPPRESS_HEALTH",
+                "access_log.suppress_health_checks"
+            ),
+            ("JAC_SERVE_COMPRESSION", "compression.enabled"),
+            ("JAC_SERVE_AUTH_SESSION_COOKIE", "auth.session_cookie")
+        ]
+    };
+    with TemporaryDirectory() as tmpdir {
+        manifest = Path(tmpdir) / "jac.toml";
+        manifest.write_text(
+            '[project]\nname = "env-switches"\n\n'
+            '[serve]\nport = 9123\ndocs_enabled = false\ngraph_enabled = false\n'
+            'cors_origins = ["https://app.example"]\n\n'
+            '[serve.access_log]\nenabled = false\nsuppress_health_checks = false\n\n'
+            '[serve.compression]\nenabled = false\nmin_bytes = 2048\n\n'
+            '[serve.auth]\nsession_cookie = false\n'
+        );
+        config = JacConfig.load(manifest);
+        for blank in ["", "   "] {
+            env = {name: blank for name in switches};
+            env.update(
+                {
+                    "JAC_SERVE_PORT": blank,
+                    "JAC_SERVE_CORS_ORIGINS": blank,
+                    "JAC_SERVE_COMPRESSION_MIN_BYTES": blank,
+                    "JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH": blank
+                }
+            );
+            with patch.dict(os.environ, env) {
+                loaded = _settings_without_worker_env(tmpdir, config=config);
+            }
+            for (name, read) in switches.items() {
+                assert read(loaded) is False , (
+                    f"{name}={blank!r} overrode a jac.toml false"
+                );
+            }
+            assert loaded.port == 9123 , f"JAC_SERVE_PORT={blank!r} gave {loaded.port}";
+            assert loaded.cors_origins == ["https://app.example"] , (
+                f"JAC_SERVE_CORS_ORIGINS={blank!r} gave {loaded.cors_origins}"
+            );
+            assert loaded.compression.min_bytes == 2048;
+            assert loaded.auth.password.min_length == 8;
+        }
+        for (name, read) in switches.items() {
+            for (raw, expected) in [
+                ("1", True),
+                ("TRUE", True),
+                ("yes", True),
+                ("On", True),
+                ("off", False),
+                ("No", False),
+                ("0", False)
+            ] {
+                with patch.dict(os.environ, {name: raw}) {
+                    loaded = _settings_without_worker_env(tmpdir, config=config);
+                }
+                assert read(loaded) is expected , f"{name}={raw!r} read as {read(
+                    loaded
+                )}";
+            }
+            for typo in ["disabled", "flase", "none", "enabled"] {
+                with patch.dict(os.environ, {name: typo}) {
+                    try {
+                        _settings_without_worker_env(tmpdir, config=config);
+                        assert False , f"{name}={typo!r} was read as a boolean";
+                    } except ServeConfigError as refused {
+                        assert f"{name} must be true or false" in str(refused) , (
+                            str(refused)
+                        );
+                        assert repr(typo) in str(refused) , str(refused);
+                    }
+                }
+            }
+        }
+        for (name, raw, needle) in [
+            ("JAC_SERVE_PORT", "eighty", "JAC_SERVE_PORT must be an integer"),
+            (
+                "JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH",
+                "long",
+                "JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH must be an integer"
+            )
+        ] {
+            with patch.dict(os.environ, {name: raw}) {
+                try {
+                    _settings_without_worker_env(tmpdir, config=config);
+                    assert False , f"{name}={raw!r} was accepted";
+                } except ServeConfigError as refused {
+                    assert needle in str(refused) , str(refused);
+                }
+            }
+        }
+    }
+}
+
+
 test "an unset worker count falls back to one worker where more would be refused" {
     import from jaclang.server.settings { ServeConfigError, ServeSettings }
     with TemporaryDirectory() as tmpdir {
