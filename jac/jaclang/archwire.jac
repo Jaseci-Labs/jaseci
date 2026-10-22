@@ -5697,12 +5697,12 @@ graph import compiler {
             classify_cross_app_import
         },
         placement.placement._element_reqs { classify_import },
+        placement.placement._scan_blockers_under { ability_delegates_to_model },
         placement.placement.module_anchor_reasons {
             ability_delegates_to_model,
             classify_import,
             is_service_app_entry
         },
-        placement.placement.native_blocker_scan { ability_delegates_to_model },
         placement.placement_export.collect_placement_rows {
             ClientImportVerdict,
             classify_client_import_item,
@@ -6401,7 +6401,7 @@ graph import compiler {
         passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
-        placement.placement.native_blocker_scan {
+        placement.placement._scan_blockers_under {
             NATIVE_SUPPORTED_STDLIB,
             is_bundled_native_module,
             resolve_native_module
@@ -7340,7 +7340,7 @@ graph import compiler {
         backends.es.esast_gen_pass
             | backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
-            | driver.boundary_classify.python_side_name_refs
+            | driver.boundary_classify.is_server_anchored_module
             | driver.module_compile
             | driver.program.JacProgram.stamp_native_import_facts
             | native_bindings
@@ -7352,6 +7352,7 @@ graph import compiler {
             | passes.placement_pass
             | passes.rc_facts_pass
             | passes.type_checker_pass.TypeCheckPass._is_generator
+            | placement.placement
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7361,8 +7362,9 @@ graph import compiler {
             ModuleFacts,
             client_capability_violations
         },
+        driver.boundary_classify.python_side_name_refs
+            | types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
         passes.placement_pass.client_refused_elements { client_capability_violations },
-        types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
     frontend.parser.frontend ++> [
         driver.compiler.JacCompiler._prepare_tool_program
@@ -12291,6 +12293,7 @@ graph import compiler.frontend {
             ModuleCode,
             ModuleItem,
             Name,
+            Test,
             TupleVal,
             UniNode,
             YieldExpr,
@@ -13788,7 +13791,7 @@ graph import compiler.placement {
         },
     ]
     placement_pins --> [
-        placement.native_blocker_scan { config_module_pin as _cmp, config_pin_for },
+        placement._scan_blockers_under { config_module_pin as _cmp, config_pin_for },
         placement.project_kind_name { config_project_kind },
         placement.summarize_module {
             config_element_pin,
