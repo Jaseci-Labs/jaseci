@@ -21,7 +21,7 @@ glob GROUPS: list[dict[str, any]] = [
                  {
                      "tag": "apps, same trick",
                      "title": "One import crosses an app boundary",
-                     "body": "The same import that erases the client/server line erases the service line. jac.toml declares this workspace's apps, and core/social_graph.jac is one of them: a file-rooted service app that the web app, the mobile app, and the cli app all consume by importing it. The boundary is structural, so it compiles and type-checks as a cut no matter how it is deployed; the topology is a profile, so it shares one process under jac run and runs as its own process behind the gateway in the fleet. The scorer works the same way: JacYac submits a repository to the scoring service and displays its typed score breakdown. The shared state module below is consumed by both the web and React Native renderers.",
+                     "body": "The same import that erases the client/server line erases the service line. jac.toml declares this workspace's apps, and core/social_graph.jac is one of them: a file-rooted service app that the web app, the mobile app, and the cli app all consume by importing it. The boundary is structural, so it compiles and type-checks as a cut no matter how it is deployed; the topology is a profile, so it shares one process under jac run and runs as its own process behind the gateway in the fleet. The knowledge service works the same way: it owns one clone of the jac repo, and the docs reader asks it for the docs of earlier release lines. The shared state module below is consumed by both the web and React Native renderers.",
                      "path": "jac.toml",
                      "needle": "[apps.social_graph]",
                      "hl": 3,
@@ -82,7 +82,7 @@ glob GROUPS: list[dict[str, any]] = [
              "pre": "",
              "hot": "Topokinetic",
              "post": ": computation moves to the data",
-             "blurb": "The docs and JacYac projects are persistent graphs, and the code that serves them travels: walkers descend, fold, and climb the topology instead of querying it from a distance.",
+             "blurb": "The docs and JacYac are persistent graphs, and the code that serves them travels: walkers descend, fold, and climb the topology instead of querying it from a distance.",
              "define": "topokinetic",
              "sections": [
                  {
@@ -177,9 +177,9 @@ glob GROUPS: list[dict[str, any]] = [
                  {
                      "tag": "queries are paths",
                      "title": "The lookup is one expression",
-                     "body": "Importing historical Ninja Scores finds an existing project under its archive profile with one expression. The bracketed edge reference is a small query algebra: direction, edge type, node type, field predicate, one expression. Assign it to a variable and it is a query; hand it to visit and it is an itinerary.",
+                     "body": "A JacYac feed is one path: from your profile across Follow edges to the profiles you follow, then on to their tweets. The bracketed edge reference is a small query algebra: direction, edge type, node type, field predicate, one expression. Assign it to a variable and it is a query; hand it to visit and it is an itinerary.",
                      "path": "core/social_graph.jac",
-                     "needle": "existing = [archive->:Owns:->[?:Project, full==item.full]];",
+                     "needle": "visit [me->:Follow:->[?:Profile]-->[?:Tweet]];",
                      "hl": 1,
                      "before": 2,
                      "after": 6,
@@ -337,7 +337,7 @@ glob GROUPS: list[dict[str, any]] = [
      ABSENT: list[dict[str, any]] = [
          {
              "thing": "a database",
-             "why": "The docs and JacYac projects live in a persistent graph. root outlives every request with no schema, no connection string, no setup."
+             "why": "The docs and JacYac live in a persistent graph. root outlives every request with no schema, no connection string, no setup."
          },
          {
              "thing": "an ORM or migrations",

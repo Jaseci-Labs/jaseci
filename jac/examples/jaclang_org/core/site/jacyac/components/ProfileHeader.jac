@@ -1,4 +1,6 @@
+import from "@jac/runtime" { Link as RouterLink }
 import from "lucide-react" {
+    Bot,
     MapPin,
     Link2,
     Github,
@@ -42,7 +44,6 @@ impl ProfileHeader(
     followingCount = len(bundle.following) if bundle.following else 0;
     followerCount = len(bundle.followers) if bundle.followers else 0;
     postCount = len(bundle.tweets) if bundle.tweets else 0;
-    projectCount = len(bundle.projects) if bundle.projects else 0;
     joined = new(Date, profile.created_at).toLocaleDateString(
         "en-US", {"month": "short", "year": "numeric"}
     )
@@ -160,6 +161,16 @@ impl ProfileHeader(
                     No bio yet. Tell people what you build.
                 </p>
             } }
+            {if profile.username == "ninjaclaw" {
+                <RouterLink
+                    to="/jacyac/ninjaclaw"
+                    id="lx-claw-profile-link"
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                    <Bot size={14}/>
+                    See what ninjaclaw is working on
+                </RouterLink>
+            }}
             <div
                 className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground"
             >
@@ -219,14 +230,6 @@ impl ProfileHeader(
                     </span>
                     <span className="text-muted-foreground">
                         {("Post" if postCount == 1 else "Posts")}
-                    </span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="font-display font-bold text-foreground">
-                        {str(projectCount)}
-                    </span>
-                    <span className="text-muted-foreground">
-                        {("Project" if projectCount == 1 else "Projects")}
                     </span>
                 </div>
             </div>

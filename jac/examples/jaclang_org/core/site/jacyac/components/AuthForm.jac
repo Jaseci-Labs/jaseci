@@ -8,6 +8,8 @@ def:pub AuthForm(
     loading: bool,
     onUsernameChange: Callable[[ChangeEvent], None],
     onPasswordChange: Callable[[ChangeEvent], None],
+    email: str = "",
+    onEmailChange: Callable[[ChangeEvent], None] = lambda (e: ChangeEvent) {},
     onSubmit: Callable[[FormEvent], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
@@ -22,6 +24,8 @@ impl AuthForm(
     loading: bool,
     onUsernameChange: Callable[[ChangeEvent], None],
     onPasswordChange: Callable[[ChangeEvent], None],
+    email: str = "",
+    onEmailChange: Callable[[ChangeEvent], None] = lambda (e: ChangeEvent) {},
     onSubmit: Callable[[FormEvent], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
@@ -91,24 +95,35 @@ impl AuthForm(
                             Continue with GitHub
                         </Button>
                     }}
-                    <a
-                        href="/jacyac/scores"
-                        className="mb-4 block text-center text-sm text-primary"
-                    >
-                        Browse Ninja Scores
-                    </a>
                     <form {onSubmit} className="flex flex-col gap-4">
                         <Field>
-                            <FieldLabel htmlFor="lx-username">Username</FieldLabel>
+                            <FieldLabel htmlFor="lx-username">
+                                {"Username" if isSignup else "Username or email"}
+                            </FieldLabel>
                             <Input
                                 id="lx-username"
                                 type="text"
-                                placeholder="yourname"
+                                placeholder={"yourname"
+                                    if isSignup
+                                    else "yourname or you@example.com"}
                                 value={username}
                                 onChange={onUsernameChange}
                                 autoComplete="username"
                             />
                         </Field>
+                        {if isSignup {
+                            <Field>
+                                <FieldLabel htmlFor="lx-email">Email</FieldLabel>
+                                <Input
+                                    id="lx-email"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={onEmailChange}
+                                    autoComplete="email"
+                                />
+                            </Field>
+                        }}
                         <Field>
                             <FieldLabel htmlFor="lx-password">Password</FieldLabel>
                             <Input
@@ -125,7 +140,10 @@ impl AuthForm(
                         <Button
                             type="submit"
                             className="mt-1 w-full font-semibold"
-                            disabled={loading or not username.strip() or not password}
+                            disabled={loading
+                                or not username.strip()
+                                or not password
+                                or (isSignup and not email.strip())}
                         >
                             {(
                                 (

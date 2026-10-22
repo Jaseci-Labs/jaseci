@@ -8,9 +8,9 @@ obj Tab {
 
 glob TABS: list[Tab] = [
          Tab(key="feed", icon="home", label="Home"),
-         Tab(key="scores", icon="explore", label="Scores"),
          Tab(key="explore", icon="explore", label="Explore"),
          Tab(key="channels", icon="hash", label="Channels"),
+         Tab(key="ninjaclaw", icon="bot", label="ninjaclaw"),
          Tab(key="profile", icon="user", label="Profile")
      ];
 

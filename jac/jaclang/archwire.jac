@@ -1917,7 +1917,7 @@ graph import {
             | client.targets.pwa_build
             | client.targets.registry.target_for_app
             | client.targets.web_target._get_app_meta_data
-            | client.vite_bundler._dev_head_scripts
+            | client.vite_bundler._dev_head
             | data.pg_dist._configured_dist
             | runtime.graph_utils.get_name
             | scale.plugin._resolve_deploy_target
@@ -4849,10 +4849,13 @@ graph import client {
         serving { client_output_dir },
     ]
     asset_processor ++> jac_client_compiler { AssetProcessor }
-    auth_contract ++> client_react_core
-        | client_runtime
-        | client_runtime_core
-        | solid_runtime { SignupResult }
+    auth_contract ++> [
+        client_react_core | client_runtime_core {
+            SignupResult,
+            __solveRegistrationChallenge
+        },
+        client_runtime | solid_runtime { SignupResult },
+    ]
     client_bundle ++> [
         compiler { ClientBuildInputs, ClientBundle, ClientBundleError },
         compiler.ViteCompiler._compile_wasm_module { client_program },
@@ -5030,8 +5033,9 @@ graph import client {
             JAC_VIRTUAL_MODULE_SOURCES
         },
     ]
-    serving ++> targets.web_target._generate_index_html
-        | vite_bundler._dev_head_scripts { HeaderBuilder }
+    serving ++> targets.web_target._generate_index_html | vite_bundler._dev_head {
+        HeaderBuilder
+    }
     source_mapping ++> client_diagnostics { JacLocator, SourceLocation, _npm_specifier }
     source_mapping --> jac_client_compiler.JacClientCompiler._write_js {
         generate_source_map_json
@@ -8991,8 +8995,19 @@ graph import compiler {
             Expr,
             FuncCall,
             FuncSignature,
+            KWPair,
             Module,
             UnaryExpr
+        },
+        passes.wasm_contract._host_export {
+            Archetype,
+            Import,
+            Module,
+            ModuleItem,
+            Name,
+            ability_of_symbol,
+            import_chain_of,
+            resolved_decl_of
         },
         passes.wasm_contract.check_host_call { Module, Name, ability_of_symbol },
         passes.wasm_contract.host_contracts { Import },
@@ -32345,6 +32360,10 @@ graph import server {
         register_auth_endpoints
     }
     endpoints.colocated ++> [
+        server.JacAPIServer._colocated_scheduled_targets {
+            colocated_providers,
+            provider_introspector
+        },
         server.JacAPIServer.register_endpoints { register_colocated_endpoints },
         server.print_endpoint_docs { colocated_providers, provider_route },
     ]
@@ -32618,9 +32637,10 @@ graph import server {
     task_scheduler ++> [
         server { Scheduler },
         server.JacAPIServer.__post_init__ { Scheduler },
+        server.JacAPIServer._colocated_scheduled_targets { ScheduleSpec },
         server.JacAPIServer._register_scheduled_tasks { schedule_namespace },
-        server.JacAPIServer._scheduled_targets { ScheduleSpec },
         server.ModuleIntrospector.scheduled_members { ScheduleSpec },
+        server.ModuleIntrospector.scheduled_targets { ScheduleSpec },
     ]
     task_scheduler --> server.JacAPIServer._start_problems { schedule_problems }
     transport ++> [

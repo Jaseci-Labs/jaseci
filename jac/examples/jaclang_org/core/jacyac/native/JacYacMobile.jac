@@ -9,9 +9,9 @@ import from "@jac/mobui" {
 
 glob TAB_TITLES: dict[str, str] = {
          "feed": "Home",
-         "scores": "Ninja Scores",
          "explore": "Explore",
          "channels": "Channels",
+         "ninjaclaw": "ninjaclaw",
          "profile": "Profile"
      };
 
@@ -53,17 +53,18 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
             </View>;
     }
 
-    if not model.session.loggedIn and model.activeTab != "scores" {
+    if not model.session.loggedIn {
         return
             <AuthScreen
                 embedded={embedded}
-                onScores={lambda { model.navigate("scores"); }}
                 isSignup={model.session.signup}
                 username={model.session.username}
+                email={model.session.email}
                 password={model.session.password}
                 error={model.session.error}
                 loading={model.session.busy}
                 onUsernameChange={lambda (t: str) { model.session.setUsername(t); }}
+                onEmailChange={lambda (t: str) { model.session.setEmail(t); }}
                 onPasswordChange={lambda (t: str) { model.session.setPassword(t); }}
                 onSubmit={model.session.submit}
                 onToggleMode={model.session.toggleMode}
@@ -113,9 +114,7 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
                 />
             }}
             <View style={styles.body}>
-                {if model.activeTab == "scores" {
-                    <ScoresScreen model={model}/>
-                } elif model.activeTab == "feed" {
+                {if model.activeTab == "feed" {
                     <FeedScreen
                         avatars={model.avatars}
                         username={profileUsername}
@@ -165,6 +164,8 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
                         onComment={model.handleComment}
                         onDelete={model.handleDelete}
                     />
+                } elif model.activeTab == "ninjaclaw" {
+                    <ClawScreen/>
                 } else {
                     <ProfileScreen
                         avatars={model.avatars}

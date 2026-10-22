@@ -7,6 +7,18 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_MSG_OFF: int = 32,
      GEN_FRAME_HEADER: int = 40;
 
+glob UTF8_CURSOR_MIN_BYTES: int = 64,
+     UTF8_CURSOR_WAYS: int = 4,
+     UTF8_CURSOR_WORDS: int = 8,
+     UTF8_CURSOR_BASE: int = 0,
+     UTF8_CURSOR_DATA: int = 1,
+     UTF8_CURSOR_LEN: int = 2,
+     UTF8_CURSOR_EPOCH: int = 3,
+     UTF8_CURSOR_TOTAL: int = 4,
+     UTF8_CURSOR_K: int = 5,
+     UTF8_CURSOR_OFF: int = 6,
+     UTF8_CURSOR_USED: int = 7;
+
 def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
 def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
@@ -378,6 +390,7 @@ walker NaIRGenPass(CompilerPass) {
         str_isascii_fn: (ir.Function | None) = None,
         utf8_cplen_fn: (ir.Function | None) = None,
         utf8_cp_off_fn: (ir.Function | None) = None,
+        utf8_cp_count_fn: (ir.Function | None) = None,
         utf8_cp_len_at_fn: (ir.Function | None) = None,
         utf8_char_at_fn: (ir.Function | None) = None,
         utf8_advance_fn: (ir.Function | None) = None,
@@ -2613,7 +2626,8 @@ walker NaIRGenPass(CompilerPass) {
         ptr: ir.Value,
         nbytes: ir.Value,
         ascii: ir.Value,
-        name: str = "u8.cplen"
+        name: str = "u8.cplen",
+        base: (ir.Value | None) = None
     ) -> ir.Value;
 
     def _call_utf8_cp_off(
@@ -2622,8 +2636,36 @@ walker NaIRGenPass(CompilerPass) {
         nbytes: ir.Value,
         cp_index: ir.Value,
         ascii: ir.Value,
-        name: str = "u8.cpoff"
+        name: str = "u8.cpoff",
+        base: (ir.Value | None) = None
     ) -> ir.Value;
+
+    def _call_utf8_cp_count(
+        b: ir.IRBuilder,
+        ptr: ir.Value,
+        nbytes: ir.Value,
+        upto: ir.Value,
+        ascii: ir.Value,
+        name: str = "u8.cpcount",
+        base: (ir.Value | None) = None
+    ) -> ir.Value;
+
+    def _utf8_base_arg(b: ir.IRBuilder, base: (ir.Value | None)) -> ir.Value;
+    def _utf8_cursor_state -> tuple[ir.Function, ir.Function, ir.GlobalVariable];
+    def _utf8_cursor_keyed(b: ir.IRBuilder, base: ir.Value) -> ir.Value;
+    def _utf8_cursor_tag_keyed(b: ir.IRBuilder, tag: ir.Value, name: str) -> ir.Value;
+    def _utf8_cursor_fn -> ir.Function;
+    def _utf8_forget_fn -> ir.Function;
+    def _utf8_forget_on_free(b: ir.IRBuilder, ptr: ir.Value) -> ir.IRBuilder;
+    def _utf8_pick_anchor(
+        b: ir.IRBuilder,
+        want: ir.Value,
+        spots: tuple[ir.Value, ir.Value],
+        cursor: tuple[ir.Value, ir.Value],
+        tail: tuple[ir.Value, ir.Value],
+        known: ir.Value,
+        name: str
+    ) -> tuple[ir.Value, ir.Value, ir.Value];
 
     def _call_utf8_cp_len_at(
         b: ir.IRBuilder,
