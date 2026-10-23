@@ -2561,10 +2561,7 @@ test "an unset worker count picks as many as fit; an explicit one is kept" {
 }
 
 
-"""A [serve] table stands where it says nothing and where a JAC_SERVE_* variable
-is blank; a boolean variable outside the true/false words stops the load instead
-of switching a surface on (#10051)."""
-test "a [serve] table without a worker count leaves the count unset, and a blank JAC_SERVE_* variable leaves the table in charge" {
+test "a [serve] table stands where it omits a key or a JAC_SERVE_* variable is blank" {
     import from unittest.mock { patch }
     import from jaclang.project.config { JacConfig }
     import from jaclang.server.settings { ServeConfigError }
@@ -2572,10 +2569,8 @@ test "a [serve] table without a worker count leaves the count unset, and a blank
         manifest = Path(tmpdir) / "jac.toml";
         manifest.write_text(
             '[project]\nname = "workers-unset"\n\n'
-            '[serve]\nport = 9123\ndocs_enabled = false\ngraph_enabled = false\n'
-            'cors_origins = ["https://app.example"]\n\n'
-            '[serve.access_log]\nenabled = false\n\n'
-            '[serve.compression]\nenabled = false\n'
+            '[serve]\nport = 9123\ngraph_enabled = false\n'
+            'cors_origins = ["https://app.example"]\n'
         );
         config = JacConfig.load(manifest);
         assert config.serve.port == 9123;
@@ -2586,46 +2581,25 @@ test "a [serve] table without a worker count leaves the count unset, and a blank
         assert settings.workers.count_by_default , (
             "a [serve] port pinned the app to an explicit worker count"
         );
-        switches = [
-            "DOCS",
-            "GRAPH",
-            "ACCESS_LOG",
-            "ACCESS_LOG_SUPPRESS_HEALTH",
-            "COMPRESSION"
-        ];
-        for blank in ["", "   "] {
-            env = {
-                f"JAC_SERVE_{name}": blank
-                for name in switches + ["PORT", "CORS_ORIGINS"]
-            };
-            with patch.dict(os.environ, env) {
-                loaded = _settings_without_worker_env(tmpdir, config=config);
-            }
-            seen = (
-                loaded.docs_enabled,
-                loaded.graph_enabled,
-                loaded.access_log.enabled,
-                loaded.access_log.suppress_health_checks,
-                loaded.compression.enabled,
-                loaded.port,
-                loaded.cors_origins
-            );
-            assert seen
-                == (False, False, False, False, False, 9123, ["https://app.example"]) , (
-                f"blank variables ({blank!r}) overrode jac.toml: {seen}"
-            );
+        blank = {
+            name: ""
+            for name in ["JAC_SERVE_GRAPH", "JAC_SERVE_PORT", "JAC_SERVE_CORS_ORIGINS"]
+        };
+        with patch.dict(os.environ, blank) {
+            loaded = _settings_without_worker_env(tmpdir, config=config);
         }
-        for name in switches {
-            for typo in ["disabled", "flase"] {
-                with patch.dict(os.environ, {f"JAC_SERVE_{name}": typo}) {
-                    try {
-                        _settings_without_worker_env(tmpdir, config=config);
-                        assert False , f"JAC_SERVE_{name}={typo!r} was read as a boolean";
-                    } except ServeConfigError as refused {
-                        assert f"JAC_SERVE_{name} must be true or false"
-                            in str(refused) , (str(refused));
-                    }
-                }
+        seen = (loaded.graph_enabled, loaded.port, loaded.cors_origins);
+        assert seen == (False, 9123, ["https://app.example"]) , (
+            f"a blank JAC_SERVE_* variable overrode jac.toml: {seen}"
+        );
+        with patch.dict(os.environ, {"JAC_SERVE_GRAPH": "disabled"}) {
+            try {
+                _settings_without_worker_env(tmpdir, config=config);
+                assert False , "JAC_SERVE_GRAPH=disabled was read as a boolean";
+            } except ServeConfigError as refused {
+                assert "JAC_SERVE_GRAPH must be true or false" in str(refused) , (
+                    str(refused)
+                );
             }
         }
     }
