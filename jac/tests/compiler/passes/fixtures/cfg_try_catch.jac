@@ -10,3 +10,12 @@ def parse(s: str) -> int {
     }
     return y;
 }
+
+def check(s: str) {
+    try {
+        int(s);
+        return;
+    } except ValueError {
+        print(s);
+    }
+}

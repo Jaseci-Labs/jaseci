@@ -127,3 +127,16 @@ obj NestedThenFinally {
         }
     }
 }
+
+obj ParseOrReturn {
+    has x: Final[int];
+
+    def init(s: str) {
+        try {
+            self.x = int(s);
+            return;
+        } except ValueError {
+            self.x = 0;
+        }
+    }
+}

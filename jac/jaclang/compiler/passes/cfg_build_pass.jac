@@ -18,6 +18,7 @@ walker CFGBuildPass(TreePass) {
     def _connect_tails(parent: UniNode, target: UniCFGNode) -> None;
     def _connect_tail(k: UniNode, target: UniCFGNode) -> None;
     def _raising_stmts(stmts: Sequence[UniNode]) -> list[CodeBlockStmt];
+    def _can_raise(nd: CodeBlockStmt) -> bool;
     def _link_body_tails_to_header(
         nd: WhileStmt | ForeverStmt | InForStmt | IterForStmt
     ) -> None;

@@ -646,6 +646,16 @@ impl CFGBuildPass.exit_try_stmt with TryStmt exit {
     }
 }
 
+impl CFGBuildPass._can_raise(nd: CodeBlockStmt) -> bool {
+    if isinstance(nd, (CtrlStmt, TryStmt, ElseStmt, FinallyStmt)) {
+        return False;
+    }
+    if isinstance(nd, ReturnStmt) {
+        return nd.expr is not None;
+    }
+    return True;
+}
+
 impl CFGBuildPass._raising_stmts(stmts: Sequence[UniNode]) -> list[CodeBlockStmt] {
     found: list[CodeBlockStmt] = [];
     pending: list[UniNode] = list(stmts);
@@ -654,7 +664,7 @@ impl CFGBuildPass._raising_stmts(stmts: Sequence[UniNode]) -> list[CodeBlockStmt
         if not nd or isinstance(nd, (Expr, Semi, Ability, Archetype, ImplDef, Test)) {
             continue;
         }
-        if isinstance(nd, CodeBlockStmt) {
+        if isinstance(nd, CodeBlockStmt) and self._can_raise(nd) {
             found.append(nd);
         }
         pending.extend([nd->:Kid:->]);

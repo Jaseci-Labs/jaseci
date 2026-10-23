@@ -508,4 +508,7 @@ test "cfg try body statements may raise into except" {
     for nd in handler.bb_catch_in {
         assert handler not in nd.bb_out , nd.loc.first_line;
     }
+    bare_return_handler = mod.get_all_sub_nodes(uni.Except)[1];
+    sources = [nd.loc.first_line for nd in bare_return_handler.bb_catch_in];
+    assert sources == [16] , sources;
 }
