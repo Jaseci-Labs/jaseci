@@ -24,11 +24,9 @@ impl EsastGenPass._resolve_dynamic_import_spec(
         candidates.append(raw + ".jac");
     }
     for candidate in candidates {
-        try {
-            resolved = resolve_relative_path(candidate, importer, string_spec=True);
-        } except Exception {
-            continue;
-        }
+        (resolved, _lang) = active_host().resolve_module(
+            candidate, importer, string_spec=True
+        );
         if resolved.endswith(".jac") and os.path.isfile(resolved) {
             return resolved;
         }

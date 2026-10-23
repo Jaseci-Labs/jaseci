@@ -2177,9 +2177,6 @@ graph import {
             | testing.cl_test_runner._compile_runtime {
             resolve_jac_virtual_module_path
         },
-        compiler.backends.es.esast_gen_pass.EsastGenPass._resolve_dynamic_import_spec {
-            resolve_relative_path
-        },
         compiler.backends.py.artifact_imports.resolve_imports
             | dist.precompile_bytecode.image_mount_prefix { project_mounts },
         dist.publish.py_imports { resolve_module },
