@@ -685,6 +685,9 @@ impl StudioQueries.wire_dict(w: any, side: str) -> dict[str, any] {
     if not w.injected {
         d["injected"] = False;
     }
+    if getattr(w, "violation", "") {
+        d["violation"] = w.violation;
+    }
     return d;
 }
 

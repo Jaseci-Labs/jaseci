@@ -99,7 +99,8 @@ obj WireInfo {
         injected: bool = True,
         form: str = "",
         archwire: str = "",
-        line: int = 0;
+        line: int = 0,
+        violation: str = "";
 
     def to_dict -> dict[str, any];
 }
@@ -175,6 +176,10 @@ obj ProjectModel {
 
 def fuzzy_score(q: str, key: str, name: str) -> int;
 
+def wire_violation(
+    spec: WiringSpec, provider: str, consumer: str, names: list[str], whole: bool
+) -> str;
+
 def sym_uri(key: str) -> str;
 
 def find_project_root(start: str) -> str;
@@ -188,7 +193,8 @@ impl WireInfo.to_dict -> dict[str, any] {
         "injected": self.injected,
         "form": self.form,
         "archwire": self.archwire,
-        "line": self.line
+        "line": self.line,
+        "violation": self.violation
     };
 }
 
@@ -418,7 +424,10 @@ impl ProjectModel._add_wiring(arch: str, spec: WiringSpec) {
                 injected=w.is_injected,
                 form=form,
                 archwire=arch,
-                line=w.line
+                line=w.line,
+                violation=wire_violation(
+                    spec, w.provider, cmod, [n for (n, a) in w.items], w.is_module_form
+                )
             );
             self.wires.append(info);
             prov +>:Wire(
@@ -1316,4 +1325,40 @@ impl ProjectModel.rewire -> None {
         self.uses_done = set();
         self._note_arch_mtimes();
     }
+}
+
+impl wire_violation(
+    spec: WiringSpec, provider: str, consumer: str, names: list[str], whole: bool
+) -> str {
+    try {
+        governing = spec.rules_governing(provider, consumer, True);
+        if not governing {
+            if spec.needs_rule(provider, consumer, True) {
+                return f"E2099 crosses from package {spec.top_package(provider)} into {spec.top_package(
+                    consumer
+                )} and no rule admits it";
+            }
+            return "";
+        }
+        admitting = spec.rules_admitting(provider, consumer, True);
+        if not admitting {
+            return "E2090 not permitted by " + ", ".join([r.name for r in governing]);
+        }
+        allowed = WiringSpec.admitted_names(admitting);
+        if allowed is None {
+            return "";
+        }
+        if whole or not names {
+            return "E2091 a whole-module wire cannot pass a payload rule";
+        }
+        bad = [
+            n
+            for n in names
+            if n not in allowed
+        ];
+        if bad {
+            return "E2091 not admitted: " + ", ".join(bad);
+        }
+    } except Exception {}
+    return "";
 }

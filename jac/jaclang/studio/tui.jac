@@ -2621,9 +2621,22 @@ impl paint_wiring(app: Studio) -> None {
                     if room > 4 and len(label) > room {
                         label = "…" + label[len(label) - room + 1:];
                     }
+                    bad = item.kind == "wire"
+                        and item.data is not None
+                        and bool(getattr(item.data, "violation", ""));
                     cell = [
-                        sp(" " + icon + " ", kind_attrs(item.kind)),
-                        sp(label, THEME.text)
+                        sp(
+                            " " + ("⚠" if bad else icon) + " ",
+                            THEME.err if bad else kind_attrs(item.kind)
+                        ),
+                        sp(label, THEME.err if bad else THEME.text)
+                    ];
+                } elif item.kind == "wire"
+                    and item.data is not None
+                    and getattr(item.data, "violation", "") {
+                    cell = [
+                        sp("    " + item.data.violation, THEME.err),
+                        sp("  " + item.detail, THEME.dim)
                     ];
                 } else {
                     cell = [sp("    " + item.detail, THEME.dim)];
