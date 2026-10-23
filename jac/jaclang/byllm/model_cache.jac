@@ -5,9 +5,8 @@ import logging;
 import struct;
 import from pathlib { Path }
 
-glob _logger: logging.Logger = logging.getLogger("byllm.model_cache");
-
-glob _GGUF_SCALAR_SIZES: dict[int, int] = {
+glob _logger: logging.Logger = logging.getLogger("byllm.model_cache"),
+     _GGUF_SCALAR_SIZES: dict[int, int] = {
          0: 1,
          1: 1,
          2: 2,
@@ -19,9 +18,8 @@ glob _GGUF_SCALAR_SIZES: dict[int, int] = {
          10: 8,
          11: 8,
          12: 8
-     };
-
-glob _GGML_BLOCKS: dict[int, tuple[int, int]] = {
+     },
+     _GGML_BLOCKS: dict[int, tuple[int, int]] = {
          0: (1, 4),
          1: (1, 2),
          2: (32, 18),
