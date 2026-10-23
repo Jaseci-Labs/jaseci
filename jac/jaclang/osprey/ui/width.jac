@@ -1,29 +1,3 @@
-"""ANSI-aware terminal display width, wrapping, and truncation.
-
-Uses Python `unicodedata` for East-Asian width and combining marks. No
-East-Asian tables are vendored. ANSI CSI/OSC sequences contribute zero
-display width. Wide grapheme clusters (CJK, emoji, regional indicators)
-count as two columns; combining marks and other non-printing code points
-count as zero.
-
-VENDOR NA_STDLIB FLOOR REQUEST (blocks native lowering, error E5090 on
-'unicodedata'): this module needs exactly two Unicode lookups, with a
-narrow consumer surface:
-
-1. `unicodedata.east_asian_width(ch) -> str` — callers only test the
-   result against {"W", "F"} (see `_char_east_asian_cols`). A floor
-   equivalent returning just W/F vs Other would suffice. Hand-rolling
-   the W/F range table app-side was rejected: ~120 ranges, version-
-   sensitive per Unicode release, silent-drift risk on CJK rendering.
-2. `unicodedata.category(ch) -> str` — callers only test membership in
-   {Mn, Mc, Me} (combining marks) and {Cc, Cf, Cs} (non-printing); see
-   `_is_mark` / `_is_non_printing`. This one is NOT hand-rollable: Mn/
-   Mc/Me span thousands of code points across dozens of blocks and are
-   Unicode-version sensitive, so predicate-level support
-   (is_combining_mark / is_non_printing) or full category() is required
-   from the native stdlib.
-"""
-
 import from unicodedata { east_asian_width, category }
 
 
@@ -33,22 +7,84 @@ obj Grapheme {
 }
 
 
-def _is_mark(cat: str) -> bool {
+def _is_mark(cat: str) -> bool;
+
+
+def _is_non_printing(cat: str) -> bool;
+
+
+def _char_east_asian_cols(cp: int) -> int;
+
+
+def _is_regional_indicator(cp: int) -> bool;
+
+
+def _is_variation_selector(cp: int) -> bool;
+
+
+def _is_emojiish(seg: str) -> bool;
+
+
+def _strip_leading_non_printing(seg: str) -> str;
+
+
+def _is_zero_width_segment(seg: str) -> bool;
+
+
+def segment_graphemes(text: str) -> list[Grapheme];
+
+
+def grapheme_width(seg: str) -> int;
+
+
+obj AnsiToken {
+    has code: str = "",
+        length: int = 0;
+}
+
+
+def extract_ansi(text: str, pos: int) -> AnsiToken | None;
+
+
+def strip_ansi(text: str) -> str;
+
+
+def _is_printable_ascii(text: str) -> bool;
+
+
+def display_width(text: str) -> int;
+
+
+obj TruncatedSpan {
+    has text: str = "",
+        width: int = 0;
+}
+
+
+def _truncate_plain(text: str, max_width: int) -> TruncatedSpan;
+
+
+def truncate_text(
+    text: str, max_width: int, ellipsis: str = "...", pad: bool = False,
+) -> str;
+
+
+def wrap_text(text: str, width: int) -> list[str];
+
+
+def wrap_text_joined(text: str, width: int) -> str;
+
+impl _is_mark(cat: str) -> bool {
     return cat == "Mn" or cat == "Mc" or cat == "Me";
 }
 
 
-def _is_non_printing(cat: str) -> bool {
-    return (
-        cat == "Cc"
-        or cat == "Cf"
-        or cat == "Cs"
-        or _is_mark(cat)
-    );
+impl _is_non_printing(cat: str) -> bool {
+    return (cat == "Cc" or cat == "Cf" or cat == "Cs" or _is_mark(cat));
 }
 
 
-def _char_east_asian_cols(cp: int) -> int {
+impl _char_east_asian_cols(cp: int) -> int {
     w = east_asian_width(chr(cp));
     if w == "W" or w == "F" {
         return 2;
@@ -57,17 +93,17 @@ def _char_east_asian_cols(cp: int) -> int {
 }
 
 
-def _is_regional_indicator(cp: int) -> bool {
+impl _is_regional_indicator(cp: int) -> bool {
     return cp >= 0x1F1E6 and cp <= 0x1F1FF;
 }
 
 
-def _is_variation_selector(cp: int) -> bool {
+impl _is_variation_selector(cp: int) -> bool {
     return (cp >= 0xFE00 and cp <= 0xFE0F) or (cp >= 0xE0100 and cp <= 0xE01EF);
 }
 
 
-def _is_emojiish(seg: str) -> bool {
+impl _is_emojiish(seg: str) -> bool {
     if not seg {
         return False;
     }
@@ -90,7 +126,7 @@ def _is_emojiish(seg: str) -> bool {
 }
 
 
-def _strip_leading_non_printing(seg: str) -> str {
+impl _strip_leading_non_printing(seg: str) -> str {
     i = 0;
     while i < len(seg) and _is_non_printing(category(seg[i])) {
         i += 1;
@@ -99,7 +135,7 @@ def _strip_leading_non_printing(seg: str) -> str {
 }
 
 
-def _is_zero_width_segment(seg: str) -> bool {
+impl _is_zero_width_segment(seg: str) -> bool {
     if not seg {
         return False;
     }
@@ -112,8 +148,7 @@ def _is_zero_width_segment(seg: str) -> bool {
 }
 
 
-"""UAX-29-lite grapheme segmentation sufficient for width/wrap/truncate."""
-def segment_graphemes(text: str) -> list[Grapheme] {
+impl segment_graphemes(text: str) -> list[Grapheme] {
     out: list[Grapheme] = [];
     n = len(text);
     i = 0;
@@ -149,7 +184,7 @@ def segment_graphemes(text: str) -> list[Grapheme] {
 }
 
 
-def grapheme_width(seg: str) -> int {
+impl grapheme_width(seg: str) -> int {
     if not seg {
         return 0;
     }
@@ -174,7 +209,7 @@ def grapheme_width(seg: str) -> int {
     if len(seg) > 1 {
         for ch in seg[1:] {
             c = ord(ch);
-            # Fullwidth forms that can appear after a base in rare clusters.
+
             if c >= 0xFF00 and c <= 0xFFEF {
                 width += _char_east_asian_cols(c);
             }
@@ -184,14 +219,7 @@ def grapheme_width(seg: str) -> int {
 }
 
 
-"""Return the length and end index of an ANSI escape at `pos`, or None."""
-obj AnsiToken {
-    has code: str = "";
-    has length: int = 0;
-}
-
-
-def extract_ansi(text: str, pos: int) -> AnsiToken | None {
+impl extract_ansi(text: str, pos: int) -> AnsiToken | None {
     if pos >= len(text) or text[pos] != "\x1b" {
         return None;
     }
@@ -236,12 +264,12 @@ def extract_ansi(text: str, pos: int) -> AnsiToken | None {
         }
         return None;
     }
-    # Single-character ESC sequences (e.g. ESC c).
+
     return AnsiToken(code=text[pos:pos + 2], length=2);
 }
 
 
-def strip_ansi(text: str) -> str {
+impl strip_ansi(text: str) -> str {
     out = "";
     i = 0;
     while i < len(text) {
@@ -257,7 +285,7 @@ def strip_ansi(text: str) -> str {
 }
 
 
-def _is_printable_ascii(text: str) -> bool {
+impl _is_printable_ascii(text: str) -> bool {
     for ch in text {
         code = ord(ch);
         if code < 32 or code > 126 {
@@ -268,8 +296,7 @@ def _is_printable_ascii(text: str) -> bool {
 }
 
 
-"""Column width of `text` as rendered by a typical terminal."""
-def display_width(text: str) -> int {
+impl display_width(text: str) -> int {
     if not text {
         return 0;
     }
@@ -291,13 +318,7 @@ def display_width(text: str) -> int {
 }
 
 
-obj TruncatedSpan {
-    has text: str = "";
-    has width: int = 0;
-}
-
-
-def _truncate_plain(text: str, max_width: int) -> TruncatedSpan {
+impl _truncate_plain(text: str, max_width: int) -> TruncatedSpan {
     if max_width <= 0 or not text {
         return TruncatedSpan(text="", width=0);
     }
@@ -316,7 +337,7 @@ def _truncate_plain(text: str, max_width: int) -> TruncatedSpan {
             i += ansi.length;
             continue;
         }
-        # Take one grapheme from the remaining non-ANSI run.
+
         end = i + 1;
         while end < len(text) and extract_ansi(text, end) is None {
             end += 1;
@@ -342,12 +363,8 @@ def _truncate_plain(text: str, max_width: int) -> TruncatedSpan {
 }
 
 
-"""Truncate to at most `max_width` columns, optionally appending an ellipsis."""
-def truncate_text(
-    text: str,
-    max_width: int,
-    ellipsis: str = "...",
-    pad: bool = False,
+impl truncate_text(
+    text: str, max_width: int, ellipsis: str = "...", pad: bool = False,
 ) -> str {
     if max_width <= 0 {
         return "";
@@ -381,8 +398,7 @@ def truncate_text(
 }
 
 
-"""Wrap `text` to `width` columns. Newlines force breaks. ANSI is preserved."""
-def wrap_text(text: str, width: int) -> list[str] {
+impl wrap_text(text: str, width: int) -> list[str] {
     if width <= 0 {
         return [""];
     }
@@ -416,7 +432,7 @@ def wrap_text(text: str, width: int) -> list[str] {
                     current = "";
                     current_w = 0;
                 }
-                # A single grapheme wider than the line still occupies its own row.
+
                 if w > width and current_w == 0 {
                     result.append(g.text);
                     continue;
@@ -430,18 +446,10 @@ def wrap_text(text: str, width: int) -> list[str] {
             result.append(current);
         }
     }
-    return result if result else [""];
+    return result or [""];
 }
 
 
-"""Wrap `text` to `width` columns and return the lines joined with '\n'.
-
-Same wrapping semantics as `wrap_text`, but returns a single `str` so the
-result crosses the native->Python ctypes callback table. Native callers
-that need the list of lines can split on '\n'; callers that only need the
-count can count '\n' occurrences plus one (the trailing element is always
-present, even when empty, to match `wrap_text`'s minimum one-element
-contract)."""
-def wrap_text_joined(text: str, width: int) -> str {
+impl wrap_text_joined(text: str, width: int) -> str {
     return "\n".join(wrap_text(text, width));
 }

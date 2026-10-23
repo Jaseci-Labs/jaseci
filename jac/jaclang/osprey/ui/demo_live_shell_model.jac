@@ -1,14 +1,3 @@
-"""State model shared by the live shell facade and its helper modules."""
-
-import from .runtime { UiSession }
-import from .screen { ShellScreen }
-import from .transcript { TranscriptMessage, TranscriptProjection }
-import from .renderer { Renderer }
-import from .terminal { ProcessTerminal }
-import from .input { InputNormalizer }
-import from .progress_bar { ProgressBar }
-
-
 obj LiveShell {
     has session: UiSession,
         shell: ShellScreen,

@@ -1,11 +1,3 @@
-"""Process-local domain/UI binding registry for OSPUI.
-
-Bindings connect durable domain source identifiers to ephemeral UI node jids
-without OSP edges across the lifetime boundary. The registry is owned by
-UiSession (runtime.jac) and updated explicitly on subscribe/unsubscribe/dispose.
-"""
-
-
 obj Binding {
     has source_id: str,
         target_id: str,
@@ -26,13 +18,77 @@ obj DeliveryResult {
 }
 
 
-"""Stable composite key for one (source, target, event) triple."""
-def binding_key(source_id: str, target_id: str, event_type: str) -> str {
+def binding_key(source_id: str, target_id: str, event_type: str) -> str;
+
+
+def _validate_binding_ids(source_id: str, target_id: str);
+
+
+def _binding_matches(
+    binding: Binding, source_id: str, target_id: str, event_type: str,
+) -> bool;
+
+
+def _append_binding(registry: BindingRegistry, binding: Binding);
+
+
+def _remove_binding(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
+) -> bool;
+
+
+def _binding_sorts_before(binding: Binding, anchor: Binding) -> bool;
+
+
+def _sort_bindings_in_place(items: list[Binding]);
+
+
+def subscribe(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
+) -> bool;
+
+
+def unsubscribe(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
+) -> bool;
+
+
+def unsubscribe_target(registry: BindingRegistry, target_id: str) -> int;
+
+
+def clear_bindings(registry: BindingRegistry);
+
+
+def binding_count(registry: BindingRegistry) -> int;
+
+
+def is_empty(registry: BindingRegistry) -> bool;
+
+
+def bindings_for_source(registry: BindingRegistry, source_id: str) -> list[Binding];
+
+
+def bindings_for_target(registry: BindingRegistry, target_id: str) -> list[Binding];
+
+
+def dump_bindings(registry: BindingRegistry) -> list[dict[str, str]];
+
+
+def deliver(
+    registry: BindingRegistry, source_id: str, event_type: str,
+) -> list[DeliveryResult];
+
+
+def find_orphan_bindings(
+    registry: BindingRegistry, live_target_ids: set[str],
+) -> list[Binding];
+
+impl binding_key(source_id: str, target_id: str, event_type: str) -> str {
     return source_id + "\x1f" + target_id + "\x1f" + event_type;
 }
 
 
-def _validate_binding_ids(source_id: str, target_id: str) {
+impl _validate_binding_ids(source_id: str, target_id: str) {
     if not source_id {
         raise ValueError("source_id must not be empty");
     }
@@ -42,11 +98,8 @@ def _validate_binding_ids(source_id: str, target_id: str) {
 }
 
 
-def _binding_matches(
-    binding: Binding,
-    source_id: str,
-    target_id: str,
-    event_type: str,
+impl _binding_matches(
+    binding: Binding, source_id: str, target_id: str, event_type: str,
 ) -> bool {
     return (
         binding.source_id == source_id
@@ -56,7 +109,7 @@ def _binding_matches(
 }
 
 
-def _append_binding(registry: BindingRegistry, binding: Binding) {
+impl _append_binding(registry: BindingRegistry, binding: Binding) {
     if binding.source_id not in registry.by_source {
         registry.by_source[binding.source_id] = [];
     }
@@ -68,19 +121,15 @@ def _append_binding(registry: BindingRegistry, binding: Binding) {
 }
 
 
-def _remove_binding(
-    registry: BindingRegistry,
-    source_id: str,
-    target_id: str,
-    event_type: str,
+impl _remove_binding(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
 ) -> bool {
     source_list = registry.by_source.get(source_id, []);
     kept_source: list[Binding] = [];
     removed = False;
     for binding in source_list {
         if (
-            not removed
-            and _binding_matches(binding, source_id, target_id, event_type)
+            not removed and _binding_matches(binding, source_id, target_id, event_type)
         ) {
             removed = True;
         } else {
@@ -113,8 +162,7 @@ def _remove_binding(
 }
 
 
-"""True when binding sorts before anchor under (source, target, event) order."""
-def _binding_sorts_before(binding: Binding, anchor: Binding) -> bool {
+impl _binding_sorts_before(binding: Binding, anchor: Binding) -> bool {
     if binding.source_id != anchor.source_id {
         return binding.source_id < anchor.source_id;
     }
@@ -125,11 +173,7 @@ def _binding_sorts_before(binding: Binding, anchor: Binding) -> bool {
 }
 
 
-"""Stable in-place insertion sort under (source, target, event) order.
-
-Used instead of list.sort(key=...) because keyed sorts do not yet lower
-correctly in the native codespace; plain `<` comparisons do."""
-def _sort_bindings_in_place(items: list[Binding]) {
+impl _sort_bindings_in_place(items: list[Binding]) {
     i: int = 1;
     while i < len(items) {
         cur = items[i];
@@ -144,12 +188,8 @@ def _sort_bindings_in_place(items: list[Binding]) {
 }
 
 
-"""Register one domain source -> UI target delivery route. Idempotent."""
-def subscribe(
-    registry: BindingRegistry,
-    source_id: str,
-    target_id: str,
-    event_type: str,
+impl subscribe(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
 ) -> bool {
     _validate_binding_ids(source_id, target_id);
     for binding in registry.by_source.get(source_id, []) {
@@ -159,30 +199,21 @@ def subscribe(
     }
     _append_binding(
         registry,
-        Binding(
-            source_id=source_id,
-            target_id=target_id,
-            event_type=event_type,
-        ),
+        Binding(source_id=source_id, target_id=target_id, event_type=event_type,),
     );
     return True;
 }
 
 
-"""Remove one binding triple when present."""
-def unsubscribe(
-    registry: BindingRegistry,
-    source_id: str,
-    target_id: str,
-    event_type: str,
+impl unsubscribe(
+    registry: BindingRegistry, source_id: str, target_id: str, event_type: str,
 ) -> bool {
     _validate_binding_ids(source_id, target_id);
     return _remove_binding(registry, source_id, target_id, event_type);
 }
 
 
-"""Remove every binding that targets one UI node jid; return removed count."""
-def unsubscribe_target(registry: BindingRegistry, target_id: str) -> int {
+impl unsubscribe_target(registry: BindingRegistry, target_id: str) -> int {
     if not target_id {
         raise ValueError("target_id must not be empty");
     }
@@ -190,10 +221,7 @@ def unsubscribe_target(registry: BindingRegistry, target_id: str) -> int {
     count = 0;
     for binding in bindings {
         if _remove_binding(
-            registry,
-            binding.source_id,
-            binding.target_id,
-            binding.event_type,
+            registry, binding.source_id, binding.target_id, binding.event_type,
         ) {
             count += 1;
         }
@@ -202,13 +230,13 @@ def unsubscribe_target(registry: BindingRegistry, target_id: str) -> int {
 }
 
 
-def clear_bindings(registry: BindingRegistry) {
+impl clear_bindings(registry: BindingRegistry) {
     registry.by_source.clear();
     registry.by_target.clear();
 }
 
 
-def binding_count(registry: BindingRegistry) -> int {
+impl binding_count(registry: BindingRegistry) -> int {
     count = 0;
     for source_id in registry.by_source {
         count += len(registry.by_source[source_id]);
@@ -217,25 +245,22 @@ def binding_count(registry: BindingRegistry) -> int {
 }
 
 
-def is_empty(registry: BindingRegistry) -> bool {
+impl is_empty(registry: BindingRegistry) -> bool {
     return binding_count(registry) == 0;
 }
 
 
-"""Return a snapshot copy of bindings registered for one domain source."""
-def bindings_for_source(registry: BindingRegistry, source_id: str) -> list[Binding] {
+impl bindings_for_source(registry: BindingRegistry, source_id: str) -> list[Binding] {
     return list(registry.by_source.get(source_id, []));
 }
 
 
-"""Return a snapshot copy of bindings registered for one UI target jid."""
-def bindings_for_target(registry: BindingRegistry, target_id: str) -> list[Binding] {
+impl bindings_for_target(registry: BindingRegistry, target_id: str) -> list[Binding] {
     return list(registry.by_target.get(target_id, []));
 }
 
 
-"""Collect all bindings in deterministic source/target/event order."""
-def dump_bindings(registry: BindingRegistry) -> list[dict[str, str]] {
+impl dump_bindings(registry: BindingRegistry) -> list[dict[str, str]] {
     rows: list[dict[str, str]] = [];
     for source_id in sorted(registry.by_source.keys()) {
         bindings = list(registry.by_source[source_id]);
@@ -246,6 +271,7 @@ def dump_bindings(registry: BindingRegistry) -> list[dict[str, str]] {
                     "source_id": binding.source_id,
                     "target_id": binding.target_id,
                     "event_type": binding.event_type,
+
                 }
             );
         }
@@ -254,11 +280,8 @@ def dump_bindings(registry: BindingRegistry) -> list[dict[str, str]] {
 }
 
 
-"""Resolve delivery targets for one domain source and semantic event name."""
-def deliver(
-    registry: BindingRegistry,
-    source_id: str,
-    event_type: str,
+impl deliver(
+    registry: BindingRegistry, source_id: str, event_type: str,
 ) -> list[DeliveryResult] {
     results: list[DeliveryResult] = [];
     bindings = bindings_for_source(registry, source_id);
@@ -268,20 +291,15 @@ def deliver(
             continue;
         }
         results.append(
-            DeliveryResult(
-                target_id=binding.target_id,
-                event_type=binding.event_type,
-            )
+            DeliveryResult(target_id=binding.target_id, event_type=binding.event_type,)
         );
     }
     return results;
 }
 
 
-"""Return bindings whose UI target jid is absent from the live target set."""
-def find_orphan_bindings(
-    registry: BindingRegistry,
-    live_target_ids: set[str],
+impl find_orphan_bindings(
+    registry: BindingRegistry, live_target_ids: set[str],
 ) -> list[Binding] {
     orphans: list[Binding] = [];
     for target_id in sorted(registry.by_target.keys()) {

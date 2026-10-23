@@ -1,6 +1,3 @@
-"""Behavior tests for Terminal helpers (no TTY required)."""
-
-
 test "read_terminal_size returns positive dimensions" {
     (cols, rows) = read_terminal_size();
     assert cols > 0;

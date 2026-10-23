@@ -1,40 +1,94 @@
-"""Constraint primitives and per-node sizing templates."""
-
-import from ..constraints.algebra {
-    Constraint,
-    Expression,
-    Relation,
-    StrengthTier,
-    Term,
-    Variable,
-    is_finite,
-    normalize_expression,
-}
-import from ..constraints.solver { SolveError }
-import from .layout_types {
-    Align,
-    AxisSize,
-    LayoutDiagnostic,
-    LayoutError,
-    LayoutRelation,
-    LayoutSeverity,
-    LayoutSpec,
-    OverlayAnchor,
-    Size,
-    SizeMode,
-    Viewport,
-}
-import from .model { UiNode }
-import from .layout_compile_model {
-    CompileResult,
-    NodeEdges,
-    _Entry,
-    _wants,
-}
+def _req(v: float | None) -> float;
 
 
-"""Unwrap a semantically required size value."""
-def _req(v: float | None) -> float {
+def _t(v: Variable, coefficient: float = 1.0) -> Term;
+
+
+def _expr(terms: list[Term], constant: float = 0.0) -> Expression;
+
+
+def _prov(
+    template: str,
+    id_str: str,
+    axis_label: str,
+    key: str = "",
+    parent: str = "",
+    rank: int = -1,
+    src: str = "",
+    extra: str = "",
+) -> str;
+
+
+def _emit(
+    result: CompileResult,
+    expr: Expression,
+    relation: Relation,
+    strength: StrengthTier,
+    provenance: str,
+) -> bool;
+
+
+def _axis_start(edges: NodeEdges, horizontal: bool) -> Variable;
+
+
+def _axis_end(edges: NodeEdges, horizontal: bool) -> Variable;
+
+
+def _emit_pin_edge(
+    result: CompileResult, v: Variable, target: float, id_str: str, axis_label: str,
+) -> bool;
+
+
+def _emit_root(
+    result: CompileResult, edges: NodeEdges, viewport: Viewport, phase: str,
+) -> bool;
+
+
+def _emit_invariants(result: CompileResult, edges: NodeEdges, phase: str,) -> bool;
+
+
+def _emit_sized_axis(
+    result: CompileResult,
+    size: AxisSize,
+    start: Variable,
+    end: Variable,
+    horizontal: bool,
+    id_str: str,
+    natural: float | None,
+    src_extra: str,
+) -> bool;
+
+
+def _emit_pin(
+    result: CompileResult,
+    child_start: Variable,
+    child_end: Variable,
+    parent_start: Variable,
+    parent_end: Variable,
+    horizontal: bool,
+    id_str: str,
+    template: str,
+) -> bool;
+
+
+def _emit_cross_align(
+    result: CompileResult,
+    child: NodeEdges,
+    parent: NodeEdges,
+    spec: LayoutSpec,
+    horizontal: bool,
+) -> bool;
+
+
+def _emit_cross_axis(
+    result: CompileResult,
+    kid: _Entry,
+    parent: _Entry,
+    natural_sizes: dict[str, Size],
+    horizontal: bool,
+) -> bool;
+
+impl _req(v: float | None) -> float {
     if v is None {
         return 0.0;
     }
@@ -42,22 +96,17 @@ def _req(v: float | None) -> float {
 }
 
 
-def _t(v: Variable, coefficient: float = 1.0) -> Term {
+impl _t(v: Variable, coefficient: float = 1.0) -> Term {
     return Term(variable=v, coefficient=coefficient);
 }
 
 
-def _expr(terms: list[Term], constant: float = 0.0) -> Expression {
+impl _expr(terms: list[Term], constant: float = 0.0) -> Expression {
     return normalize_expression(Expression(terms=terms, constant=constant));
 }
 
 
-"""Provenance string per plan §6: template name, node jid (+ semantic
-key when known), axis, parent jid + rank when relevant, the declaring
-source (spec / relation handle), and any extra facts (grow weight and
-continuous target). Deterministic; consumed by UNSATISFIABLE witness
-diagnostics so failures point back to the registration site."""
-def _prov(
+impl _prov(
     template: str,
     id_str: str,
     axis_label: str,
@@ -85,9 +134,7 @@ def _prov(
 }
 
 
-"""Emit one constraint; on rejection attach a diagnostic with provenance
-and flip the result to failed. Returns True only on success."""
-def _emit(
+impl _emit(
     result: CompileResult,
     expr: Expression,
     relation: Relation,
@@ -96,7 +143,7 @@ def _emit(
 ) -> bool {
     s = result.solver;
     if s is None {
-        return False;  # Aborted compile; nothing further to emit into.
+        return False;
     }
     c = Constraint(expression=expr, relation=relation, strength=strength);
     res = s.add_constraint(c, provenance=provenance);
@@ -109,12 +156,14 @@ def _emit(
         for w in res.witness_provenance {
             witnesses.append(w);
         }
-        result.diagnostics.append(LayoutDiagnostic(
-            code=code,
-            severity=LayoutSeverity.ERROR,
-            message=res.message,
-            provenance=witnesses,
-        ));
+        result.diagnostics.append(
+            LayoutDiagnostic(
+                code=code,
+                severity=LayoutSeverity.ERROR,
+                message=res.message,
+                provenance=witnesses,
+            )
+        );
         result.ok = False;
         return False;
     }
@@ -122,26 +171,18 @@ def _emit(
 }
 
 
-# ----------------------------------------------------------------------
-# Templates.
-# ----------------------------------------------------------------------
-
-def _axis_start(edges: NodeEdges, horizontal: bool) -> Variable {
+impl _axis_start(edges: NodeEdges, horizontal: bool) -> Variable {
     return edges.left if horizontal else edges.top;
 }
 
 
-def _axis_end(edges: NodeEdges, horizontal: bool) -> Variable {
+impl _axis_end(edges: NodeEdges, horizontal: bool) -> Variable {
     return edges.right if horizontal else edges.bottom;
 }
 
 
-def _emit_pin_edge(
-    result: CompileResult,
-    v: Variable,
-    target: float,
-    id_str: str,
-    axis_label: str,
+impl _emit_pin_edge(
+    result: CompileResult, v: Variable, target: float, id_str: str, axis_label: str,
 ) -> bool {
     return _emit(
         result,
@@ -153,12 +194,8 @@ def _emit_pin_edge(
 }
 
 
-"""Required viewport pinning of the root's four edges (plan §6.1)."""
-def _emit_root(
-    result: CompileResult,
-    edges: NodeEdges,
-    viewport: Viewport,
-    phase: str,
+impl _emit_root(
+    result: CompileResult, edges: NodeEdges, viewport: Viewport, phase: str,
 ) -> bool {
     id_str = edges.id_str;
     if _wants(phase, True) {
@@ -185,11 +222,7 @@ def _emit_root(
 }
 
 
-def _emit_invariants(
-    result: CompileResult,
-    edges: NodeEdges,
-    phase: str,
-) -> bool {
+impl _emit_invariants(result: CompileResult, edges: NodeEdges, phase: str,) -> bool {
     id_str = edges.id_str;
     if _wants(phase, True) {
         if not _emit(
@@ -215,8 +248,7 @@ def _emit_invariants(
 }
 
 
-"""FIXED / INTRINSIC / BOUNDED sizing on one axis (plan §6.1)."""
-def _emit_sized_axis(
+impl _emit_sized_axis(
     result: CompileResult,
     size: AxisSize,
     start: Variable,
@@ -239,7 +271,7 @@ def _emit_sized_axis(
     }
     if size.mode == SizeMode.INTRINSIC {
         if natural is None {
-            return True;  # Measurement lands in M5; invariants suffice.
+            return True;
         }
         return _emit(
             result,
@@ -283,13 +315,12 @@ def _emit_sized_axis(
         }
         return True;
     }
-    # FILL / GROW are handled by the caller (pin or partition).
+
     return True;
 }
 
 
-"""Pin both edges of a child to the parent content box on one axis."""
-def _emit_pin(
+impl _emit_pin(
     result: CompileResult,
     child_start: Variable,
     child_end: Variable,
@@ -319,8 +350,7 @@ def _emit_pin(
 }
 
 
-"""Position a sized child on the cross axis per cross_align."""
-def _emit_cross_align(
+impl _emit_cross_align(
     result: CompileResult,
     child: NodeEdges,
     parent: NodeEdges,
@@ -359,13 +389,11 @@ def _emit_cross_align(
             _prov("align", child.id_str, label),
         );
     }
-    return True;  # STRETCH never reaches here (handled as pins).
+    return True;
 }
 
 
-
-
-def _emit_cross_axis(
+impl _emit_cross_axis(
     result: CompileResult,
     kid: _Entry,
     parent: _Entry,
@@ -413,7 +441,6 @@ def _emit_cross_axis(
         );
     }
 
-    # Sized cross axis: bounds/min/max templates, then positioning.
     if not _emit_sized_axis(
         result,
         cross_size,
@@ -427,10 +454,7 @@ def _emit_cross_axis(
         return False;
     }
     if kid_spec.cross_align == Align.STRETCH {
-        # Sized + STRETCH degrades to START anchoring (documented).
         return True;
     }
     return _emit_cross_align(result, kid_edges, parent_edges, kid_spec, horizontal);
 }
-
-

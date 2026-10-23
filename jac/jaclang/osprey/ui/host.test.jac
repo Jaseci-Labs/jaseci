@@ -1,13 +1,6 @@
-"""Host loop tick tests (virtual terminal, no TTY)."""
+import from .virtual_terminal { VirtualTerminal, }
 
-import from .virtual_terminal {
-    VirtualTerminal,
-}
-
-import from .input {
-    TextEvent,
-    KeyEvent,
-}
+import from .input { TextEvent }
 
 
 test "host tick drains inject and maps interrupt" {

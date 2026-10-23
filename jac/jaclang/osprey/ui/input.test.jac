@@ -1,6 +1,3 @@
-"""Input normalization: escapes, paste, and coalescing."""
-
-
 test "plain ascii becomes text events" {
     norm = InputNormalizer();
     events = norm.feed("ab");
@@ -100,7 +97,6 @@ test "sgr mouse click decodes; motion is coalesced" {
     assert mouse.y == 20;
     assert mouse.pressed;
 
-    # Motion bit (32) set — held until flush_coalesced.
     m1 = norm.feed("\x1b[<32;11;21M");
     m2 = norm.feed("\x1b[<32;12;22M");
     assert m1 == [];
@@ -147,6 +143,7 @@ test "coalesce_events merges mixed resize mouse and stream" {
         StreamChunkEvent(text="y"),
         MouseEvent(button=0, x=1, y=1, motion=True),
         MouseEvent(button=0, x=5, y=5, motion=True),
+
     ];
     out = coalesce_events(events);
     kinds = [e.kind for e in out];

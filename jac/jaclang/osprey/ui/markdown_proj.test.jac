@@ -1,6 +1,3 @@
-"""Tests for markdown → projection spans (not a component tree)."""
-
-
 test "project_inline_spans marks strong em code strike" {
     spans = project_inline_spans("a **b** c *d* `e` ~~f~~");
     ids = [s.style_id for s in spans];
@@ -27,9 +24,8 @@ test "project_markdown headings fences lists hr" {
         }
     }
     assert "heading" in styles;
-    assert "list_marker" in styles or any(
-        s.style_id == "strong" for line in lines for s in line.spans
-    );
+    assert "list_marker" in styles
+        or any(s.style_id == "strong" for line in lines for s in line.spans);
     assert "code" in styles;
     assert "hr" in styles;
 }

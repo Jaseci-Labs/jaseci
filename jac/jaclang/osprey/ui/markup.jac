@@ -1,28 +1,3 @@
-"""One-time markup lowering to detached OSP graph construction (OSPUI.md §12).
-
-Statically registered tag → archetype map. Unknown tag/property = error.
-`--print-generated` emits equivalent direct-construction Jac. No virtual tree,
-no per-frame view, no runtime archetype generation.
-"""
-
-
-
-import from .model {
-    UiNode,
-    UiContainer,
-    MainScreen,
-    Header,
-    TranscriptView,
-    Status,
-    Prompt,
-    ApprovalOverlay,
-}
-
-import from .mutation {
-    append_child,
-}
-
-
 obj MarkupError {
     has path: str,
         message: str;
@@ -49,41 +24,119 @@ obj _MarkupElem {
 }
 
 
-
-# Codepoint-aware tag/attribute parser. Each pattern mirrors the original
-# regex semantics; `group(i)` is None for unmatched groups, `.end()` returns
-# the codepoint index just past the match.
 obj _MarkupMatch {
     has _groups: list[str | None] = [],
         _end: int = 0;
 
-    def group(i: int) -> str | None {
-        return self._groups[i - 1];
-    }
-
-    def end -> int {
-        return self._end;
-    }
+    def group(i: int) -> str | None;
+    def end -> int;
 }
 
 
-def _is_name_start(c: str) -> bool {
+def _is_name_start(c: str) -> bool;
+
+
+def _is_name_cont(c: str) -> bool;
+
+
+def _is_space(c: str) -> bool;
+
+
+def _skip_ws(text: str, i: int) -> int;
+
+
+def _read_name(text: str, i: int) -> tuple[str, int] | None;
+
+
+def _match_tag_open(text: str, i: int) -> _MarkupMatch | None;
+
+
+def _match_tag_close(text: str, i: int) -> _MarkupMatch | None;
+
+
+def _match_attr(text: str, i: int) -> _MarkupMatch | None;
+
+
+def _iter_attrs(text: str, end: int) -> list[_MarkupMatch];
+
+
+def create_tag_registry -> TagRegistry;
+
+
+def register_tag(registry: TagRegistry, tag: str, archetype: any);
+
+
+def default_shell_registry -> TagRegistry;
+
+
+def _allowed_props(tag: str) -> set[str];
+
+
+def _parse_attrs(raw: str) -> dict[str, str];
+
+
+def _parse_markup(source: str) -> (list[_MarkupElem], list[MarkupError]);
+
+
+def _coerce_value(raw: str, field: str) -> any;
+
+
+def _field_name(attr: str) -> str;
+
+
+def _apply_attrs(
+    ui_node: UiNode,
+    tag: str,
+    attrs: dict[str, str],
+    path: str,
+    errors: list[MarkupError],
+);
+
+
+def _ctor_args(tag: str, attrs: dict[str, str]) -> str;
+
+
+def _instantiate_tracked(
+    elem: _MarkupElem,
+    registry: TagRegistry,
+    errors: list[MarkupError],
+    gen_lines: list[str],
+    var_counter: list[int],
+) -> (UiNode | None, str);
+
+
+def lower_markup(
+    source: str, registry: TagRegistry | None = None, print_generated: bool = False,
+) -> LowerResult;
+
+
+def print_generated(source: str, registry: TagRegistry | None = None) -> str;
+
+impl _MarkupMatch.group(i: int) -> str | None {
+    return self._groups[i - 1];
+}
+
+impl _MarkupMatch.end -> int {
+    return self._end;
+}
+
+
+impl _is_name_start(c: str) -> bool {
     return c.isalpha() or c == "_";
 }
 
 
-def _is_name_cont(c: str) -> bool {
+impl _is_name_cont(c: str) -> bool {
     return c.isalnum() or c == "_";
 }
 
 
-def _is_space(c: str) -> bool {
+impl _is_space(c: str) -> bool {
     return c == " " or c == "\t" or c == "\r" or c == "\n";
 }
 
 
-"""Skip whitespace codepoints starting at `i`; return new index."""
-def _skip_ws(text: str, i: int) -> int {
+impl _skip_ws(text: str, i: int) -> int {
     n = len(text);
     while i < n and _is_space(text[i]) {
         i += 1;
@@ -92,8 +145,7 @@ def _skip_ws(text: str, i: int) -> int {
 }
 
 
-"""Read identifier codepoints starting at `i`; (name, end_idx) or None."""
-def _read_name(text: str, i: int) -> (str, int) | None {
+impl _read_name(text: str, i: int) -> tuple[str, int] | None {
     n = len(text);
     if i >= n or not _is_name_start(text[i]) {
         return None;
@@ -107,8 +159,7 @@ def _read_name(text: str, i: int) -> (str, int) | None {
 }
 
 
-"""Match an open tag at `i`. Mirrors re pattern `<\\s*NAME\\s*ATTRS\\s*(/)?>`."""
-def _match_tag_open(text: str, i: int) -> _MarkupMatch | None {
+impl _match_tag_open(text: str, i: int) -> _MarkupMatch | None {
     n = len(text);
     if i >= n or text[i] != "<" {
         return None;
@@ -140,8 +191,7 @@ def _match_tag_open(text: str, i: int) -> _MarkupMatch | None {
 }
 
 
-"""Match a close tag at `i`. Mirrors re pattern `</\\s*NAME\\s*>`."""
-def _match_tag_close(text: str, i: int) -> _MarkupMatch | None {
+impl _match_tag_close(text: str, i: int) -> _MarkupMatch | None {
     n = len(text);
     if i + 1 >= n or text[i] != "<" or text[i + 1] != "/" {
         return None;
@@ -162,8 +212,7 @@ def _match_tag_close(text: str, i: int) -> _MarkupMatch | None {
 }
 
 
-"""Match a single attribute at `i`. Mirrors `NAME = "..."` or `NAME = '...'`."""
-def _match_attr(text: str, i: int) -> _MarkupMatch | None {
+impl _match_attr(text: str, i: int) -> _MarkupMatch | None {
     n = len(text);
     name_t = _read_name(text, i);
     if name_t is None {
@@ -197,8 +246,7 @@ def _match_attr(text: str, i: int) -> _MarkupMatch | None {
 }
 
 
-"""Yield every attribute match within `text[:end]`."""
-def _iter_attrs(text: str, end: int) -> list[_MarkupMatch] {
+impl _iter_attrs(text: str, end: int) -> list[_MarkupMatch] {
     out: list[_MarkupMatch] = [];
     i = 0;
     while i < end {
@@ -217,15 +265,12 @@ def _iter_attrs(text: str, end: int) -> list[_MarkupMatch] {
 }
 
 
-
-
-def create_tag_registry() -> TagRegistry {
+impl create_tag_registry -> TagRegistry {
     return TagRegistry();
 }
 
 
-"""Register a markup tag name to a node archetype constructor."""
-def register_tag(registry: TagRegistry, tag: str, archetype: any) {
+impl register_tag(registry: TagRegistry, tag: str, archetype: any) {
     if not tag {
         raise ValueError("tag must not be empty");
     }
@@ -233,7 +278,7 @@ def register_tag(registry: TagRegistry, tag: str, archetype: any) {
 }
 
 
-def default_shell_registry() -> TagRegistry {
+impl default_shell_registry -> TagRegistry {
     reg = create_tag_registry();
     register_tag(reg, "MainScreen", MainScreen);
     register_tag(reg, "Header", Header);
@@ -245,19 +290,21 @@ def default_shell_registry() -> TagRegistry {
 }
 
 
-def _allowed_props(tag: str) -> set[str] {
+impl _allowed_props(tag: str) -> set[str] {
     base: set[str] = {"key"};
     if tag == "Header" {
         return base | {"title"};
     }
     if tag == "TranscriptView" {
-        return base | {
-            "scroll_offset",
-            "follow_tail",
-            "source_id",
-            "observed_revision",
-            "source",
-        };
+        return base
+            | {
+                "scroll_offset",
+                "follow_tail",
+                "source_id",
+                "observed_revision",
+                "source",
+
+            };
     }
     if tag == "Prompt" {
         return base | {"draft", "mode"};
@@ -272,7 +319,7 @@ def _allowed_props(tag: str) -> set[str] {
 }
 
 
-def _parse_attrs(raw: str) -> dict[str, str] {
+impl _parse_attrs(raw: str) -> dict[str, str] {
     attrs: dict[str, str] = {};
     for m in _iter_attrs(raw, len(raw)) {
         raw_name = m.group(1);
@@ -290,7 +337,7 @@ def _parse_attrs(raw: str) -> dict[str, str] {
 }
 
 
-def _parse_markup(source: str) -> (list[_MarkupElem], list[MarkupError]) {
+impl _parse_markup(source: str) -> (list[_MarkupElem], list[MarkupError]) {
     errors: list[MarkupError] = [];
     roots: list[_MarkupElem] = [];
     stack: list[_MarkupElem] = [];
@@ -325,8 +372,7 @@ def _parse_markup(source: str) -> (list[_MarkupElem], list[MarkupError]) {
                 if top.tag != tag {
                     errors.append(
                         MarkupError(
-                            path=top.path,
-                            message="mismatched close tag " + tag,
+                            path=top.path, message="mismatched close tag " + tag,
                         )
                     );
                 } else {
@@ -379,7 +425,7 @@ def _parse_markup(source: str) -> (list[_MarkupElem], list[MarkupError]) {
 }
 
 
-def _coerce_value(raw: str, field: str) -> any {
+impl _coerce_value(raw: str, field: str) -> any {
     if field in ("scroll_offset", "observed_revision") {
         try {
             return int(raw);
@@ -402,7 +448,7 @@ def _coerce_value(raw: str, field: str) -> any {
 }
 
 
-def _field_name(attr: str) -> str {
+impl _field_name(attr: str) -> str {
     if attr == "source" {
         return "source_id";
     }
@@ -410,7 +456,7 @@ def _field_name(attr: str) -> str {
 }
 
 
-def _apply_attrs(
+impl _apply_attrs(
     ui_node: UiNode,
     tag: str,
     attrs: dict[str, str],
@@ -422,8 +468,7 @@ def _apply_attrs(
         if name not in allowed {
             errors.append(
                 MarkupError(
-                    path=path,
-                    message="unknown property '" + name + "' on " + tag,
+                    path=path, message="unknown property '" + name + "' on " + tag,
                 )
             );
             continue;
@@ -432,8 +477,7 @@ def _apply_attrs(
         if not hasattr(ui_node, field) {
             errors.append(
                 MarkupError(
-                    path=path,
-                    message="unknown property '" + name + "' on " + tag,
+                    path=path, message="unknown property '" + name + "' on " + tag,
                 )
             );
             continue;
@@ -443,7 +487,7 @@ def _apply_attrs(
 }
 
 
-def _ctor_args(tag: str, attrs: dict[str, str]) -> str {
+impl _ctor_args(tag: str, attrs: dict[str, str]) -> str {
     key = attrs.get("key", "");
     parts: list[str] = ["key=" + repr(key)];
     for (name, raw) in sorted(attrs.items()) {
@@ -464,7 +508,7 @@ def _ctor_args(tag: str, attrs: dict[str, str]) -> str {
 }
 
 
-def _instantiate_tracked(
+impl _instantiate_tracked(
     elem: _MarkupElem,
     registry: TagRegistry,
     errors: list[MarkupError],
@@ -473,10 +517,7 @@ def _instantiate_tracked(
 ) -> (UiNode | None, str) {
     if elem.tag not in registry.tags {
         errors.append(
-            MarkupError(
-                path=elem.path,
-                message="unknown tag '" + elem.tag + "'",
-            )
+            MarkupError(path=elem.path, message="unknown tag '" + elem.tag + "'",)
         );
         return (None, "");
     }
@@ -511,8 +552,7 @@ def _instantiate_tracked(
         if not isinstance(ui_node, UiContainer) {
             errors.append(
                 MarkupError(
-                    path=elem.path,
-                    message=elem.tag + " cannot contain children",
+                    path=elem.path, message=elem.tag + " cannot contain children",
                 )
             );
             continue;
@@ -524,11 +564,8 @@ def _instantiate_tracked(
 }
 
 
-"""Lower markup source into a detached graph (one-time initialization)."""
-def lower_markup(
-    source: str,
-    registry: TagRegistry | None = None,
-    print_generated: bool = False,
+impl lower_markup(
+    source: str, registry: TagRegistry | None = None, print_generated: bool = False,
 ) -> LowerResult {
     reg = registry;
     if reg is None {
@@ -560,16 +597,11 @@ def lower_markup(
     if print_generated and root_var {
         generated = generated + "\n# root: " + root_var;
     }
-    return LowerResult(
-        graph_root=graph_root,
-        errors=[],
-        generated_jac=generated,
-    );
+    return LowerResult(graph_root=graph_root, errors=[], generated_jac=generated,);
 }
 
 
-"""Return generated Jac graph construction for markup (print-generated mode)."""
-def print_generated(source: str, registry: TagRegistry | None = None) -> str {
+impl print_generated(source: str, registry: TagRegistry | None = None) -> str {
     result = lower_markup(source, registry, print_generated=True);
     if result.errors {
         msgs = [e.message for e in result.errors];

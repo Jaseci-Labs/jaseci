@@ -1,5 +1,3 @@
-"""Virtual terminal restoration, injection, and cell-capture tests."""
-
 import from .terminal { synchronized_write }
 
 
@@ -24,9 +22,7 @@ test "start enables paste and alternate screen; stop restores" {
 test "inject queues input and invokes callback" {
     seen: list[str] = [];
     term = VirtualTerminal(
-        columns=20,
-        rows=5,
-        on_input=lambda (data: str) -> None { seen.append(data); },
+        columns=20, rows=5, on_input=lambda (data: str) { seen.append(data); },
     );
     term.start();
     term.inject("abc");
@@ -45,7 +41,7 @@ test "inject_resize updates size and notifies" {
     term = VirtualTerminal(
         columns=80,
         rows=24,
-        on_resize=lambda (c: int, r: int) -> None { sizes.append((c, r)); },
+        on_resize=lambda (c: int, r: int) { sizes.append((c, r)); },
     );
     term.inject_resize(100, 30);
     assert term.columns == 100;
@@ -57,9 +53,7 @@ test "inject_resize updates size and notifies" {
 
 test "inject_sigint restores terminal" {
     hits = [0];
-    term = VirtualTerminal(
-        on_interrupt=lambda () -> None { hits[0] = hits[0] + 1; },
-    );
+    term = VirtualTerminal(on_interrupt=lambda() { hits[0] = hits[0] + 1; },);
     term.start();
     assert not term.restored;
     term.inject_sigint();
@@ -74,7 +68,7 @@ test "exception exit path still restores" {
     failed = False;
     try {
         term.run_with_exception_guard(
-            lambda (t: VirtualTerminal) -> None {
+            lambda (t: VirtualTerminal) {
                 t.write("hi");
                 raise ValueError("boom");
             }

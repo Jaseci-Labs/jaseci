@@ -1,31 +1,6 @@
-"""Shared data model for the layout compiler's internal phases."""
-
-import from ..constraints.algebra { Variable }
-import from ..constraints.solver { Solver }
-import from .layout_types {
-    AxisSize,
-    LayoutDiagnostic,
-    LayoutSpec,
-    Size,
-}
-import from .model { UiNode }
+def _wants(phase: str, horizontal: bool) -> bool;
 
 
-"""Axis-phase gate: does this phase emit constraints on the horizontal
-axis? Phase full emits both; h only left/right facts; v only
-top/bottom."""
-def _wants(phase: str, horizontal: bool) -> bool {
-    if phase == "h" {
-        return horizontal;
-    }
-    if phase == "v" {
-        return not horizontal;
-    }
-    return True;
-}
-
-
-"""The four edge variables for one laid-out node (plan §6)."""
 obj NodeEdges {
     has id_str: str,
         key: str,
@@ -36,7 +11,6 @@ obj NodeEdges {
 }
 
 
-"""Compilation outcome. On ok=False the solver is absent (atomic abort)."""
 obj CompileResult {
     has ok: bool = True,
         solver: Solver | None = None,
@@ -46,8 +20,6 @@ obj CompileResult {
 }
 
 
-"""One container flow partition recorded for largest-remainder
-quantization by the layout engine."""
 obj PartitionInfo {
     has parent_id: str,
         horizontal: bool,
@@ -96,4 +68,14 @@ obj _Allocation {
     has targets: list[float] = [],
         overflow: bool = False,
         hard_overflow: bool = False;
+}
+
+impl _wants(phase: str, horizontal: bool) -> bool {
+    if phase == "h" {
+        return horizontal;
+    }
+    if phase == "v" {
+        return not horizontal;
+    }
+    return True;
 }

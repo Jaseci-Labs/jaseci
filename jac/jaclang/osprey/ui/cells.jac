@@ -1,19 +1,3 @@
-"""Retained styled cell buffer and ANSI cell-diff (OSPUI.md §15).
-
-Paint authoring may still feed plain strings via the host; those convert to
-default-attr cells here. Style lives in the retained buffer and damage path —
-not on OSP nodes and not as a frozen markup DSL.
-"""
-
-import from .layout_types { Rect }
-
-import from .width {
-    segment_graphemes,
-    grapheme_width,
-}
-
-
-"""SGR / display attributes for one terminal cell."""
 obj StyleAttrs {
     has fg: int | None = None,
         bg: int | None = None,
@@ -25,11 +9,9 @@ obj StyleAttrs {
 }
 
 
-"""One display cell: a single column char plus style."""
 obj StyledCell {
     has ch: str = " ",
         attrs: StyleAttrs = StyleAttrs(),
-        # True on the trailing column of a wide grapheme (not painted).
         wide_cont: bool = False;
 }
 
@@ -47,12 +29,86 @@ obj CellDiff {
 }
 
 
-def blank_cell() -> StyledCell {
+def blank_cell -> StyledCell;
+
+
+def attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool;
+
+
+def cell_eq(a: StyledCell, b: StyledCell) -> bool;
+
+
+def copy_attrs(a: StyleAttrs) -> StyleAttrs;
+
+
+def copy_cell(c: StyledCell) -> StyledCell;
+
+
+def sgr_reset -> str;
+
+
+def sgr_for(attrs: StyleAttrs) -> str;
+
+
+def create_buffer(columns: int, rows: int) -> CellBuffer;
+
+
+def buffer_get(buf: CellBuffer, row: int, col: int) -> StyledCell;
+
+
+def buffer_clear_rect(
+    buf: CellBuffer,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    attrs: StyleAttrs | None = None,
+);
+
+
+def buffer_blit_text(
+    buf: CellBuffer,
+    row: int,
+    col: int,
+    text: str,
+    attrs: StyleAttrs | None = None,
+    max_width: int = -1,
+);
+
+
+obj TextSpan {
+    has text: str = "",
+        attrs: StyleAttrs | None = None;
+}
+
+
+def buffer_blit_spans(
+    buf: CellBuffer, row: int, col: int, spans: list[TextSpan], max_width: int = -1,
+);
+
+
+def buffer_to_plain_rows(buf: CellBuffer) -> list[str];
+
+
+def buffer_from_plain_rows(rows: list[str], columns: int, rows_n: int) -> CellBuffer;
+
+
+def _rect_bounds(rect: Rect, columns: int, rows_n: int) -> tuple[int, int, int, int];
+
+
+def diff_buffers_ansi(
+    previous: CellBuffer | None,
+    desired: CellBuffer,
+    patch_rects: list[Rect],
+    force: bool = False,
+) -> CellDiff;
+
+impl blank_cell -> StyledCell {
     return StyledCell(ch=" ", attrs=StyleAttrs());
 }
 
 
-def attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool {
+impl attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool {
     return (
         a.fg == b.fg
         and a.bg == b.bg
@@ -65,7 +121,7 @@ def attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool {
 }
 
 
-def cell_eq(a: StyledCell, b: StyledCell) -> bool {
+impl cell_eq(a: StyledCell, b: StyledCell) -> bool {
     if a.wide_cont != b.wide_cont {
         return False;
     }
@@ -76,7 +132,7 @@ def cell_eq(a: StyledCell, b: StyledCell) -> bool {
 }
 
 
-def copy_attrs(a: StyleAttrs) -> StyleAttrs {
+impl copy_attrs(a: StyleAttrs) -> StyleAttrs {
     return StyleAttrs(
         fg=a.fg,
         bg=a.bg,
@@ -89,22 +145,17 @@ def copy_attrs(a: StyleAttrs) -> StyleAttrs {
 }
 
 
-def copy_cell(c: StyledCell) -> StyledCell {
-    return StyledCell(
-        ch=c.ch,
-        attrs=copy_attrs(c.attrs),
-        wide_cont=c.wide_cont,
-    );
+impl copy_cell(c: StyledCell) -> StyledCell {
+    return StyledCell(ch=c.ch, attrs=copy_attrs(c.attrs), wide_cont=c.wide_cont,);
 }
 
 
-def sgr_reset() -> str {
+impl sgr_reset -> str {
     return "\x1b[0m";
 }
 
 
-"""Emit CSI SGR for attrs (includes leading reset)."""
-def sgr_for(attrs: StyleAttrs) -> str {
+impl sgr_for(attrs: StyleAttrs) -> str {
     parts: list[str] = ["0"];
     if attrs.bold {
         parts.append("1");
@@ -145,7 +196,7 @@ def sgr_for(attrs: StyleAttrs) -> str {
 }
 
 
-def create_buffer(columns: int, rows: int) -> CellBuffer {
+impl create_buffer(columns: int, rows: int) -> CellBuffer {
     cols = max(1, columns);
     rows_n = max(1, rows);
     grid: list[list[StyledCell]] = [];
@@ -160,7 +211,7 @@ def create_buffer(columns: int, rows: int) -> CellBuffer {
 }
 
 
-def buffer_get(buf: CellBuffer, row: int, col: int) -> StyledCell {
+impl buffer_get(buf: CellBuffer, row: int, col: int) -> StyledCell {
     if row < 0 or row >= buf.rows or col < 0 or col >= buf.columns {
         return blank_cell();
     }
@@ -168,7 +219,7 @@ def buffer_get(buf: CellBuffer, row: int, col: int) -> StyledCell {
 }
 
 
-def buffer_clear_rect(
+impl buffer_clear_rect(
     buf: CellBuffer,
     x: int,
     y: int,
@@ -189,8 +240,7 @@ def buffer_clear_rect(
 }
 
 
-"""Blit text by display columns: wide graphemes occupy N cells (wide_cont trail)."""
-def buffer_blit_text(
+impl buffer_blit_text(
     buf: CellBuffer,
     row: int,
     col: int,
@@ -239,19 +289,8 @@ def buffer_blit_text(
 }
 
 
-"""Blit a run of {text, attrs} spans with wide-grapheme column advance."""
-obj TextSpan {
-    has text: str = "";
-    has attrs: StyleAttrs | None = None;
-}
-
-
-def buffer_blit_spans(
-    buf: CellBuffer,
-    row: int,
-    col: int,
-    spans: list[TextSpan],
-    max_width: int = -1,
+impl buffer_blit_spans(
+    buf: CellBuffer, row: int, col: int, spans: list[TextSpan], max_width: int = -1,
 ) {
     if row < 0 or row >= buf.rows or col < 0 or col >= buf.columns {
         return;
@@ -284,7 +323,7 @@ def buffer_blit_spans(
 }
 
 
-def buffer_to_plain_rows(buf: CellBuffer) -> list[str] {
+impl buffer_to_plain_rows(buf: CellBuffer) -> list[str] {
     out: list[str] = [];
     for r in range(buf.rows) {
         chars: list[str] = [];
@@ -293,7 +332,7 @@ def buffer_to_plain_rows(buf: CellBuffer) -> list[str] {
             if cell.wide_cont {
                 continue;
             }
-            chars.append(cell.ch if cell.ch else " ");
+            chars.append(cell.ch or " ");
         }
         out.append("".join(chars));
     }
@@ -301,10 +340,7 @@ def buffer_to_plain_rows(buf: CellBuffer) -> list[str] {
 }
 
 
-"""Build a buffer from plain row strings (interim host paint API)."""
-def buffer_from_plain_rows(
-    rows: list[str], columns: int, rows_n: int
-) -> CellBuffer {
+impl buffer_from_plain_rows(rows: list[str], columns: int, rows_n: int) -> CellBuffer {
     buf = create_buffer(columns, rows_n);
     for r in range(rows_n) {
         line = rows[r] if r < len(rows) else "";
@@ -314,9 +350,7 @@ def buffer_from_plain_rows(
 }
 
 
-def _rect_bounds(
-    rect: Rect, columns: int, rows_n: int
-) -> tuple[int, int, int, int] {
+impl _rect_bounds(rect: Rect, columns: int, rows_n: int) -> tuple[int, int, int, int] {
     x = rect.x;
     y = rect.y;
     w = rect.width;
@@ -329,8 +363,7 @@ def _rect_bounds(
 }
 
 
-"""Diff previous vs desired within patch rects; emit moves + SGR + chars."""
-def diff_buffers_ansi(
+impl diff_buffers_ansi(
     previous: CellBuffer | None,
     desired: CellBuffer,
     patch_rects: list[Rect],
@@ -368,8 +401,7 @@ def diff_buffers_ansi(
                             need_attrs = False;
                         }
                         parts.append(
-                            f"\x1b[{y + 1};{run_start + 1}H"
-                            + "".join(run_chars)
+                            f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars)
                         );
                         written += len(run_chars);
                         run_start = -1;
@@ -379,9 +411,7 @@ def diff_buffers_ansi(
                 }
                 had = blank_cell();
                 if (
-                    previous is not None
-                    and y < previous.rows
-                    and x < previous.columns
+                    previous is not None and y < previous.rows and x < previous.columns
                 ) {
                     had = previous.cells[y][x];
                 }
@@ -394,8 +424,7 @@ def diff_buffers_ansi(
                             need_attrs = False;
                         }
                         parts.append(
-                            f"\x1b[{y + 1};{run_start + 1}H"
-                            + "".join(run_chars)
+                            f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars)
                         );
                         written += len(run_chars);
                         run_start = -1;
@@ -403,7 +432,7 @@ def diff_buffers_ansi(
                     }
                     continue;
                 }
-                ch = want.ch if want.ch else " ";
+                ch = want.ch or " ";
                 if run_start < 0 {
                     run_start = x;
                     run_attrs = copy_attrs(want.attrs);
@@ -417,9 +446,7 @@ def diff_buffers_ansi(
                         sgr_on = True;
                         need_attrs = False;
                     }
-                    parts.append(
-                        f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars)
-                    );
+                    parts.append(f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars));
                     written += len(run_chars);
                     run_start = x;
                     run_attrs = copy_attrs(want.attrs);
@@ -433,9 +460,7 @@ def diff_buffers_ansi(
                     sgr_on = True;
                     need_attrs = False;
                 }
-                parts.append(
-                    f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars)
-                );
+                parts.append(f"\x1b[{y + 1};{run_start + 1}H" + "".join(run_chars));
                 written += len(run_chars);
             }
         }

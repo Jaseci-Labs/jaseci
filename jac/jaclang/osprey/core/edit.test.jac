@@ -1,12 +1,3 @@
-"""Tests for core/edit.jac - pure string edit engine.
-
-Same-stem convention: merged with core/edit.jac, so all symbols under test
-are referenced directly without imports.
-
-count_matches semantics: NON-OVERLAPPING (str.count style) — after a match,
-scanning resumes past its end, so "aaa".find("aa") counts 1.
-"""
-
 test "apply_edit success replaces the unique occurrence" {
     src = "def foo():\n    pass\n";
     out = apply_edit(src, "pass", "return 1");
@@ -35,14 +26,13 @@ test "multi-edit applies all pairs in order" {
 
 test "multi-edit is atomic: failure names the pair index and yields no partial result" {
     src = "one two three";
-    # Pair 2 fails ("four" not found); result must be an ERROR naming pair 2,
-    # never a partially-edited source (module is pure; input is untouched).
+
     edits = [["two", "TWO"], ["four", "FOUR"]];
     r = apply_multi_edit(src, edits);
     assert r.startswith("ERROR:");
     assert "2 of 2" in r;
     assert src == "one two three";
-    # Later pairs must not run either.
+
     edits2 = [["nope", "x"], ["two", "TWO"]];
     r2 = apply_multi_edit(src, edits2);
     assert r2.startswith("ERROR:");
@@ -64,7 +54,7 @@ test "replace_lines handles a single line and adds newline when needed" {
 test "replace_lines full-file range works" {
     src = "x\ny\n";
     assert replace_lines(src, 1, 2, "all\nnew") == "all\nnew\n";
-    # Deleting via empty replacement at end-of-file keeps no stray newline.
+
     assert replace_lines(src, 1, 2, "") == "";
 }
 
@@ -78,7 +68,6 @@ test "replace_lines bounds violations return ERROR strings" {
 }
 
 test "count_matches is non-overlapping" {
-    # Documented choice: non-overlapping. "aaaa" contains "aa" twice, not 3x.
     assert count_matches("aaaa", "aa") == 2;
     assert count_matches("aaa", "aa") == 1;
     assert count_matches("abcabc", "abc") == 2;
@@ -124,7 +113,7 @@ test "guess_indentation prefers spaces on majority and tabs on majority" {
     assert guess_indentation(two_space_src) == "  ";
     tabs_src = "def f():\n\ta = 1\n\tb = 2\n";
     assert guess_indentation(tabs_src) == "\t";
-    # Strict majority required: ties prefer spaces (GCD of space widths here = 4).
+
     tie_src = "def f():\n    a\n\tb\n";
     assert guess_indentation(tie_src) == "    ";
     assert guess_indentation("no indent here") == "";

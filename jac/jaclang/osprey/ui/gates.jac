@@ -1,71 +1,4 @@
-"""Gate harness entry points for OSPUI architecture validation (Unit 13).
-
-Each gate returns success / a metrics report. Companion tests in gates.test.jac
-define acceptance.
-"""
-
 import from time { perf_counter }
-
-import from .model {
-    MainScreen,
-    ordered_child_keys,
-}
-
-import from .runtime {
-    create_session,
-    dispose_session,
-}
-
-import from .persistence_probe {
-    ui_jids_reachable_from_persistent_root,
-}
-
-import from .bindings {
-    is_empty,
-}
-
-import from .events {
-    InsertText,
-    dispatch_event,
-}
-
-import from .screen {
-    build_main_shell,
-    configure_main_shell_layout,
-    install_shell_contracts,
-    shell_insert_text,
-    shell_open_approval,
-    shell_close_approval,
-    shell_resize,
-}
-
-import from .renderer {
-    create_renderer,
-    render_frame,
-    set_node_content,
-}
-
-import from .virtual_terminal {
-    VirtualTerminal,
-}
-
-import from .markup {
-    lower_markup,
-    default_shell_registry,
-    register_tag,
-    create_tag_registry,
-}
-
-import from .progress_bar {
-    ProgressBar,
-    SetProgress,
-    render_progress,
-    register_progress_markup,
-}
-
-import from .inspect {
-    validate_invariants,
-}
 
 
 obj Gate4Report {
@@ -77,13 +10,26 @@ obj Gate4Report {
 }
 
 
-"""Gate 1 — Detached graph lifecycle: no UI jids from persistent root; dispose cleans."""
-def run_gate1_detached_lifecycle() -> bool {
+def run_gate1_detached_lifecycle -> bool;
+
+
+def run_gate3_layout_damage -> bool;
+
+
+def run_gate4_invalidation_bench -> Gate4Report;
+
+
+def run_gate5_external_widget -> bool;
+
+
+def run_gate6_authoring_scale -> bool;
+
+impl run_gate1_detached_lifecycle -> bool {
     handle = create_session();
     session = handle.session;
     shell = build_main_shell(session);
     install_shell_contracts(session, shell, "session.events");
-    # Spawn a semantic walker on the prompt (process-local only).
+
     event = InsertText(text="gate1");
     dispatch_event(session, event, shell.prompt);
 
@@ -116,8 +62,7 @@ def run_gate1_detached_lifecycle() -> bool {
 }
 
 
-"""Gate 3 — Real layout and damage across shell scenarios."""
-def run_gate3_layout_damage() -> bool {
+impl run_gate3_layout_damage -> bool {
     handle = create_session();
     session = handle.session;
     shell = build_main_shell(session);
@@ -144,8 +89,7 @@ def run_gate3_layout_damage() -> bool {
 }
 
 
-"""Gate 4 — Invalidation benchmark numbers (nodes, cells, latency)."""
-def run_gate4_invalidation_bench() -> Gate4Report {
+impl run_gate4_invalidation_bench -> Gate4Report {
     handle = create_session();
     session = handle.session;
     shell = build_main_shell(session);
@@ -184,8 +128,7 @@ def run_gate4_invalidation_bench() -> Gate4Report {
 }
 
 
-"""Gate 5 — External ProgressBar package without framework-source edits."""
-def run_gate5_external_widget() -> bool {
+impl run_gate5_external_widget -> bool {
     bar = ProgressBar(key="p", value=0.0);
     event = SetProgress(value=0.4);
     bar spawn event;
@@ -204,7 +147,7 @@ def run_gate5_external_widget() -> bool {
     if "ProgressBar" not in tags {
         return False;
     }
-    # Markup registration into a framework registry without editing markup.jac.
+
     reg = create_tag_registry();
     register_tag(reg, "ProgressBar", ProgressBar);
     result = lower_markup('<ProgressBar key="pb" value="0.5" />', reg);
@@ -218,8 +161,7 @@ def run_gate5_external_widget() -> bool {
 }
 
 
-"""Gate 6 — Authoring scale: dozens of regions via markup, no manual ranks."""
-def run_gate6_authoring_scale() -> bool {
+impl run_gate6_authoring_scale -> bool {
     parts: list[str] = ['<MainScreen key="main">'];
     parts.append('  <Header key="header" title="Osprey" />');
     parts.append('  <TranscriptView key="transcript" />');
@@ -247,7 +189,7 @@ def run_gate6_authoring_scale() -> bool {
     if "header" not in keys or "prompt" not in keys {
         return False;
     }
-    # Generated Jac mentions append_child and never asks authors for ranks.
+
     gen = result.generated_jac;
     if "append_child" not in gen {
         return False;

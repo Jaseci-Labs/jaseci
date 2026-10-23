@@ -1,112 +1,36 @@
-"""Interactive Osprey OSP shell — live ProcessTerminal session.
-
-Crafted for presence: brand chrome, typewriter stream, visible caret,
-Unicode progress, history, and a centered approval modal.
-
-Keys:
-  type / paste   edit draft
-  enter          submit → stream → tool approval
-  up / down      prompt history
-  backspace      delete char
-  ctrl+u         clear draft
-  ctrl+l         redraw
-  a / y          accept approval
-  r / n          reject approval
-  esc            dismiss approval, else quit
-  ctrl+c         quit (terminal restored)
-
-  JACPATH=. jac run ui/demo_entry.jac
-"""
-
-import from .runtime {
-    UiSession,
-    create_session,
-    dispose_session,
-}
-
-import from .screen {
-    ShellScreen,
-    build_main_shell,
-    install_shell_contracts,
-    shell_insert_text,
-    shell_submit,
-    shell_cancel,
-    shell_open_approval,
-    shell_close_approval,
-    shell_resize,
-}
-
-import from .editor {
-    editor_backspace,
-    editor_history_prev,
-    editor_history_next,
-}
-
-import from .transcript {
-    TranscriptMessage,
-    TranscriptProjection,
-    bind_transcript,
-    apply_transcript_revision,
-    materialize_visible,
-    set_follow_tail,
-}
-
-import from .layout_types {
-    LayoutSpec,
-    fill_axis,
-    fixed_axis,
-    grow_axis,
-}
-
-import from .renderer {
-    Renderer,
-    create_renderer,
-    render_frame,
-    set_node_content,
-    set_node_contract,
-    mark_semantic_dirty,
-    mark_layout_dirty,
-    request_cursor,
-}
-
-import from .terminal {
-    ProcessTerminal,
-    read_terminal_size,
-}
-
-import from .input {
-    HostEvent,
-    InputNormalizer,
-    TextEvent,
-    KeyEvent,
-    PasteEvent,
-    coalesce_events,
-}
-
-import from .progress_bar {
-    ProgressBar,
-    SetProgress,
-}
-
-import from .width {
-    display_width,
-    truncate_text,
-}
-
-import from .demo_live_shell_model { LiveShell }
-
-import from .demo_live_shell_messages {
-    _push_turn,
-    _rewrite_turn,
-}
-
-import from .demo_live_shell_render {
-    _install_layout,
-    _render,
-}
+def _apply_resize(app: LiveShell, columns: int, rows: int);
 
 
-def _apply_resize(app: LiveShell, columns: int, rows: int) {
+def _begin_assistant_reply(app: LiveShell, user_text: str);
+
+
+def _tick_stream(app: LiveShell);
+
+
+def _accept_approval(app: LiveShell);
+
+
+def _reject_approval(app: LiveShell);
+
+
+def _history_up(app: LiveShell);
+
+
+def _history_down(app: LiveShell);
+
+
+def _handle_key(app: LiveShell, key: str);
+
+
+def _handle_host_events(app: LiveShell, events: list[HostEvent]);
+
+
+def create_live_shell -> LiveShell;
+
+
+def run_live_shell_demo;
+
+impl _apply_resize(app: LiveShell, columns: int, rows: int) {
     if columns < 40 {
         columns = 40;
     }
@@ -127,13 +51,13 @@ def _apply_resize(app: LiveShell, columns: int, rows: int) {
 }
 
 
-def _begin_assistant_reply(app: LiveShell, user_text: str) {
+impl _begin_assistant_reply(app: LiveShell, user_text: str) {
     _push_turn(app, "user", user_text);
     app.phase = "streaming";
     app.shell.status.phase = "streaming";
     app.progress_value = 0.08;
     app.progress spawn SetProgress(value=app.progress_value);
-    # Typewriter source — paced in _tick_stream.
+
     clipped = user_text if len(user_text) < 48 else user_text[:45] + "…";
     app.stream_full = (
         "looking at «"
@@ -148,7 +72,7 @@ def _begin_assistant_reply(app: LiveShell, user_text: str) {
 }
 
 
-def _tick_stream(app: LiveShell) {
+impl _tick_stream(app: LiveShell) {
     if app.phase != "streaming" {
         return;
     }
@@ -177,12 +101,12 @@ def _tick_stream(app: LiveShell) {
 }
 
 
-def _accept_approval(app: LiveShell) {
+impl _accept_approval(app: LiveShell) {
     if app.shell.approval is None {
         return;
     }
     shell_close_approval(app.session, app.shell);
-    # Drop the block caret from the finished assistant line.
+
     _rewrite_turn(app, app.stream_msg_id, "assistant", app.stream_full);
     _push_turn(app, "tool", "jac check  ✓  clean (demo — no subprocess)");
     app.phase = "ready";
@@ -194,7 +118,7 @@ def _accept_approval(app: LiveShell) {
 }
 
 
-def _reject_approval(app: LiveShell) {
+impl _reject_approval(app: LiveShell) {
     if app.shell.approval is None {
         return;
     }
@@ -210,20 +134,19 @@ def _reject_approval(app: LiveShell) {
 }
 
 
-"""Prompt history via the shared editor API (ui/editor.jac)."""
-def _history_up(app: LiveShell) {
+impl _history_up(app: LiveShell) {
     editor_history_prev(app.shell.prompt);
     app.dirty = True;
 }
 
 
-def _history_down(app: LiveShell) {
+impl _history_down(app: LiveShell) {
     editor_history_next(app.shell.prompt);
     app.dirty = True;
 }
 
 
-def _handle_key(app: LiveShell, key: str) {
+impl _handle_key(app: LiveShell, key: str) {
     if key == "ctrl+c" {
         app.running = False;
         return;
@@ -278,7 +201,7 @@ def _handle_key(app: LiveShell, key: str) {
     if key == "backspace" {
         if app.shell.prompt.draft {
             editor_backspace(app.shell.prompt);
-            # Leave history-browse mode on manual edits (matches editor_insert).
+
             app.shell.prompt.history_index = -1;
             app.dirty = True;
         }
@@ -286,8 +209,7 @@ def _handle_key(app: LiveShell, key: str) {
     }
     if key == "ctrl+u" {
         shell_cancel(app.session, app.shell);
-        # Gap: neither AblePrompt.on_cancel nor shell_cancel resets history
-        # state — no editor API op covers "clear draft + exit browse mode".
+
         app.shell.prompt.history_index = -1;
         app.dirty = True;
         return;
@@ -301,7 +223,7 @@ def _handle_key(app: LiveShell, key: str) {
 }
 
 
-def _handle_host_events(app: LiveShell, events: list[HostEvent]) {
+impl _handle_host_events(app: LiveShell, events: list[HostEvent]) {
     for event in coalesce_events(events) {
         if isinstance(event, TextEvent) {
             if app.shell.approval is not None {
@@ -327,7 +249,7 @@ def _handle_host_events(app: LiveShell, events: list[HostEvent]) {
 }
 
 
-def create_live_shell() -> LiveShell {
+impl create_live_shell -> LiveShell {
     (cols, rows) = read_terminal_size(80, 24);
     handle = create_session();
     session = handle.session;
@@ -362,13 +284,13 @@ def create_live_shell() -> LiveShell {
         app,
         "system",
         "session attached · detached graph · retained paint\n"
-        + "say something — watch the stream, then the approval modal",
+            + "say something — watch the stream, then the approval modal",
     );
     return app;
 }
 
 
-def run_live_shell_demo() {
+impl run_live_shell_demo {
     app = create_live_shell();
     app.term.start();
     app.term.set_title("Osprey");
@@ -395,7 +317,6 @@ def run_live_shell_demo() {
             if app.phase == "streaming" {
                 _tick_stream(app);
             } elif app.phase == "approval" {
-                # Keep the status meter alive while the modal sits.
                 app.spin_i += 1;
                 if app.spin_i % 4 == 0 {
                     app.dirty = True;
@@ -409,11 +330,7 @@ def run_live_shell_demo() {
         try {
             app.term.hide_cursor();
             app.term.stop();
-        } except Exception {
-        }
+        } except Exception {}
         dispose_session(app.session);
     }
 }
-
-
-

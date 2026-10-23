@@ -1,14 +1,4 @@
-"""Unit 11 acceptance: inspection dumps and invariant validation.
-
-Companion scope provides inspect APIs.
-"""
-
-import from .model {
-    MainScreen,
-    Prompt,
-    TranscriptView,
-    node_id,
-}
+import from .model { MainScreen, Prompt, TranscriptView }
 
 import from .runtime {
     append_child_session,
@@ -18,13 +8,9 @@ import from .runtime {
     record_invalidation,
 }
 
-import from .bindings {
-    subscribe,
-}
+import from .bindings { subscribe, }
 
-import from .events {
-    InsertText,
-}
+import from .events { InsertText, }
 
 
 test "dump_graph is deterministic for the same topology" {
@@ -54,7 +40,9 @@ test "dump_session_bindings lists source target and event type" {
     transcript = TranscriptView(key="transcript");
     append_child_session(session, ui_root, screen);
     append_child_session(session, screen, transcript);
-    subscribe(session.bindings, "session.events", node_id(transcript), "TranscriptChanged");
+    subscribe(
+        session.bindings, "session.events", node_id(transcript), "TranscriptChanged"
+    );
     text = dump_session_bindings(session);
     assert "session.events" in text;
     assert (node_id(transcript) in text) or ("transcript" in text);

@@ -1,21 +1,8 @@
-"""Unit 12 acceptance: markup lowering, errors, and print-generated mode.
+import from .model { ordered_child_keys }
 
-Companion scope provides markup APIs. screen/runtime imported for equivalence
-checks against Unit 8.
-"""
+import from .runtime { create_session, }
 
-import from .model {
-    MainScreen,
-    ordered_child_keys,
-}
-
-import from .runtime {
-    create_session,
-}
-
-import from .screen {
-    build_main_shell,
-}
+import from .screen { build_main_shell, }
 
 
 test "default_shell_registry has Osprey shell tags" {

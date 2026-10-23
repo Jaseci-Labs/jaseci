@@ -1,23 +1,4 @@
-"""Terminal host tick: poll → decode → ESC timeout → coalesced HostEvents.
-
-Maps process/virtual terminal bytes to semantic HostEvents for the shell.
-Does not construct UiEvent walkers (that stays with the product host loop).
-"""
-
 import time;
-
-import from .terminal {
-    Terminal,
-}
-
-import from .input {
-    HostEvent,
-    InputNormalizer,
-    KeyEvent,
-    EofEvent,
-    InterruptEvent,
-    coalesce_events,
-}
 
 
 obj HostLoop {
@@ -28,29 +9,41 @@ obj HostLoop {
 }
 
 
-def create_host_loop(esc_timeout_ms: int = 50) -> HostLoop {
+def create_host_loop(esc_timeout_ms: int = 50) -> HostLoop;
+
+
+def note_interrupt(loop: HostLoop);
+
+
+def note_resize(loop: HostLoop, width: int, height: int);
+
+
+def run_host_tick(
+    loop: HostLoop, term: Terminal, timeout_s: float = 0.0, now_ms: float | None = None,
+) -> list[HostEvent];
+
+
+def host_events_to_effects(events: list[HostEvent]) -> list[dict[str, any]];
+
+impl create_host_loop(esc_timeout_ms: int = 50) -> HostLoop {
     norm = InputNormalizer();
     norm.esc_timeout_ms = esc_timeout_ms;
     return HostLoop(normalizer=norm);
 }
 
 
-def note_interrupt(loop: HostLoop) {
+impl note_interrupt(loop: HostLoop) {
     loop.interrupt_pending = True;
 }
 
 
-def note_resize(loop: HostLoop, width: int, height: int) {
+impl note_resize(loop: HostLoop, width: int, height: int) {
     loop.normalizer.feed_resize(width, height);
 }
 
 
-"""One host tick: poll terminal, decode, apply ESC timeout, coalesce."""
-def run_host_tick(
-    loop: HostLoop,
-    term: Terminal,
-    timeout_s: float = 0.0,
-    now_ms: float | None = None,
+impl run_host_tick(
+    loop: HostLoop, term: Terminal, timeout_s: float = 0.0, now_ms: float | None = None,
 ) -> list[HostEvent] {
     clock = now_ms if now_ms is not None else (time.monotonic() * 1000.0);
     loop.last_now_ms = clock;
@@ -61,8 +54,6 @@ def run_host_tick(
         out.append(InterruptEvent());
     }
 
-    # poll_input/eof live on ProcessTerminal/VirtualTerminal, not the base
-    # Terminal type; resolve them dynamically so the native checker lowers.
     raw = "";
     try {
         poll_fn = getattr(term, "poll_input");
@@ -77,7 +68,6 @@ def run_host_tick(
             loop.normalizer.arm_esc(clock);
         }
     } else {
-        # Still allow ESC timeout to fire when idle.
         if loop.normalizer.buffer == "\x1b" and loop.normalizer.esc_armed_at_ms < 0.0 {
             loop.normalizer.arm_esc(clock);
         }
@@ -96,8 +86,7 @@ def run_host_tick(
 }
 
 
-"""Thin mapping of common host keys to effect-like dicts for demos/tests."""
-def host_events_to_effects(events: list[HostEvent]) -> list[dict[str, any]] {
+impl host_events_to_effects(events: list[HostEvent]) -> list[dict[str, any]] {
     effects: list[dict[str, any]] = [];
     for event in events {
         if isinstance(event, InterruptEvent) {

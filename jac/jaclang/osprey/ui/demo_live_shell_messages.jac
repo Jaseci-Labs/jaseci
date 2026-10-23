@@ -1,14 +1,18 @@
-"""Transcript mutation helpers for the interactive live shell demo."""
-
-import from .transcript {
-    TranscriptMessage,
-    apply_transcript_revision,
-}
-
-import from .demo_live_shell_model { LiveShell }
+def _format_turn(role: str, body: str) -> str;
 
 
-def _format_turn(role: str, body: str) -> str {
+def _next_id(app: LiveShell) -> str;
+
+
+def _commit_messages(app: LiveShell);
+
+
+def _push_turn(app: LiveShell, role: str, body: str) -> str;
+
+
+def _rewrite_turn(app: LiveShell, message_id: str, role: str, body: str);
+
+impl _format_turn(role: str, body: str) -> str {
     if role == "user" {
         mark = "◆ you";
     } elif role == "assistant" {
@@ -26,34 +30,33 @@ def _format_turn(role: str, body: str) -> str {
 }
 
 
-def _next_id(app: LiveShell) -> str {
+impl _next_id(app: LiveShell) -> str {
     app.msg_n += 1;
     return "m" + str(app.msg_n);
 }
 
 
-def _commit_messages(app: LiveShell) {
+impl _commit_messages(app: LiveShell) {
     app.rev += 1;
     apply_transcript_revision(app.proj, app.rev, app.messages);
     app.dirty = True;
 }
 
 
-def _push_turn(app: LiveShell, role: str, body: str) -> str {
+impl _push_turn(app: LiveShell, role: str, body: str) -> str {
     mid = _next_id(app);
-    app.messages = app.messages + [
-        TranscriptMessage(
-            message_id=mid,
-            content=_format_turn(role, body),
-            content_rev=1,
-        )
-    ];
+    app.messages = app.messages
+        + [
+            TranscriptMessage(
+                message_id=mid, content=_format_turn(role, body), content_rev=1,
+            )
+        ];
     _commit_messages(app);
     return mid;
 }
 
 
-def _rewrite_turn(app: LiveShell, message_id: str, role: str, body: str) {
+impl _rewrite_turn(app: LiveShell, message_id: str, role: str, body: str) {
     updated: list[TranscriptMessage] = [];
     for message in app.messages {
         if message.message_id == message_id {

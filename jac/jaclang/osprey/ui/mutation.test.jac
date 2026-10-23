@@ -1,6 +1,3 @@
-"""Behavior tests for OSP UI graph structural mutations."""
-
-
 test "append_child maintains sparse rank ordering" {
     screen = MainScreen(key="main");
     header = Header(key="header", title="Osprey");
@@ -13,12 +10,7 @@ test "append_child maintains sparse rank ordering" {
     append_child(screen, status);
     append_child(screen, prompt);
 
-    assert ordered_child_keys(screen) == [
-        "header",
-        "transcript",
-        "status",
-        "prompt",
-    ];
+    assert ordered_child_keys(screen) == ["header", "transcript", "status", "prompt", ];
     assert child_rank(screen, transcript) > child_rank(screen, header);
     assert child_rank(screen, prompt) > child_rank(screen, status);
 }
@@ -37,12 +29,7 @@ test "move_before reorders siblings without remounting unrelated nodes" {
     append_child(screen, prompt);
 
     move_before(prompt, header);
-    assert ordered_child_keys(screen) == [
-        "prompt",
-        "header",
-        "transcript",
-        "status",
-    ];
+    assert ordered_child_keys(screen) == ["prompt", "header", "transcript", "status", ];
     assert child_parent(prompt) is screen;
     assert child_parent(header) is screen;
 }
@@ -104,7 +91,7 @@ test "insert_before and insert_after place relative to a sibling" {
     c = Prompt(key="c");
     append_child(screen, a);
     append_child(screen, c);
-    # OSPUI.md: insert_before(parent, child, sibling)
+
     insert_before(screen, b, c);
     assert ordered_child_keys(screen) == ["a", "b", "c"];
     d = TranscriptView(key="d");
@@ -165,12 +152,7 @@ test "move into own descendant is rejected without partial mutation" {
 
 test "sparse ranks keep a positive gap after successive appends" {
     screen = MainScreen(key="main");
-    nodes = [
-        Header(key="h0"),
-        Header(key="h1"),
-        Header(key="h2"),
-        Header(key="h3"),
-    ];
+    nodes = [Header(key="h0"), Header(key="h1"), Header(key="h2"), Header(key="h3"), ];
     for n in nodes {
         append_child(screen, n);
     }
@@ -179,7 +161,7 @@ test "sparse ranks keep a positive gap after successive appends" {
     for i in range(1, len(ranks)) {
         assert ranks[i] - ranks[i - 1] >= 1;
     }
-    # Default gap is 1024 until exhaustion forces normalize.
+
     assert ranks[1] - ranks[0] >= 1024 or ranks[1] > ranks[0];
 }
 

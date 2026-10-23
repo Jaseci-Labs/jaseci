@@ -1,22 +1,5 @@
-"""Unit 8 acceptance: durable Osprey shell topology and editor lifecycle.
-
-Companion scope provides screen APIs. runtime imported for session helpers.
-"""
-
-import from .model {
-    node_id,
-}
-
-import from .layout_types {
-    SizeMode,
-    create_layout_state,
-}
-import from .runtime {
-    create_session,
-    dispose_session,
-    get_focus_node,
-    set_focus,
-}
+import from .layout_types { create_layout_state }
+import from .runtime { create_session, dispose_session, get_focus_node }
 
 
 test "build_main_shell mounts header transcript status prompt once" {
@@ -135,8 +118,6 @@ test "configure_main_shell_layout installs legacy-parity specs" {
     failures = configure_main_shell_layout(state, shell);
     assert failures == [];
 
-    # Screen fills; header/status/prompt keep legacy fixed heights;
-    # transcript grows with scroll enabled (mirrors gates.jac).
     sid = node_id(shell.screen);
     tid = node_id(shell.transcript);
     hid = node_id(shell.header);

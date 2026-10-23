@@ -1,25 +1,8 @@
-"""Annex for ui.persistence_probe — persistent-root reachability invariants.
+import from .model { MainScreen, Prompt, node_id, }
 
-These checks read Jac's persistent root, so they live on the server-placed
-probe module rather than ui/runtime.test.jac (a native-sealed unit).
-"""
+import from .runtime { create_session, append_child_session, dispose_session, }
 
-import from .model {
-    MainScreen,
-    Prompt,
-    node_id,
-}
-
-import from .runtime {
-    create_session,
-    append_child_session,
-    dispose_session,
-}
-
-import from .bindings {
-    is_empty,
-    subscribe,
-}
+import from .bindings { subscribe }
 
 
 test "create_session tracked jids are not reachable from persistent root" {
@@ -41,10 +24,7 @@ test "populated session stays detached from persistent root until dispose" {
     append_child_session(session, ui_root, screen);
     append_child_session(session, screen, prompt);
     subscribe(
-        session.bindings,
-        "session.events",
-        node_id(prompt),
-        "TranscriptChanged",
+        session.bindings, "session.events", node_id(prompt), "TranscriptChanged",
     );
     session.renderer.layout[node_id(prompt)] = {"width": 80};
     assert ui_jids_reachable_from_persistent_root(session.tracked_node_ids) == [];

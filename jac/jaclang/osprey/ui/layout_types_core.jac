@@ -1,67 +1,15 @@
-"""Core layout value types for the public ui.layout_types seam.
-
-The public module re-exports these declarations together with registry
-lifecycle operations. Keeping the data model independent avoids import cycles.
-"""
-
-import from ..constraints.algebra {
-    StrengthTier,
-    is_finite,
-}
-import from .model {
-    UiNode,
-    node_id,
-}
-
-
-"""Axis-aligned terminal rectangle in cell coordinates (origin top-left)."""
 obj Rect {
     has x: int = 0,
         y: int = 0,
         width: int = 0,
         height: int = 0;
 
-    def right() -> int {
-        return self.x + self.width;
-    }
-
-    def bottom() -> int {
-        return self.y + self.height;
-    }
-
-    def is_empty() -> bool {
-        return self.width <= 0 or self.height <= 0;
-    }
-
-    def contains_point(col: int, row: int) -> bool {
-        return (
-            col >= self.x
-            and col < self.right()
-            and row >= self.y
-            and row < self.bottom()
-        );
-    }
-
-    def intersects(other: Rect) -> bool {
-        if self.is_empty() or other.is_empty() {
-            return False;
-        }
-        return (
-            self.x < other.right()
-            and self.right() > other.x
-            and self.y < other.bottom()
-            and self.bottom() > other.y
-        );
-    }
-
-    def copy() -> Rect {
-        return Rect(
-            x=self.x,
-            y=self.y,
-            width=self.width,
-            height=self.height,
-        );
-    }
+    def right -> int;
+    def bottom -> int;
+    def is_empty -> bool;
+    def contains_point(col: int, row: int) -> bool;
+    def intersects(other: Rect) -> bool;
+    def copy -> Rect;
 }
 
 
@@ -71,28 +19,28 @@ obj Size {
 }
 
 
-def rect_union(a: Rect, b: Rect) -> Rect {
-    if a.is_empty() {
-        return b.copy();
-    }
-    if b.is_empty() {
-        return a.copy();
-    }
-    x0 = min(a.x, b.x);
-    y0 = min(a.y, b.y);
-    x1 = max(a.right(), b.right());
-    y1 = max(a.bottom(), b.bottom());
-    return Rect(x=x0, y=y0, width=x1 - x0, height=y1 - y0);
-}
+def rect_union(a: Rect, b: Rect) -> Rect;
 
 
 enum Axis { HORIZONTAL = "horizontal", VERTICAL = "vertical" }
-enum SizeMode { FIXED = "fixed", INTRINSIC = "intrinsic", BOUNDED = "bounded", FILL = "fill", GROW = "grow" }
+enum SizeMode {
+    FIXED = "fixed",
+    INTRINSIC = "intrinsic",
+    BOUNDED = "bounded",
+    FILL = "fill",
+    GROW = "grow"
+}
+
 enum Align { START = "start", CENTER = "center", END = "end", STRETCH = "stretch" }
-enum OverlayAnchor { CENTER = "center", TOP = "top", BOTTOM = "bottom", LEFT = "left", RIGHT = "right" }
+enum OverlayAnchor {
+    CENTER = "center",
+    TOP = "top",
+    BOTTOM = "bottom",
+    LEFT = "left",
+    RIGHT = "right"
+}
 
 
-"""Per-axis sizing policy (plan §4.1)."""
 obj AxisSize {
     has mode: SizeMode,
         minimum: float = 0.0,
@@ -102,10 +50,6 @@ obj AxisSize {
 }
 
 
-"""Permanent node layout spec (plan §4.1).
-
-Field order puts the required axis sizes first because Jac objects follow
-dataclass default rules (a plan-sanctioned spelling change)."""
 obj LayoutSpec {
     has width: AxisSize,
         height: AxisSize,
@@ -184,17 +128,17 @@ obj LayoutResult {
 
 
 enum LayoutRelationKind {
-    LEFT_OF = "left_of", RIGHT_OF = "right_of",
-    ABOVE = "above", BELOW = "below",
-    ALIGN_START = "align_start", ALIGN_END = "align_end",
-    ALIGN_CENTER = "align_center", SAME_SIZE = "same_size"
+    LEFT_OF = "left_of",
+    RIGHT_OF = "right_of",
+    ABOVE = "above",
+    BELOW = "below",
+    ALIGN_START = "align_start",
+    ALIGN_END = "align_end",
+    ALIGN_CENTER = "align_center",
+    SAME_SIZE = "same_size"
 }
 
 
-"""Process-local spatial relation between two live nodes (plan §4.1).
-
-Not an OSP edge: relations are registry data keyed by stable node ids so
-a replaced node (new jid) never inherits geometry declarations."""
 obj LayoutRelation {
     has owner_id: str,
         source_id: str,
@@ -207,7 +151,6 @@ obj LayoutRelation {
 }
 
 
-"""Registered content for one node (plan §4 invariant 6)."""
 obj ContentEntry {
     has lines: list[str],
         content_revision: int,
@@ -215,9 +158,6 @@ obj ContentEntry {
 }
 
 
-"""Cached wrapped lines for one node at one integer width (plan §7.1
-step 4). One entry per node — revisions are monotonic, so older wraps
-are never reusable and keeping only the newest bounds memory."""
 obj MeasureEntry {
     has width: int,
         content_revision: int,
@@ -226,10 +166,6 @@ obj MeasureEntry {
 }
 
 
-"""Permanent layout registry (plan §4).
-
-`solver` and `last_frame` carry solver state and the last published
-frame. Frames are immutable by ownership convention."""
 obj LayoutState {
     has viewport: Viewport = Viewport(columns=80, rows=24),
         specs: dict[str, LayoutSpec] = {},
@@ -241,7 +177,51 @@ obj LayoutState {
         last_frame: LayoutFrame | None = None;
 }
 
+impl Rect.right -> int {
+    return self.x + self.width;
+}
 
-# ----------------------------------------------------------------------
-# Spec construction helpers (axis sugar over AxisSize).
-# ----------------------------------------------------------------------
+impl Rect.bottom -> int {
+    return self.y + self.height;
+}
+
+impl Rect.is_empty -> bool {
+    return self.width <= 0 or self.height <= 0;
+}
+
+impl Rect.contains_point(col: int, row: int) -> bool {
+    return (
+        col >= self.x and col < self.right() and row >= self.y and row < self.bottom()
+    );
+}
+
+impl Rect.intersects(other: Rect) -> bool {
+    if self.is_empty() or other.is_empty() {
+        return False;
+    }
+    return (
+        self.x < other.right()
+        and self.right() > other.x
+        and self.y < other.bottom()
+        and self.bottom() > other.y
+    );
+}
+
+impl Rect.copy -> Rect {
+    return Rect(x=self.x, y=self.y, width=self.width, height=self.height,);
+}
+
+
+impl rect_union(a: Rect, b: Rect) -> Rect {
+    if a.is_empty() {
+        return b.copy();
+    }
+    if b.is_empty() {
+        return a.copy();
+    }
+    x0 = min(a.x, b.x);
+    y0 = min(a.y, b.y);
+    x1 = max(a.right(), b.right());
+    y1 = max(a.bottom(), b.bottom());
+    return Rect(x=x0, y=y0, width=x1 - x0, height=y1 - y0);
+}

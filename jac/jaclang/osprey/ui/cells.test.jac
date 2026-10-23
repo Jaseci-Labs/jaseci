@@ -1,6 +1,3 @@
-"""Tests for styled cell buffer and SGR-aware diff."""
-
-
 test "create_buffer is blank spaces" {
     buf = create_buffer(4, 2);
     assert buf.columns == 4;
@@ -43,7 +40,7 @@ test "wide grapheme clips when only one column remains" {
     buffer_blit_text(buf, 0, 0, "xy你", None, 3);
     assert buffer_get(buf, 0, 0).ch == "x";
     assert buffer_get(buf, 0, 1).ch == "y";
-    # Wide char needs 2 cols but only 1 left — not painted.
+
     assert buffer_get(buf, 0, 2).ch == " ";
     assert not buffer_get(buf, 0, 2).wide_cont;
 }
@@ -54,6 +51,7 @@ test "buffer_blit_spans advances by display width" {
     spans = [
         TextSpan(text="你", attrs=StyleAttrs(bold=True)),
         TextSpan(text="ok", attrs=StyleAttrs()),
+
     ];
     buffer_blit_spans(buf, 0, 0, spans, 8);
     assert buffer_get(buf, 0, 0).ch == "你";
@@ -114,9 +112,7 @@ test "unchanged region writes zero cells" {
     buffer_blit_text(prev, 0, 0, "ab", None, 4);
     desired = create_buffer(4, 2);
     buffer_blit_text(desired, 0, 0, "ab", None, 4);
-    diff = diff_buffers_ansi(
-        prev, desired, [Rect(x=0, y=0, width=4, height=2)]
-    );
+    diff = diff_buffers_ansi(prev, desired, [Rect(x=0, y=0, width=4, height=2)]);
     assert diff.cells_written == 0;
     assert diff.text == "" or diff.text == sgr_reset();
 }

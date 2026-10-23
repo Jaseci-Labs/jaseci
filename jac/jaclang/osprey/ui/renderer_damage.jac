@@ -1,57 +1,39 @@
-"""Layout, damage, cursor, and ANSI diff helpers for the renderer."""
+def _rects_equal(a: Rect, b: Rect) -> bool;
 
-import from .model {
-    UiNode,
-    UiContainer,
-    Screen,
-    ordered_children,
-    node_id,
-}
 
-import from .layout_types {
-    LayoutResult,
-    LayoutState,
-    Rect,
-    Viewport,
-    rect_union,
-}
+def _walk_damage(renderer: Renderer, n: UiNode, out: list[DamageRect],);
 
-import from .layout {
-    compute_layout,
-}
 
-import from .cells {
-    CellBuffer,
-    diff_buffers_ansi,
-}
+def compute_damage(renderer: Renderer, layout_root: UiNode) -> list[DamageRect];
 
-import from .renderer_types {
-    AnsiDiff,
-    CursorPos,
-    DamageRect,
-    Renderer,
-}
 
-import from .renderer_paint {
-    _layered_overlays,
+def _merge_damage(damage: list[DamageRect]) -> list[Rect];
+
+
+def _diff_ansi(
+    previous: CellBuffer | None,
+    desired: CellBuffer,
+    patch_rects: list[Rect],
+    columns: int,
+    rows_n: int,
+    force: bool = False,
+) -> AnsiDiff;
+
+
+def _resolve_cursor(renderer: Renderer) -> CursorPos;
+
+
+def _run_layout(renderer: Renderer, layout_root: UiNode) -> LayoutResult;
+
+
+def _snapshot_rects(renderer: Renderer);
+
+impl _rects_equal(a: Rect, b: Rect) -> bool {
+    return (a.x == b.x and a.y == b.y and a.width == b.width and a.height == b.height);
 }
 
 
-def _rects_equal(a: Rect, b: Rect) -> bool {
-    return (
-        a.x == b.x
-        and a.y == b.y
-        and a.width == b.width
-        and a.height == b.height
-    );
-}
-
-
-def _walk_damage(
-    renderer: Renderer,
-    n: UiNode,
-    out: list[DamageRect],
-) {
+impl _walk_damage(renderer: Renderer, n: UiNode, out: list[DamageRect],) {
     state = renderer.layout;
     frame = state.last_frame;
     nid = node_id(n);
@@ -64,12 +46,8 @@ def _walk_damage(
         } elif not prev.is_empty() and cur.is_empty() {
             out.append(DamageRect(rect=prev.copy(), reason="disappear"));
         } elif not _rects_equal(prev, cur) {
-            out.append(
-                DamageRect(rect=rect_union(prev, cur), reason="bounds")
-            );
-        } elif (
-            nid in renderer.pending_semantic or nid in renderer.pending_layout
-        ) {
+            out.append(DamageRect(rect=rect_union(prev, cur), reason="bounds"));
+        } elif (nid in renderer.pending_semantic or nid in renderer.pending_layout) {
             if not cur.is_empty() {
                 out.append(DamageRect(rect=cur.copy(), reason="semantic"));
             }
@@ -88,8 +66,7 @@ def _walk_damage(
 }
 
 
-"""Compute damage rectangles from prev/current layout without painting."""
-def compute_damage(renderer: Renderer, layout_root: UiNode) -> list[DamageRect] {
+impl compute_damage(renderer: Renderer, layout_root: UiNode) -> list[DamageRect] {
     out: list[DamageRect] = [];
     for d in renderer.damage {
         out.append(d);
@@ -112,12 +89,7 @@ def compute_damage(renderer: Renderer, layout_root: UiNode) -> list[DamageRect] 
 }
 
 
-"""Merge overlapping damage into disjoint patches (fixpoint on pairs).
-
-Far-apart damage stays separate so patch scope reflects where cells
-actually changed instead of one screen-spanning bounding box.
-"""
-def _merge_damage(damage: list[DamageRect]) -> list[Rect] {
+impl _merge_damage(damage: list[DamageRect]) -> list[Rect] {
     rects: list[Rect] = [];
     for d in damage {
         if not d.rect.is_empty() {
@@ -149,7 +121,7 @@ def _merge_damage(damage: list[DamageRect]) -> list[Rect] {
 }
 
 
-def _diff_ansi(
+impl _diff_ansi(
     previous: CellBuffer | None,
     desired: CellBuffer,
     patch_rects: list[Rect],
@@ -163,7 +135,7 @@ def _diff_ansi(
 }
 
 
-def _resolve_cursor(renderer: Renderer) -> CursorPos {
+impl _resolve_cursor(renderer: Renderer) -> CursorPos {
     if not renderer.cursor_node_id {
         return CursorPos();
     }
@@ -177,28 +149,24 @@ def _resolve_cursor(renderer: Renderer) -> CursorPos {
     if row < 0 or col < 0 {
         return CursorPos();
     }
-    if row >= renderer.layout.viewport.rows or col >= renderer.layout.viewport.columns {
+    if row >= renderer.layout.viewport.rows
+        or col >= renderer.layout.viewport.columns {
         return CursorPos();
     }
     return CursorPos(row=row, col=col);
 }
 
 
-"""Run the compute pipeline at the renderer's current viewport."""
-def _run_layout(renderer: Renderer, layout_root: UiNode) -> LayoutResult {
+impl _run_layout(renderer: Renderer, layout_root: UiNode) -> LayoutResult {
     state = renderer.layout;
     vp = state.viewport;
     return compute_layout(
-        state,
-        layout_root,
-        Viewport(columns=vp.columns, rows=vp.rows),
+        state, layout_root, Viewport(columns=vp.columns, rows=vp.rows),
     );
 }
 
 
-# Replaces the legacy engine's snapshot_rects: record this frame's rects
-# as the damage baseline for the next one.
-def _snapshot_rects(renderer: Renderer) {
+impl _snapshot_rects(renderer: Renderer) {
     fresh: dict[str, Rect] = {};
     frame = renderer.layout.last_frame;
     if frame is not None {

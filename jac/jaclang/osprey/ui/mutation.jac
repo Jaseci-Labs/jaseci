@@ -1,36 +1,5 @@
-"""Structural mutations for the detached OSP UI graph.
-
-Public helpers wrap typed Child edge operations, enforce containment invariants,
-and bump a caller-owned graph revision counter. Callers never renumber ranks
-manually; sparse ranks use a 1024 gap with normalization on exhaustion.
-"""
-
-import from .model {
-    UiNode,
-    UiContainer,
-    UiSessionRoot,
-    MainScreen,
-    Header,
-    TranscriptView,
-    Status,
-    Prompt,
-    Child,
-    Owns,
-    Feeds,
-    FocusNext,
-    Layer,
-    child_parent,
-    child_rank,
-    duplicate_sibling_keys,
-    is_child_ancestor,
-    node_id,
-    ordered_child_keys,
-    ordered_children,
-}
-
-
-glob RANK_GAP: int = 1024;
-glob MIN_RANK: int = 0;
+glob RANK_GAP: int = 1024,
+     MIN_RANK: int = 0;
 
 
 obj MutationResult {
@@ -39,21 +8,63 @@ obj MutationResult {
 }
 
 
-def _next_rank_after(parent: UiContainer, sibling: UiNode | None) -> int {
+def _next_rank_after(parent: UiContainer, sibling: UiNode | None) -> int;
+
+
+def _normalize_child_ranks(parent: UiContainer);
+
+
+def _validate_mount(parent: UiContainer, child: UiNode);
+
+
+def _connect_child(parent: UiContainer, child: UiNode, rank: int) -> MutationResult;
+
+
+def append_child(parent: UiContainer, child: UiNode) -> MutationResult;
+
+
+def insert_before(
+    parent: UiContainer, child: UiNode, sibling: UiNode,
+) -> MutationResult;
+
+
+def insert_after(
+    parent: UiContainer, child: UiNode, sibling: UiNode,
+) -> MutationResult;
+
+
+def move_before(child: UiNode, sibling: UiNode) -> MutationResult;
+
+
+def move_after(child: UiNode, sibling: UiNode) -> MutationResult;
+
+
+def detach(child: UiNode) -> MutationResult;
+
+
+def replace(old: UiNode, new: UiNode) -> MutationResult;
+
+
+def clear_ui_edges(n: UiNode);
+
+
+def dispose_subtree(n: UiNode);
+
+impl _next_rank_after(parent: UiContainer, sibling: UiNode | None) -> int {
     children = ordered_children(parent);
     if sibling is None {
         if not children {
             return RANK_GAP;
         }
         last = children[-1];
-        for e in [edge parent ->:Child:-> last] {
+        for e in [edge parent->:Child:->last] {
             return e.rank + RANK_GAP;
         }
         return RANK_GAP;
     }
     idx = children.index(sibling);
     if idx == 0 {
-        for e in [edge parent ->:Child:-> sibling] {
+        for e in [edge parent->:Child:->sibling] {
             return max(MIN_RANK, e.rank // 2);
         }
         return RANK_GAP;
@@ -61,10 +72,10 @@ def _next_rank_after(parent: UiContainer, sibling: UiNode | None) -> int {
     prev = children[idx - 1];
     prev_rank = 0;
     sib_rank = 0;
-    for e in [edge parent ->:Child:-> prev] {
+    for e in [edge parent->:Child:->prev] {
         prev_rank = e.rank;
     }
-    for e in [edge parent ->:Child:-> sibling] {
+    for e in [edge parent->:Child:->sibling] {
         sib_rank = e.rank;
     }
     gap = sib_rank - prev_rank;
@@ -76,11 +87,11 @@ def _next_rank_after(parent: UiContainer, sibling: UiNode | None) -> int {
 }
 
 
-def _normalize_child_ranks(parent: UiContainer) {
+impl _normalize_child_ranks(parent: UiContainer) {
     children = ordered_children(parent);
     rank = RANK_GAP;
     for child in children {
-        for e in [edge parent ->:Child:-> child] {
+        for e in [edge parent->:Child:->child] {
             e.rank = rank;
         }
         rank += RANK_GAP;
@@ -88,7 +99,7 @@ def _normalize_child_ranks(parent: UiContainer) {
 }
 
 
-def _validate_mount(parent: UiContainer, child: UiNode) {
+impl _validate_mount(parent: UiContainer, child: UiNode) {
     existing = child_parent(child);
     if existing is not None and existing is not parent {
         raise ValueError("UI node already has a parent: " + child.key);
@@ -106,35 +117,30 @@ def _validate_mount(parent: UiContainer, child: UiNode) {
 }
 
 
-def _connect_child(parent: UiContainer, child: UiNode, rank: int) -> MutationResult {
+impl _connect_child(parent: UiContainer, child: UiNode, rank: int) -> MutationResult {
     _validate_mount(parent, child);
     if rank < MIN_RANK {
         raise ValueError("Child rank must be non-negative");
     }
     existing = child_parent(child);
     if existing is not None {
-        for e in [edge existing ->:Child:-> child] {
+        for e in [edge existing->:Child:->child] {
             del e;
         }
     }
     parent +>:Child(rank=rank):+> child;
-    return MutationResult(
-        graph_revision=1,
-        layout_root_id=jid(parent),
-    );
+    return MutationResult(graph_revision=1, layout_root_id=jid(parent),);
 }
 
 
-def append_child(parent: UiContainer, child: UiNode) -> MutationResult {
+impl append_child(parent: UiContainer, child: UiNode) -> MutationResult {
     rank = _next_rank_after(parent, None);
     return _connect_child(parent, child, rank);
 }
 
 
-def insert_before(
-    parent: UiContainer,
-    child: UiNode,
-    sibling: UiNode,
+impl insert_before(
+    parent: UiContainer, child: UiNode, sibling: UiNode,
 ) -> MutationResult {
     if sibling not in ordered_children(parent) {
         raise ValueError("insert_before sibling is not a child of parent");
@@ -144,10 +150,8 @@ def insert_before(
 }
 
 
-def insert_after(
-    parent: UiContainer,
-    child: UiNode,
-    sibling: UiNode,
+impl insert_after(
+    parent: UiContainer, child: UiNode, sibling: UiNode,
 ) -> MutationResult {
     children = ordered_children(parent);
     if sibling not in children {
@@ -161,7 +165,7 @@ def insert_after(
 }
 
 
-def move_before(child: UiNode, sibling: UiNode) -> MutationResult {
+impl move_before(child: UiNode, sibling: UiNode) -> MutationResult {
     parent = child_parent(child);
     if parent is None {
         raise ValueError("move_before requires a mounted child");
@@ -172,7 +176,7 @@ def move_before(child: UiNode, sibling: UiNode) -> MutationResult {
     if child is sibling {
         return MutationResult(graph_revision=0, layout_root_id=jid(parent));
     }
-    for e in [edge parent ->:Child:-> child] {
+    for e in [edge parent->:Child:->child] {
         del e;
     }
     rank = _next_rank_after(parent, sibling);
@@ -180,7 +184,7 @@ def move_before(child: UiNode, sibling: UiNode) -> MutationResult {
 }
 
 
-def move_after(child: UiNode, sibling: UiNode) -> MutationResult {
+impl move_after(child: UiNode, sibling: UiNode) -> MutationResult {
     parent = child_parent(child);
     if parent is None {
         raise ValueError("move_after requires a mounted child");
@@ -193,26 +197,26 @@ def move_after(child: UiNode, sibling: UiNode) -> MutationResult {
     if idx + 1 < len(children) {
         return move_before(child, children[idx + 1]);
     }
-    for e in [edge parent ->:Child:-> child] {
+    for e in [edge parent->:Child:->child] {
         del e;
     }
     return append_child(parent, child);
 }
 
 
-def detach(child: UiNode) -> MutationResult {
+impl detach(child: UiNode) -> MutationResult {
     parent = child_parent(child);
     if parent is None {
         return MutationResult(graph_revision=0, layout_root_id="");
     }
-    for e in [edge parent ->:Child:-> child] {
+    for e in [edge parent->:Child:->child] {
         del e;
     }
     return MutationResult(graph_revision=1, layout_root_id=jid(parent));
 }
 
 
-def replace(old: UiNode, new: UiNode) -> MutationResult {
+impl replace(old: UiNode, new: UiNode) -> MutationResult {
     parent = child_parent(old);
     if parent is None {
         raise ValueError("replace requires the old node to be mounted");
@@ -235,66 +239,64 @@ def replace(old: UiNode, new: UiNode) -> MutationResult {
 }
 
 
-"""Remove one detached subtree's typed UI edges without deleting nodes."""
-def clear_ui_edges(n: UiNode) {
+impl clear_ui_edges(n: UiNode) {
     if isinstance(n, UiContainer) {
-        for child in list([n ->:Child:->]) {
+        for child in list([n->:Child:->]) {
             clear_ui_edges(child);
-            for e in [edge n ->:Child:-> child] {
+            for e in [edge n->:Child:->child] {
                 del e;
             }
         }
     }
-    for target in list([n ->:Owns:->]) {
-        for e in [edge n ->:Owns:-> target] {
+    for target in list([n->:Owns:->]) {
+        for e in [edge n->:Owns:->target] {
             del e;
         }
     }
-    for target in list([n ->:Feeds:->]) {
-        for e in [edge n ->:Feeds:-> target] {
+    for target in list([n->:Feeds:->]) {
+        for e in [edge n->:Feeds:->target] {
             del e;
         }
     }
-    for target in list([n ->:FocusNext:->]) {
-        for e in [edge n ->:FocusNext:-> target] {
+    for target in list([n->:FocusNext:->]) {
+        for e in [edge n->:FocusNext:->target] {
             del e;
         }
     }
-    for parent in list([n <-:Child:<-]) {
-        for e in [edge parent ->:Child:-> n] {
+    for parent in list([n<-:Child:<-]) {
+        for e in [edge parent->:Child:->n] {
             del e;
         }
     }
-    for source in list([n <-:Owns:<-]) {
-        for e in [edge source ->:Owns:-> n] {
+    for source in list([n<-:Owns:<-]) {
+        for e in [edge source->:Owns:->n] {
             del e;
         }
     }
-    for source in list([n <-:Feeds:<-]) {
-        for e in [edge source ->:Feeds:-> n] {
+    for source in list([n<-:Feeds:<-]) {
+        for e in [edge source->:Feeds:->n] {
             del e;
         }
     }
-    for source in list([n <-:FocusNext:<-]) {
-        for e in [edge source ->:FocusNext:-> n] {
+    for source in list([n<-:FocusNext:<-]) {
+        for e in [edge source->:FocusNext:->n] {
             del e;
         }
     }
-    for source in list([n <-:Layer:<-]) {
-        for e in [edge source ->:Layer:-> n] {
+    for source in list([n<-:Layer:<-]) {
+        for e in [edge source->:Layer:->n] {
             del e;
         }
     }
-    for target in list([n ->:Layer:->]) {
-        for e in [edge n ->:Layer:-> target] {
+    for target in list([n->:Layer:->]) {
+        for e in [edge n->:Layer:->target] {
             del e;
         }
     }
 }
 
 
-"""Post-order teardown: clear edges for subtree then delete nodes."""
-def dispose_subtree(n: UiNode) {
+impl dispose_subtree(n: UiNode) {
     if isinstance(n, UiContainer) {
         for child in list(ordered_children(n)) {
             dispose_subtree(child);

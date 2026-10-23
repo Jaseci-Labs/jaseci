@@ -1,9 +1,3 @@
-"""Unit 13 acceptance: OSPUI Gates 1–6 harness contracts.
-
-Companion scope provides gate runners and report types.
-"""
-
-
 test "Gate 1 detached lifecycle passes" {
     assert run_gate1_detached_lifecycle() == True;
 }

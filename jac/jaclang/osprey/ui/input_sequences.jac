@@ -1,15 +1,94 @@
-"""Terminal escape-sequence parsing and decoding."""
-
-import from .input_events {
-    ESC,
-    HostEvent,
-    TextEvent,
-    KeyEvent,
-    MouseEvent,
-}
+def _is_complete_csi(data: str) -> str;
 
 
-def _is_complete_csi(data: str) -> str {
+def _is_complete_osc(data: str) -> str;
+
+
+def sequence_status(data: str) -> str;
+
+
+def extract_sequences(buffer: str) -> dict[str, list[str] | str];
+
+
+glob LEGACY_KEYS: dict[str, str] = {
+         "\x1b[A": "up",
+         "\x1bOA": "up",
+         "\x1b[B": "down",
+         "\x1bOB": "down",
+         "\x1b[C": "right",
+         "\x1bOC": "right",
+         "\x1b[D": "left",
+         "\x1bOD": "left",
+         "\x1b[H": "home",
+         "\x1bOH": "home",
+         "\x1b[F": "end",
+         "\x1bOF": "end",
+         "\x1b[3~": "delete",
+         "\x1b[2~": "insert",
+         "\x1b[5~": "page_up",
+         "\x1b[6~": "page_down",
+         "\x1bOP": "f1",
+         "\x1bOQ": "f2",
+         "\x1bOR": "f3",
+         "\x1bOS": "f4",
+         "\x1b[15~": "f5",
+         "\x1b[17~": "f6",
+         "\x1b[18~": "f7",
+         "\x1b[19~": "f8",
+         "\x1b[20~": "f9",
+         "\x1b[21~": "f10",
+         "\x1b[23~": "f11",
+         "\x1b[24~": "f12",
+
+     };
+
+
+def _parse_sgr_mouse(seq: str) -> MouseEvent | None;
+
+
+glob MODIFIER_NAMES: dict[int, str] = {
+         2: "shift",
+         3: "alt",
+         4: "alt+shift",
+         5: "ctrl",
+         6: "ctrl+shift",
+
+     };
+
+
+def _modified_key(modifier: int, base: str) -> str | None;
+
+
+glob CSI_LETTER_KEYS: dict[str, str] = {
+         "A": "up",
+         "B": "down",
+         "C": "right",
+         "D": "left",
+         "H": "home",
+         "F": "end",
+
+     };
+
+
+def _parse_modified_csi(seq: str) -> KeyEvent | None;
+
+
+def decode_sequence(seq: str) -> HostEvent;
+
+def _parse_int_seq(text: str, start: int) -> list[int] | None;
+
+
+def _match_sgr_mouse_body(payload: str) -> bool;
+
+
+def _parse_sgr_mouse_native(seq: str) -> MouseEvent | None;
+
+
+def _parse_modified_letter_csi(seq: str) -> tuple[int, str] | None;
+
+def _parse_modified_digit_csi(seq: str) -> tuple[int, int] | None;
+
+impl _is_complete_csi(data: str) -> str {
     if not data.startswith(ESC + "[") {
         return "complete";
     }
@@ -21,7 +100,6 @@ def _is_complete_csi(data: str) -> str {
     code = ord(last);
     if code >= 64 and code <= 126 {
         if payload.startswith("<") {
-            # SGR mouse: ESC [ < btn ; x ; y M/m
             if _match_sgr_mouse_body(payload) {
                 return "complete";
             }
@@ -36,7 +114,7 @@ def _is_complete_csi(data: str) -> str {
 }
 
 
-def _is_complete_osc(data: str) -> str {
+impl _is_complete_osc(data: str) -> str {
     if not data.startswith(ESC + "]") {
         return "complete";
     }
@@ -47,7 +125,7 @@ def _is_complete_osc(data: str) -> str {
 }
 
 
-def sequence_status(data: str) -> str {
+impl sequence_status(data: str) -> str {
     if not data.startswith(ESC) {
         return "not-escape";
     }
@@ -80,8 +158,7 @@ def sequence_status(data: str) -> str {
 }
 
 
-"""Split a buffer into complete sequences and an incomplete remainder."""
-def extract_sequences(buffer: str) -> dict[str, list[str] | str] {
+impl extract_sequences(buffer: str) -> dict[str, list[str] | str] {
     sequences: list[str] = [];
     pos = 0;
     while pos < len(buffer) {
@@ -115,53 +192,12 @@ def extract_sequences(buffer: str) -> dict[str, list[str] | str] {
 }
 
 
-glob LEGACY_KEYS: dict[str, str] = {
-    "\x1b[A": "up",
-    "\x1bOA": "up",
-    "\x1b[B": "down",
-    "\x1bOB": "down",
-    "\x1b[C": "right",
-    "\x1bOC": "right",
-    "\x1b[D": "left",
-    "\x1bOD": "left",
-    "\x1b[H": "home",
-    "\x1bOH": "home",
-    "\x1b[F": "end",
-    "\x1bOF": "end",
-    "\x1b[3~": "delete",
-    "\x1b[2~": "insert",
-    "\x1b[5~": "page_up",
-    "\x1b[6~": "page_down",
-    "\x1bOP": "f1",
-    "\x1bOQ": "f2",
-    "\x1bOR": "f3",
-    "\x1bOS": "f4",
-    "\x1b[15~": "f5",
-    "\x1b[17~": "f6",
-    "\x1b[18~": "f7",
-    "\x1b[19~": "f8",
-    "\x1b[20~": "f9",
-    "\x1b[21~": "f10",
-    "\x1b[23~": "f11",
-    "\x1b[24~": "f12",
-};
-
-
-def _parse_sgr_mouse(seq: str) -> MouseEvent | None {
+impl _parse_sgr_mouse(seq: str) -> MouseEvent | None {
     return _parse_sgr_mouse_native(seq);
 }
 
 
-glob MODIFIER_NAMES: dict[int, str] = {
-    2: "shift",
-    3: "alt",
-    4: "alt+shift",
-    5: "ctrl",
-    6: "ctrl+shift",
-};
-
-
-def _modified_key(modifier: int, base: str) -> str | None {
+impl _modified_key(modifier: int, base: str) -> str | None {
     prefix = MODIFIER_NAMES.get(modifier);
     if prefix is None {
         return None;
@@ -170,18 +206,7 @@ def _modified_key(modifier: int, base: str) -> str | None {
 }
 
 
-glob CSI_LETTER_KEYS: dict[str, str] = {
-    "A": "up",
-    "B": "down",
-    "C": "right",
-    "D": "left",
-    "H": "home",
-    "F": "end",
-};
-
-
-"""Decode modified CSI keys: ESC [ 1 ; <mod> <ABCDHF> and ESC [ <n> ; <mod> ~."""
-def _parse_modified_csi(seq: str) -> KeyEvent | None {
+impl _parse_modified_csi(seq: str) -> KeyEvent | None {
     lr = _parse_modified_letter_csi(seq);
     if lr is not None {
         (modifier, base) = lr;
@@ -206,7 +231,7 @@ def _parse_modified_csi(seq: str) -> KeyEvent | None {
 }
 
 
-def decode_sequence(seq: str) -> HostEvent {
+impl decode_sequence(seq: str) -> HostEvent {
     if not seq {
         return TextEvent(text="");
     }
@@ -257,22 +282,21 @@ def decode_sequence(seq: str) -> HostEvent {
     if seq == "\x17" {
         return KeyEvent(key="ctrl+w");
     }
-    # Alt+key often arrives as ESC + char.
+
     if len(seq) == 2 and seq[0] == ESC and seq[1] != "[" and seq[1] != "O" {
         return KeyEvent(key="alt+" + seq[1]);
     }
     if len(seq) == 1 and ord(seq[0]) >= 32 {
         return TextEvent(text=seq);
     }
-    # Unrecognized escape: expose as key with raw identity for debugging.
+
     if seq.startswith(ESC) {
         return KeyEvent(key="unknown:" + repr(seq));
     }
     return TextEvent(text=seq);
 }
 
-# --- re replacements (native pathway has no `re` support) ---
-def _parse_int_seq(text: str, start: int) -> list[int] | None {
+impl _parse_int_seq(text: str, start: int) -> list[int] | None {
     out: list[int] = [];
     i = start;
     n = len(text);
@@ -304,8 +328,7 @@ def _parse_int_seq(text: str, start: int) -> list[int] | None {
 }
 
 
-# Equivalent to prior `re.match(r"^<\d+;\d+;\d+[Mm]$", payload)`.
-def _match_sgr_mouse_body(payload: str) -> bool {
+impl _match_sgr_mouse_body(payload: str) -> bool {
     if not payload.startswith("<") or len(payload) < 5 {
         return False;
     }
@@ -321,8 +344,7 @@ def _match_sgr_mouse_body(payload: str) -> bool {
 }
 
 
-# Equivalent to prior `re.match(r"^\x1b\[<(\d+);(\d+);(\d+)([Mm])$", seq)`.
-def _parse_sgr_mouse_native(seq: str) -> MouseEvent | None {
+impl _parse_sgr_mouse_native(seq: str) -> MouseEvent | None {
     if not seq.startswith("\x1b[<") or len(seq) < 8 {
         return None;
     }
@@ -339,18 +361,11 @@ def _parse_sgr_mouse_native(seq: str) -> MouseEvent | None {
     y = parts[2];
     pressed = last == "M";
     motion = (button & 32) != 0;
-    return MouseEvent(
-        button=button & ~32,
-        x=x,
-        y=y,
-        pressed=pressed,
-        motion=motion,
-    );
+    return MouseEvent(button=button & ~32, x=x, y=y, pressed=pressed, motion=motion,);
 }
 
 
-# Equivalent to prior `re.match(r"^\x1b\[1?;(\d+)([ABCDHF])$", seq)`.
-def _parse_modified_letter_csi(seq: str) -> tuple[int, str] | None {
+impl _parse_modified_letter_csi(seq: str) -> tuple[int, str] | None {
     if not seq.startswith("\x1b[") {
         return None;
     }
@@ -380,8 +395,7 @@ def _parse_modified_letter_csi(seq: str) -> tuple[int, str] | None {
     return (int(mod_str), base);
 }
 
-# Equivalent to prior `re.match(r"^\x1b\[(\d+);(\d+)~$", seq)`.
-def _parse_modified_digit_csi(seq: str) -> tuple[int, int] | None {
+impl _parse_modified_digit_csi(seq: str) -> tuple[int, int] | None {
     if not seq.startswith("\x1b[") or len(seq) < 6 {
         return None;
     }

@@ -1,16 +1,6 @@
-"""Behavior tests for UiSession runtime ownership and Gate 1 lifecycle."""
+import from .model { MainScreen, Prompt, TranscriptView }
 
-import from .model {
-    MainScreen,
-    Prompt,
-    TranscriptView,
-    node_id,
-}
-
-import from .bindings {
-    is_empty,
-    subscribe,
-}
+import from .bindings { subscribe }
 
 test "create_session builds detached ui_root not connected to persistent root" {
     handle = create_session();
@@ -81,10 +71,7 @@ test "Gate 1 lifecycle dispose releases bindings renderer and capabilities" {
     append_child_session(session, ui_root, screen);
     append_child_session(session, screen, prompt);
     subscribe(
-        session.bindings,
-        "session.events",
-        node_id(prompt),
-        "TranscriptChanged",
+        session.bindings, "session.events", node_id(prompt), "TranscriptChanged",
     );
     register_capability(session, node_id(prompt), "input");
     session.renderer.layout[node_id(prompt)] = {"width": 80};
@@ -92,7 +79,7 @@ test "Gate 1 lifecycle dispose releases bindings renderer and capabilities" {
     dispose_session(session);
     assert session.disposed;
     assert is_empty(session.bindings);
-    assert len(session.renderer.layout) == 0;  # == {} dict-compare pending native dict deep-eq
+    assert len(session.renderer.layout) == 0;
     assert len(session.capabilities.by_node) == 0;
     assert validate_session(session) == [];
 }
@@ -146,7 +133,7 @@ test "dispose clears renderer layout keys" {
     session.renderer.layout["00000000000000000000000000000000"] = {"x": 0};
     assert len(session.renderer.layout) != 0;
     dispose_session(session);
-    assert len(session.renderer.layout) == 0;  # == {} dict-compare pending native dict deep-eq
+    assert len(session.renderer.layout) == 0;
 }
 
 

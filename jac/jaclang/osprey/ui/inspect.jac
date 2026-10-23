@@ -1,41 +1,3 @@
-"""Inspection and invariant surface for the OSP UI (OSPUI.md §20).
-
-Dumps read semantic graph + runtime side tables. Renderer state is never
-implied to live on graph nodes.
-"""
-
-import from .model {
-    UiNode,
-    UiContainer,
-    Screen,
-    Child,
-    Owns,
-    Feeds,
-    FocusNext,
-    Layer,
-    node_id,
-    ordered_children,
-    ordered_child_keys,
-    duplicate_sibling_keys,
-    child_rank,
-}
-
-import from .runtime {
-    UiSession,
-    validate_session,
-}
-
-import from .events {
-    UiEvent,
-    containment_path,
-    resolve_target,
-}
-
-import from .bindings {
-    Binding,
-}
-
-
 obj InspectFinding {
     has kind: str,
         detail: str;
@@ -50,23 +12,69 @@ obj InvalidationExplanation {
 }
 
 
-def _node_label(n: UiNode) -> str {
+def _node_label(n: UiNode) -> str;
+
+
+def _node_sort_key(n: UiNode) -> str;
+
+
+def _binding_line_key(binding: Binding) -> str;
+
+
+def _walk_nodes(session: UiSession) -> list[UiNode];
+
+
+def dump_graph(session: UiSession) -> str;
+
+
+def dump_session_bindings(session: UiSession) -> str;
+
+
+def dump_event_path(
+    session: UiSession, event: any, target: UiNode | None = None,
+) -> str;
+
+
+def explain_invalidation(session: UiSession, n: UiNode,) -> InvalidationExplanation;
+
+
+def dump_layout(session: UiSession, n: UiNode) -> str;
+
+
+def dump_damage(session: UiSession, frame: any = None) -> str;
+
+
+def dump_lifetimes(session: UiSession, n: UiNode) -> str;
+
+
+def _detect_cycles(session: UiSession) -> list[InspectFinding];
+
+
+def _detect_duplicate_keys(session: UiSession) -> list[InspectFinding];
+
+
+def _detect_invalid_ranks(session: UiSession) -> list[InspectFinding];
+
+
+def validate_invariants(session: UiSession) -> list[InspectFinding];
+
+impl _node_label(n: UiNode) -> str {
     kind = type(n).__name__;
     return kind + "[" + n.key + "]:" + node_id(n);
 }
 
 
-def _node_sort_key(n: UiNode) -> str {
+impl _node_sort_key(n: UiNode) -> str {
     return n.key + ":" + node_id(n);
 }
 
 
-def _binding_line_key(binding: Binding) -> str {
+impl _binding_line_key(binding: Binding) -> str {
     return binding.target_id + ":" + binding.event_type;
 }
 
 
-def _walk_nodes(session: UiSession) -> list[UiNode] {
+impl _walk_nodes(session: UiSession) -> list[UiNode] {
     out: list[UiNode] = [];
     if session.ui_root is None {
         return out;
@@ -88,8 +96,7 @@ def _walk_nodes(session: UiSession) -> list[UiNode] {
 }
 
 
-"""Deterministic dump of semantic UI nodes and typed edges."""
-def dump_graph(session: UiSession) -> str {
+impl dump_graph(session: UiSession) -> str {
     lines: list[str] = [];
     nodes = _walk_nodes(session);
     nodes.sort(key=_node_sort_key);
@@ -99,37 +106,34 @@ def dump_graph(session: UiSession) -> str {
             for child in ordered_children(n) {
                 rank = child_rank(n, child);
                 lines.append(
-                    "  Child(rank="
-                    + str(rank)
-                    + ") -> "
-                    + _node_label(child)
+                    "  Child(rank=" + str(rank) + ") -> " + _node_label(child)
                 );
             }
         }
-        for target in [n ->:Owns:->] {
+        for target in [n->:Owns:->] {
             lines.append("  Owns -> " + _node_label(target as UiNode));
         }
-        for target in [n ->:Feeds:->] {
+        for target in [n->:Feeds:->] {
             lines.append("  Feeds -> " + _node_label(target as UiNode));
         }
-        for target in [n ->:FocusNext:->] {
+        for target in [n->:FocusNext:->] {
             lines.append("  FocusNext -> " + _node_label(target as UiNode));
         }
         if isinstance(n, Screen) {
-            for target in [n ->:Layer:->] {
+            for target in [n->:Layer:->] {
                 z = 0;
                 modal = False;
-                for layer_edge in [edge n ->:Layer:-> target] {
+                for layer_edge in [edge n->:Layer:->target] {
                     z = layer_edge.z_index;
                     modal = layer_edge.modal;
                 }
                 lines.append(
                     "  Layer(z="
-                    + str(z)
-                    + ",modal="
-                    + str(modal)
-                    + ") -> "
-                    + _node_label(target as UiNode)
+                        + str(z)
+                        + ",modal="
+                        + str(modal)
+                        + ") -> "
+                        + _node_label(target as UiNode)
                 );
             }
         }
@@ -138,8 +142,7 @@ def dump_graph(session: UiSession) -> str {
 }
 
 
-"""Dump domain source → UI target bindings."""
-def dump_session_bindings(session: UiSession) -> str {
+impl dump_session_bindings(session: UiSession) -> str {
     lines: list[str] = [];
     sources = sorted(session.bindings.by_source.keys());
     for source_id in sources {
@@ -147,12 +150,7 @@ def dump_session_bindings(session: UiSession) -> str {
         bindings.sort(key=_binding_line_key);
         for binding in bindings {
             lines.append(
-                source_id
-                + " -> "
-                + binding.target_id
-                + " ["
-                + binding.event_type
-                + "]"
+                source_id + " -> " + binding.target_id + " [" + binding.event_type + "]"
             );
         }
     }
@@ -160,11 +158,8 @@ def dump_session_bindings(session: UiSession) -> str {
 }
 
 
-"""Dump target, bubble path, and handled/stopped/default flags for an event."""
-def dump_event_path(
-    session: UiSession,
-    event: any,
-    target: UiNode | None = None,
+impl dump_event_path(
+    session: UiSession, event: any, target: UiNode | None = None,
 ) -> str {
     resolved = resolve_target(session, target);
     lines: list[str] = [];
@@ -193,11 +188,7 @@ def dump_event_path(
 }
 
 
-"""Explain invalidation: originating event/feed → layout root → damage."""
-def explain_invalidation(
-    session: UiSession,
-    n: UiNode,
-) -> InvalidationExplanation {
+impl explain_invalidation(session: UiSession, n: UiNode,) -> InvalidationExplanation {
     nid = node_id(n);
     origin = "";
     layout_root_id = "";
@@ -218,8 +209,7 @@ def explain_invalidation(
 }
 
 
-"""Dump layout contract, measured size, rect, and clip for a node."""
-def dump_layout(session: UiSession, n: UiNode) -> str {
+impl dump_layout(session: UiSession, n: UiNode) -> str {
     nid = node_id(n);
     lines: list[str] = ["node=" + _node_label(n)];
     ent = session.renderer.layout.get(nid, None);
@@ -238,8 +228,7 @@ def dump_layout(session: UiSession, n: UiNode) -> str {
 }
 
 
-"""Dump frame damage: old/new bounds and repaint reasons."""
-def dump_damage(session: UiSession, frame: any = None) -> str {
+impl dump_damage(session: UiSession, frame: any = None) -> str {
     _ = frame;
     lines: list[str] = [];
     for (i, row) in enumerate(session.renderer.damage) {
@@ -252,11 +241,10 @@ def dump_damage(session: UiSession, frame: any = None) -> str {
 }
 
 
-"""Dump containment, ownership, bindings, and capabilities for a node."""
-def dump_lifetimes(session: UiSession, n: UiNode) -> str {
+impl dump_lifetimes(session: UiSession, n: UiNode) -> str {
     nid = node_id(n);
     lines: list[str] = ["node=" + _node_label(n)];
-    parents = [n <-:Child:<-];
+    parents = [n<-:Child:<-];
     if parents {
         lines.append("parent=" + _node_label(parents[0]));
     } else {
@@ -266,22 +254,17 @@ def dump_lifetimes(session: UiSession, n: UiNode) -> str {
         keys = ordered_child_keys(n);
         lines.append("children=" + ",".join(keys));
     }
-    owns = [node_id(t as UiNode) for t in [n ->:Owns:->]];
+    owns = [node_id(t as UiNode) for t in [n->:Owns:->]];
     if owns {
         lines.append("owns=" + ",".join(owns));
     }
-    owned_by = [node_id(t as UiNode) for t in [n <-:Owns:<-]];
+    owned_by = [node_id(t as UiNode) for t in [n<-:Owns:<-]];
     if owned_by {
         lines.append("owned_by=" + ",".join(owned_by));
     }
     target_bindings = list(session.bindings.by_target.get(nid, []));
     for binding in target_bindings {
-        lines.append(
-            "binding="
-            + binding.source_id
-            + ":"
-            + binding.event_type
-        );
+        lines.append("binding=" + binding.source_id + ":" + binding.event_type);
     }
     caps = session.capabilities.by_node.get(nid, []);
     if caps {
@@ -294,12 +277,12 @@ def dump_lifetimes(session: UiSession, n: UiNode) -> str {
 }
 
 
-def _detect_cycles(session: UiSession) -> list[InspectFinding] {
+impl _detect_cycles(session: UiSession) -> list[InspectFinding] {
     findings: list[InspectFinding] = [];
     if session.ui_root is None {
         return findings;
     }
-    # Iterative DFS with color marks: 0=unseen, 1=visiting, 2=done.
+
     color: dict[str, int] = {};
     stack: list[UiNode] = [session.ui_root];
     enter: list[bool] = [True];
@@ -338,16 +321,13 @@ def _detect_cycles(session: UiSession) -> list[InspectFinding] {
 }
 
 
-def _detect_duplicate_keys(session: UiSession) -> list[InspectFinding] {
+impl _detect_duplicate_keys(session: UiSession) -> list[InspectFinding] {
     findings: list[InspectFinding] = [];
     for n in _walk_nodes(session) {
         if isinstance(n, UiContainer) {
             for dup in duplicate_sibling_keys(n) {
                 findings.append(
-                    InspectFinding(
-                        kind="duplicate_key",
-                        detail=n.key + "/" + dup,
-                    )
+                    InspectFinding(kind="duplicate_key", detail=n.key + "/" + dup,)
                 );
             }
         }
@@ -356,7 +336,7 @@ def _detect_duplicate_keys(session: UiSession) -> list[InspectFinding] {
 }
 
 
-def _detect_invalid_ranks(session: UiSession) -> list[InspectFinding] {
+impl _detect_invalid_ranks(session: UiSession) -> list[InspectFinding] {
     findings: list[InspectFinding] = [];
     for n in _walk_nodes(session) {
         if not isinstance(n, UiContainer) {
@@ -367,16 +347,12 @@ def _detect_invalid_ranks(session: UiSession) -> list[InspectFinding] {
             rank = child_rank(n, child);
             if rank < 0 {
                 findings.append(
-                    InspectFinding(
-                        kind="invalid_rank",
-                        detail=node_id(child),
-                    )
+                    InspectFinding(kind="invalid_rank", detail=node_id(child),)
                 );
             } elif rank <= prev {
                 findings.append(
                     InspectFinding(
-                        kind="invalid_rank",
-                        detail=node_id(child) + " non-increasing",
+                        kind="invalid_rank", detail=node_id(child) + " non-increasing",
                     )
                 );
             }
@@ -387,8 +363,7 @@ def _detect_invalid_ranks(session: UiSession) -> list[InspectFinding] {
 }
 
 
-"""Validate cycles, duplicate keys, invalid ranks, stale edges, invalid focus."""
-def validate_invariants(session: UiSession) -> list[InspectFinding] {
+impl validate_invariants(session: UiSession) -> list[InspectFinding] {
     findings: list[InspectFinding] = [];
     for leak in validate_session(session) {
         findings.append(InspectFinding(kind=leak.kind, detail=leak.detail));
@@ -398,5 +373,3 @@ def validate_invariants(session: UiSession) -> list[InspectFinding] {
     findings.extend(_detect_invalid_ranks(session));
     return findings;
 }
-
-

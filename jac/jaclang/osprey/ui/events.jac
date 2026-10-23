@@ -1,32 +1,3 @@
-"""Semantic event walkers, typed effects, and target-and-bubble dispatch.
-
-Raw terminal bytes never become walkers: the host normalizes and coalesces
-input before creating these semantic events (OSPUI spec section 13). The
-runtime owns the itinerary: resolve the target, deliver the same walker
-instance along the unique Child containment path toward the screen, honor
-propagation_stopped independently of handled/default_prevented, run the
-framework default action unless prevented, and surface effects for
-post-propagation host execution.
-"""
-
-import from .model {
-    UiNode,
-    UiContainer,
-    Screen,
-    Overlay,
-    Child,
-    Layer,
-    node_id,
-    ordered_children,
-    find_node_by_jid,
-}
-
-import from .runtime {
-    UiSession,
-}
-
-
-"""Typed request that crosses into an external system."""
 obj Effect {}
 
 
@@ -48,7 +19,6 @@ obj SpawnProcess(Effect) {
 obj Quit(Effect) {}
 
 
-"""Base archetype for normalized semantic events."""
 walker UiEvent {
     has handled: bool = False,
         propagation_stopped: bool = False,
@@ -96,8 +66,51 @@ obj DispatchRecord {
 }
 
 
+def _get_focus_node(session: UiSession) -> UiNode | None;
 
-def _get_focus_node(session: UiSession) -> UiNode | None {
+
+def _set_focus(session: UiSession, n: UiNode | None);
+
+
+def containment_path(target: UiNode) -> list[UiNode];
+
+
+def topmost_modal_overlay(session: UiSession) -> Overlay | None;
+
+
+def resolve_input_target(session: UiSession) -> UiNode | None;
+
+
+def resolve_target(
+    session: UiSession, explicit_target: UiNode | None = None
+) -> UiNode | None;
+
+
+def run_default_action(session: UiSession, event: UiEvent);
+
+
+def _default_move_focus(session: UiSession, event: MoveFocus);
+
+
+def dispatch_event(
+    session: UiSession, event: UiEvent, target: UiNode | None = None
+) -> UiEvent;
+
+
+def dispatch_event_with_effects(
+    session: UiSession, event: UiEvent, target: UiNode | None = None,
+) -> list[Effect];
+
+
+def pending_effects(event: UiEvent) -> list[Effect];
+
+
+def consume_effects(event: UiEvent) -> list[Effect];
+
+
+def trace_event_path(session: UiSession, target: UiNode | None = None) -> list[str];
+
+impl _get_focus_node(session: UiSession) -> UiNode | None {
     if session.disposed or session.ui_root is None or not session.focus_id {
         return None;
     }
@@ -108,7 +121,7 @@ def _get_focus_node(session: UiSession) -> UiNode | None {
 }
 
 
-def _set_focus(session: UiSession, n: UiNode | None) {
+impl _set_focus(session: UiSession, n: UiNode | None) {
     if n is None {
         session.focus_id = "";
         return;
@@ -117,13 +130,11 @@ def _set_focus(session: UiSession, n: UiNode | None) {
 }
 
 
-"""Return the unique containment path from target up to and including
-the nearest Screen ancestor (or the top of the detached graph)."""
-def containment_path(target: UiNode) -> list[UiNode] {
+impl containment_path(target: UiNode) -> list[UiNode] {
     path: list[UiNode] = [target];
     current: UiNode = target;
     while True {
-        parents = [current <-:Child:<-];
+        parents = [current<-:Child:<-];
         if not parents {
             break;
         }
@@ -137,16 +148,15 @@ def containment_path(target: UiNode) -> list[UiNode] {
 }
 
 
-"""Return the highest z_index modal overlay layered on the current screen."""
-def topmost_modal_overlay(session: UiSession) -> Overlay | None {
+impl topmost_modal_overlay(session: UiSession) -> Overlay | None {
     screen = session.current_screen;
     if screen is None {
         return None;
     }
     best: Overlay | None = None;
     best_z = -1;
-    for candidate in [screen ->:Layer:->] {
-        for layer_edge in [edge screen ->:Layer:-> candidate] {
+    for candidate in [screen->:Layer:->] {
+        for layer_edge in [edge screen->:Layer:->candidate] {
             if layer_edge.modal and layer_edge.z_index > best_z {
                 best_z = layer_edge.z_index;
                 best = candidate;
@@ -157,9 +167,7 @@ def topmost_modal_overlay(session: UiSession) -> Overlay | None {
 }
 
 
-"""Resolve the target for untargeted (input) events:
-topmost modal overlay, else focused node, else current screen root."""
-def resolve_input_target(session: UiSession) -> UiNode | None {
+impl resolve_input_target(session: UiSession) -> UiNode | None {
     modal = topmost_modal_overlay(session);
     if modal is not None {
         return modal;
@@ -172,8 +180,9 @@ def resolve_input_target(session: UiSession) -> UiNode | None {
 }
 
 
-"""Resolve the dispatch target. An explicit target bypasses the input chain."""
-def resolve_target(session: UiSession, explicit_target: UiNode | None = None) -> UiNode | None {
+impl resolve_target(
+    session: UiSession, explicit_target: UiNode | None = None
+) -> UiNode | None {
     if explicit_target is not None {
         return explicit_target;
     }
@@ -181,19 +190,19 @@ def resolve_target(session: UiSession, explicit_target: UiNode | None = None) ->
 }
 
 
-def run_default_action(session: UiSession, event: UiEvent) {
+impl run_default_action(session: UiSession, event: UiEvent) {
     if isinstance(event, MoveFocus) {
         _default_move_focus(session, event);
     }
 }
 
 
-def _default_move_focus(session: UiSession, event: MoveFocus) {
+impl _default_move_focus(session: UiSession, event: MoveFocus) {
     focused = _get_focus_node(session);
     if focused is None {
         return;
     }
-    parents = [focused <-:Child:<-];
+    parents = [focused<-:Child:<-];
     if not parents {
         return;
     }
@@ -220,8 +229,9 @@ def _default_move_focus(session: UiSession, event: MoveFocus) {
 }
 
 
-"""Deliver one event along the containment path, then run default actions."""
-def dispatch_event(session: UiSession, event: UiEvent, target: UiNode | None = None) -> UiEvent {
+impl dispatch_event(
+    session: UiSession, event: UiEvent, target: UiNode | None = None
+) -> UiEvent {
     if session.disposed {
         raise ValueError("UiSession is disposed");
     }
@@ -243,33 +253,27 @@ def dispatch_event(session: UiSession, event: UiEvent, target: UiNode | None = N
 }
 
 
-"""Dispatch one event and return effects for post-propagation host execution."""
-def dispatch_event_with_effects(
-    session: UiSession,
-    event: UiEvent,
-    target: UiNode | None = None,
+impl dispatch_event_with_effects(
+    session: UiSession, event: UiEvent, target: UiNode | None = None,
 ) -> list[Effect] {
     dispatch_event(session, event, target);
     return consume_effects(event);
 }
 
 
-"""Snapshot effects accumulated during propagation (host executes them)."""
-def pending_effects(event: UiEvent) -> list[Effect] {
+impl pending_effects(event: UiEvent) -> list[Effect] {
     return list(event.effects);
 }
 
 
-"""Take ownership of accumulated effects, clearing the event's list."""
-def consume_effects(event: UiEvent) -> list[Effect] {
+impl consume_effects(event: UiEvent) -> list[Effect] {
     effects = event.effects;
     event.effects = [];
     return effects;
 }
 
 
-"""Trace the itinerary dispatch_event would run without mutating state."""
-def trace_event_path(session: UiSession, target: UiNode | None = None) -> list[str] {
+impl trace_event_path(session: UiSession, target: UiNode | None = None) -> list[str] {
     resolved = resolve_target(session, target);
     if resolved is None {
         return [];

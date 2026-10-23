@@ -1,63 +1,62 @@
-"""Constraint insertion and primal simplex algorithm."""
+def _solver_add_core(
+    s: any, c: Constraint, tag: Tag, jnl: MutationJournal
+) -> SolveResult;
 
-import from .algebra {
-    EPSILON,
-    Constraint,
-    Expression,
-    LexWeight,
-    Relation,
-    StrengthTier,
-    Term,
-    Variable,
-    constraint_key,
-    is_finite,
-    lex_add,
-    lex_compare,
-    lex_is_negative,
-    lex_is_zero,
-    lex_neg,
-    lex_scale,
-    lex_zero,
-    near_zero,
-    normalize_expression,
-    strength_weight,
-    term,
-}
-import from .results {
-    ConstraintHandle,
-    SolveError,
-    SolveResult,
-    SolverSnapshot,
-}
-import from .solver_types {
-    SymbolKind,
-    MutationJournal,
-    Tag,
-    Row,
-    CostRow,
-    StoredConstraint,
-    EditInfo,
-}
+def _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> any;
 
-import from .solver_journal {
-    _journal_kind_of,
-    _journal_begin,
-    _journal_new_symbol_journaled,
-    _journal_get_var_symbol,
-    _journal_insert_row,
-    _journal_touch_row,
-    _journal_touch_objective,
-    _journal_pop_row,
-    _journal_rollback,
-}
+def _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint;
 
-def _solver_add_core(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> SolveResult {
+def _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> any;
+
+def _solver_pivot(
+    s: any,
+    entering: int,
+    leaving: int,
+    jnl: MutationJournal,
+    extra: Row | None = None,
+    reinsert: bool = True,
+);
+
+def _solver_adopt(s: any, bundle: any);
+
+def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> Row;
+
+def _solver_choose_subject(s: any, row: Row, tag: Tag) -> int;
+
+def _solver_all_dummies(s: any, row: Row) -> bool;
+
+def _solver_any_pivotable_symbol(s: any, row: Row) -> int;
+
+def _solver_add_with_artificial_variable(
+    s: any, row: Row, jnl: MutationJournal
+) -> bool;
+
+def _solver_substitute(
+    s: any, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
+);
+
+def _solver_add_objective(
+    s: any, symbol: int, weight: LexWeight, jnl: MutationJournal,
+) -> None;
+
+def _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult;
+
+def _solver_optimize_toward(
+    s: any, target: Row, jnl: MutationJournal, extra: Row | None = None,
+) -> SolveResult;
+
+def _solver_get_entering_symbol(s: any, objective: Row) -> int;
+
+def _solver_get_entering_cost_symbol(s: any) -> int;
+
+def _solver_get_leaving_row(s: any, entering: int) -> int;
+
+impl _solver_add_core(
+    s: any, c: Constraint, tag: Tag, jnl: MutationJournal
+) -> SolveResult {
     row = _solver_create_row(s, c, tag, jnl);
     subject = _solver_choose_subject(s, row, tag);
 
-    # No valid entering subject: an all-dummy row is redundant when its
-    # constant is zero (the dummy marker may enter the basis) and
-    # unsatisfiable otherwise (kiwi addConstraint).
     if (
         _journal_kind_of(s, subject) == SymbolKind.INVALID
         and _solver_all_dummies(s, row)
@@ -86,25 +85,26 @@ def _solver_add_core(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> S
         _journal_insert_row(s, subject, row, jnl);
     }
 
-    # Optimize after every mutation. The target is lexicographic, so
-    # higher tiers are exhausted before lower tiers are considered.
     return _solver_optimize_cost(s, jnl);
 }
 
-def _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> any {
+impl _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> any {
     stored: list[StoredConstraint] = list(s.history);
-    stored.append(StoredConstraint(
-        expression=candidate.expression,
-        relation=candidate.relation,
-        strength=candidate.strength,
-        content_key=constraint_key(candidate),
-    ));
+    stored.append(
+        StoredConstraint(
+            expression=candidate.expression,
+            relation=candidate.relation,
+            strength=candidate.strength,
+            content_key=constraint_key(candidate),
+        )
+    );
 
     orders: list[list[StoredConstraint]] = [
         stored,
         [_solver_terms_reversed(s, st) for st in stored],
         list(reversed(stored)),
         [_solver_terms_reversed(s, st) for st in reversed(stored)],
+
     ];
 
     for order in orders {
@@ -116,13 +116,12 @@ def _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> an
     return None;
 }
 
-def _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint {
+impl _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint {
     terms_rev = [];
     for t in st.expression.terms {
-        terms_rev.append(Term(
-            variable=Variable(id=t.variable.id),
-            coefficient=t.coefficient,
-        ));
+        terms_rev.append(
+            Term(variable=Variable(id=t.variable.id), coefficient=t.coefficient,)
+        );
     }
     return StoredConstraint(
         expression=Expression(terms=terms_rev, constant=st.expression.constant),
@@ -133,16 +132,12 @@ def _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint {
     );
 }
 
-def _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> any {
-    # Replay on a scratch tableau so `self` stays untouched unless the
-    # caller adopts the result.
+impl _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> any {
     scratch = factory();
     tags: dict[str, Tag] = {};
     for st in order {
         c = Constraint(
-            expression=st.expression,
-            relation=st.relation,
-            strength=st.strength,
+            expression=st.expression, relation=st.relation, strength=st.strength,
         );
         jnl = _journal_begin(scratch);
         tag = Tag();
@@ -154,19 +149,19 @@ def _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> a
         tags[key] = tag;
     }
     scratch.cns = tags;
-    # Preserve the complete accepted set so a future rebuild after this
-    # adoption does not silently forget constraints.
+
     scratch.history = list(order);
     return scratch;
 }
 
-def _solver_pivot(s: any, 
+impl _solver_pivot(
+    s: any,
     entering: int,
     leaving: int,
     jnl: MutationJournal,
     extra: Row | None = None,
     reinsert: bool = True,
-) -> None {
+) {
     row = _journal_pop_row(s, leaving, jnl);
     row.solve_for_symbols(leaving, entering);
     _solver_substitute(s, entering, row, jnl, extra);
@@ -175,21 +170,20 @@ def _solver_pivot(s: any,
     }
 }
 
-def _solver_adopt(s: any, bundle: any) -> None {
+impl _solver_adopt(s: any, bundle: any) {
     s.rows = bundle.rows;
     s.kinds = bundle.kinds;
     s.var_symbols = bundle.var_symbols;
     s.objective = bundle.objective;
     s.id_tick = bundle.id_tick;
     s.cns = bundle.cns;
-    # Stale worklist entries would reference old-symbol ids that now
-    # denote different rows in the adopted tableau.
+
     s.infeasible_rows = bundle.infeasible_rows;
 }
 
-def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> Row {
+impl _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> Row {
     row = Row(constant=c.expression.constant);
-    # Substitute already-basic variables from the current tableau.
+
     for t in c.expression.terms {
         if not near_zero(t.coefficient) {
             symbol = _journal_get_var_symbol(s, t.variable, jnl);
@@ -207,11 +201,8 @@ def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) ->
         tag.marker = slack;
         row.insert_symbol(slack, coeff);
         if c.strength == StrengthTier.REQUIRED {
-            # A required inequality has only its non-negative slack.
             tag.other = 0;
         } else {
-            # LEQ violation is positive expression, hence -error; GEQ
-            # violation is negative expression, hence +error.
             error = _journal_new_symbol_journaled(s, SymbolKind.ERROR, jnl);
             tag.other = error;
             row.insert_symbol(error, -coeff);
@@ -219,16 +210,10 @@ def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) ->
         }
     } else {
         if c.strength == StrengthTier.REQUIRED {
-            # Required equality: a dummy marker keeps the basis restricted.
             dummy = _journal_new_symbol_journaled(s, SymbolKind.DUMMY, jnl);
             tag.marker = dummy;
             row.insert_symbol(dummy);
         } else {
-            # A soft equality needs two non-negative error
-            # directions: v == eplus - eminus, i.e. v - eplus +
-            # eminus = 0 (kiwi OP_EQ soft case). The marker keeps a
-            # NEGATIVE coefficient so chooseSubject can pick it as
-            # pivot subject when no external symbol is available.
             plus = _journal_new_symbol_journaled(s, SymbolKind.ERROR, jnl);
             minus = _journal_new_symbol_journaled(s, SymbolKind.ERROR, jnl);
             tag.marker = plus;
@@ -246,7 +231,7 @@ def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) ->
     return row;
 }
 
-def _solver_choose_subject(s: any, row: Row, tag: Tag) -> int {
+impl _solver_choose_subject(s: any, row: Row, tag: Tag) -> int {
     for symbol in sorted(row.cells.keys()) {
         if _journal_kind_of(s, symbol) == SymbolKind.EXTERNAL {
             return symbol;
@@ -264,7 +249,7 @@ def _solver_choose_subject(s: any, row: Row, tag: Tag) -> int {
     return 0;
 }
 
-def _solver_all_dummies(s: any, row: Row) -> bool {
+impl _solver_all_dummies(s: any, row: Row) -> bool {
     for symbol in sorted(row.cells.keys()) {
         if _journal_kind_of(s, symbol) != SymbolKind.DUMMY {
             return False;
@@ -273,7 +258,7 @@ def _solver_all_dummies(s: any, row: Row) -> bool {
     return True;
 }
 
-def _solver_any_pivotable_symbol(s: any, row: Row) -> int {
+impl _solver_any_pivotable_symbol(s: any, row: Row) -> int {
     for symbol in sorted(row.cells.keys()) {
         kind = _journal_kind_of(s, symbol);
         if kind == SymbolKind.SLACK or kind == SymbolKind.ERROR {
@@ -283,14 +268,14 @@ def _solver_any_pivotable_symbol(s: any, row: Row) -> int {
     return 0;
 }
 
-def _solver_add_with_artificial_variable(s: any, row: Row, jnl: MutationJournal) -> bool {
+impl _solver_add_with_artificial_variable(
+    s: any, row: Row, jnl: MutationJournal
+) -> bool {
     art = _journal_new_symbol_journaled(s, SymbolKind.SLACK, jnl);
     art_row = Row(constant=row.constant);
     art_row.cells = dict(row.cells);
     _journal_insert_row(s, art, art_row, jnl);
 
-    # Artificial cost row; kept in sync by every pivot below
-    # (kiwi m_artificial, substituted inside substitute()).
     artificial = Row(constant=row.constant);
     artificial.cells = dict(row.cells);
     _solver_optimize_toward(s, artificial, jnl, artificial);
@@ -320,28 +305,21 @@ def _solver_add_with_artificial_variable(s: any, row: Row, jnl: MutationJournal)
     return success;
 }
 
-def _solver_substitute(s: any,
-    symbol: int,
-    row: Row,
-    jnl: MutationJournal,
-    extra: Row | None = None,
-) -> None {
+impl _solver_substitute(
+    s: any, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
+) {
     for row_symbol in sorted(s.rows.keys()) {
         _journal_touch_row(s, row_symbol, jnl);
         r = s.rows[row_symbol];
         r.substitute(symbol, row);
-        # Negative non-external constants would be tracked for
-        # dualOptimize from M3 onward (kiwi m_infeasible_rows).
     }
     _journal_touch_objective(s, jnl);
     s.objective.substitute(symbol, row);
-    # The artificial cost row participates in its own pivots
-    # (kiwi substitutes into m_artificial when present).
+
     if extra is not None {
         extra.substitute(symbol, row);
     }
-    # Track rows driven out of feasibility so a later suggestion's
-    # dualOptimize can repair them (kiwi m_infeasible_rows).
+
     for row_symbol in sorted(s.rows.keys()) {
         if (
             _journal_kind_of(s, row_symbol) != SymbolKind.EXTERNAL
@@ -353,10 +331,8 @@ def _solver_substitute(s: any,
     }
 }
 
-def _solver_add_objective(s: any, 
-    symbol: int,
-    weight: LexWeight,
-    jnl: MutationJournal,
+impl _solver_add_objective(
+    s: any, symbol: int, weight: LexWeight, jnl: MutationJournal,
 ) -> None {
     if lex_is_zero(weight) {
         return;
@@ -368,7 +344,7 @@ def _solver_add_objective(s: any,
     }
 }
 
-def _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult {
+impl _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult {
     while True {
         entering = _solver_get_entering_cost_symbol(s);
         if entering == 0 {
@@ -386,10 +362,8 @@ def _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult {
     }
 }
 
-def _solver_optimize_toward(s: any, 
-    target: Row,
-    jnl: MutationJournal,
-    extra: Row | None = None,
+impl _solver_optimize_toward(
+    s: any, target: Row, jnl: MutationJournal, extra: Row | None = None,
 ) -> SolveResult {
     while True {
         entering = _solver_get_entering_symbol(s, target);
@@ -408,7 +382,7 @@ def _solver_optimize_toward(s: any,
     }
 }
 
-def _solver_get_entering_symbol(s: any, objective: Row) -> int {
+impl _solver_get_entering_symbol(s: any, objective: Row) -> int {
     for symbol in sorted(objective.cells.keys()) {
         if (
             _journal_kind_of(s, symbol) != SymbolKind.DUMMY
@@ -420,7 +394,7 @@ def _solver_get_entering_symbol(s: any, objective: Row) -> int {
     return 0;
 }
 
-def _solver_get_entering_cost_symbol(s: any) -> int {
+impl _solver_get_entering_cost_symbol(s: any) -> int {
     for symbol in sorted(s.objective.cells.keys()) {
         if (
             _journal_kind_of(s, symbol) != SymbolKind.DUMMY
@@ -432,7 +406,7 @@ def _solver_get_entering_cost_symbol(s: any) -> int {
     return 0;
 }
 
-def _solver_get_leaving_row(s: any, entering: int) -> int {
+impl _solver_get_leaving_row(s: any, entering: int) -> int {
     ratio = 1e308;
     found = 0;
     for symbol in sorted(s.rows.keys()) {
@@ -450,4 +424,3 @@ def _solver_get_leaving_row(s: any, entering: int) -> int {
     }
     return found;
 }
-

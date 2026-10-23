@@ -1,6 +1,3 @@
-"""Behavior tests for ANSI-aware display width, wrap, and truncate."""
-
-
 test "ascii display_width matches string length" {
     assert display_width("") == 0;
     assert display_width("hello") == 5;
@@ -23,7 +20,6 @@ test "wide cjk characters count as two columns" {
 
 
 test "combining marks do not add width" {
-    # Latin 'e' + combining acute
     composed = "e\u0301";
     assert display_width(composed) == 1;
 }

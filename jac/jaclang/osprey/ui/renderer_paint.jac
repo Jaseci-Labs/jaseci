@@ -1,40 +1,42 @@
-"""Cell-buffer painting for the retained renderer."""
-
-import from .model {
-    UiNode,
-    UiContainer,
-    Screen,
-    Overlay,
-    Layer,
-    ordered_children,
-    node_id,
-}
-
-import from .layout_types {
-    FrameEntry,
-    LayoutState,
-}
-
-import from .cells {
-    CellBuffer,
-    StyleAttrs,
-    create_buffer,
-    buffer_clear_rect,
-    buffer_blit_text,
-}
-
-import from .renderer_types {
-    Renderer,
-    _OverlayHit,
-}
+def _blank_buffer(columns: int, rows: int) -> CellBuffer;
 
 
-def _blank_buffer(columns: int, rows: int) -> CellBuffer {
+def _paint_text_into(
+    buf: CellBuffer,
+    text: str,
+    row: int,
+    col: int,
+    max_width: int,
+    attrs: StyleAttrs | None = None,
+);
+
+
+def _paint_entry_lines(buf: CellBuffer, layout_entry: FrameEntry, scrolls: bool,);
+
+
+def _overlay_z_key(hit: _OverlayHit) -> int;
+
+
+def _overlay_jid_key(hit: _OverlayHit) -> str;
+
+
+def _layered_overlays(layout_root: UiNode) -> list[UiNode];
+
+
+def _paint_node(state: LayoutState, n: UiNode, buf: CellBuffer);
+
+
+def _paint_tree(state: LayoutState, n: UiNode, buf: CellBuffer);
+
+
+def _paint_frame_buffer(renderer: Renderer, layout_root: UiNode) -> CellBuffer;
+
+impl _blank_buffer(columns: int, rows: int) -> CellBuffer {
     return create_buffer(columns, rows);
 }
 
 
-def _paint_text_into(
+impl _paint_text_into(
     buf: CellBuffer,
     text: str,
     row: int,
@@ -49,11 +51,7 @@ def _paint_text_into(
 }
 
 
-def _paint_entry_lines(
-    buf: CellBuffer,
-    layout_entry: FrameEntry,
-    scrolls: bool,
-) {
+impl _paint_entry_lines(buf: CellBuffer, layout_entry: FrameEntry, scrolls: bool,) {
     rect = layout_entry.rect;
     clip = layout_entry.clip if not layout_entry.clip.is_empty() else rect;
     if clip.is_empty() or rect.is_empty() {
@@ -74,36 +72,27 @@ def _paint_entry_lines(
         if src_i < 0 or src_i >= len(lines) {
             continue;
         }
-        _paint_text_into(
-            buf,
-            lines[src_i],
-            term_row,
-            clip.x,
-            clip.width,
-            None,
-        );
+        _paint_text_into(buf, lines[src_i], term_row, clip.x, clip.width, None,);
     }
 }
 
 
-# Layer-reached overlays of one Screen, ordered by (z_index, jid) —
-# same ordering the compiler's scope walk uses (plan §6.3).
-def _overlay_z_key(hit: _OverlayHit) -> int {
+impl _overlay_z_key(hit: _OverlayHit) -> int {
     return hit.z;
 }
 
 
-def _overlay_jid_key(hit: _OverlayHit) -> str {
+impl _overlay_jid_key(hit: _OverlayHit) -> str {
     return hit.id_str;
 }
 
 
-def _layered_overlays(layout_root: UiNode) -> list[UiNode] {
+impl _layered_overlays(layout_root: UiNode) -> list[UiNode] {
     found: list[_OverlayHit] = [];
     if isinstance(layout_root, Screen) {
-        for ov in [layout_root ->:Layer:->] {
+        for ov in [layout_root->:Layer:->] {
             z = 0;
-            for e in [edge layout_root ->:Layer:-> ov] {
+            for e in [edge layout_root->:Layer:->ov] {
                 z = e.z_index;
             }
             found.append(_OverlayHit(nd=ov, z=z, id_str=node_id(ov)));
@@ -118,7 +107,7 @@ def _layered_overlays(layout_root: UiNode) -> list[UiNode] {
 }
 
 
-def _paint_node(state: LayoutState, n: UiNode, buf: CellBuffer) {
+impl _paint_node(state: LayoutState, n: UiNode, buf: CellBuffer) {
     frame = state.last_frame;
     if frame is None {
         return;
@@ -136,12 +125,10 @@ def _paint_node(state: LayoutState, n: UiNode, buf: CellBuffer) {
 }
 
 
-def _paint_tree(state: LayoutState, n: UiNode, buf: CellBuffer) {
+impl _paint_tree(state: LayoutState, n: UiNode, buf: CellBuffer) {
     _paint_node(state, n, buf);
     if isinstance(n, UiContainer) {
         for child in ordered_children(n) {
-            # Overlays hang off Layer edges; skip them in the flow walk so
-            # a Child-mounted overlay is painted exactly once.
             if isinstance(child, Overlay) {
                 continue;
             }
@@ -151,7 +138,7 @@ def _paint_tree(state: LayoutState, n: UiNode, buf: CellBuffer) {
 }
 
 
-def _paint_frame_buffer(renderer: Renderer, layout_root: UiNode) -> CellBuffer {
+impl _paint_frame_buffer(renderer: Renderer, layout_root: UiNode) -> CellBuffer {
     state = renderer.layout;
     buf = _blank_buffer(state.viewport.columns, state.viewport.rows);
     _paint_tree(state, layout_root, buf);

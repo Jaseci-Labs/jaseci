@@ -1,27 +1,4 @@
-"""Unit 10 acceptance: transcript virtualization and scroll anchoring.
-
-Companion scope provides transcript APIs.
-"""
-
-import from .model {
-    TranscriptView,
-}
-
-
-def _msgs(n: int, prefix: str = "m") -> list[TranscriptMessage] {
-    out: list[TranscriptMessage] = [];
-    for i in range(n) {
-        out.append(
-            TranscriptMessage(
-                message_id=prefix + str(i),
-                content="line-" + str(i) + " " + ("x" * 20),
-                content_rev=1,
-                style_rev=1,
-            )
-        );
-    }
-    return out;
-}
+def _msgs(n: int, prefix: str = "m") -> list[TranscriptMessage];
 
 
 test "measure_cache_key includes id width and revisions" {
@@ -58,10 +35,7 @@ test "measurement cache reuses height for unchanged message width" {
     view = TranscriptView(key="transcript");
     proj = bind_transcript(view, "src", width=20, height=5);
     msg = TranscriptMessage(
-        message_id="m0",
-        content="abcdefghijKLMNOPQRST",
-        content_rev=1,
-        style_rev=1,
+        message_id="m0", content="abcdefghijKLMNOPQRST", content_rev=1, style_rev=1,
     );
     apply_transcript_revision(proj, 1, [msg]);
     h1 = measure_message_height(proj, msg, 20);
@@ -97,10 +71,7 @@ test "follow_tail false preserves visible anchor across inserts above" {
     grown = (
         [
             TranscriptMessage(
-                message_id="pre0",
-                content="preamble",
-                content_rev=1,
-                style_rev=1,
+                message_id="pre0", content="preamble", content_rev=1, style_rev=1,
             )
         ]
         + _msgs(20)
@@ -156,4 +127,19 @@ test "project_visible_spans uses markdown styles for md messages" {
     assert len(spans) >= 1;
     styles = [str(s.get("style_id", "")) for s in spans];
     assert "heading" in styles or any("Hello" in str(s.get("text", "")) for s in spans);
+}
+
+impl _msgs(n: int, prefix: str = "m") -> list[TranscriptMessage] {
+    out: list[TranscriptMessage] = [];
+    for i in range(n) {
+        out.append(
+            TranscriptMessage(
+                message_id=prefix + str(i),
+                content="line-" + str(i) + " " + ("x" * 20),
+                content_rev=1,
+                style_rev=1,
+            )
+        );
+    }
+    return out;
 }

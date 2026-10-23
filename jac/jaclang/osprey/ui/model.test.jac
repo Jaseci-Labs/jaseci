@@ -1,6 +1,3 @@
-"""Behavior tests for the OSP-native semantic UI graph model."""
-
-
 test "Child edges order siblings by sparse rank" {
     screen = MainScreen(key="main");
     header = Header(key="header", title="Osprey");
@@ -13,12 +10,7 @@ test "Child edges order siblings by sparse rank" {
     screen +>:Child(rank=3072):+> status;
     screen +>:Child(rank=4096):+> prompt;
 
-    assert ordered_child_keys(screen) == [
-        "header",
-        "transcript",
-        "status",
-        "prompt",
-    ];
+    assert ordered_child_keys(screen) == ["header", "transcript", "status", "prompt", ];
     assert child_rank(screen, header) == 1024;
     assert child_rank(screen, transcript) == 2048;
 }
@@ -51,7 +43,7 @@ test "overlay layer edges attach outside Child containment" {
     overlay = ApprovalOverlay(key="approval");
     screen +>:Child(rank=1024):+> overlay;
     screen +>:Layer(z_index=10, modal=True):+> overlay;
-    assert overlay in [screen ->:Layer:->];
+    assert overlay in [screen->:Layer:->];
     assert enclosing_screen(overlay) is screen;
 }
 
@@ -64,8 +56,8 @@ test "Feeds and FocusNext edges connect semantic regions" {
     screen +>:Child(rank=2048):+> prompt;
     transcript +>:Feeds:+> prompt;
     transcript +>:FocusNext:+> prompt;
-    assert prompt in [transcript ->:Feeds:->];
-    assert prompt in [transcript ->:FocusNext:->];
+    assert prompt in [transcript->:Feeds:->];
+    assert prompt in [transcript->:FocusNext:->];
 }
 
 
@@ -75,18 +67,15 @@ test "Owns edge scopes UI-local ownership without Child containment" {
     draft_holder = Status(key="draft-meta", phase="owned");
     screen +>:Child(rank=1024):+> prompt;
     prompt +>:Owns:+> draft_holder;
-    assert draft_holder in [prompt ->:Owns:->];
-    assert draft_holder not in [screen ->:Child:->];
+    assert draft_holder in [prompt->:Owns:->];
+    assert draft_holder not in [screen->:Child:->];
 }
 
 
 test "product archetypes keep only semantic fields on the node" {
     screen = MainScreen(key="main");
     tv = TranscriptView(
-        key="transcript",
-        source_id="session.events",
-        follow_tail=True,
-        scroll_offset=3,
+        key="transcript", source_id="session.events", follow_tail=True, scroll_offset=3,
     );
     status = Status(key="status", phase="streaming");
     prompt = Prompt(key="prompt", draft="partial", mode="insert");

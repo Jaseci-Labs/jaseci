@@ -1,13 +1,4 @@
-"""Editor runtime tests: caret, selection, history, display width."""
-
-import from .model {
-    Prompt,
-    MainScreen,
-}
-
-import from .width {
-    display_width,
-}
+import from .model { MainScreen }
 
 import from .runtime {
     create_session,
@@ -16,12 +7,7 @@ import from .runtime {
     set_current_screen,
 }
 
-import from .events {
-    InsertText,
-    Submit,
-    Cancel,
-    dispatch_event,
-}
+import from .events { dispatch_event }
 
 
 test "editor_insert advances caret" {
@@ -52,7 +38,7 @@ test "editor_move_up_down across lines" {
     editor_move_up(p);
     assert p.caret == 2;
     editor_move_down(p);
-    # Same visual column as end of "aa" (col 2) lands at index 5 in "bbb".
+
     assert p.caret == 5;
 }
 

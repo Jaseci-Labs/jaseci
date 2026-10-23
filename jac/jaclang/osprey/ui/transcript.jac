@@ -1,31 +1,8 @@
-"""Transcript projection, streaming, and virtualization (OSPUI.md §16).
-
-Messages stay in domain state. TranscriptView binds source_id + revision;
-the renderer materializes visible wrapped lines + overscan only. Measurement
-cache key: (message_id, width, content_rev, style_rev).
-"""
-
-import from .model {
-    TranscriptView,
-}
-
-import from .width {
-    wrap_text,
-}
-
-import from .markdown_proj {
-    looks_like_markdown,
-    project_markdown,
-    proj_lines_to_span_dicts,
-}
-
-
 obj TranscriptMessage {
     has message_id: str,
         content: str = "",
         content_rev: int = 0,
         style_rev: int = 0,
-        # "plain" | "markdown" | "auto" — auto uses looks_like_markdown.
         format: str = "auto";
 }
 
@@ -61,35 +38,93 @@ obj TranscriptProjection {
 }
 
 
-def create_measure_cache() -> MeasureCache {
+def create_measure_cache -> MeasureCache;
+
+
+def measure_cache_key(
+    message_id: str, width: int, content_rev: int, style_rev: int,
+) -> str;
+
+
+def _snapshot_key(content_rev: int, style_rev: int) -> str;
+
+
+def _use_markdown(message: TranscriptMessage) -> bool;
+
+
+def _message_lines(message: TranscriptMessage, width: int) -> list[str];
+
+
+def _total_height(proj: TranscriptProjection) -> int;
+
+
+def _line_ranges(proj: TranscriptProjection) -> list[dict[str, any]];
+
+
+def _visible_message_ids(proj: TranscriptProjection) -> list[str];
+
+
+def _anchor_at_offset(proj: TranscriptProjection, offset: int) -> (str, int);
+
+
+def _offset_for_anchor(
+    proj: TranscriptProjection, message_id: str, line_off: int
+) -> int;
+
+
+def _compute_damage(
+    proj: TranscriptProjection, new_messages: list[TranscriptMessage],
+) -> bool;
+
+
+def bind_transcript(
+    view: TranscriptView, source_id: str, width: int = 40, height: int = 10,
+) -> TranscriptProjection;
+
+
+def apply_transcript_revision(
+    proj: TranscriptProjection, revision: int, messages: list[TranscriptMessage],
+);
+
+
+def measure_message_height(
+    proj: TranscriptProjection, message: TranscriptMessage, width: int,
+) -> int;
+
+
+def project_visible_spans(proj: TranscriptProjection) -> list[dict[str, any]];
+
+
+def materialize_visible(proj: TranscriptProjection) -> VisibleWindow;
+
+
+def transcript_needs_damage(
+    proj: TranscriptProjection, prev_revision: int, next_revision: int,
+) -> bool;
+
+
+def set_follow_tail(proj: TranscriptProjection, follow: bool);
+
+impl create_measure_cache -> MeasureCache {
     return MeasureCache();
 }
 
 
-def measure_cache_key(
-    message_id: str,
-    width: int,
-    content_rev: int,
-    style_rev: int,
+impl measure_cache_key(
+    message_id: str, width: int, content_rev: int, style_rev: int,
 ) -> str {
     return (
-        message_id
-        + "|"
-        + str(width)
-        + "|"
-        + str(content_rev)
-        + "|"
-        + str(style_rev)
+        message_id + "|" + str(width) + "|" + str(content_rev) + "|" + str(style_rev)
     );
 }
 
 
-def _snapshot_key(content_rev: int, style_rev: int) -> str {
+impl _snapshot_key(content_rev: int, style_rev: int) -> str {
     return str(content_rev) + ":" + str(style_rev);
 }
 
 
-def _use_markdown(message: TranscriptMessage) -> bool {
+impl _use_markdown(message: TranscriptMessage) -> bool {
     if message.format == "markdown" {
         return True;
     }
@@ -100,7 +135,7 @@ def _use_markdown(message: TranscriptMessage) -> bool {
 }
 
 
-def _message_lines(message: TranscriptMessage, width: int) -> list[str] {
+impl _message_lines(message: TranscriptMessage, width: int) -> list[str] {
     if _use_markdown(message) {
         proj = project_markdown(message.content, width);
         dicts = proj_lines_to_span_dicts(proj);
@@ -121,7 +156,7 @@ def _message_lines(message: TranscriptMessage, width: int) -> list[str] {
 }
 
 
-def _total_height(proj: TranscriptProjection) -> int {
+impl _total_height(proj: TranscriptProjection) -> int {
     total = 0;
     for message in proj.messages {
         total += measure_message_height(proj, message, proj.viewport_width);
@@ -130,7 +165,7 @@ def _total_height(proj: TranscriptProjection) -> int {
 }
 
 
-def _line_ranges(proj: TranscriptProjection) -> list[dict[str, any]] {
+impl _line_ranges(proj: TranscriptProjection) -> list[dict[str, any]] {
     ranges: list[dict[str, any]] = [];
     cursor = 0;
     for message in proj.messages {
@@ -141,6 +176,7 @@ def _line_ranges(proj: TranscriptProjection) -> list[dict[str, any]] {
                 "start": cursor,
                 "height": height,
                 "end": cursor + height,
+
             }
         );
         cursor += height;
@@ -149,7 +185,7 @@ def _line_ranges(proj: TranscriptProjection) -> list[dict[str, any]] {
 }
 
 
-def _visible_message_ids(proj: TranscriptProjection) -> list[str] {
+impl _visible_message_ids(proj: TranscriptProjection) -> list[str] {
     if not proj.messages {
         return [];
     }
@@ -183,7 +219,7 @@ def _visible_message_ids(proj: TranscriptProjection) -> list[str] {
 }
 
 
-def _anchor_at_offset(proj: TranscriptProjection, offset: int) -> (str, int) {
+impl _anchor_at_offset(proj: TranscriptProjection, offset: int) -> (str, int) {
     if not proj.messages {
         return ("", 0);
     }
@@ -203,7 +239,9 @@ def _anchor_at_offset(proj: TranscriptProjection, offset: int) -> (str, int) {
 }
 
 
-def _offset_for_anchor(proj: TranscriptProjection, message_id: str, line_off: int) -> int {
+impl _offset_for_anchor(
+    proj: TranscriptProjection, message_id: str, line_off: int
+) -> int {
     ranges = _line_ranges(proj);
     for row in ranges {
         if str(row["message_id"]) == message_id {
@@ -214,19 +252,17 @@ def _offset_for_anchor(proj: TranscriptProjection, message_id: str, line_off: in
 }
 
 
-def _compute_damage(
-    proj: TranscriptProjection,
-    new_messages: list[TranscriptMessage],
+impl _compute_damage(
+    proj: TranscriptProjection, new_messages: list[TranscriptMessage],
 ) -> bool {
     old_snap: dict[str, str] = dict(proj.rev_snapshot);
     new_snap: dict[str, str] = {};
     for message in new_messages {
         new_snap[message.message_id] = _snapshot_key(
-            message.content_rev,
-            message.style_rev,
+            message.content_rev, message.style_rev,
         );
     }
-    # Temporarily use new messages for visible-id calculation with current scroll.
+
     saved = proj.messages;
     proj.messages = new_messages;
     visible: list[str] = _visible_message_ids(proj);
@@ -246,7 +282,7 @@ def _compute_damage(
             return True;
         }
     }
-    # Structural change that shifts the scroll range into view.
+
     if len(old_snap) != len(new_snap) and proj.view.follow_tail {
         return True;
     }
@@ -254,12 +290,8 @@ def _compute_damage(
 }
 
 
-"""Bind a TranscriptView to a domain source and empty projection."""
-def bind_transcript(
-    view: TranscriptView,
-    source_id: str,
-    width: int = 40,
-    height: int = 10,
+impl bind_transcript(
+    view: TranscriptView, source_id: str, width: int = 40, height: int = 10,
 ) -> TranscriptProjection {
     view.source_id = source_id;
     return TranscriptProjection(
@@ -271,13 +303,9 @@ def bind_transcript(
 }
 
 
-"""Replace projection messages for a new observed revision."""
-def apply_transcript_revision(
-    proj: TranscriptProjection,
-    revision: int,
-    messages: list[TranscriptMessage],
+impl apply_transcript_revision(
+    proj: TranscriptProjection, revision: int, messages: list[TranscriptMessage],
 ) {
-    # Capture anchor before mutation when not following the tail.
     if not proj.view.follow_tail and proj.messages {
         (aid, aoff) = _anchor_at_offset(proj, proj.view.scroll_offset);
         proj.anchor_message_id = aid;
@@ -286,7 +314,6 @@ def apply_transcript_revision(
 
     proj.last_damage = _compute_damage(proj, messages);
 
-    # Copy messages so later in-place domain edits don't erase the snapshot.
     copied: list[TranscriptMessage] = [];
     snap: dict[str, str] = {};
     for message in messages {
@@ -299,8 +326,7 @@ def apply_transcript_revision(
             )
         );
         snap[message.message_id] = _snapshot_key(
-            message.content_rev,
-            message.style_rev,
+            message.content_rev, message.style_rev,
         );
     }
     proj.messages = copied;
@@ -312,25 +338,17 @@ def apply_transcript_revision(
         proj.view.scroll_offset = max(0, total - proj.viewport_height);
     } elif proj.anchor_message_id {
         proj.view.scroll_offset = _offset_for_anchor(
-            proj,
-            proj.anchor_message_id,
-            proj.anchor_line_offset,
+            proj, proj.anchor_message_id, proj.anchor_line_offset,
         );
     }
 }
 
 
-"""Return wrapped line height for one message, using the measurement cache."""
-def measure_message_height(
-    proj: TranscriptProjection,
-    message: TranscriptMessage,
-    width: int,
+impl measure_message_height(
+    proj: TranscriptProjection, message: TranscriptMessage, width: int,
 ) -> int {
     key = measure_cache_key(
-        message.message_id,
-        width,
-        message.content_rev,
-        message.style_rev,
+        message.message_id, width, message.content_rev, message.style_rev,
     );
     if key in proj.measure_cache.entries {
         proj.measure_cache.hits += 1;
@@ -347,14 +365,11 @@ def measure_message_height(
 }
 
 
-"""Projection spans for visible lines — domain → text/style_id, not a component tree."""
-def project_visible_spans(proj: TranscriptProjection) -> list[dict[str, any]] {
+impl project_visible_spans(proj: TranscriptProjection) -> list[dict[str, any]] {
     win = materialize_visible(proj);
-    # Prefer rich markdown spans when the visible window maps to md messages.
+
     rich: list[dict[str, any]] = [];
     if proj.messages {
-        # Rebuild visible span rows from messages in the same order as
-        # materialize_visible (width + overscan window).
         width = proj.viewport_width;
         vh = proj.viewport_height;
         if vh < 1 {
@@ -412,8 +427,7 @@ def project_visible_spans(proj: TranscriptProjection) -> list[dict[str, any]] {
 }
 
 
-"""Materialize visible + overscan lines for the current scroll window."""
-def materialize_visible(proj: TranscriptProjection) -> VisibleWindow {
+impl materialize_visible(proj: TranscriptProjection) -> VisibleWindow {
     win = VisibleWindow();
     if not proj.messages {
         return win;
@@ -450,7 +464,7 @@ def materialize_visible(proj: TranscriptProjection) -> VisibleWindow {
     last_id = "";
     for message in proj.messages {
         msg_lines = _message_lines(message, width);
-        # Find this message's start line.
+
         msg_start = 0;
         for row in ranges {
             if str(row["message_id"]) == message.message_id {
@@ -478,11 +492,8 @@ def materialize_visible(proj: TranscriptProjection) -> VisibleWindow {
 }
 
 
-"""True if a revision change requires terminal damage for this viewport."""
-def transcript_needs_damage(
-    proj: TranscriptProjection,
-    prev_revision: int,
-    next_revision: int,
+impl transcript_needs_damage(
+    proj: TranscriptProjection, prev_revision: int, next_revision: int,
 ) -> bool {
     if prev_revision == next_revision {
         return False;
@@ -491,8 +502,7 @@ def transcript_needs_damage(
 }
 
 
-"""Set follow_tail and optionally pin scroll to newest content."""
-def set_follow_tail(proj: TranscriptProjection, follow: bool) {
+impl set_follow_tail(proj: TranscriptProjection, follow: bool) {
     proj.view.follow_tail = follow;
     if follow {
         total = _total_height(proj);

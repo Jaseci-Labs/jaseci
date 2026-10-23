@@ -1,58 +1,91 @@
-"""Editor / focus runtime on Prompt — session behavior, not markup.
-
-Caret is a code-unit index into draft; horizontal movement uses display
-width via ui.width so wide glyphs advance correctly. Selection + history
-live on Prompt semantic fields (never geometry/cells).
-
-AblePrompt adds InsertText / Submit / Cancel abilities so the shell can
-dispatch walkers without a closure registry (ability-heavy prototype).
-"""
-
-import from .model {
-    Prompt,
-}
-
-import from .runtime {
-    UiSession,
-}
-
-import from .width {
-    display_width,
-}
-
-import from .events {
-    InsertText,
-    Submit,
-    Cancel,
-    SendPrompt,
-}
-
-
-"""Prompt with node abilities — drop-in for build_main_shell."""
 node AblePrompt(Prompt) {
-    can on_insert with InsertText entry {
-        editor_insert(self, visitor.text);
-        visitor.handled = True;
-    }
-
-    can on_submit with Submit entry {
-        text = editor_submit(self);
-        visitor.effects.append(SendPrompt(text=text));
-        visitor.default_prevented = True;
-        visitor.handled = True;
-    }
-
-    can on_cancel with Cancel entry {
-        self.draft = "";
-        self.caret = 0;
-        self.sel_anchor = -1;
-        self.sel_end = -1;
-        visitor.handled = True;
-    }
+    can on_insert with InsertText entry;
+    can on_submit with Submit entry;
+    can on_cancel with Cancel entry;
 }
 
 
-def _clamp(n: int, lo: int, hi: int) -> int {
+def _clamp(n: int, lo: int, hi: int) -> int;
+
+
+def editor_has_selection(prompt: Prompt) -> bool;
+
+
+def editor_clear_selection(prompt: Prompt);
+
+
+def _delete_selection(prompt: Prompt);
+
+
+def editor_insert(prompt: Prompt, text: str);
+
+
+def editor_backspace(prompt: Prompt);
+
+
+def editor_delete_forward(prompt: Prompt);
+
+
+def editor_move_left(prompt: Prompt);
+
+
+def editor_move_right(prompt: Prompt);
+
+
+def editor_move_left_display(prompt: Prompt);
+
+
+def editor_move_right_display(prompt: Prompt);
+
+
+def editor_move_home(prompt: Prompt);
+
+
+def editor_move_end(prompt: Prompt);
+
+
+def editor_move_up(prompt: Prompt);
+
+
+def editor_move_down(prompt: Prompt);
+
+
+def editor_caret_display_col(prompt: Prompt) -> int;
+
+
+def editor_history_prev(prompt: Prompt);
+
+
+def editor_history_next(prompt: Prompt);
+
+
+def editor_submit(prompt: Prompt) -> str;
+
+
+def editor_set_selection(prompt: Prompt, anchor: int, end: int);
+
+impl AblePrompt.on_insert with InsertText entry {
+    editor_insert(self, visitor.text);
+    visitor.handled = True;
+}
+
+impl AblePrompt.on_submit with Submit entry {
+    text = editor_submit(self);
+    visitor.effects.append(SendPrompt(text=text));
+    visitor.default_prevented = True;
+    visitor.handled = True;
+}
+
+impl AblePrompt.on_cancel with Cancel entry {
+    self.draft = "";
+    self.caret = 0;
+    self.sel_anchor = -1;
+    self.sel_end = -1;
+    visitor.handled = True;
+}
+
+
+impl _clamp(n: int, lo: int, hi: int) -> int {
     if n < lo {
         return lo;
     }
@@ -63,7 +96,7 @@ def _clamp(n: int, lo: int, hi: int) -> int {
 }
 
 
-def editor_has_selection(prompt: Prompt) -> bool {
+impl editor_has_selection(prompt: Prompt) -> bool {
     return (
         prompt.sel_anchor >= 0
         and prompt.sel_end >= 0
@@ -72,13 +105,13 @@ def editor_has_selection(prompt: Prompt) -> bool {
 }
 
 
-def editor_clear_selection(prompt: Prompt) {
+impl editor_clear_selection(prompt: Prompt) {
     prompt.sel_anchor = -1;
     prompt.sel_end = -1;
 }
 
 
-def _delete_selection(prompt: Prompt) {
+impl _delete_selection(prompt: Prompt) {
     if not editor_has_selection(prompt) {
         return;
     }
@@ -90,7 +123,7 @@ def _delete_selection(prompt: Prompt) {
 }
 
 
-def editor_insert(prompt: Prompt, text: str) {
+impl editor_insert(prompt: Prompt, text: str) {
     if not text {
         return;
     }
@@ -104,7 +137,7 @@ def editor_insert(prompt: Prompt, text: str) {
 }
 
 
-def editor_backspace(prompt: Prompt) {
+impl editor_backspace(prompt: Prompt) {
     if editor_has_selection(prompt) {
         _delete_selection(prompt);
         return;
@@ -113,12 +146,12 @@ def editor_backspace(prompt: Prompt) {
         return;
     }
     i = prompt.caret;
-    prompt.draft = prompt.draft[: i - 1] + prompt.draft[i:];
+    prompt.draft = prompt.draft[:i - 1] + prompt.draft[i:];
     prompt.caret = i - 1;
 }
 
 
-def editor_delete_forward(prompt: Prompt) {
+impl editor_delete_forward(prompt: Prompt) {
     if editor_has_selection(prompt) {
         _delete_selection(prompt);
         return;
@@ -131,30 +164,29 @@ def editor_delete_forward(prompt: Prompt) {
 }
 
 
-def editor_move_left(prompt: Prompt) {
+impl editor_move_left(prompt: Prompt) {
     editor_clear_selection(prompt);
     prompt.caret = _clamp(prompt.caret - 1, 0, len(prompt.draft));
 }
 
 
-def editor_move_right(prompt: Prompt) {
+impl editor_move_right(prompt: Prompt) {
     editor_clear_selection(prompt);
     prompt.caret = _clamp(prompt.caret + 1, 0, len(prompt.draft));
 }
 
 
-"""Move left by one display column (skips continuation of wide clusters simply)."""
-def editor_move_left_display(prompt: Prompt) {
+impl editor_move_left_display(prompt: Prompt) {
     editor_clear_selection(prompt);
     if prompt.caret <= 0 {
         return;
     }
-    # Step back one code unit; callers that need grapheme clusters can refine.
+
     prompt.caret = prompt.caret - 1;
 }
 
 
-def editor_move_right_display(prompt: Prompt) {
+impl editor_move_right_display(prompt: Prompt) {
     editor_clear_selection(prompt);
     if prompt.caret >= len(prompt.draft) {
         return;
@@ -163,9 +195,9 @@ def editor_move_right_display(prompt: Prompt) {
 }
 
 
-def editor_move_home(prompt: Prompt) {
+impl editor_move_home(prompt: Prompt) {
     editor_clear_selection(prompt);
-    # Start of current line.
+
     i = prompt.caret;
     while i > 0 and prompt.draft[i - 1] != "\n" {
         i -= 1;
@@ -174,7 +206,7 @@ def editor_move_home(prompt: Prompt) {
 }
 
 
-def editor_move_end(prompt: Prompt) {
+impl editor_move_end(prompt: Prompt) {
     editor_clear_selection(prompt);
     i = prompt.caret;
     n = len(prompt.draft);
@@ -185,9 +217,9 @@ def editor_move_end(prompt: Prompt) {
 }
 
 
-def editor_move_up(prompt: Prompt) {
+impl editor_move_up(prompt: Prompt) {
     editor_clear_selection(prompt);
-    # Move to previous line, same column preference by char offset on line.
+
     line_start = prompt.caret;
     while line_start > 0 and prompt.draft[line_start - 1] != "\n" {
         line_start -= 1;
@@ -207,7 +239,7 @@ def editor_move_up(prompt: Prompt) {
 }
 
 
-def editor_move_down(prompt: Prompt) {
+impl editor_move_down(prompt: Prompt) {
     editor_clear_selection(prompt);
     line_start = prompt.caret;
     while line_start > 0 and prompt.draft[line_start - 1] != "\n" {
@@ -233,8 +265,7 @@ def editor_move_down(prompt: Prompt) {
 }
 
 
-"""Display-width of draft prefix up to caret (for cursor placement)."""
-def editor_caret_display_col(prompt: Prompt) -> int {
+impl editor_caret_display_col(prompt: Prompt) -> int {
     line_start = prompt.caret;
     while line_start > 0 and prompt.draft[line_start - 1] != "\n" {
         line_start -= 1;
@@ -244,7 +275,7 @@ def editor_caret_display_col(prompt: Prompt) -> int {
 }
 
 
-def editor_history_prev(prompt: Prompt) {
+impl editor_history_prev(prompt: Prompt) {
     if not prompt.history {
         return;
     }
@@ -259,7 +290,7 @@ def editor_history_prev(prompt: Prompt) {
 }
 
 
-def editor_history_next(prompt: Prompt) {
+impl editor_history_next(prompt: Prompt) {
     if prompt.history_index < 0 {
         return;
     }
@@ -277,8 +308,7 @@ def editor_history_next(prompt: Prompt) {
 }
 
 
-"""Push draft to history, clear prompt, return submitted text."""
-def editor_submit(prompt: Prompt) -> str {
+impl editor_submit(prompt: Prompt) -> str {
     text = prompt.draft;
     if text {
         prompt.history = prompt.history + [text];
@@ -291,7 +321,7 @@ def editor_submit(prompt: Prompt) -> str {
 }
 
 
-def editor_set_selection(prompt: Prompt, anchor: int, end: int) {
+impl editor_set_selection(prompt: Prompt, anchor: int, end: int) {
     n = len(prompt.draft);
     prompt.sel_anchor = _clamp(anchor, 0, n);
     prompt.sel_end = _clamp(end, 0, n);

@@ -1,19 +1,20 @@
-"""Pure string edit engine - no I/O.
+def apply_edit(source: str, old_text: str, new_text: str) -> str;
 
-Anchor-free module: the placement solver should decide it native. This is the
-N1 dogfooding module; tools.jac calls it across the server/native bridge.
+def apply_multi_edit(source: str, edits: list[list[str]]) -> str;
 
-Error convention (shared by every function): failures return "ERROR: ..."
-strings instead of raising, so callers can surface them to the model without
-exceptions. Functions never mutate their inputs.
-"""
+def replace_lines(
+    source: str, start_line: int, end_line: int, replacement: str
+) -> str;
 
-"""Replace old_text with new_text in source. old_text must appear exactly once.
+def count_matches(source: str, needle: str) -> int;
 
-Returns the new source on success, or an "ERROR: ..." string describing the
-failure so callers can surface it to the model without exceptions.
-"""
-def apply_edit(source: str, old_text: str, new_text: str) -> str {
+def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str;
+
+def _fmt_range(start: int, length: int) -> str;
+
+def guess_indentation(source: str) -> str;
+
+impl apply_edit(source: str, old_text: str, new_text: str) -> str {
     if len(old_text) == 0 {
         return "ERROR: old_text is empty";
     }
@@ -28,15 +29,7 @@ def apply_edit(source: str, old_text: str, new_text: str) -> str {
     return source[:first] + new_text + source[first + len(old_text):];
 }
 
-"""Apply a sequential list of [old_text, new_text] edit pairs to source.
-
-Pairs are applied in order, each against the result of the previous one.
-Atomic: if ANY pair fails, an "ERROR: ..." string identifying the failing
-pair index (1-based) is returned and the caller receives no partial result;
-since this module is pure, the original "source" is never mutated.
-An empty edits list returns source unchanged.
-"""
-def apply_multi_edit(source: str, edits: list[list[str]]) -> str {
+impl apply_multi_edit(source: str, edits: list[list[str]]) -> str {
     work = source;
     for i in range(len(edits)) {
         pair = edits[i];
@@ -45,26 +38,20 @@ def apply_multi_edit(source: str, edits: list[list[str]]) -> str {
         result = apply_edit(work, old_text, new_text);
         if result.startswith("ERROR:") {
             return "ERROR: multi-edit pair "
-                + str(i + 1) + " of " + str(len(edits)) + " failed: " + result;
+                + str(i + 1)
+                + " of "
+                + str(len(edits))
+                + " failed: "
+                + result;
         }
         work = result;
     }
     return work;
 }
 
-"""Replace the 1-based inclusive line range [start_line, end_line] with
-replacement text.
-
-Newline handling: the file is split into newline-free lines; a trailing
-newline in the source is preserved on the result (dropped only when the
-edit empties the whole file). Bounds violations (start < 1, start > line
-count, end < start, end > line count) return "ERROR: ..." strings.
-An empty replacement deletes the range. An empty source has no lines, so any
-range is out of bounds.
-"""
-def replace_lines(source: str, start_line: int, end_line: int, replacement: str) -> str {
-    # splitlines() is unreliable in this runtime; split on newlines directly
-    # and drop the empty piece a trailing newline produces.
+impl replace_lines(
+    source: str, start_line: int, end_line: int, replacement: str
+) -> str {
     lines = source.split("\n");
     trailing_nl = False;
     if len(lines) > 0 and lines[-1] == "" {
@@ -73,16 +60,24 @@ def replace_lines(source: str, start_line: int, end_line: int, replacement: str)
     }
     n = len(lines);
     if start_line < 1 or start_line > n {
-        return "ERROR: start_line " + str(start_line)
-            + " out of range (file has " + str(n) + " lines)";
+        return "ERROR: start_line "
+            + str(start_line)
+            + " out of range (file has "
+            + str(n)
+            + " lines)";
     }
     if end_line < start_line {
-        return "ERROR: end_line " + str(end_line)
-            + " is before start_line " + str(start_line);
+        return "ERROR: end_line "
+            + str(end_line)
+            + " is before start_line "
+            + str(start_line);
     }
     if end_line > n {
-        return "ERROR: end_line " + str(end_line)
-            + " out of range (file has " + str(n) + " lines)";
+        return "ERROR: end_line "
+            + str(end_line)
+            + " out of range (file has "
+            + str(n)
+            + " lines)";
     }
     repl_lines = replacement.split("\n");
     if replacement == "" {
@@ -96,11 +91,7 @@ def replace_lines(source: str, start_line: int, end_line: int, replacement: str)
     return text;
 }
 
-"""Count non-overlapping occurrences of needle in source, using str.count
-semantics: after a match, scanning resumes past its end. An empty needle
-counts as 0 matches.
-"""
-def count_matches(source: str, needle: str) -> int {
+impl count_matches(source: str, needle: str) -> int {
     if len(needle) == 0 {
         return 0;
     }
@@ -113,17 +104,7 @@ def count_matches(source: str, needle: str) -> int {
     return count;
 }
 
-"""Minimal unified diff between old_text and new_text.
-
-Hand-rolled LCS hunks (difflib.unified_diff cannot lower in the native
-codespace, and this module is pinned native). Output follows Python-difflib
-conventions: at-sign hunk headers with ranges, single-line ranges omit the
-length suffix, and 0-length old ranges report the preceding line number.
-Space, minus and plus line prefixes; context unchanged lines around each
-hunk. Identical inputs produce the empty string. Negative context is
-rejected with an ERROR string.
-"""
-def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str {
+impl compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str {
     if context < 0 {
         return "ERROR: context must be >= 0";
     }
@@ -138,7 +119,6 @@ def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str 
     n = len(old_lines);
     m = len(new_lines);
 
-    # LCS table: lcs[i][j] = LCS length of old_lines[i:] vs new_lines[j:].
     lcs: list[list[int]] = [];
     for i in range(n + 1) {
         row: list[int] = [];
@@ -159,7 +139,6 @@ def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str 
         }
     }
 
-    # Flatten into per-line ops: e equal, d delete-from-old, a add-from-new.
     tags: list[str] = [];
     old_idx: list[int] = [];
     new_idx: list[int] = [];
@@ -231,7 +210,6 @@ def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str 
             we = K;
         }
 
-        # Header ranges over the window.
         first_old = -1;
         last_old = -1;
         first_new = -1;
@@ -263,8 +241,11 @@ def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str 
             new_start -= 1;
         }
         out.append(
-            "@@ -" + _fmt_range(old_start, old_len)
-            + " +" + _fmt_range(new_start, new_len) + " @@"
+            "@@ -"
+                + _fmt_range(old_start, old_len)
+                + " +"
+                + _fmt_range(new_start, new_len)
+                + " @@"
         );
         for t in range(ws, we) {
             if tags[t] == "e" {
@@ -284,9 +265,7 @@ def compute_unified_diff(old_text: str, new_text: str, context: int = 3) -> str 
     return "\n".join(out);
 }
 
-"""Format one side of an @@ header following Python-difflib conventions.
-"""
-def _fmt_range(start: int, length: int) -> str {
+impl _fmt_range(start: int, length: int) -> str {
     if length == 1 {
         return str(start);
     }
@@ -296,15 +275,7 @@ def _fmt_range(start: int, length: int) -> str {
     return str(start) + "," + str(length);
 }
 
-"""Detect the dominant indentation unit of source for smart insertions.
-
-Counts indented lines whose leading whitespace starts with a tab vs spaces.
-Tabs win only when strictly more numerous than space-indented lines; ties and
-space majorities prefer a space unit sized by the GCD of observed indent
-widths (typically 4 spaces). No indented lines yields the empty string
-(unknown; callers should fall back to their default).
-"""
-def guess_indentation(source: str) -> str {
+impl guess_indentation(source: str) -> str {
     tab_lines = 0;
     widths = [];
     for line in source.splitlines() {

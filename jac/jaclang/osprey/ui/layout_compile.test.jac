@@ -1,75 +1,29 @@
-"""Behavior tests for constraint compilation (LAYOUT-ENGINE-PLAN §6, M4).
-
-Same-stem test module: ui/layout_compile.jac symbols are ambient.
-Covers: root pinning, grow partition solve, provenance presence,
-topology/scope rejection, UNSAT via conflicting relations, overflow
-warning without frame failure, overlay centering, determinism, and the
-D23 contract (intrinsic drift never turns a frame unsatisfiable).
-"""
-
-import from ..constraints.algebra {
-    StrengthTier,
-}
-import from ..constraints.solver {
-    Solver,
-}
 import from .layout_types {
     Axis,
     AxisSize,
-    LayoutError,
     LayoutRelation,
     LayoutRelationKind,
-    LayoutSeverity,
     LayoutSpec,
-    LayoutState,
-    Size,
-    SizeMode,
-    Viewport,
     add_relation,
     create_layout_state,
-    set_spec,
+    set_spec
 }
-import from .model {
-    Child,
-    Header,
-    MainScreen,
-    Prompt,
-    Status,
-    TranscriptView,
-    UiNode,
-    node_id,
-}
+import from .model { Child, Header, MainScreen, Prompt, Status, TranscriptView }
 
 
-"""Narrow CompileResult.solver for the type checker (fails loudly on
-an unsuccessful compile instead of returning a None solver)."""
-def _solver_of(r: CompileResult) -> Solver {
-    s = r.solver;
-    if s is None {
-        raise ValueError("expected a successful compile with a solver");
-    }
-    return s;
-}
+def _solver_of(r: CompileResult) -> Solver;
 
 
-def _fill() -> AxisSize {
-    return AxisSize(mode=SizeMode.FILL);
-}
+def _fill -> AxisSize;
 
 
-def _fixed(n: float) -> AxisSize {
-    return AxisSize(mode=SizeMode.FIXED, preferred=n);
-}
+def _fixed(n: float) -> AxisSize;
 
 
-def _grow(weight: float) -> AxisSize {
-    return AxisSize(mode=SizeMode.GROW, grow_weight=weight);
-}
+def _grow(weight: float) -> AxisSize;
 
 
-def _intrinsic() -> AxisSize {
-    return AxisSize(mode=SizeMode.INTRINSIC);
-}
+def _intrinsic -> AxisSize;
 
 
 obj _ShellFixture {
@@ -82,38 +36,7 @@ obj _ShellFixture {
 }
 
 
-"""Build the legacy-parity shell: header(1) / transcript(grow) /
-status(1) / prompt(2) under a MainScreen, specs registered in state."""
-def _shell_state(columns: int = 80, rows: int = 24) -> _ShellFixture {
-    screen = MainScreen(key="main");
-    header = Header(key="header");
-    transcript = TranscriptView(key="transcript");
-    status = Status(key="status");
-    prompt = Prompt(key="prompt");
-    screen +>:Child(rank=1024):+> header;
-    screen +>:Child(rank=2048):+> transcript;
-    screen +>:Child(rank=3072):+> status;
-    screen +>:Child(rank=4096):+> prompt;
-
-    state = create_layout_state(columns, rows);
-    set_spec(state, screen, LayoutSpec(width=_fill(), height=_fill()));
-    set_spec(state, header, LayoutSpec(width=_fill(), height=_fixed(1.0)));
-    set_spec(
-        state,
-        transcript,
-        LayoutSpec(width=_fill(), height=_grow(1.0), scroll_vertical=True),
-    );
-    set_spec(state, status, LayoutSpec(width=_fill(), height=_fixed(1.0)));
-    set_spec(state, prompt, LayoutSpec(width=_fill(), height=_fixed(2.0)));
-    return _ShellFixture(
-        state=state,
-        screen=screen,
-        header=header,
-        transcript=transcript,
-        status=status,
-        prompt=prompt,
-    );
-}
+def _shell_state(columns: int = 80, rows: int = 24) -> _ShellFixture;
 
 
 test "root pins to viewport and grow child absorbs the remainder" {
@@ -128,8 +51,7 @@ test "root pins to viewport and grow child absorbs the remainder" {
     edges = r.nodes[node_id(m.transcript)];
     top = snap.values[edges.top.id];
     bottom = snap.values[edges.bottom.id];
-    # 24 viewport rows minus header(1) + status(1) + prompt(2) fixed:
-    # transcript grows into exactly 20 rows starting below the header.
+
     assert top == 1.0;
     assert bottom == 21.0;
     assert bottom - top == 20.0;
@@ -140,7 +62,6 @@ test "root pins to viewport and grow child absorbs the remainder" {
     assert snap.values[root_edges.right.id] == 80.0;
     assert snap.values[root_edges.bottom.id] == 24.0;
 
-    # Cross-axis FILL: transcript spans full width.
     assert snap.values[edges.left.id] == 0.0;
     assert snap.values[edges.right.id] == 80.0;
 }
@@ -204,8 +125,7 @@ test "relation endpoint outside scope is rejected as OUT_OF_SCOPE" {
 
 test "relation owner that is not the direct parent is INVALID_TOPOLOGY" {
     m = _shell_state();
-    # header and prompt share the screen parent; declaring status as the
-    # owning parent violates the direct-parent rule.
+
     rel = LayoutRelation(
         owner_id=node_id(m.status),
         source_id=node_id(m.header),
@@ -224,24 +144,15 @@ test "relation owner that is not the direct parent is INVALID_TOPOLOGY" {
             return;
         }
     }
-    assert False;  # INVALID_TOPOLOGY diagnostic missing
+    assert False;
 }
 
 
 test "conflicting REQUIRED relation makes compilation unsatisfiable" {
     m = _shell_state();
-    # Distinct fixed widths plus a REQUIRED same-width relation is a
-    # direct contradiction.
-    set_spec(
-        m.state,
-        m.header,
-        LayoutSpec(width=_fixed(30.0), height=_fixed(1.0)),
-    );
-    set_spec(
-        m.state,
-        m.status,
-        LayoutSpec(width=_fixed(45.0), height=_fixed(1.0)),
-    );
+
+    set_spec(m.state, m.header, LayoutSpec(width=_fixed(30.0), height=_fixed(1.0)),);
+    set_spec(m.state, m.status, LayoutSpec(width=_fixed(45.0), height=_fixed(1.0)),);
     rel = LayoutRelation(
         owner_id=node_id(m.screen),
         source_id=node_id(m.header),
@@ -256,7 +167,9 @@ test "conflicting REQUIRED relation makes compilation unsatisfiable" {
     r = compile_layout(st, m.screen, Viewport(columns=80, rows=24));
     assert not r.ok;
     unsat = [
-        d for d in r.diagnostics if d.code == LayoutError.UNSATISFIABLE
+        d
+        for d in r.diagnostics
+        if d.code == LayoutError.UNSATISFIABLE
     ];
     assert len(unsat) == 1;
     assert len(unsat[0].provenance) >= 1;
@@ -264,14 +177,16 @@ test "conflicting REQUIRED relation makes compilation unsatisfiable" {
 
 
 test "overflow keeps the frame satisfiable and attaches a WARNING" {
-    m = _shell_state(rows=3);  # 3 rows cannot hold 1+1+2 fixed rows.
+    m = _shell_state(rows=3);
     r = compile_layout(m.state, m.screen, Viewport(columns=80, rows=3));
     overflow = [
-        d for d in r.diagnostics if d.code == LayoutError.OVERFLOW
+        d
+        for d in r.diagnostics
+        if d.code == LayoutError.OVERFLOW
     ];
     assert len(overflow) == 1;
     assert overflow[0].severity == LayoutSeverity.WARNING;
-    assert r.ok;  # Warned clipped frame, not an error (plan §6.2 step 3).
+    assert r.ok;
 }
 
 
@@ -284,20 +199,13 @@ test "intrinsic natural drift never turns the frame unsatisfiable (D23)" {
 
     state = create_layout_state(40, 10);
     set_spec(state, screen, LayoutSpec(width=_fill(), height=_fill()));
-    set_spec(
-        state, text,
-        LayoutSpec(width=_fill(), height=_intrinsic()),
-    );
+    set_spec(state, text, LayoutSpec(width=_fill(), height=_intrinsic()),);
     set_spec(state, filler, LayoutSpec(width=_fill(), height=_grow(1.0)));
 
-    # Natural HEIGHT wildly exceeds the viewport: the WEAK preference
-    # must lose to the REQUIRED chain + grow equality; the frame stays
-    # solvable (hard-claim-only split, decision D23).
     naturals: dict[str, Size] = {};
     naturals[node_id(text)] = Size(width=40, height=500);
     r = compile_layout(
-        state, screen, Viewport(columns=40, rows=10),
-        natural_sizes=naturals,
+        state, screen, Viewport(columns=40, rows=10), natural_sizes=naturals,
     );
     assert r.ok;
     for d in r.diagnostics {
@@ -306,13 +214,9 @@ test "intrinsic natural drift never turns the frame unsatisfiable (D23)" {
     snap = _solver_of(r).snapshot();
     tedges = r.nodes[node_id(text)];
     fedges = r.nodes[node_id(filler)];
-    # Text collapsed to zero rows; filler took the whole column.
-    assert (
-        snap.values[tedges.bottom.id] - snap.values[tedges.top.id]
-    ) < 1e-6;
-    assert (
-        snap.values[fedges.bottom.id] - snap.values[fedges.top.id]
-    ) == 10.0;
+
+    assert (snap.values[tedges.bottom.id] - snap.values[tedges.top.id]) < 1e-6;
+    assert (snap.values[fedges.bottom.id] - snap.values[fedges.top.id]) == 10.0;
 }
 
 
@@ -332,4 +236,64 @@ test "compilation is deterministic across runs" {
     for vid in ka {
         assert abs(sa.values[vid] - sb.values[vid]) < 1e-9;
     }
+}
+
+impl _solver_of(r: CompileResult) -> Solver {
+    s = r.solver;
+    if s is None {
+        raise ValueError("expected a successful compile with a solver");
+    }
+    return s;
+}
+
+
+impl _fill -> AxisSize {
+    return AxisSize(mode=SizeMode.FILL);
+}
+
+
+impl _fixed(n: float) -> AxisSize {
+    return AxisSize(mode=SizeMode.FIXED, preferred=n);
+}
+
+
+impl _grow(weight: float) -> AxisSize {
+    return AxisSize(mode=SizeMode.GROW, grow_weight=weight);
+}
+
+
+impl _intrinsic -> AxisSize {
+    return AxisSize(mode=SizeMode.INTRINSIC);
+}
+
+
+impl _shell_state(columns: int = 80, rows: int = 24) -> _ShellFixture {
+    screen = MainScreen(key="main");
+    header = Header(key="header");
+    transcript = TranscriptView(key="transcript");
+    status = Status(key="status");
+    prompt = Prompt(key="prompt");
+    screen +>:Child(rank=1024):+> header;
+    screen +>:Child(rank=2048):+> transcript;
+    screen +>:Child(rank=3072):+> status;
+    screen +>:Child(rank=4096):+> prompt;
+
+    state = create_layout_state(columns, rows);
+    set_spec(state, screen, LayoutSpec(width=_fill(), height=_fill()));
+    set_spec(state, header, LayoutSpec(width=_fill(), height=_fixed(1.0)));
+    set_spec(
+        state,
+        transcript,
+        LayoutSpec(width=_fill(), height=_grow(1.0), scroll_vertical=True),
+    );
+    set_spec(state, status, LayoutSpec(width=_fill(), height=_fixed(1.0)));
+    set_spec(state, prompt, LayoutSpec(width=_fill(), height=_fixed(2.0)));
+    return _ShellFixture(
+        state=state,
+        screen=screen,
+        header=header,
+        transcript=transcript,
+        status=status,
+        prompt=prompt,
+    );
 }

@@ -1,10 +1,3 @@
-"""Gate 5 acceptance helpers for the external ProgressBar package.
-
-Companion scope provides ProgressBar APIs. Avoid importing other ui modules
-so jac test does not pull the entire transitive suite.
-"""
-
-
 test "render_progress clamps and fills width" {
     assert render_progress(0.0, 10) == "[--------]";
     assert render_progress(1.0, 10) == "[########]";

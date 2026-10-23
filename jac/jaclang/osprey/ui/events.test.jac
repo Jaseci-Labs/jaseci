@@ -1,12 +1,4 @@
-"""Behavior tests for semantic event dispatch, bubbling, and effects."""
-
-import from .model {
-    MainScreen,
-    Overlay,
-    UiContainer,
-    UiRegion,
-    node_id,
-}
+import from .model { MainScreen, UiRegion }
 
 import from .runtime {
     append_child_session,
@@ -20,31 +12,16 @@ import from .runtime {
 node EchoRegion(UiRegion) {
     has seen: list[str] = [];
 
-    can on_insert with InsertText entry {
-        self.seen.append("insert:" + visitor.text);
-        visitor.handled = True;
-    }
-
-    can on_submit with Submit entry {
-        self.seen.append("submit");
-        visitor.effects.append(SendPrompt(text="x"));
-        visitor.default_prevented = True;
-        visitor.handled = True;
-    }
-
-    can on_stop with Cancel entry {
-        self.seen.append("cancel");
-        visitor.propagation_stopped = True;
-    }
+    can on_insert with InsertText entry;
+    can on_submit with Submit entry;
+    can on_stop with Cancel entry;
 }
 
 
 node BubbleParent(UiContainer) {
     has arrivals: int = 0;
 
-    can on_insert with InsertText entry {
-        self.arrivals += 1;
-    }
+    can on_insert with InsertText entry;
 }
 
 
@@ -157,7 +134,7 @@ test "target resolution prefers modal overlay then focus then screen" {
     set_focus(session, focused);
     assert resolve_input_target(session) is focused;
 
-    screen +>: Layer(z_index=10, modal=True) :+> overlay;
+    screen +>:Layer(z_index=10, modal=True):+> overlay;
     assert topmost_modal_overlay(session) is overlay;
     assert resolve_input_target(session) is overlay;
 
@@ -178,7 +155,7 @@ test "explicit target bypasses modal and focus chain" {
     append_child_session(session, screen, bound);
     append_child_session(session, screen, overlay);
     set_current_screen(session, screen);
-    screen +>: Layer(z_index=1, modal=True) :+> overlay;
+    screen +>:Layer(z_index=1, modal=True):+> overlay;
 
     change = TranscriptChanged(revision=7);
     dispatch_event(session, change, bound);
@@ -298,11 +275,7 @@ test "containment path runs target to screen inclusive" {
     set_current_screen(session, screen);
 
     ids = trace_event_path(session, leaf);
-    assert ids == [
-        node_id(leaf),
-        node_id(mid),
-        node_id(screen),
-    ];
+    assert ids == [node_id(leaf), node_id(mid), node_id(screen), ];
 }
 
 
@@ -317,13 +290,11 @@ test "handled default_prevented and propagation_stopped are independent flags" {
     append_child_session(session, screen, region);
     set_current_screen(session, screen);
 
-    # Cancel sets propagation_stopped only (EchoRegion.on_stop).
     cancel = dispatch_event(session, Cancel(), region);
     assert cancel.propagation_stopped;
     assert not cancel.handled;
     assert not cancel.default_prevented;
 
-    # Submit sets handled + default_prevented, not propagation_stopped.
     submit = dispatch_event(session, Submit(), region);
     assert submit.handled;
     assert submit.default_prevented;
@@ -339,10 +310,32 @@ test "Resize walker carries terminal dimensions" {
     screen = MainScreen(key="main");
     append_child_session(session, ui_root, screen);
     set_current_screen(session, screen);
-    # OSPUI.md: walker Resize(UiEvent) { has width: int; has height: int; }
+
     event = Resize(width=120, height=40);
     dispatch_event(session, event, screen);
     assert event.width == 120;
     assert event.height == 40;
     assert not event.handled;
+}
+
+impl EchoRegion.on_insert with InsertText entry {
+    self.seen.append("insert:" + visitor.text);
+    visitor.handled = True;
+}
+
+impl EchoRegion.on_submit with Submit entry {
+    self.seen.append("submit");
+    visitor.effects.append(SendPrompt(text="x"));
+    visitor.default_prevented = True;
+    visitor.handled = True;
+}
+
+impl EchoRegion.on_stop with Cancel entry {
+    self.seen.append("cancel");
+    visitor.propagation_stopped = True;
+}
+
+
+impl BubbleParent.on_insert with InsertText entry {
+    self.arrivals += 1;
 }
