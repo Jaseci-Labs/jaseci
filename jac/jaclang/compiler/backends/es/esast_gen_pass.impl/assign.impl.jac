@@ -375,6 +375,7 @@ impl EsastGenPass._convert_assignment_target(
                 es.MemberExpression(object=_obj, property=_idx, computed=True),
                 jac_node=target
             );
+            self._strip_optional_chain(_member);
             return (_member, _member, None);
         }
     }
@@ -382,6 +383,7 @@ impl EsastGenPass._convert_assignment_target(
         (es.Pattern | es.Expression),
         target.gen.es_ast or self.sync_loc(es.Identifier(name='temp'), jac_node=target)
     );
+    self._strip_optional_chain(left);
     return (left, cast(es.Expression, left), None);
 }
 
