@@ -1734,23 +1734,45 @@ impl TypeCheckPass.exit_in_for_stmt with InForStmt exit {
 impl TypeCheckPass.exit_raise_stmt with RaiseStmt exit {
     if here.cause {
         cause_type = self.evaluator.get_type_of_expression(here.cause);
-        if isinstance(cause_type, ClassType)
-            and not isinstance(cause_type, UnknownType) {
-            is_exception = False;
-            for cls in cause_type.shared.mro {
-                if isinstance(cls, ClassType)
-                    and (
-                        cls.is_builtin("BaseException") or cls.is_builtin("Exception")
-                    ) {
-                    is_exception = True;
-                    break;
-                }
-            }
-            if not is_exception {
-                self.ctx.emit(E1090, node_override=here, type=str(cause_type));
-            }
+        if not self._is_exception_operand(cause_type, allow_none=False) {
+            self.ctx.emit(E1090, node_override=here, type=str(cause_type));
         }
     }
+    if here.from_target {
+        from_type = self.evaluator.get_type_of_expression(here.from_target);
+        if not self._is_exception_operand(from_type, allow_none=True) {
+            self.ctx.emit(E1161, node_override=here.from_target, type=str(from_type));
+        }
+    }
+}
+
+impl TypeCheckPass._is_exception_operand(ty: TypeBase, allow_none: bool) -> bool {
+    if isinstance(ty, UnionType) {
+        return all(self._is_exception_operand(m, allow_none) for m in ty.types);
+    }
+    if isinstance(ty, TypeVarType) {
+        if ty.bound is not None {
+            return self._is_exception_operand(ty.bound, allow_none);
+        }
+        return all(self._is_exception_operand(c, allow_none) for c in ty.constraints);
+    }
+    if isinstance(ty, (UnknownType, NeverType)) or self.evaluator.is_any_type(ty) {
+        return True;
+    }
+    if isinstance(ty, ClassType) and ty.is_builtin("type") and ty.is_class_instance() {
+        return not ty.private.type_args
+            or self._is_exception_operand(ty.private.type_args[0], allow_none=False);
+    }
+    if self.evaluator.is_none_type(ty) {
+        return allow_none and ty.is_class_instance();
+    }
+    ty = self.evaluator._convert_to_instance(ty);
+    base_exception = self.evaluator.prefetch.base_exception_class;
+    if base_exception is None {
+        return True;
+    }
+    return isinstance(ty, ClassType)
+        and self.evaluator.is_sub_class(base_exception, ty, ignore_unknown=True);
 }
 
 impl TypeCheckPass.enter_with_stmt with WithStmt entry {
