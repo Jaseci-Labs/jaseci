@@ -4,6 +4,8 @@ import time;
 import threading;
 import logging;
 import warnings;
+import queue;
+
 import from jaclang.osprey.ui.model { UiRegion, UiContainer, MainScreen, Overlay }
 import from jaclang.osprey.ui.runtime_core {
     UiSession,
@@ -156,7 +158,22 @@ obj Studio {
         spin: int = 0,
         log_path: str = "",
         verbs: dict[str, str] = {},
-        config: dict[str, any] = {};
+        config: dict[str, any] = {},
+        registry: any = None,
+        rec: any = None,
+        tool_index: dict[str, int] = {},
+        term_index: dict[str, int] = {},
+        plan_idx: int = -1,
+        msg_open: str = "",
+        queued: list[dict[str, any]] = [],
+        pending: list[dict[str, any]] = [],
+        tickets: dict[int, str] = {},
+        hover_due: float = 0.0,
+        agent_title: str = "",
+        agent_commands: list[str] = [],
+        loc_items: list[PickItem] = [],
+        agent_items: list[PickItem] = [],
+        turn_started: float = 0.0;
 
     def postinit;
     def install_layout;
@@ -487,6 +504,16 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
         app.term.enable_mouse();
         sys.stderr = log_file;
         start_indexing(app);
+        try {
+            app.intel = CodeIntel();
+            app.intel.start(root_dir);
+        } except Exception as e {
+            app.intel = None;
+            app.say(f"code intelligence is off: {e}", "warn", 6.0);
+        }
+        if session_id {
+            restore_session(app, session_id);
+        }
         app.say(
             "Welcome to jac studio. Tab moves focus, Ctrl+P finds anything, F1 shows keys.",
             "info",
@@ -500,10 +527,12 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
         try {
             app.term.stop();
         } except Exception {}
-        sys.stderr = saved_err;
-        sys.stdout = saved_out;
-        logging.getLogger().handlers = saved_handlers;
-        logging.getLogger().setLevel(saved_level);
+        try {
+            if app.rec is not None {
+                app.rec.tray = list(app.tray);
+                app.rec.save();
+            }
+        } except Exception {}
         try {
             if app.agent is not None {
                 app.agent.stop();
@@ -514,7 +543,16 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
                 app.intel.stop();
             }
         } except Exception {}
+        sys.stderr = saved_err;
+        sys.stdout = saved_out;
+        logging.getLogger().handlers = saved_handlers;
+        logging.getLogger().setLevel(saved_level);
         log_file.close();
+        if app.rec is not None {
+            saved_err.write(
+                f"jac studio: session {app.rec.id[:8]} saved; resume with `jac studio -s {app.rec.id[:8]}`\n"
+            );
+        }
     }
     return rc;
 }
@@ -550,11 +588,14 @@ impl start_indexing(app: Studio) {
 
 impl main_loop(app: Studio) {
     frame_t = 0.0;
+    trace = os.environ.get("JAC_STUDIO_TRACE", "") == "1";
     while app.running {
+        t0 = time.time();
         raw = app.term.poll_input(0.03);
         if getattr(app.term, "eof", False) {
             break;
         }
+        t1 = time.time();
         events: list[any] = [];
         if raw {
             events = app.norm.feed(raw);
@@ -564,13 +605,15 @@ impl main_loop(app: Studio) {
         for ev in coalesce_events(events) {
             handle_event(app, ev);
         }
+        t2 = time.time();
         pump_background(app);
+        t3 = time.time();
         now = time.time();
         if app.flash and now > app.flash_until {
             app.flash = "";
             app.dirty = True;
         }
-        if app.indexing or (app.agent_state == "busy") {
+        if app.indexing or app.agent_state in ["busy", "starting"] {
             if now - frame_t > 0.12 {
                 app.spin += 1;
                 app.dirty = True;
@@ -581,11 +624,27 @@ impl main_loop(app: Studio) {
             app.dirty = False;
             frame_t = now;
         }
+        t4 = time.time();
+        if trace and t4 - t0 > 0.25 {
+            sys.stderr.write(
+                f"slow frame {t4 - t0:.2f}s: poll {t1 - t0:.2f} input {t2
+                    - t1:.2f} pump {t3 - t2:.2f} paint {t4 - t3:.2f} events {len(
+                    events
+                )}\n"
+            );
+        }
     }
 }
 
 impl pump_background(app: Studio) {
     now = time.time();
+    pump_agent(app);
+    ta = time.time();
+    pump_intel(app, now);
+    tb = time.time();
+    if os.environ.get("JAC_STUDIO_TRACE", "") == "1" and tb - now > 0.2 {
+        sys.stderr.write(f"  pump: agent {ta - now:.2f} intel {tb - ta:.2f}\n");
+    }
     if not app.indexing and now - app.last_stale_check > 1.5 {
         app.last_stale_check = now;
         try {
@@ -1063,7 +1122,7 @@ impl load_code(app: Studio, path: str, keep_pos: bool = False) -> None {
         keep_pos = False;
     }
     app.code_path = path;
-    app.code_lines = text.replace("\t", "    ").split("\n");
+    app.code_lines = text.split("\n");
     if not keep_pos {
         app.cur_line = 0;
         app.cur_col = 0;
@@ -1240,9 +1299,9 @@ impl goto_definition(app: Studio) -> None {
     if app.intel is not None {
         try {
             t = app.intel.request_definition(
-                app.code_path, app.cur_line + 1, app.cur_col + 1
+                app.code_path, app.cur_line + 1, app.cur_col
             );
-            app.approval["def_ticket"] = t;
+            app.tickets[t] = "definition";
             app.say("finding definition…");
             return;
         } except Exception {}
@@ -1271,9 +1330,9 @@ impl find_references(app: Studio) -> None {
     if app.intel is not None {
         try {
             t = app.intel.request_references(
-                app.code_path, app.cur_line + 1, app.cur_col + 1
+                app.code_path, app.cur_line + 1, app.cur_col
             );
-            app.approval["refs_ticket"] = t;
+            app.tickets[t] = "references";
             app.say("finding references…");
             return;
         } except Exception {}
@@ -1318,7 +1377,7 @@ impl show_locations(app: Studio, title: str, items: list[PickItem]) -> None {
     open_picker(app, "locations", title, "");
     app.picker_items = items;
     app.picker_sel = 0;
-    app.approval["loc_items"] = items;
+    app.loc_items = items;
 }
 
 impl jump_diagnostic(app: Studio) -> None {
@@ -1327,20 +1386,25 @@ impl jump_diagnostic(app: Studio) -> None {
         return;
     }
     diags = sorted(
-        app.intel.diagnostics(app.code_path), key=lambda (d: any) -> int { d.line }
+        app.intel.diagnostics(app.code_path),
+        key=lambda (d: any) -> tuple[int, int] { (d.line, d.col) }
     );
     for d in diags {
         if d.line - 1 > app.cur_line {
             goto_line(app, d.line - 1);
-            app.cur_col = max(d.col - 1, 0);
+            app.cur_col = max(d.col, 0);
             return;
         }
     }
     if diags {
         goto_line(app, diags[0].line - 1);
-        app.cur_col = max(diags[0].col - 1, 0);
+        app.cur_col = max(diags[0].col, 0);
     } else {
-        app.say("no diagnostics in this file", "ok");
+        st = app.intel.status(app.code_path);
+        app.say(
+            "no diagnostics in this file" if st == "ready" else f"checking… ({st})",
+            "ok"
+        );
     }
 }
 
@@ -1348,17 +1412,12 @@ impl update_hover(app: Studio) -> None {
     sym = symbol_at_cursor(app);
     if sym is None {
         app.hover = "";
-        return;
+    } else {
+        sig = getattr(sym, "signature", "") or getattr(sym, "type_str", "");
+        app.hover = f"{sym.kind} {sym.key}  {sig}".strip();
     }
-    sig = getattr(sym, "signature", "") or getattr(sym, "type_str", "");
-    app.hover = f"{sym.kind} {sym.key}  {sig}".strip();
     if app.intel is not None {
-        try {
-            t = app.intel.request_hover(
-                app.code_path, app.cur_line + 1, app.cur_col + 1
-            );
-            app.approval["hover_ticket"] = t;
-        } except Exception {}
+        app.hover_due = time.time() + 0.35;
     }
 }
 
@@ -1664,13 +1723,44 @@ impl send_to_agent(app: Studio, text: str) {
         ChatEntry(role="user", text=text, detail=", ".join(app.tray), time=time.time())
     );
     app.chat_follow = True;
-    app.chat.append(
-        ChatEntry(
-            role="system",
-            text="No agent is connected yet. Agents arrive in the next step of the build.",
-            time=time.time()
-        )
-    );
+    app.msg_open = "";
+    if app.rec is None {
+        app.rec = new_session(app.root_dir, agent=app.agent_name, title=text[:60]);
+        app.session_id = app.rec.id;
+    }
+    app.rec.add("user", text);
+    app.rec.tray = list(app.tray);
+    blocks: list[dict[str, any]] = [];
+    if app.tray {
+        try {
+            blocks = context_blocks(app.model, app.tray);
+        } except Exception as e {
+            app.chat.append(
+                ChatEntry(role="error", text=f"could not build the context: {e}")
+            );
+        }
+        blocks.insert(
+            0,
+            {
+                "type": "text",
+                "text": "I selected these items in jac studio (a compiler-backed view of this Jac project); my request follows them."
+            }
+        );
+    }
+    blocks.append({"type": "text", "text": text});
+    if app.agent is not None and app.agent_state == "ready" {
+        app.agent.prompt(blocks);
+        app.agent_state = "busy";
+        app.turn_started = time.time();
+        return;
+    }
+    if app.agent_state == "busy" {
+        app.say(
+            "the agent is still working; your message will follow its turn", "warn"
+        );
+    }
+    app.queued.append({"blocks": blocks});
+    start_agent(app);
 }
 
 impl cancel_turn(app: Studio) {
@@ -1679,11 +1769,32 @@ impl cancel_turn(app: Studio) {
             app.agent.cancel();
         } except Exception {}
     }
+    app.queued = [];
     app.say("cancelling the agent's turn…", "warn");
 }
 
 impl open_agent_picker(app: Studio) {
-    app.say("agent selection arrives with the agents step", "warn");
+    reg = ensure_registry(app);
+    items: list[PickItem] = [];
+    for name in reg.names() {
+        spec = reg.get(name);
+        if spec is None {
+            continue;
+        }
+        ok = spec.runnable();
+        detail = ("ready" if ok else spec.reason())
+            + ("  (current)" if name == app.agent_name else "");
+        items.append(
+            PickItem(
+                key=name,
+                label=f"{name}  {spec.title}",
+                detail=detail,
+                kind="walker" if ok else "external"
+            )
+        );
+    }
+    app.agent_items = items;
+    open_picker(app, "agents", "Choose the agent", "");
 }
 
 impl open_sheet(
@@ -1740,7 +1851,7 @@ impl open_picker(app: Studio, purpose: str, title: str, query: str) {
 
 impl refresh_picker(app: Studio) {
     if app.picker_purpose == "locations" {
-        base = app.approval.get("loc_items", []);
+        base = app.loc_items;
         q = app.picker_query.lower();
         app.picker_items = [
             i
@@ -1755,7 +1866,7 @@ impl refresh_picker(app: Studio) {
             if q in i.label.lower()
         ];
     } elif app.picker_purpose == "agents" {
-        app.picker_items = app.approval.get("agent_items", []);
+        app.picker_items = app.agent_items;
     } else {
         hits = app.model.search(app.picker_query, limit=200);
         app.picker_items = [
@@ -1909,8 +2020,21 @@ impl pick(app: Studio, item: PickItem, alt: bool) {
 }
 
 impl choose_agent(app: Studio, name: str) {
+    reg = ensure_registry(app);
+    spec = reg.get(name);
+    if spec is None {
+        return;
+    }
+    if not spec.runnable() {
+        app.say(f"{name} is not available: {spec.reason()}", "error", 6.0);
+        return;
+    }
+    if name == app.agent_name and app.agent is not None {
+        return;
+    }
+    stop_agent(app);
     app.agent_name = name;
-    app.say(f"agent set to {name}");
+    app.say(f"agent set to {name}; it starts with your next message", "ok");
 }
 
 impl open_help(app: Studio) {
@@ -1925,7 +2049,58 @@ impl open_help(app: Studio) {
 }
 
 impl approval_key(app: Studio, key: str) {
-    close_sheet(app);
+    if not app.pending {
+        close_sheet(app);
+        return;
+    }
+    req = app.pending[0];
+    if key in ["down", "j"] {
+        app.sheet_scroll += 1;
+        return;
+    }
+    if key in ["up", "k"] {
+        app.sheet_scroll = max(0, app.sheet_scroll - 1);
+        return;
+    }
+    if key == "page_down" {
+        app.sheet_scroll += 15;
+        return;
+    }
+    if key == "page_up" {
+        app.sheet_scroll = max(0, app.sheet_scroll - 15);
+        return;
+    }
+    if req["type"] == "permission" {
+        options = req["data"].get("options") or [];
+        chosen: (str | None) = None;
+        decided = False;
+        if key.isdigit() and 1 <= int(key) <= len(options) {
+            chosen = options[int(key) - 1].get("optionId");
+            decided = True;
+        } elif key in ["a", "y", "enter"] {
+            chosen = first_option(options, ["allow_once", "allow_always"]);
+            decided = True;
+        } elif key in ["r", "n"] {
+            chosen = first_option(options, ["reject_once", "reject_always"]);
+            decided = True;
+        } elif key == "escape" {
+            chosen = None;
+            decided = True;
+        }
+        if decided {
+            finish_permission(app, req, chosen);
+        }
+        return;
+    }
+    if req["type"] == "write" {
+        if key in ["a", "y", "enter"] {
+            finish_write(app, req, True, "");
+        } elif key in ["r", "n", "escape"] {
+            finish_write(app, req, False, "The user rejected this edit in jac studio.");
+        } elif key == "f" {
+            finish_write(app, req, False, write_feedback(req));
+        }
+    }
 }
 
 impl paint(app: Studio) {
@@ -2066,7 +2241,7 @@ impl code_line_spans(
             spans.append(sp(text[pos:a], THEME.text));
         }
         if b > a {
-            spans.append(sp(text[a:b], CODE_STYLES.get(s.style, THEME.text)));
+            spans.append(sp(text[a:b], style_for(s.style)));
             pos = b;
         }
     }
@@ -2154,7 +2329,12 @@ impl paint_code(app: Studio) -> None {
     out = [title_row(app, title, focused, w, right)];
     gw = gutter_width(app);
     diag_lines: dict[int, str] = {};
+    diag_text: dict[int, str] = {};
     for d in diags {
+        if d.line not in diag_text or d.severity == "error" {
+            diag_text[d.line] = (d.code + " " if d.code else "")
+                + d.message.split("\n")[0];
+        }
         sev = diag_lines.get(d.line, "");
         if sev != "error" {
             diag_lines[d.line] = d.severity;
@@ -2188,6 +2368,11 @@ impl paint_code(app: Studio) -> None {
             sp(" " + mark + " ", mark_a)
         ];
         body = slice_spans(code_line_spans(app, i, text, styles), app.code_left);
+        dmsg = diag_text.get(i + 1, "");
+        if dmsg {
+            sev_a = THEME.err if diag_lines.get(i + 1, "") == "error" else THEME.warn;
+            body = body + [sp("   ● " + dmsg, StyleAttrs(fg=sev_a.fg, italic=True))];
+        }
         line = fit(gutter + body, w, None);
         if cur and focused {
             line = restyle(line, 236);
@@ -2491,6 +2676,8 @@ impl paint_status(app: Studio) -> None {
             app.flash_kind, THEME.status
         );
         spans = [sp(" " + app.flash, with_bg(a, 236))];
+    } elif app.focus == "code" and cursor_diag(app) {
+        spans = [sp(" " + cursor_diag(app), with_bg(THEME.err, 236))];
     } elif app.hover and app.focus == "code" {
         spans = [sp(" " + app.hover.split("\n")[0], THEME.status)];
     } else {
@@ -2585,6 +2772,8 @@ impl paint_sheet(app: Studio) -> None {
             if app.picker_purpose == "goto"
             else " ↑↓ select · Enter choose · Esc close";
         out.append(fit([sp(foot, StyleAttrs(fg=244, bg=237))], w, THEME.overlay));
+    } elif app.sheet_kind == "approval" {
+        out = approval_view(app, w, h);
     } elif app.sheet_kind == "help" {
         out.append(fit([sp(" Keys", THEME.overlay_title)], w, THEME.overlay_title));
         rows = HELP_TEXT[app.sheet_scroll:];
@@ -2656,4 +2845,764 @@ impl ensure_indexed(app: Studio, key: str) -> None {
     }
     app.model.index_module(mk);
     app.file_syms = {};
+}
+
+def style_for(style: str) -> StyleAttrs;
+
+def cursor_diag(app: Studio) -> str;
+
+def pump_intel(app: Studio, now: float) -> None;
+
+def ensure_registry(app: Studio) -> any;
+
+def mcp_servers(app: Studio) -> list[dict[str, any]];
+
+def start_agent(app: Studio) -> None;
+
+def stop_agent(app: Studio);
+
+def pump_agent(app: Studio) -> None;
+
+def close_message(app: Studio);
+
+def append_stream(app: Studio, role: str, text: str) -> None;
+
+def summarize_tool(d: dict[str, any]) -> str;
+
+def handle_agent_event(app: Studio, ev: any) -> None;
+
+def first_option(options: list[dict[str, any]], kinds: list[str]) -> (str | None);
+
+def diff_spans(text: str, width: int) -> list[list[TextSpan]];
+
+def open_approval(app: Studio) -> None;
+
+def review_lines(review: any, w: int) -> list[list[TextSpan]];
+
+def approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]];
+
+def next_approval(app: Studio);
+
+def finish_permission(app: Studio, req: dict[str, any], option_id: (str | None));
+
+def finish_write(app: Studio, req: dict[str, any], accept: bool, message: str);
+
+def write_feedback(req: dict[str, any]) -> str;
+
+def restore_session(app: Studio, session_id: str) -> None;
+
+impl style_for(style: str) -> StyleAttrs {
+    if style in CODE_STYLES {
+        return CODE_STYLES[style];
+    }
+    parts = style.split(".");
+    base = CODE_STYLES.get(parts[0], THEME.text);
+    if "declaration" in parts or "definition" in parts {
+        return StyleAttrs(fg=base.fg, bold=True, italic=base.italic);
+    }
+    return base;
+}
+
+impl cursor_diag(app: Studio) -> str {
+    if app.intel is None or not app.code_path {
+        return "";
+    }
+    try {
+        for d in app.intel.diagnostics(app.code_path) {
+            if d.line == app.cur_line + 1 {
+                text = (d.code + " " if d.code else "") + d.message.split("\n")[0];
+                if d.help {
+                    text += "  — " + d.help.split("\n")[0];
+                }
+                return text;
+            }
+        }
+    } except Exception {}
+    return "";
+}
+
+impl pump_intel(app: Studio, now: float) -> None {
+    if app.intel is None {
+        return;
+    }
+    if app.hover_due and now >= app.hover_due and app.code_path {
+        app.hover_due = 0.0;
+        try {
+            t = app.intel.request_hover(app.code_path, app.cur_line + 1, app.cur_col);
+            app.tickets[t] = "hover";
+        } except Exception {}
+    }
+    try {
+        done = app.intel.poll();
+    } except Exception {
+        done = [];
+    }
+    for (t, res) in done {
+        kind = app.tickets.pop(t, "");
+        if kind == "hover" {
+            if res {
+                lines = [
+                    l.strip()
+                    for l in str(res).replace("```jac", "").replace("```", "").split(
+                        "\n"
+                    )
+                    if l.strip()
+                ];
+                if lines {
+                    app.hover = "  ".join(lines[:2]);
+                }
+            }
+        } elif kind == "definition" {
+            if res and res.get("path") {
+                load_code(app, str(res["path"]));
+                goto_line(app, int(res.get("line", 1)) - 1);
+                app.cur_col = int(res.get("col", 0));
+                clamp_cursor(app);
+                app.center_mode = "code";
+                app.say(
+                    f"definition: {os.path.relpath(str(res['path']), app.root_dir)}:{res.get(
+                        'line', 1
+                    )}"
+                );
+            } else {
+                app.say("no definition found here", "warn");
+            }
+        } elif kind == "references" {
+            items: list[PickItem] = [];
+            for r in (res or []) {
+                path = str(r.get("path", ""));
+                line = int(r.get("line", 1));
+                items.append(
+                    PickItem(
+                        key=f"{path}:{line}",
+                        label=f"{os.path.relpath(path, app.root_dir)}:{line}",
+                        detail=str(r.get("text", "")).strip()[:90],
+                        kind="ref",
+                        data=(path, line - 1)
+                    )
+                );
+            }
+            show_locations(app, f"References ({len(items)})", items);
+        }
+        app.dirty = True;
+    }
+    if app.code_path {
+        st = app.intel.status(app.code_path);
+        if st in ["queued", "checking"] {
+            app.dirty = True;
+        }
+    }
+}
+
+impl ensure_registry(app: Studio) -> any {
+    if app.registry is None {
+        app.registry = AgentRegistry(root_dir=app.root_dir);
+    }
+    return app.registry;
+}
+
+impl mcp_servers(app: Studio) -> list[dict[str, any]] {
+    return [jac_mcp_server()];
+}
+
+impl start_agent(app: Studio) -> None {
+    if app.agent is not None and app.agent_state in ["starting", "ready", "busy"] {
+        return;
+    }
+    reg = ensure_registry(app);
+    name = app.agent_name or reg.default_name();
+    if not name {
+        app.chat.append(
+            ChatEntry(
+                role="error",
+                text="No agent can run here. `jac studio agents` lists what is missing."
+            )
+        );
+        app.queued = [];
+        return;
+    }
+    spec = reg.get(name);
+    if spec is not None and not spec.runnable() {
+        app.chat.append(
+            ChatEntry(role="error", text=f"{name} cannot start: {spec.reason()}")
+        );
+        app.queued = [];
+        return;
+    }
+    app.agent_name = name;
+    load_id = "";
+    if app.rec is not None and app.rec.agent == name and app.rec.agent_session_id {
+        load_id = app.rec.agent_session_id;
+    }
+    if app.rec is not None {
+        app.rec.agent = name;
+    }
+    try {
+        sess = reg.create_session(
+            name=name, project_model=app.model, load_session_id=load_id
+        );
+    } except Exception as e {
+        app.chat.append(
+            ChatEntry(role="error", text=f"could not create the {name} session: {e}")
+        );
+        app.queued = [];
+        return;
+    }
+    app.agent = sess;
+    app.agent_state = "starting";
+    app.chat.append(ChatEntry(role="system", text=f"starting {name}…"));
+    servers = mcp_servers(app);
+    root_dir = app.root_dir;
+    def boot {
+        try {
+            sess.start(root_dir, servers);
+        } except Exception as e {
+            sess.events.put(
+                AgentEvent(
+                    kind="error", data={"message": f"{name} could not start: {e}"}
+                )
+            );
+            sess.events.put(AgentEvent(kind="__start_failed", data={}));
+        }
+    }
+    threading.Thread(target=boot, daemon=True).start();
+}
+
+impl stop_agent(app: Studio) {
+    if app.agent is not None {
+        try {
+            app.agent.stop();
+        } except Exception {}
+    }
+    app.agent = None;
+    app.agent_state = "none";
+    app.agent_title = "";
+}
+
+impl pump_agent(app: Studio) -> None {
+    ag = app.agent;
+    if ag is None {
+        return;
+    }
+    for _ in range(300) {
+        try {
+            ev = ag.events.get_nowait();
+        } except queue.Empty {
+            break;
+        }
+        handle_agent_event(app, ev);
+        app.dirty = True;
+    }
+}
+
+impl close_message(app: Studio) {
+    app.msg_open = "";
+}
+
+impl append_stream(app: Studio, role: str, text: str) -> None {
+    if not text {
+        return;
+    }
+    if app.msg_open == role and app.chat and app.chat[-1].role == role {
+        app.chat[-1].text += text;
+    } else {
+        app.chat.append(ChatEntry(role=role, text=text, time=time.time()));
+        app.msg_open = role;
+    }
+}
+
+impl summarize_tool(d: dict[str, any]) -> str {
+    out: list[str] = [];
+    for c in (d.get("content") or []) {
+        if not isinstance(c, dict) {
+            continue;
+        }
+        if c.get("type") == "diff" {
+            old = str(c.get("oldText") or "");
+            new = str(c.get("newText") or "");
+            added = len(
+                [
+                    l
+                    for l in new.split("\n")
+                    if l not in old.split("\n")
+                ]
+            );
+            removed = len(
+                [
+                    l
+                    for l in old.split("\n")
+                    if l not in new.split("\n")
+                ]
+            );
+            out.append(f"edit {c.get('path', '')}  +{added} -{removed}");
+        } elif c.get("type") == "content" {
+            inner = c.get("content") or {};
+            if isinstance(inner, dict) and inner.get("type") == "text" {
+                text = str(inner.get("text", "")).strip();
+                if text {
+                    out.append(text);
+                }
+            }
+        } elif c.get("type") == "terminal" {
+            out.append(f"terminal {c.get('terminalId', '')}");
+        }
+    }
+    for loc in (d.get("locations") or [])[:3] {
+        if isinstance(loc, dict) and loc.get("path") {
+            out.append(
+                f"{loc['path']}" + (f":{loc['line']}" if loc.get("line") else "")
+            );
+        }
+    }
+    return "\n".join(out)[:600];
+}
+
+impl handle_agent_event(app: Studio, ev: any) -> None {
+    kind = ev.kind;
+    d = ev.data or {};
+    if d.get("replay") {
+        return;
+    }
+    if app.rec is not None
+        and kind not in ["ready", "log", "__start_failed", "commands"] {
+        try {
+            app.rec.record(ev);
+        } except Exception {}
+    }
+    if kind == "ready" {
+        app.agent_title = str(d.get("title") or d.get("agent") or app.agent_name);
+        if app.rec is not None and d.get("session_id") {
+            app.rec.agent_session_id = str(d.get("session_id"));
+        }
+        if app.chat
+            and app.chat[-1].role == "system"
+            and app.chat[-1].text.startswith("starting ") {
+            app.chat[-1].text = f"{app.agent_title} is ready.";
+        }
+        app.agent_state = "ready";
+        if app.queued {
+            item = app.queued.pop(0);
+            app.agent.prompt(item["blocks"]);
+            app.agent_state = "busy";
+            app.turn_started = time.time();
+        }
+    } elif kind == "__start_failed" {
+        app.agent = None;
+        app.agent_state = "error";
+        app.queued = [];
+    } elif kind == "message_chunk" {
+        append_stream(app, "agent", str(d.get("text", "")));
+    } elif kind == "thought_chunk" {
+        append_stream(app, "thought", str(d.get("text", "")));
+    } elif kind in ["tool_call", "tool_call_update"] {
+        close_message(app);
+        tid = str(d.get("id", ""));
+        idx = app.tool_index.get(tid, -1);
+        if idx < 0 or idx >= len(app.chat) {
+            app.chat.append(ChatEntry(role="tool", ident=tid, time=time.time()));
+            idx = len(app.chat) - 1;
+            app.tool_index[tid] = idx;
+        }
+        e = app.chat[idx];
+        if d.get("title") {
+            e.title = str(d["title"]);
+        }
+        if d.get("kind") {
+            e.kind = str(d["kind"]);
+        }
+        if d.get("status") {
+            e.status = str(d["status"]);
+        }
+        detail = summarize_tool(d);
+        if detail {
+            e.detail = detail;
+        }
+    } elif kind == "plan" {
+        close_message(app);
+        marks = {"completed": "☑", "in_progress": "◐", "pending": "☐"};
+        text = "\n".join(
+            [
+                f"{marks.get(str(en.get('status', '')), '☐')} {en.get('content', '')}"
+                for en in (d.get("entries") or [])
+            ]
+        );
+        if 0 <= app.plan_idx < len(app.chat)
+            and app.chat[app.plan_idx].role == "plan" {
+            app.chat[app.plan_idx].text = text;
+        } else {
+            app.chat.append(ChatEntry(role="plan", text=text, time=time.time()));
+            app.plan_idx = len(app.chat) - 1;
+        }
+    } elif kind == "permission" {
+        close_message(app);
+        app.pending.append({"type": "permission", "data": d});
+        if app.sheet is None {
+            open_approval(app);
+        }
+    } elif kind == "write" {
+        close_message(app);
+        app.pending.append({"type": "write", "data": d});
+        if app.sheet is None {
+            open_approval(app);
+        }
+    } elif kind == "terminal" {
+        tid = str(d.get("terminal_id", ""));
+        idx = app.term_index.get(tid, -1);
+        if idx < 0 or idx >= len(app.chat) {
+            app.chat.append(
+                ChatEntry(role="tool", ident=tid, kind="execute", time=time.time())
+            );
+            idx = len(app.chat) - 1;
+            app.term_index[tid] = idx;
+        }
+        e = app.chat[idx];
+        e.title = "$ " + str(d.get("command", ""));
+        tail = str(d.get("output", "")).rstrip("\n").split("\n")[-6:];
+        e.detail = "\n".join(tail);
+        code = d.get("exit_code");
+        e.status = "in_progress"
+            if code is None
+            else ("completed" if code == 0 else "failed");
+    } elif kind == "commands" {
+        app.agent_commands = [
+            str(c.get("name", ""))
+            for c in (d.get("commands") or [])
+            if isinstance(c, dict)
+        ];
+    } elif kind == "turn_end" {
+        close_message(app);
+        reason = str(d.get("stop_reason", ""));
+        secs = time.time() - app.turn_started if app.turn_started else 0.0;
+        if reason and reason != "end_turn" {
+            app.chat.append(ChatEntry(role="system", text=f"turn ended: {reason}"));
+        } elif secs > 0 {
+            app.say(f"{app.agent_name} finished in {secs:.0f}s", "ok");
+        }
+        app.agent_state = "ready" if app.agent is not None else "none";
+        if app.rec is not None {
+            try {
+                app.rec.tray = list(app.tray);
+                app.rec.save();
+            } except Exception {}
+        }
+        if app.queued and app.agent is not None {
+            item = app.queued.pop(0);
+            app.agent.prompt(item["blocks"]);
+            app.agent_state = "busy";
+            app.turn_started = time.time();
+        }
+    } elif kind == "error" {
+        close_message(app);
+        app.chat.append(
+            ChatEntry(
+                role="error", text=str(d.get("message", "error")), time=time.time()
+            )
+        );
+    }
+}
+
+impl first_option(options: list[dict[str, any]], kinds: list[str]) -> (str | None) {
+    for k in kinds {
+        for o in options {
+            if o.get("kind") == k {
+                return o.get("optionId");
+            }
+        }
+    }
+    return None;
+}
+
+impl diff_spans(text: str, width: int) -> list[list[TextSpan]] {
+    out: list[list[TextSpan]] = [];
+    for ln in text.rstrip("\n").split("\n") {
+        a = THEME.overlay;
+        if ln.startswith("+++") or ln.startswith("---") {
+            a = StyleAttrs(fg=250, bg=237, bold=True);
+        } elif ln.startswith("+") {
+            a = StyleAttrs(fg=114, bg=237);
+        } elif ln.startswith("-") {
+            a = StyleAttrs(fg=203, bg=237);
+        } elif ln.startswith("@@") {
+            a = StyleAttrs(fg=81, bg=237);
+        }
+        out.append(fit([sp(" " + ln, a)], width, THEME.overlay));
+    }
+    return out;
+}
+
+impl open_approval(app: Studio) -> None {
+    if not app.pending {
+        return;
+    }
+    (cols, rows) = screen_size(app);
+    open_sheet(
+        app,
+        "approval",
+        max(40, min(cols - 6, 130)),
+        max(10, rows - 6),
+        OverlayAnchor.CENTER
+    );
+    req = app.pending[0];
+    w = max(40, min(cols - 6, 130));
+    lines: list[list[TextSpan]] = [];
+    if req["type"] == "permission" {
+        tc = req["data"].get("tool_call") or {};
+        title = str(tc.get("title") or tc.get("toolCallId") or "a tool call");
+        lines.append(
+            fit(
+                [
+                    sp(f" {app.agent_name} asks permission: ", THEME.overlay_title),
+                    sp(title, THEME.overlay_title)
+                ],
+                w,
+                THEME.overlay_title
+            )
+        );
+        known: dict[str, any] = {};
+        idx = app.tool_index.get(str(tc.get("toolCallId", "")), -1);
+        if 0 <= idx < len(app.chat) {
+            known = {"content": []};
+        }
+        diffs = permission_diffs(tc, app.root_dir, known);
+        raw = tc.get("rawInput");
+        if not diffs and raw {
+            for ln in str(raw)[:2000].split("\n") {
+                lines.append(fit([sp(" " + ln, THEME.overlay)], w, THEME.overlay));
+            }
+        }
+        for dtext in diffs {
+            lines += diff_spans(dtext, w);
+        }
+    } else {
+        d = req["data"];
+        path = str(d.get("path", ""));
+        rel = os.path.relpath(path, app.root_dir) if path else "?";
+        lines.append(
+            fit(
+                [
+                    sp(f" {app.agent_name} wants to write ", THEME.overlay_title),
+                    sp(rel, THEME.overlay_title)
+                ],
+                w,
+                THEME.overlay_title
+            )
+        );
+        review = req.get("review");
+        if review is not None {
+            for ln in review_lines(review, w) {
+                lines.append(ln);
+            }
+        }
+        old = d.get("old_content");
+        if old is None {
+            old = read_or_empty(path);
+        }
+        lines += diff_spans(
+            unified_diff(path, str(old), str(d.get("content", "")), app.root_dir), w
+        );
+    }
+    app.sheet_lines = lines;
+    app.sheet_scroll = 0;
+}
+
+impl review_lines(review: any, w: int) -> list[list[TextSpan]] {
+    return [];
+}
+
+impl approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]] {
+    out: list[list[TextSpan]] = [];
+    if not app.pending {
+        return [blank(w, THEME.overlay)];
+    }
+    req = app.pending[0];
+    head = app.sheet_lines[:1];
+    body = app.sheet_lines[1:];
+    out += head;
+    if len(app.pending) > 1 {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"  ({len(app.pending) - 1} more waiting)",
+                        with_bg(THEME.dim, 237)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    room = h - len(out) - 2;
+    top = min(app.sheet_scroll, max(0, len(body) - room));
+    app.sheet_scroll = top;
+    out += body[top:top + room];
+    while len(out) < h - 2 {
+        out.append(blank(w, THEME.overlay));
+    }
+    if req["type"] == "permission" {
+        opts = req["data"].get("options") or [];
+        spans = [sp(" ", THEME.overlay)];
+        for (i, o) in enumerate(opts[:9]) {
+            k = str(o.get("kind", ""));
+            a = StyleAttrs(fg=255, bg=28, bold=True)
+                if k.startswith("allow")
+                else StyleAttrs(fg=255, bg=124, bold=True);
+            spans.append(sp(f" {i + 1} {o.get('name', k)} ", a));
+            spans.append(sp(" ", THEME.overlay));
+        }
+        out.append(fit(spans, w, THEME.overlay));
+        out.append(
+            fit(
+                [
+                    sp(
+                        " Enter/a allow · r reject · Esc cancel · ↑↓ scroll",
+                        StyleAttrs(fg=244, bg=237)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    } else {
+        out.append(
+            fit(
+                [
+                    sp(" ", THEME.overlay),
+                    sp(" a accept ", StyleAttrs(fg=255, bg=28, bold=True)),
+                    sp(" ", THEME.overlay),
+                    sp(" r reject ", StyleAttrs(fg=255, bg=124, bold=True)),
+                    sp(" ", THEME.overlay),
+                    sp(
+                        " f reject and send the problems back ",
+                        StyleAttrs(fg=255, bg=130, bold=True)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+        out.append(
+            fit(
+                [sp(" ↑↓ PgUp PgDn scroll the diff", StyleAttrs(fg=244, bg=237))],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    return out[:h];
+}
+
+impl next_approval(app: Studio) {
+    if app.pending {
+        app.pending.pop(0);
+    }
+    close_sheet(app);
+    if app.pending {
+        open_approval(app);
+    }
+}
+
+impl finish_permission(app: Studio, req: dict[str, any], option_id: (str | None)) {
+    d = req["data"];
+    try {
+        app.agent.respond_permission(d.get("request_id"), option_id);
+    } except Exception as e {
+        app.say(f"could not answer the agent: {e}", "error");
+    }
+    tc = d.get("tool_call") or {};
+    accepted = option_id is not None
+        and any(
+            [
+                o.get("optionId") == option_id
+                    and str(o.get("kind", "")).startswith("allow")
+                for o in (d.get("options") or [])
+            ]
+        );
+    if app.rec is not None {
+        try {
+            app.rec.decide("permission", accepted, message=str(tc.get("title", "")));
+        } except Exception {}
+    }
+    app.say(
+        ("allowed: " if accepted else "rejected: ") + str(tc.get("title", "")),
+        "ok" if accepted else "warn"
+    );
+    next_approval(app);
+}
+
+impl finish_write(app: Studio, req: dict[str, any], accept: bool, message: str) {
+    d = req["data"];
+    try {
+        app.agent.resolve_write(d.get("request_id"), accept, message);
+    } except Exception as e {
+        app.say(f"could not answer the agent: {e}", "error");
+    }
+    path = str(d.get("path", ""));
+    if app.rec is not None {
+        try {
+            app.rec.decide("write", accept, path=path, message=message);
+        } except Exception {}
+    }
+    rel = os.path.relpath(path, app.root_dir) if path else "?";
+    app.say(
+        ("wrote " if accept else "rejected the edit to ") + rel,
+        "ok" if accept else "warn"
+    );
+    if accept and path == app.code_path {
+        load_code(app, path, keep_pos=True);
+    }
+    next_approval(app);
+}
+
+impl write_feedback(req: dict[str, any]) -> str {
+    review = req.get("review");
+    if review is not None {
+        try {
+            return str(review.feedback());
+        } except Exception {}
+    }
+    return "The user rejected this edit in jac studio. Check that it compiles and keeps the archwire wiring valid, then try again.";
+}
+
+impl restore_session(app: Studio, session_id: str) -> None {
+    rec = load_session(app.root_dir, session_id);
+    if rec is None {
+        app.say(f"no saved session matches {session_id}", "error", 6.0);
+        return;
+    }
+    app.rec = rec;
+    app.session_id = rec.id;
+    if rec.agent and not app.agent_name {
+        app.agent_name = rec.agent;
+    }
+    app.tray = [k for k in rec.tray];
+    for en in rec.entries {
+        role = str(en.get("role", "system"));
+        tc = en.get("tool_call") or {};
+        if role == "tool" {
+            app.chat.append(
+                ChatEntry(
+                    role="tool",
+                    title=str(tc.get("title", "")),
+                    status=str(tc.get("status", "")),
+                    kind=str(tc.get("kind", ""))
+                )
+            );
+        } else {
+            app.chat.append(
+                ChatEntry(
+                    role=role
+                        if role in ["user", "agent", "plan", "thought"]
+                        else "system",
+                    text=str(en.get("text", ""))
+                )
+            );
+        }
+    }
+    app.chat.append(
+        ChatEntry(
+            role="system",
+            text=f"resumed session {rec.id[:8]} ({len(rec.entries)} entries)"
+        )
+    );
 }

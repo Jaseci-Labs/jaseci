@@ -570,9 +570,13 @@ impl ProjectModel.index_module(key: str) -> bool {
         for idef in tree.get_all_sub_nodes(uni.ImplDef) {
             self._index_impl(mod, idef);
         }
-        try {
-            mod.mtime = os.path.getmtime(mod.file);
-        } except OSError {}
+        newest = 0.0;
+        for f in mod.files {
+            try {
+                newest = max(newest, os.path.getmtime(f));
+            } except OSError {}
+        }
+        mod.mtime = newest;
         mod.indexed = True;
     }
     return True;

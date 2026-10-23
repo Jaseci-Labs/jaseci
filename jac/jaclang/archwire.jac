@@ -32802,9 +32802,9 @@ graph import studio {
         acp { AgentEvent, AgentSession, blocks_text },
         agents { AgentSession },
         native_agent { AgentSession, blocks_text },
-        session { AgentEvent },
+        session | tui { AgentEvent },
     ]
-    agents ++> app { AgentRegistry }
+    agents ++> app | tui { AgentRegistry }
     context ++> [
         app { context_blocks, resolve_key },
         native_agent {
@@ -32818,8 +32818,12 @@ graph import studio {
             tidy_sig,
             wire_line
         },
+        tui { context_blocks },
     ]
-    intel ++> app { CodeIntel, Span }
+    intel ++> [
+        app { CodeIntel, Span },
+        tui { CodeIntel },
+    ]
     intel_server --> [
         intel.CodeIntel._do_check { check_head, new_cancel_token },
         intel.CodeIntel._do_invalidate { invalidate_path },
@@ -32843,13 +32847,10 @@ graph import studio {
         tui { ProjectModel, StAbility, StImpl, StModule, StNode },
     ]
     native_agent ++> agents { NativeAgentSession }
-    session ++> app {
-        StudioSession,
-        list_sessions,
-        load_session,
-        new_session,
-        sessions_dir
-    }
+    session ++> [
+        app { StudioSession, list_sessions, load_session, new_session, sessions_dir },
+        tui { load_session, new_session },
+    ]
     theme ++> tui {
         CODE_STYLES,
         C_SEL,
@@ -32866,6 +32867,10 @@ graph import studio {
         wrap_plain
     }
     tui ++> app { run_tui }
+    util ++> [
+        app { jac_mcp_server, permission_diffs, unified_diff },
+        tui { jac_mcp_server, permission_diffs, read_or_empty, unified_diff },
+    ]
 }
 
 graph import testing {
