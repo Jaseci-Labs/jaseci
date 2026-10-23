@@ -192,7 +192,9 @@ obj Studio {
         nav_w: int = 34,
         side_w: int = 0,
         show_inlays: bool = True,
-        pending_new: list[str] = [];
+        pending_new: list[str] = [],
+        gmap: (MapState | None) = None,
+        wire_items: list[PickItem] = [];
 
     def postinit;
     def install_layout;
@@ -336,6 +338,7 @@ glob HELP_TEXT: list[tuple[str, str]] = [
              "go to any module or symbol (Tab in the list adds it to the context)"
          ),
          ("Ctrl+T or w", "switch the centre between code and the archwire wiring view"),
+         ("m", "the architecture map: the wiring a package level at a time"),
          ("Ctrl+X", "command palette"),
          ("Ctrl+L", "jump to the prompt"),
          ("Ctrl+C / Ctrl+Q", "cancel the agent's turn (twice to quit) / quit"),
@@ -357,6 +360,13 @@ glob HELP_TEXT: list[tuple[str, str]] = [
          ("Enter", "follow a wire to that module, or open a symbol"),
          ("Space", "add the wire or symbol to the context"),
          ("A", "add every item in the column to the context"),
+         ("", "Architecture map"),
+         ("v or 1 2 3", "matrix / layers / issues"),
+         ("arrows", "move; in the matrix the row feeds the column"),
+         ("Enter", "open a package, a module's wiring, or the wires behind a number"),
+         ("Backspace or u", "up one package level"),
+         ("Space", "add a group, a dependency or the whole level to the context"),
+         ("d / t", "matrix: jump to the diagonal / swap row and column"),
          ("", "Context and prompt"),
          ("@", "in the prompt: pick something to add to the context"),
          ("Enter / Alt+Enter", "send / new line"),
@@ -402,6 +412,22 @@ def slice_spans(spans: list[TextSpan], left: int) -> list[TextSpan];
 def paint_code(app: Studio) -> None;
 
 def paint_wiring(app: Studio) -> None;
+
+def paint_map(app: Studio) -> None;
+
+def open_map(app: Studio, key: str, inside: bool = False) -> None;
+
+def set_map_scope(app: Studio, scope: str, select: str = "") -> None;
+
+def map_key(app: Studio, key: str) -> None;
+
+def map_activate(app: Studio) -> None;
+
+def map_add(app: Studio) -> None;
+
+def open_wire_list(app: Studio, src: str, dst: str) -> None;
+
+def map_target(app: Studio) -> str;
 
 def chat_lines(app: Studio, width: int) -> list[list[TextSpan]];
 
@@ -629,11 +655,16 @@ impl start_indexing(app: Studio) {
 impl main_loop(app: Studio) {
     frame_t = 0.0;
     trace = os.environ.get("JAC_STUDIO_TRACE", "") == "1";
+    painted_size = app.term.size();
     while app.running {
         t0 = time.time();
         raw = app.term.poll_input(0.03);
         if getattr(app.term, "eof", False) {
             break;
+        }
+        if app.term.size() != painted_size {
+            painted_size = app.term.size();
+            app.dirty = True;
         }
         t1 = time.time();
         events: list[any] = [];
@@ -880,6 +911,14 @@ impl handle_key(app: Studio, key: str) -> None {
         toggle_center(app);
         return;
     }
+    if key == "m" and app.focus in ["nav", "code"] {
+        if app.center_mode == "map" {
+            app.center_mode = "code";
+        } else {
+            open_map(app, map_target(app));
+        }
+        return;
+    }
     if key == "ctrl+l" {
         app.focus = "prompt";
         return;
@@ -890,6 +929,9 @@ impl handle_key(app: Studio, key: str) -> None {
     }
     if key == "escape" and app.focus != "prompt" {
         app.hover = "";
+        if app.focus == "code" and app.center_mode != "code" {
+            app.center_mode = "code";
+        }
         return;
     }
     if app.focus == "nav" {
@@ -897,6 +939,8 @@ impl handle_key(app: Studio, key: str) -> None {
     } elif app.focus == "code" {
         if app.center_mode == "code" {
             code_key(app, key);
+        } elif app.center_mode == "map" {
+            map_key(app, key);
         } else {
             wire_key(app, key);
         }
@@ -915,6 +959,20 @@ impl cycle_focus(app: Studio, step: int) {
 }
 
 impl toggle_center(app: Studio) -> None {
+    if app.center_mode == "map" {
+        nd = app.gmap.selected_node() if app.gmap is not None else None;
+        if nd is not None and nd.kind == "module" {
+            app.wire_mod = nd.key;
+            app.center_mode = "wiring";
+            app.wire_sel = [0, 0, 0];
+            app.wire_top = [0, 0, 0];
+            app.wire_col = 1;
+        } else {
+            app.center_mode = "code";
+        }
+        app.focus = "code";
+        return;
+    }
     if app.center_mode == "code" {
         key = current_module_key(app);
         if key {
@@ -1667,7 +1725,19 @@ impl tray_key(app: Studio, key: str) {
     } elif key == "enter" {
         if 0 <= app.tray_sel < n {
             k = app.tray[app.tray_sel];
-            if not k.startswith("wire:") {
+            pair = parse_deps_key(k);
+            if k.startswith(MAP_PREFIX) {
+                open_map(app, k[len(MAP_PREFIX):], inside=True);
+            } elif pair is not None {
+                (a, b) = (pair[0].split("."), pair[1].split("."));
+                n = 0;
+                while n < min(len(a), len(b)) and a[n] == b[n] {
+                    n += 1;
+                }
+                open_map(app, "");
+                set_map_scope(app, ".".join(a[:n]), pair[0]);
+                open_wire_list(app, pair[0], pair[1]);
+            } elif not k.startswith("wire:") {
                 open_key(app, k, focus=True);
             }
         }
@@ -1949,6 +2019,13 @@ impl refresh_picker(app: Studio) {
         ];
     } elif app.picker_purpose == "agents" {
         app.picker_items = app.agent_items;
+    } elif app.picker_purpose == "wires" {
+        q = app.picker_query.lower();
+        app.picker_items = [
+            i
+            for i in app.wire_items
+            if q in i.label.lower() or q in i.detail.lower()
+        ];
     } else {
         hits = app.model.search(app.picker_query, limit=200);
         app.picker_items = [
@@ -1974,6 +2051,7 @@ impl palette_items(app: Studio) -> list[PickItem] {
         + [
             PickItem(key="goto", label="Go to symbol or module   Ctrl+P"),
             PickItem(key="wiring", label="Toggle code / wiring view   Ctrl+T"),
+            PickItem(key="map", label="Architecture map   m"),
             PickItem(key="agent", label="Choose agent   /agent"),
             PickItem(key="explain", label="Ask: explain the context   /explain"),
             PickItem(key="tests", label="Ask: write tests   /tests"),
@@ -1999,6 +2077,8 @@ impl run_palette(app: Studio, key: str) {
         open_picker(app, "goto", "Go to symbol or module", "");
     } elif key == "wiring" {
         toggle_center(app);
+    } elif key == "map" {
+        open_map(app, map_target(app));
     } elif key == "agent" {
         open_agent_picker(app);
     } elif key in app.verbs {
@@ -2109,6 +2189,24 @@ impl pick(app: Studio, item: PickItem, alt: bool) {
         run_palette(app, item.key);
     } elif purpose == "agents" {
         choose_agent(app, item.key);
+    } elif purpose == "wires" {
+        w = item.data;
+        if alt {
+            add_to_tray(app, f"wire:{w.provider}->{w.consumer}");
+        } elif w.consumer in app.model.modules
+            and app.model.modules[w.consumer].kind == "module" {
+            app.wire_mod = w.consumer;
+            app.center_mode = "wiring";
+            app.wire_sel = [0, 0, 0];
+            app.wire_top = [0, 0, 0];
+            app.wire_col = 0;
+            for (i, pw) in enumerate(app.model.providers(w.consumer)) {
+                if pw is w {
+                    app.wire_sel[0] = i;
+                }
+            }
+            app.focus = "code";
+        }
     }
 }
 
@@ -2248,6 +2346,8 @@ impl paint(app: Studio) {
     marks.append(("nav", time.perf_counter()));
     if app.center_mode == "code" {
         paint_code(app);
+    } elif app.center_mode == "map" {
+        paint_map(app);
     } else {
         paint_wiring(app);
     }
@@ -2439,7 +2539,8 @@ impl paint_code(app: Studio) -> None {
             "",
             "  Pick something in the navigator (Enter), or press Ctrl+P to find any",
             "  module or symbol. Ctrl+T shows how a module is wired: what feeds it",
-            "  and what it feeds.",
+            "  and what it feeds. m opens the architecture map: the wiring between",
+            "  packages, a level at a time.",
             "",
             "  Select code (Space) to put it in the context, then tell an agent what",
             "  to do with it in the prompt below."
@@ -2661,6 +2762,217 @@ impl paint_wiring(app: Studio) -> None {
     set_node_spans(app.r, app.center, out[:h], THEME.pane);
 }
 
+impl map_target(app: Studio) -> str {
+    if app.focus == "nav" and 0 <= app.nav_sel < len(app.nav_rows) {
+        return app.nav_rows[app.nav_sel].key;
+    }
+    if app.center_mode == "wiring" and app.wire_mod {
+        return app.wire_mod;
+    }
+    if app.code_path {
+        mod = app.model.module_for_file(app.code_path);
+        if mod is not None {
+            return mod.key;
+        }
+    }
+    return "";
+}
+
+impl open_map(app: Studio, key: str, inside: bool = False) -> None {
+    if app.gmap is None {
+        app.gmap = MapState();
+    }
+    key = key.strip();
+    scope = scope_for(app.model, key) if key else "";
+    if key and scope == key and not inside {
+        scope = key.rsplit(".", 1)[0] if "." in key else "";
+    }
+    set_map_scope(app, scope, key);
+    app.center_mode = "map";
+    app.focus = "code";
+}
+
+impl set_map_scope(app: Studio, scope: str, select: str = "") -> None {
+    st = app.gmap;
+    if st is None {
+        return;
+    }
+    st.level = graph_level(app.model, scope);
+    st.scope = st.level.scope;
+    st.sig = (id(app.model.wires), len(app.model.wires));
+    (st.r, st.c, st.sel, st.item) = (0, 0, 0, 0);
+    (st.top, st.left, st.scroll) = (0, 0, 0);
+    if select {
+        st.select_key(group_of(select, st.scope));
+    }
+}
+
+impl paint_map(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.center);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    st = app.gmap;
+    if st is None {
+        app.center_mode = "code";
+        return;
+    }
+    if st.level is None or st.sig != (id(app.model.wires), len(app.model.wires)) {
+        keep = "";
+        if st.level is not None and st.level.nodes {
+            i = st.r if st.view == "matrix" else st.sel;
+            keep = st.level.nodes[min(i, len(st.level.nodes) - 1)].key;
+        }
+        set_map_scope(app, st.scope, keep);
+    }
+    focused = app.focus == "code";
+    lvl = st.level;
+    if lvl is None {
+        return;
+    }
+    stats = f"{len(lvl.nodes)} groups · {lvl.wires} wires · {lvl.back_wires} backward";
+    out = [
+        title_row(
+            app, f"MAP  {crumbs(st.scope)}   {stats}", focused, w, view_tabs(st.view)
+        )
+    ];
+    out += map_lines(st, w, h - 1, focused);
+    set_node_spans(app.r, app.center, out[:h], THEME.pane);
+}
+
+impl map_key(app: Studio, key: str) -> None {
+    st = app.gmap;
+    if st is None {
+        return;
+    }
+    if key == "v" {
+        st.set_view(MAP_VIEWS[(MAP_VIEWS.index(st.view) + 1) % len(MAP_VIEWS)]);
+    } elif key in ["1", "2", "3"] {
+        st.set_view(MAP_VIEWS[int(key) - 1]);
+    } elif key in ["backspace", "u"] {
+        up = parent_scope(app.model, st.scope);
+        if up is None {
+            app.say("This is the whole project");
+            return;
+        }
+        set_map_scope(app, up, st.scope);
+    } elif key == "enter" {
+        map_activate(app);
+    } elif key in [" ", "a", "ctrl+space"] {
+        map_add(app);
+    } elif key == "A" {
+        add_to_tray(app, MAP_PREFIX + st.scope);
+    } elif key == "o" {
+        nd = st.selected_node();
+        if nd is not None and nd.kind == "module" {
+            open_key(app, nd.key);
+        }
+    } else {
+        map_move(st, key);
+    }
+}
+
+impl map_activate(app: Studio) -> None {
+    st = app.gmap;
+    if st is None or st.level is None or not st.level.nodes {
+        return;
+    }
+    lvl = st.level;
+    if st.view == "issues" {
+        items = issue_items(lvl);
+        if not items {
+            return;
+        }
+        it = items[min(st.item, len(items) - 1)];
+        if it.kind == "cycle" {
+            st.set_view("layers");
+            st.sel = lvl.index.get(it.src, 0);
+        } else {
+            open_wire_list(app, it.src, it.dst);
+        }
+        return;
+    }
+    nd = st.selected_node();
+    if nd is not None {
+        if nd.kind == "package" {
+            set_map_scope(app, nd.key);
+        } else {
+            app.wire_mod = nd.key;
+            app.center_mode = "wiring";
+            app.wire_sel = [0, 0, 0];
+            app.wire_top = [0, 0, 0];
+            app.wire_col = 1;
+            reveal_in_nav(app, nd.key);
+        }
+        return;
+    }
+    e = st.selected_edge();
+    if e is not None {
+        open_wire_list(app, e.src, e.dst);
+    } else {
+        app.say("No wires between these two");
+    }
+}
+
+impl map_add(app: Studio) -> None {
+    st = app.gmap;
+    if st is None or st.level is None or not st.level.nodes {
+        return;
+    }
+    if st.view == "issues" {
+        items = issue_items(st.level);
+        if not items {
+            return;
+        }
+        it = items[min(st.item, len(items) - 1)];
+        add_to_tray(
+            app,
+            MAP_PREFIX + st.scope if it.kind == "cycle" else deps_key(it.src, it.dst)
+        );
+        return;
+    }
+    nd = st.selected_node();
+    if nd is not None {
+        add_to_tray(app, MAP_PREFIX + nd.key if nd.kind == "package" else nd.key);
+        return;
+    }
+    e = st.selected_edge();
+    if e is not None {
+        add_to_tray(app, deps_key(e.src, e.dst));
+    } else {
+        app.say("No wires between these two");
+    }
+}
+
+impl open_wire_list(app: Studio, src: str, dst: str) -> None {
+    with app.model.lock {
+        wires = edge_wires(app.model, src, dst);
+    }
+    if not wires {
+        app.say(f"{src} does not feed {dst}");
+        return;
+    }
+    items: list[PickItem] = [];
+    for w in wires {
+        names = ", ".join(w.names) if w.names else "whole module";
+        scope = f" (in {w.scope})" if w.scope else "";
+        bad = f"   ⚠ {w.violation}" if w.violation else "";
+        items.append(
+            PickItem(
+                key=w.consumer,
+                label=f"{w.provider} ++> {w.consumer}{scope}",
+                detail=names + bad,
+                kind="wire",
+                data=w
+            )
+        );
+    }
+    app.wire_items = items;
+    short_src = src.rsplit(".", 1)[-1];
+    short_dst = dst.rsplit(".", 1)[-1];
+    open_picker(app, "wires", f"Wires {short_src} → {short_dst} ({len(items)})", "");
+}
+
 impl chat_lines(app: Studio, width: int) -> list[list[TextSpan]] {
     out: list[list[TextSpan]] = [];
     starts: list[int] = [];
@@ -2838,6 +3150,14 @@ impl paint_tray(app: Studio) -> None {
             if nd is not None
             else ("wire" if k.startswith("wire:") else "?");
         label = k[5:] if k.startswith("wire:") else k;
+        if k.startswith(MAP_PREFIX) {
+            kind = "package";
+            label = "map of " + (k[len(MAP_PREFIX):] or "the project");
+        } elif parse_deps_key(k) is not None {
+            kind = "wire";
+            (src, dst) = parse_deps_key(k);
+            label = f"wires {src} → {dst}";
+        }
         line = fit(
             [sp(" " + kind_icon(kind) + " ", kind_attrs(kind)), sp(label, THEME.text)],
             w,
@@ -2913,8 +3233,8 @@ impl paint_status(app: Studio) -> None {
         spans = [sp(" " + app.hover.split("\n")[0], THEME.status)];
     } else {
         hints = {
-            "nav": "↑↓ move  →← open/close  Enter open  Space add to context  w wiring",
-            "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  t types  w wiring",
+            "nav": "↑↓ move  →← open/close  Enter open  Space add to context  w wiring  m map",
+            "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  t types  w wiring  m map",
             "chat": "↑↓ select  Enter expand / plan links  o open tool file  End follow",
             "tray": "↑↓ select  x remove  Enter open  C clear",
             "prompt": "Enter send  Alt+Enter newline  @ add  ↑ history"
@@ -2923,6 +3243,9 @@ impl paint_status(app: Studio) -> None {
         );
         if app.center_mode == "wiring" and app.focus == "code" {
             hints = "←→ column  ↑↓ select  Enter follow/open  Space add  o open module  Esc code";
+        }
+        if app.center_mode == "map" and app.focus == "code" {
+            hints = "v view  arrows move  Enter open  Backspace up  Space add  w wiring  Esc code";
         }
         spans = [
             sp(f" {app.focus.upper()} ", THEME.status_key),
@@ -2999,9 +3322,12 @@ impl paint_sheet(app: Studio) -> None {
         while len(out) < h - 1 {
             out.append(blank(w, THEME.overlay));
         }
-        foot = " ↑↓ select · Enter open · Tab add to context · Esc close"
-            if app.picker_purpose == "goto"
-            else " ↑↓ select · Enter choose · Esc close";
+        foot = " ↑↓ select · Enter choose · Esc close";
+        if app.picker_purpose == "goto" {
+            foot = " ↑↓ select · Enter open · Tab add to context · Esc close";
+        } elif app.picker_purpose == "wires" {
+            foot = " ↑↓ select · Enter show in the wiring view · Tab add to context · Esc close";
+        }
         out.append(fit([sp(foot, StyleAttrs(fg=244, bg=237))], w, THEME.overlay));
     } elif app.sheet_kind == "approval" {
         out = approval_view(app, w, h);
@@ -4235,7 +4561,13 @@ impl bridge_handle(app: Studio, method: str, params: dict[str, any]) -> any {
             cursor=(app.cur_line + 1, app.cur_col),
             cursor_symbol=(sym.key if sym is not None else ""),
             wiring_module=app.wire_mod,
-            extra={"focused_pane": app.focus, "center_view": app.center_mode}
+            extra={
+                "focused_pane": app.focus,
+                "center_view": app.center_mode,
+                "map_scope": app.gmap.scope
+                    if app.gmap is not None and app.center_mode == "map"
+                    else None
+            }
         );
     }
     if method == "focus" {

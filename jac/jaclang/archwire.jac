@@ -32870,6 +32870,30 @@ graph import studio {
         app { EditGate, EditReview, format_review },
         tui { EditGate, leaf_changes, partial_text },
     ]
+    graph ++> [
+        app { graph_level, in_scope, level_dict, level_text, scope_for },
+        bridge { graph_level, level_dict, scope_for },
+        context {
+            DEPS_PREFIX,
+            MAP_PREFIX,
+            deps_text,
+            graph_level,
+            level_text,
+            parse_deps_key
+        },
+        map_view { GraphEdge, GraphLevel, GraphNode },
+        native_agent { graph_level, level_text, scope_for },
+        tui {
+            MAP_PREFIX,
+            deps_key,
+            edge_wires,
+            graph_level,
+            group_of,
+            parent_scope,
+            parse_deps_key,
+            scope_for
+        },
+    ]
     intel ++> [
         app { CodeIntel, Span },
         tui { CodeIntel },
@@ -32881,6 +32905,15 @@ graph import studio {
         intel.CodeIntel._ensure_engine { new_server },
         intel.CodeIntel._run { shutdown_server },
     ]
+    map_view ++> tui {
+        MAP_VIEWS,
+        MapState,
+        crumbs,
+        issue_items,
+        map_lines,
+        map_move,
+        view_tabs
+    }
     model ++> [
         app { ProjectModel, find_project_root },
         bridge {
@@ -32902,6 +32935,7 @@ graph import studio {
             WireInfo,
             sym_uri
         },
+        graph { Governs, ProjectModel, WireInfo },
         native_agent { ProjectModel, SKIP_DIRS },
         tui { ProjectModel, StAbility, StImpl, StModule, StNode },
     ]
@@ -32918,21 +32952,37 @@ graph import studio {
         tui { load_session, new_session },
     ]
     studio_mcp ++> app { serve_studio_mcp }
-    theme ++> tui {
-        CODE_STYLES,
-        C_SEL,
-        C_SEL_FOCUS,
-        THEME,
-        blank,
-        fit,
-        kind_attrs,
-        kind_icon,
-        plain,
-        restyle,
-        sp,
-        with_bg,
-        wrap_plain
-    }
+    theme ++> [
+        map_view {
+            C_DIM,
+            C_SEL,
+            C_SEL_FOCUS,
+            THEME,
+            blank,
+            fit,
+            kind_attrs,
+            kind_icon,
+            plain,
+            restyle,
+            sp,
+            with_bg
+        },
+        tui {
+            CODE_STYLES,
+            C_SEL,
+            C_SEL_FOCUS,
+            THEME,
+            blank,
+            fit,
+            kind_attrs,
+            kind_icon,
+            plain,
+            restyle,
+            sp,
+            with_bg,
+            wrap_plain
+        },
+    ]
     tui ++> app { run_tui }
     util ++> [
         app { jac_mcp_server, permission_diffs, unified_diff },

@@ -6,7 +6,7 @@ import shutil;
 import difflib;
 import time;
 
-glob ACTIONS: list[str] = ["model", "ask", "agents", "sessions", "mcp"];
+glob ACTIONS: list[str] = ["model", "graph", "ask", "agents", "sessions", "mcp"];
 
 def out(text: str);
 
@@ -22,6 +22,8 @@ def run_studio(
 ) -> int;
 
 def cmd_model(root_dir: str, args: list[str], as_json: bool) -> int;
+
+def cmd_graph(root_dir: str, args: list[str], as_json: bool) -> int;
 
 def cmd_gate(directory: str, args: list[str], as_json: bool) -> int;
 def cmd_mcp(root_dir: str, args: list[str]) -> int;
@@ -151,6 +153,9 @@ impl run_studio(
     if action == "model" {
         return cmd_model(root_dir, args, as_json);
     }
+    if action == "graph" {
+        return cmd_graph(root_dir, args, as_json);
+    }
     if action == "agents" {
         return cmd_agents(root_dir, as_json);
     }
@@ -212,6 +217,36 @@ impl cmd_model(root_dir: str, args: list[str], as_json: bool) -> int {
         return 0;
     }
     out(format_summary(model));
+    return 0;
+}
+
+impl cmd_graph(root_dir: str, args: list[str], as_json: bool) -> int {
+    model = ProjectModel(root_dir=root_dir);
+    model.build(index=False);
+    target = args[0] if args else "";
+    if target {
+        known = False;
+        for k in model.modules.keys() {
+            if in_scope(k, target) or target.startswith(k + ".") {
+                known = True;
+                break;
+            }
+        }
+        if not known {
+            hits = model.search(target, limit=1, kinds=["module"]);
+            if not hits {
+                err(f"jac studio graph: no package or module matches '{target}'");
+                return 1;
+            }
+            target = hits[0].key;
+        }
+    }
+    level = graph_level(model, scope_for(model, target));
+    if as_json {
+        out(json.dumps(level_dict(level, model), indent=2));
+    } else {
+        out(level_text(level, model));
+    }
     return 0;
 }
 

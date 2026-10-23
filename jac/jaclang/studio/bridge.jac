@@ -9,7 +9,14 @@ import threading;
 
 glob SOCKET_ENV: str = "JAC_STUDIO_SOCKET",
      MAX_SOCK_PATH: int = 100,
-     QUERY_METHODS: list[str] = ["wiring", "rules", "symbol", "search", "locate"],
+     QUERY_METHODS: list[str] = [
+         "wiring",
+         "rules",
+         "graph",
+         "symbol",
+         "search",
+         "locate"
+     ],
      UI_METHODS: list[str] = ["selection", "focus", "link_plan"],
      MAX_SLICE_LINES: int = 400;
 
@@ -513,6 +520,10 @@ impl StudioQueries.handle(method: str, params: dict[str, any]) -> any {
         }
         if method == "rules" {
             return self.rule_coverage();
+        }
+        if method == "graph" {
+            scope = scope_for(self.model, str(params.get("scope", "") or key));
+            return level_dict(graph_level(self.model, scope), self.model);
         }
         if method == "symbol" {
             return self.symbol(key);

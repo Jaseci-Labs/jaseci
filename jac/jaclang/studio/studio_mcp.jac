@@ -6,7 +6,7 @@ glob STUDIO_MCP_VERSION: str = "0.1.0",
      MCP_PROTOCOL: str = "2025-06-18",
      MCP_PROTOCOLS: list[str] = ["2025-06-18", "2025-03-26", "2024-11-05"],
      KEY_HELP: str = "A studio model key: a module (`core.jobs`), a symbol (`core.jobs.Runner`, `core.jobs.Runner.start`), a `jac://sym/<key>` URI, or a file path with an optional `:line` (resolves to the innermost symbol at that line).",
-     STUDIO_INSTRUCTIONS: str = "These tools connect you to jac studio, the terminal workspace the user is driving you from. The studio keeps a live, compiler-built model of this Jac project: every module, archetype, ability and field, and the archwire graph (in this codebase imports are wires declared in archwire.jac files, not import statements in the code). Use studio_selection to see what the user is pointing at, studio_wiring / studio_rules before changing dependencies, studio_symbol to read a declaration together with its impl, studio_focus to show the user code you are discussing, and studio_link_plan to tie your plan steps to the code they touch.";
+     STUDIO_INSTRUCTIONS: str = "These tools connect you to jac studio, the terminal workspace the user is driving you from. The studio keeps a live, compiler-built model of this Jac project: every module, archetype, ability and field, and the archwire graph (in this codebase imports are wires declared in archwire.jac files, not import statements in the code). Use studio_selection to see what the user is pointing at, studio_wiring / studio_rules before changing dependencies, studio_graph to see the architecture a package level at a time, studio_symbol to read a declaration together with its impl, studio_focus to show the user code you are discussing, and studio_link_plan to tie your plan steps to the code they touch.";
 
 obj StudioTool {
     has name: str,
@@ -86,6 +86,20 @@ impl studio_tools -> list[StudioTool] {
             name="studio_rules",
             method="rules",
             description="Archwire rule coverage for the whole project: each rule (`edge Name: sources --> targets { names }`) with its sources, targets, name payload, and how many modules and wires it governs, plus `unruled_cross_package_wires` (wires between different top-level packages that no rule admits). Check this before adding a wire between packages: such a wire needs a rule whose sources match the provider and whose targets match the consumer, and a rule with a names payload only admits those names."
+        ),
+        StudioTool(
+            name="studio_graph",
+            method="graph",
+            description="The archwire graph at one level of the package hierarchy, for reasoning about architecture rather than single imports. `scope` is a package (its sub-packages and modules become the groups), a module or symbol (shown among its siblings), or empty for the whole project. Groups come providers first, each with its layer (0 = fed by nothing at this level), module count, governing rules and whether it sits in a cycle; `edges` are wire counts between groups, and `backward` marks wires where a later group feeds an earlier one, which are what keep the level from being cleanly layered. `parent` is the scope one level up. Use it before moving code between packages or untangling a cycle.",
+            schema={
+                "type": "object",
+                "properties": {
+                    "scope": {
+                        "type": "string",
+                        "description": "A package such as `jaclang.compiler`, a module or symbol key, or empty for the whole project."
+                    }
+                }
+            }
         ),
         StudioTool(
             name="studio_symbol",

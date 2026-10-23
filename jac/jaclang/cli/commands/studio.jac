@@ -6,7 +6,7 @@ comptime SPEC_STUDIO: CommandSpec = CommandSpec(
                  "action",
                  kind=ArgKind.POSITIONAL,
                  `default="",
-                 help="(none) open the workspace | model | ask | agents | sessions | mcp"
+                 help="(none) open the workspace | model | graph | ask | agents | sessions | mcp"
              ),
              Arg.create(
                  "args",
@@ -50,6 +50,10 @@ comptime SPEC_STUDIO: CommandSpec = CommandSpec(
                  "Dump the project model: modules, wires, rules and symbols"
              ),
              ("jac studio model core.jobs", "Show one module's wiring and symbols"),
+             (
+                 "jac studio graph core",
+                 "Show the wiring between a package's parts: layers, matrix, backward wires and cycles"
+             ),
              (
                  "jac studio ask core.jobs.Runner.start \"add retry with backoff\"",
                  "Hand a symbol and an instruction to an agent without the UI"

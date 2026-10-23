@@ -3,6 +3,8 @@ import re;
 
 glob WIRE_PREFIX: str = "wire:",
      WIRE_SCHEME: str = "jac://wire/",
+     MAP_SCHEME: str = "jac://map/",
+     DEPS_SCHEME: str = "jac://deps/",
      JAC_MIME: str = "text/x-jac",
      MAX_DECL_LINES: int = 300,
      MAX_MODULE_SOURCE: int = 120,
@@ -69,6 +71,28 @@ impl context_blocks(model: ProjectModel, keys: list[str]) -> list[dict[str, any]
 }
 
 impl context_block(model: ProjectModel, key: str) -> (dict[str, any] | None) {
+    if key.startswith(MAP_PREFIX) {
+        level = graph_level(model, key[len(MAP_PREFIX):]);
+        return {
+            "type": "resource",
+            "resource": {
+                "uri": MAP_SCHEME + (level.scope or "project"),
+                "text": level_text(level, model),
+                "mimeType": "text/plain"
+            }
+        };
+    }
+    pair = parse_deps_key(key);
+    if pair is not None {
+        return {
+            "type": "resource",
+            "resource": {
+                "uri": DEPS_SCHEME + key[len(DEPS_PREFIX):],
+                "text": deps_text(model, pair[0], pair[1]),
+                "mimeType": "text/plain"
+            }
+        };
+    }
     if key.startswith(WIRE_PREFIX) {
         w = find_wire(model, key);
         if w is None {
@@ -108,6 +132,9 @@ impl resolve_key(model: ProjectModel, query: str) -> str {
     q = query.strip();
     if q.startswith(WIRE_PREFIX) {
         return q if find_wire(model, q) is not None else "";
+    }
+    if q.startswith(MAP_PREFIX) or parse_deps_key(q) is not None {
+        return q;
     }
     if model.node_for(q) is not None {
         return q;

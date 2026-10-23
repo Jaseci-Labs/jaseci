@@ -18,11 +18,12 @@ jac studio -s 20261023-0012     # resume a saved session (a unique prefix is eno
 | Navigator | Packages, modules, archetypes, abilities and fields. A `●` marks symbols changed in this session. |
 | Code | The selected file, read-only, with semantic highlighting, hover, diagnostics and inferred types inline. |
 | Wiring | For the focused module: the modules that feed it, the module itself with the rules that govern it, and the modules it feeds, with the names each wire carries. A wire that breaks a rule is marked `⚠` with the reason. |
+| Map | The architecture map: the wiring between packages, one level of the package hierarchy at a time. See [The architecture map](#the-architecture-map). |
 | Agent | The transcript: messages, collapsible tool calls, the agent's plan and command output. |
 | Context | The tray: everything you selected for the next request. |
 | Prompt | Your instruction. Slash verbs act on the tray. |
 
-The centre pane switches between code and wiring with `Ctrl+T` (or `w` in the navigator or code view).
+The centre pane switches between code and wiring with `Ctrl+T` (or `w` in the navigator or code view), and to the architecture map with `m`.
 
 ## Keys
 
@@ -30,6 +31,7 @@ The centre pane switches between code and wiring with `Ctrl+T` (or `w` in the na
 |-----|--------|
 | `Tab` / `Shift+Tab` | Move focus between panes |
 | `Ctrl+P` | Go to any module or symbol (`Tab` in the list adds it to the context) |
+| `m` | Architecture map of the package around the selection |
 | `Ctrl+X` | Command palette |
 | `Ctrl+L` | Jump to the prompt |
 | `F1` | All keys |
@@ -40,6 +42,31 @@ The centre pane switches between code and wiring with `Ctrl+T` (or `w` in the na
 In the navigator and code view, `Space` (or `a`) adds the item under the cursor to the context. In the code view, `Enter` or `d` goes to the definition, `r` lists references, `i` jumps between a declaration and its impl, `e` moves to the next diagnostic, and `t` shows or hides inferred types. In the wiring view, `←` and `→` move between the columns, `Enter` follows a wire, `Space` adds a wire or symbol to the context, and `A` adds a whole column.
 
 In the transcript, `↑` and `↓` select an entry. `Enter` expands a tool call, or on the plan opens the code its steps are linked to. `o` opens the files a tool call touched.
+
+## The architecture map
+
+`m` in the navigator or code view opens the map on the package that holds the selected item, with the item selected. Each level groups the modules under one package by their next name segment, so a level shows sub-packages and modules side by side, and adds up the wires between them. Groups are ordered providers first: a group comes before the groups it feeds wherever the wiring allows it.
+
+The map has three views of the same level; `v` cycles them and `1`, `2`, `3` pick one.
+
+| View | Shows |
+|------|-------|
+| Matrix | Every pair of groups. The row feeds the column, and each number is a count of wires. Numbers right of the diagonal follow the provider order; a number left of it is a backward wire, where a later group feeds an earlier one. Backward counts are yellow and counts that include a rule violation are red. `↻` marks groups that sit in a cycle. |
+| Layers | Groups stacked by depth: layer 0 is fed by nothing at this level, and every forward wire goes to a higher layer. Selecting a group lights up what feeds it, what it feeds, and the rest of its cycle. |
+| Issues | What keeps the level from being cleanly layered: wires that break a rule, backward wires (largest first), and cycles. |
+
+Under each view, the selected group shows its module count, layer, cycle, governing rules, and the groups it feeds and is fed by with wire counts (`↺` marks a backward one). A selected matrix cell shows the dependency: its wire count, a sample wire, and whether the two groups depend on each other.
+
+| Key | Action |
+|-----|--------|
+| Arrows | Move. In the matrix, `d` jumps to the diagonal and `t` swaps the row and column |
+| `Enter` | Open a package (its level), show a module in the wiring view, or list the wires behind a number |
+| `Backspace` / `u` | Up one level |
+| `Space` | Add the selection to the context: a module, a package's map, or the wires behind a dependency |
+| `A` | Add the whole level to the context |
+| `w` | Show the selected module in the wiring view |
+
+A package's map in the context reaches the agent as the level in text: its groups by layer, the matrix, the backward wires and the cycles. A dependency reaches it as the list of wires with the names each carries. The map follows `archwire.jac`: change a wire and the level is recomputed.
 
 ## Telling an agent what to do
 
@@ -95,6 +122,7 @@ The studio drives any agent that speaks the [Agent Client Protocol](https://agen
 | `studio_focus` | Shows a module, symbol or file location to the user, with an optional note |
 | `studio_wiring` | A module's providers, consumers and governing rules |
 | `studio_rules` | Every rule and the modules it covers |
+| `studio_graph` | One level of the architecture map: groups by layer, wire counts between them, backward wires and cycles |
 | `studio_symbol` | A declaration with its impl, users, uses and the walkers that visit it |
 | `studio_search` | Fuzzy search over modules and symbols |
 | `studio_link_plan` | Links each step of the agent's plan to the code it touches |
@@ -107,6 +135,8 @@ The built-in agent, `jac`, runs on byLLM inside the studio. It needs byLLM's mod
 jac studio model                       # summary of the project model
 jac studio model geo.shape --json      # one module, as JSON
 jac studio model geo.shape.Circle      # a symbol: members, impls, users, uses, walkers
+jac studio graph                       # the architecture map of the project, as text
+jac studio graph core --json           # one package's level, as JSON
 jac studio ask geo.shape.Circle "add a perimeter method" -a claude --yes
 jac studio sessions                    # saved sessions
 jac studio sessions fork <id>          # copy a session to take it in another direction

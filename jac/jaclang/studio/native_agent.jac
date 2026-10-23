@@ -17,7 +17,8 @@ glob TOOL_KINDS: dict[str, str] = {
          "find_symbol": "search",
          "symbol_context": "read",
          "symbol_uses": "search",
-         "archwire": "search"
+         "archwire": "search",
+         "architecture": "search"
      },
      NOISY_LOGGERS: list[str] = ["LiteLLM", "litellm", "byllm", "httpx", "openai"],
      MAX_TOOL_OUTPUT: int = 20000,
@@ -27,7 +28,8 @@ glob TOOL_KINDS: dict[str, str] = {
      SYSTEM_PROMPT: str = """You are the built-in coding agent of Jac Studio, working inside a Jac project.
 Read code with the tools before you answer; do not guess. Paths are relative to the project root.
 Prefer the compiler-aware tools: find_symbol to locate a symbol, symbol_context for its declaration,
-impl body and wiring, symbol_uses for its uses, archwire for a module's providers, consumers and rules.
+impl body and wiring, symbol_uses for its uses, archwire for a module's providers, consumers and rules,
+architecture for a package's sub-packages, the wires between them and the cycles among them.
 In Jac, imports between project modules are wires in archwire.jac, not import lines in the file.
 To change a file, call write_file with the complete new content; the user approves every write and may
 reject it with a reason. Keep answers short and concrete.""";
@@ -72,6 +74,7 @@ obj NativeAgentSession(AgentSession) {
     def t_symbol_context(key: str) -> str;
     def t_symbol_uses(name: str) -> str;
     def t_archwire(module: str) -> str;
+    def t_architecture(scope: str) -> str;
 }
 
 def friendly_error(e: Exception, model_name: str) -> str;
@@ -368,6 +371,10 @@ impl NativeAgentSession.make_tools -> list[any] {
         return self.t_archwire(module);
     }
     archwire.__doc__ = "Show a module's architecture neighbourhood: the wires that feed it and that it feeds (with payload names) and the archwire rules governing it.";
+    def architecture(scope: str = "") -> str {
+        return self.t_architecture(scope);
+    }
+    architecture.__doc__ = "Show the architecture one package level at a time: the groups under scope (a package such as pkg.sub, a module shown among its siblings, or empty for the whole project) in provider-first layers, a matrix of wire counts between them, the backward wires that break the layering, and cycles.";
     return [
         read_file,
         list_dir,
@@ -377,7 +384,8 @@ impl NativeAgentSession.make_tools -> list[any] {
         find_symbol,
         symbol_context,
         symbol_uses,
-        archwire
+        archwire,
+        architecture
     ];
 }
 
@@ -717,6 +725,12 @@ impl NativeAgentSession.t_symbol_uses(name: str) -> str {
     return "\n".join(out);
 }
 
+impl NativeAgentSession.t_architecture(scope: str) -> str {
+    pm = self.model();
+    level = graph_level(pm, scope_for(pm, scope));
+    return level_text(level, pm);
+}
+
 impl NativeAgentSession.t_archwire(module: str) -> str {
     pm = self.model();
     key = module if module in pm.modules else module_of(pm, module);
@@ -777,7 +791,16 @@ impl tool_title(tool: str, args: any) -> str {
     if not isinstance(args, dict) {
         return tool;
     }
-    for k in ["path", "command", "query", "key", "name", "module", "pattern"] {
+    for k in [
+        "path",
+        "command",
+        "query",
+        "key",
+        "name",
+        "module",
+        "scope",
+        "pattern"
+    ] {
         if args.get(k) {
             val = " ".join(str(args[k]).split());
             return f"{tool} {val[:80]}";
