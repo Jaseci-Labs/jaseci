@@ -15773,6 +15773,12 @@ graph import runtime.python {
             keywords_of_dict
         },
         modules.math { vector_tuple },
+        object_model.bytes_methods | object_model.list | object_model.odict {
+            BoundArguments,
+            CallSignature,
+            PARSE_KEYWORDS,
+            invoke_vector
+        },
         object_model.complex
             | object_model.interpolation
             | object_model.module
@@ -15786,12 +15792,6 @@ graph import runtime.python {
             CallSignature,
             PARSE_KEYWORDS,
             invoke_tuple
-        },
-        object_model.list | object_model.odict {
-            BoundArguments,
-            CallSignature,
-            PARSE_KEYWORDS,
-            invoke_vector
         },
         object_model.long | object_model.memory {
             BoundArguments,
@@ -21409,6 +21409,49 @@ graph import runtime.python {
             _PyArg_NoKwnames,
             _Py_SetImmortal
         },
+        object_model.bytes_methods {
+            NULL,
+            PyBool_FromLong,
+            PyBuffer_Release,
+            PyByteArray_AsString,
+            PyByteArray_Type,
+            PyBytes_AsString,
+            PyBytes_FromStringAndSize,
+            PyBytes_Type,
+            PyErr_Clear,
+            PyErr_ExceptionMatches,
+            PyErr_Format,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetString,
+            PyEval_RestoreThread,
+            PyEval_SaveThread,
+            PyExc_OverflowError,
+            PyExc_RuntimeError,
+            PyExc_TypeError,
+            PyExc_ValueError,
+            PyIndex_Check,
+            PyList_Append,
+            PyList_New,
+            PyList_Reverse,
+            PyLong_AsInt,
+            PyLong_AsSsize_t,
+            PyLong_FromSsize_t,
+            PyMem_Calloc,
+            PyMem_Free,
+            PyMem_Malloc,
+            PyNumber_AsSsize_t,
+            PyObject,
+            PyObject_CheckBuffer,
+            PyObject_GetBuffer,
+            PySequence_Fast,
+            PyThreadState,
+            PyTuple_New,
+            Py_buffer,
+            _PyArg_BadArgument,
+            _PyArg_CheckPositional,
+            _PyNumber_Index
+        },
         object_model.capsule {
             NULL,
             PyErr_Format,
@@ -23361,6 +23404,13 @@ graph import runtime.python {
             _PyLong_TRUE_TAG,
             _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
             _object
+        },
+        object_model.bytes_methods {
+            PyBUF_SIMPLE,
+            PyTypeObject,
+            PyVarObject,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_TUPLE_SUBCLASS
         },
         object_model.capsule {
             PyCapsule,
@@ -31945,6 +31995,19 @@ graph import runtime.python.object_model {
         | weakref { Py_GenericAlias }
     header ++> [
         bool { object_is_type },
+        bytes_methods {
+            fast_items,
+            object_decref,
+            object_incref,
+            object_is_type,
+            object_new_ref,
+            object_size,
+            object_type,
+            object_type_check,
+            tuple_get_item,
+            tuple_set_item,
+            type_has_feature
+        },
         capsule { PyType_Type, object_gc_track, object_gc_untrack, object_is_type },
         cell {
             PyType_Type,

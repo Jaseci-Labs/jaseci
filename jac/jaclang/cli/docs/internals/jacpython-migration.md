@@ -703,6 +703,14 @@ Multiplication switches to Karatsuba and conversions of very long ints call
 into `_pylong` at the same thresholds as C. Where C uses stack arrays (the
 `pow` window table, `_PyLong_Frexp`'s digits), the port allocates.
 
+`bytes_methods.c` (`object_model/bytes_methods.jac`) carries the
+`_Py_bytes_*` functions and, as `bl_*` helpers over a byte pointer and a
+length, the byte instantiation of `Objects/stringlib` (fastsearch with its
+two-way, Horspool and adaptive paths at C's thresholds, split, partition,
+replace, join, the padding methods). bytes and bytearray share it; the
+stringlib headers stay until `unicodeobject.c`, which includes them, is
+ported.
+
 Order after these: text (`bytesobject.c`, `bytearrayobject.c`,
 `unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
 (`obmalloc.c` and the mimalloc copy under `Objects/mimalloc/`) follows the

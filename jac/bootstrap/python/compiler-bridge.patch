@@ -385,58 +385,59 @@
 -		Python/instruction_sequence.o \
 @@ -495,1 +450,0 @@
 -		Python/symtable.o \
-@@ -523,1 +477,0 @@
+@@ -523,2 +477,0 @@
 -		Objects/boolobject.o \
-@@ -528,3 +481,0 @@
+-		Objects/bytes_methods.o \
+@@ -528,3 +480,0 @@
 -		Objects/capsule.o \
 -		Objects/cellobject.o \
 -		Objects/classobject.o \
-@@ -532,2 +482,0 @@
+@@ -532,2 +481,0 @@
 -		Objects/complexobject.o \
 -		Objects/descrobject.o \
-@@ -534,2 +482,0 @@
+@@ -534,2 +481,0 @@
 -		Objects/enumobject.o \
 -		Objects/exceptions.o \
-@@ -536,1 +482,0 @@
+@@ -536,1 +481,0 @@
 -		Objects/genericaliasobject.o \
-@@ -538,2 +483,0 @@
+@@ -538,2 +482,0 @@
 -		Objects/fileobject.o \
 -		Objects/floatobject.o \
-@@ -541,5 +484,0 @@
+@@ -541,5 +483,0 @@
 -		Objects/funcobject.o \
 -		Objects/interpolationobject.o \
 -		Objects/iterobject.o \
 -		Objects/listobject.o \
 -		Objects/longobject.o \
-@@ -546,3 +484,0 @@
+@@ -546,3 +483,0 @@
 -		Objects/dictobject.o \
 -		Objects/odictobject.o \
 -		Objects/memoryobject.o \
-@@ -549,3 +484,0 @@
+@@ -549,3 +483,0 @@
 -		Objects/methodobject.o \
 -		Objects/moduleobject.o \
 -		Objects/namespaceobject.o \
-@@ -554,6 +486,0 @@
+@@ -554,6 +485,0 @@
 -		Objects/picklebufobject.o \
 -		Objects/rangeobject.o \
 -		Objects/setobject.o \
 -		Objects/sliceobject.o \
 -		Objects/structseq.o \
 -		Objects/templateobject.o \
-@@ -560,1 +486,0 @@
+@@ -560,1 +485,0 @@
 -		Objects/tupleobject.o \
-@@ -562,1 +487,0 @@
+@@ -562,1 +486,0 @@
 -		Objects/typevarobject.o \
-@@ -565,2 +489,0 @@
+@@ -565,2 +488,0 @@
 -		Objects/unionobject.o \
 -		Objects/weakrefobject.o \
-@@ -1937,1 +1877,1 @@
+@@ -1937,1 +1876,1 @@
 -Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
 +# posixmodule.c and posixmodule.h are native Jac (jaclang/runtime/python/modules/posix*.jac).
-@@ -1943,1 +1883,1 @@
+@@ -1943,1 +1882,1 @@
 -Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
 +Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c
-@@ -1986,8 +1926,2 @@
+@@ -1986,8 +1925,2 @@
 -	@$(MKDIR_P) $(srcdir)/Parser
 -	@$(MKDIR_P) $(srcdir)/Parser/tokenizer
 -	@$(MKDIR_P) $(srcdir)/Parser/lexer
@@ -447,7 +448,7 @@
 -	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 +	@echo "JacPython supplies this compiler component; C regeneration is disabled" >&2
 +	@false
-@@ -2015,21 +1949,2 @@
+@@ -2015,21 +1948,2 @@
 -	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
 -	# using Tools/build/generate_token.py
 -	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_token.py rst \
@@ -471,10 +472,10 @@
 -		$(srcdir)/Lib/token.py
 +	@echo "JacPython supplies this compiler component; C regeneration is disabled" >&2
 +	@false
-@@ -2065,1 +1980,1 @@
+@@ -2065,1 +1979,1 @@
 -Python/compile.o Python/codegen.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h
 +Python/ast_unparse.o: $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h
-@@ -2201,7 +2115,0 @@
+@@ -2201,7 +2114,0 @@
 -Python/compile.o Python/codegen.o Python/assemble.o Python/flowgraph.o Python/instruction_sequence.o: \
 -                $(srcdir)/Include/internal/pycore_compile.h \
 -                $(srcdir)/Include/internal/pycore_flowgraph.h \
@@ -482,17 +483,17 @@
 -                $(srcdir)/Include/internal/pycore_opcode_metadata.h \
 -                $(srcdir)/Include/internal/pycore_opcode_utils.h
 -
-@@ -2214,3 +2121,0 @@
+@@ -2214,3 +2120,0 @@
 -
 -Python/flowgraph.o: \
 -		$(srcdir)/Include/internal/pycore_opcode_metadata.h
-@@ -2817,1 +2722,1 @@
+@@ -2817,1 +2721,1 @@
 -	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 +	PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-@@ -2822,1 +2727,1 @@
+@@ -2822,1 +2726,1 @@
 -	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 +	PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-@@ -3422,0 +3328,7 @@
+@@ -3422,0 +3327,7 @@
 +
 +# Compiler/parser objects are supplied by native Jac and retained-runtime ABI adapters.
 +Python/jac_compile.o: $(srcdir)/Python/jac_compile.c $(srcdir)/Python/jac_compile.h
