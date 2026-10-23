@@ -142,6 +142,12 @@ impl run_studio(
         return cmd_gate(directory, args, as_json);
     }
     root_dir = find_project_root(directory or os.getcwd());
+    try {
+        cfg = get_config_for_dir(root_dir);
+        if cfg is not None {
+            add_venv_to_path(cfg);
+        }
+    } except Exception {}
     if action == "model" {
         return cmd_model(root_dir, args, as_json);
     }

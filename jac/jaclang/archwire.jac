@@ -2074,7 +2074,8 @@ graph import {
             | client.targets.react_native.scaffold._project_native_deps
             | scale.config.app_config
             | scale.runtime.realizer.kubernetes_realizer.KubernetesRealizer._resolve_fleet
-            | server.endpoints.colocated.served_app_route { get_config_for_dir },
+            | server.endpoints.colocated.served_app_route
+            | studio.app { get_config_for_dir },
         dist.publish.metadata | dist.publish.package_json { JacConfig, PersonConfig },
         packages.migrate { serialize_toml, toml_minimal_update },
         scale.config.dev_config.resolve_dev_channel
@@ -2302,7 +2303,9 @@ graph import {
         client.cli | client.plugin_config { EcosystemProvider },
     ]
     project.pyvenv ++> [
-        cli.commands.execution._discover_config_from_file { add_venv_to_path },
+        cli.commands.execution._discover_config_from_file | studio.app {
+            add_venv_to_path
+        },
         cli.commands.execution._ensure_watchdog_installed { add_venv_to_path },
         cli.commands.execution._pin_run_scope { add_venv_to_path },
         cli.commands.project._update_pypi { make_git_spec },
@@ -4544,7 +4547,7 @@ graph import byllm {
 
 graph import byllm._optdeps {
     _deferred ++> [
-        litellm { DeferredClassMeta, DeferredModule, is_installed, when_loaded },
+        litellm { DeferredClassMeta, is_installed, when_loaded },
         openai { DeferredClassMeta, DeferredModule, is_installed },
     ]
 }

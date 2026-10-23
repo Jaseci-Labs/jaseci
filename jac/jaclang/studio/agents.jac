@@ -89,7 +89,7 @@ impl AgentSpec.runnable -> bool {
 impl AgentSpec.reason -> str {
     if self.kind == "builtin" {
         if importlib.util.find_spec("litellm") is None {
-            return "byllm's model client (litellm) is not installed";
+            return "byllm's model client is not installed; add [byllm] to jac.toml and run `jac install`";
         }
         return "";
     }

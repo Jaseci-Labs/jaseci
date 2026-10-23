@@ -760,7 +760,7 @@ impl friendly_error(e: Exception, model_name: str) -> str {
     if isinstance(e, ImportError) {
         return (
             f"The built-in agent needs byllm's model client, which is not installed: {text}. "
-            "Install the provider support (litellm) into this environment."
+            "Add [byllm] to jac.toml and run `jac install` to install it."
         );
     }
     if name in ["ModelNotFoundError", "NotFoundError"] or "model not found" in low {
