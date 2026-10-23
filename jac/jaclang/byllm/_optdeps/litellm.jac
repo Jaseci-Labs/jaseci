@@ -16,6 +16,8 @@ class _Timeout(_LLMUnavailable) {}
 class _LiteLLMShim {
     def __getattr__(self: any, attr: str) -> any;
     def __setattr__(self: any, attr: str, value: any);
+    def __delattr__(self: any, attr: str);
+    def __dir__(self: any) -> list[str];
     def __repr__(self: any) -> str;
 }
 

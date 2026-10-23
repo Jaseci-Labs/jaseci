@@ -13,6 +13,21 @@ impl _LiteLLMShim.__setattr__(self: any, attr: str, value: any) {
     }
 }
 
+impl _LiteLLMShim.__delattr__(self: any, attr: str) {
+    if is_installed("litellm") {
+        delattr(importlib.import_module("litellm"), attr);
+    } else {
+        object.__delattr__(self, attr);
+    }
+}
+
+impl _LiteLLMShim.__dir__(self: any) -> list[str] {
+    if is_installed("litellm") {
+        return dir(importlib.import_module("litellm"));
+    }
+    return dir(_FALLBACK);
+}
+
 impl _LiteLLMShim.__repr__(self: any) -> str {
     return "<litellm ("
         + ("installed" if is_installed("litellm") else "not installed")
