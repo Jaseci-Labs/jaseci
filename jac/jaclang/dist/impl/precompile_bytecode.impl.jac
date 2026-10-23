@@ -192,10 +192,12 @@ impl _application_sources(package_dir: str, app: str) -> list[str] | None {
         }
         _placement_cache[key] = facts;
         _source_apps[key] = source_apps;
+
+        entry_paths = {os.path.realpath(application.entry) for application in entries};
         return sorted(
             path
             for (path, spaces) in facts.items()
-            if not spaces_are_client_only(spaces)
+            if path in entry_paths or not spaces_are_client_only(spaces)
         );
     } finally {
         program.release_compile_closure();
@@ -243,10 +245,15 @@ impl sealable_sources(package_dir: str, app: str = "") -> list[str] {
             );
             result = candidates;
         } else {
+            workspace = workspace_for_path(os.path.join(package_dir, '__init__.jac'));
+            entry_paths = {a.real_entry for a in workspace.apps.values()}
+                if workspace
+                else set();
             skipped = [
                 p
                 for p in candidates
-                if spaces_are_client_only(facts[os.path.abspath(p)])
+                if os.path.realpath(p) not in entry_paths
+                    and spaces_are_client_only(facts[os.path.abspath(p)])
             ];
             result = [
                 p
