@@ -1,10 +1,13 @@
 [dev] jac dev mode - using compiler source at /home/baichuan/jaseci/jac-sql/jac
 jac: llvm-shim runs on its floor (Python placement for native-default code, slower): not built. Run `jac native build llvm-shim`; `jac native status llvm-shim` shows what moved.
 jac: kernel runs on its floor (the bytecode compiler, slower): native pipeline unavailable: the LLVM shim is not built. Run `jac native build kernel`; `jac native status kernel` shows what moved.
-jac: stubcat runs on its floor (parsing the typeshed stubs, slower): not built. Run `jac native build stubcat`; `jac native status stubcat` shows what moved.
 Preparing application...
-  Compiling server modules and placement metadata...
+  Restoring prepared application
+
+Setting up Jac for first use (compiling and caching compiler)...
+  Compiling jaclang/sql.jac...
 SELECT "_t0"."name" AS "name" FROM "people" AS "_t0" INNER JOIN "pets" AS "_t1" ON ("_t0"."id" = "_t1"."owner_id") WHERE ("_t0"."age" > CAST(:p0 AS bigint)) ORDER BY "_t0"."age" DESC
 {'p0': 30}
 SELECT (SELECT COUNT(*) AS "total" FROM "people" AS "_t0") AS "total"
 WITH "_cte0" ("id", "name") AS (SELECT "_t0"."id" AS "id", "_t0"."name" AS "name" FROM "people" AS "_t0" WHERE ("_t0"."age" > CAST(:p0 AS bigint))) SELECT "_t1"."name" AS "name" FROM "_cte0" AS "_t1"
+Jac setup complete (1 modules compiled and cached)

@@ -152,28 +152,28 @@ test "PostgreSQL: aggregate validation" {
     run_case(PostgresTests("test_aggregate_validation"));
 }
 
-test "PostgreSQL: mutated ast is revalidated" {
-    run_case(PostgresTests("test_mutated_ast_is_revalidated"));
+test "PostgreSQL: query and expression are immutable" {
+    run_case(PostgresTests("test_query_and_expression_are_immutable"));
 }
 
 test "PostgreSQL: source field schema validation" {
     run_case(PostgresTests("test_source_field_schema_validation"));
 }
 
-test "PostgreSQL: projection expression type swap rejected" {
-    run_case(PostgresTests("test_projection_expression_type_swap_rejected"));
+test "PostgreSQL: projection expression is immutable" {
+    run_case(PostgresTests("test_projection_expression_is_immutable"));
 }
 
-test "PostgreSQL: projection derived arithmetic rejected" {
-    run_case(PostgresTests("test_projection_derived_arithmetic_rejected"));
+test "PostgreSQL: derived schema comes from query" {
+    run_case(PostgresTests("test_derived_schema_comes_from_query"));
 }
 
-test "PostgreSQL: projection nullability swap rejected" {
-    run_case(PostgresTests("test_projection_nullability_swap_rejected"));
+test "PostgreSQL: projection nullability is immutable" {
+    run_case(PostgresTests("test_projection_nullability_is_immutable"));
 }
 
-test "PostgreSQL: projection same type swap allowed" {
-    run_case(PostgresTests("test_projection_same_type_swap_allowed"));
+test "PostgreSQL: query rebuild preserves original" {
+    run_case(PostgresTests("test_query_rebuild_preserves_original"));
 }
 
 test "PostgreSQL: recursive anchor clauses limit" {
@@ -224,6 +224,30 @@ test "PostgreSQL: auto source aliases for self join" {
     run_case(PostgresTests("test_auto_source_aliases_for_self_join"));
 }
 
-test "PostgreSQL: recursive union schema mutation" {
-    run_case(PostgresTests("test_recursive_union_schema_mutation"));
+test "PostgreSQL: recursive union is immutable" {
+    run_case(PostgresTests("test_recursive_union_is_immutable"));
+}
+
+test "PostgreSQL: recursive step can be reused" {
+    run_case(PostgresTests("test_recursive_step_can_be_reused"));
+}
+
+test "PostgreSQL: cte bindings share target schema" {
+    run_case(PostgresTests("test_cte_bindings_share_target_schema"));
+}
+
+test "PostgreSQL: correlated aggregate local grouping" {
+    run_case(PostgresTests("test_correlated_aggregate_local_grouping"));
+}
+
+test "PostgreSQL: constructor inputs are snapshotted" {
+    run_case(PostgresTests("test_constructor_inputs_are_snapshotted"));
+}
+
+test "PostgreSQL: validation precedes rendering" {
+    run_case(PostgresTests("test_validation_precedes_rendering"));
+}
+
+test "PostgreSQL: invalid raw nodes are rejected" {
+    run_case(PostgresTests("test_invalid_raw_nodes_are_rejected"));
 }

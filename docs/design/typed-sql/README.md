@@ -18,7 +18,7 @@ executes a generated query. Jac itself remains the required language runtime.
 | --- | --- | --- |
 | `ScalarExpr[T]` | One SQL value of type T | Typed wrapper over expression AST |
 | `Relation[R, C]` | Rows with schema R and cardinality proof C | SELECT, UNION ALL; reachable CTE definitions |
-| `Source` | A bound table, derived relation or CTE reference | Owns schema and alias |
+| `Source` | A bound table, derived relation or CTE reference | Reads its target schema; identifies a source binding |
 | `Command` | Separate category for future data-changing statements | Category marker |
 
 **SELECT is a relational expression.** `compile_sql` consumes a relation;
@@ -28,7 +28,7 @@ column types. The prototype does not synthesize a static record type from runtim
 field names. Field existence and whole-query constraints are validated before SQL.
 
 SQL types: Bool, Int64, Float64, Text, UUID and Nullable[T]. Type tokens and field
-keys use generic marker types; data types are checked again during rendering.
+keys use generic marker types; data types are checked during query analysis.
 The marker parameters are intentionally phantom, which the current all-rules
 Jac lint configuration reports as unused-type-parameter warnings.
 
@@ -85,17 +85,44 @@ at all 11 expected invalid-call lines. A second fixture rejects all three
 legacy calls that supply temporary SQL names or pass non-relations to `cte`. Runtime/AST validation covers dynamic
 schema information and callers from Python or gradual typing.
 
-## Whole-query validation
+## Immutable query model and compilation
 
-The renderer checks each projection field against its expression type, including
-nullability, in addition to comparing the declared row schema with those fields.
-This rejects stale schema metadata after expression replacement, including inside
-derived relations, before SQL is returned. It also validates bound column
-sources and field types, sequential JOIN
-visibility, alias collisions/shadowing, CTE visibility/order, compatible UNION/CTE
-schemas, aggregate placement, nested aggregates, GROUP BY coverage and cardinality
-proofs. Raw AST nodes are revalidated on every compile, so post-construction
-mutation cannot silently invalidate a row-count proof or parameter type.
+Query values, expression nodes, field definitions and schemas are immutable.
+Their sequence fields use tuples; constructors copy caller-supplied lists. Build
+another query to change a projection, predicate or limit. Existing queries and
+queries that share their expressions retain their meaning. For example,
+`limit_one(query)` constructs a separate SELECT with LIMIT 1.
+
+SELECT obtains its schema from its projections. UNION obtains its output schema
+from its left arm. A derived source reads its query's schema; a CTE use reads its
+target's schema. These objects have no independent schema snapshot to synchronize.
+Physical tables have an explicit schema contract. A recursive forward reference
+has a declared output schema and a single-assignment definition binding;
+`define_cte` checks that contract when closing the reference. Once bound, the
+CTE's definition and recursive flag cannot change.
+
+`compile_sql` has separate analysis and rendering phases:
+
+1. `QueryGraph` traverses structural containment and queues CTE references.
+   Definitions are collected after the active containment traversal finishes.
+   Dependency ordering distinguishes recursive self-reference from mutual cycles.
+2. `QueryValidator` checks types, scope, grouping and cardinality and resolves SQL
+   names. It returns a `ValidatedQuery` containing the immutable AST and bindings.
+   This phase builds no SQL strings and allocates no SQL parameter placeholders.
+3. `PostgresRenderer` serializes that plan, quotes identifiers and assigns named
+   parameter bindings. SQL semantic validation resides in the analyzer.
+
+Analysis checks each projection field against its expression type, including
+nullability. It validates bound columns, sequential JOIN visibility, alias scope,
+CTE visibility, compatible UNION/CTE schemas, aggregate placement, nested
+aggregates, GROUP BY coverage and scalar-subquery cardinality. Low-level AST
+constructors are also checked through `compile_sql`; immutable construction does
+not substitute for semantic validation.
+
+GROUP BY coverage uses local columns. Correlated outer columns remain free
+variables for checking the enclosing query, while acting as constants within an
+inner aggregate. Tests cover both valid correlated aggregates and invalid local
+or enclosing-query grouping.
 
 The initial grouping fragment accepts column expressions as group keys. Aggregates
 are COUNT(*) returning non-null Int64 and SUM(Float64) returning nullable Float64.
@@ -120,7 +147,7 @@ Int64 range at construction; convenience factories have narrower Jac signatures.
 ## CTEs and recursion
 
 `cte(query)` creates a reference whose output schema comes from the query. The
-renderer follows references, orders dependencies and emits each definition once.
+compiler collects references, orders dependencies and emits each definition once.
 SQL names and temporary-source aliases are generated per compilation and avoid
 all referenced physical table names and explicit table aliases. Physical table
 names remain supplied by the caller. Generated names do not mutate the AST.
@@ -152,8 +179,9 @@ The anchor renders as `SELECT * FROM (anchor) AS "_recursive_anchor"` before
 UNION ALL. This subquery keeps anchor-local ORDER BY and LIMIT inside the anchor.
 Tests execute LIMIT, ORDER BY and their combination on PostgreSQL and SQLite.
 Ordinary and recursive UNION paths share schema/cardinality validation. Both
-arms are rechecked against UNION metadata on every compilation, including after
-AST replacement; the UNION output must also match the CTE schema.
+arm schemas must agree, and the UNION output must match the recursive CTE
+contract. Reusing the recursive step as a standalone query or derived source
+collects the completed CTE definition and executes normally.
 CTE definitions are independently scoped and cannot capture outer query columns.
 
 ## Extension path
@@ -186,7 +214,7 @@ JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
 
-There are 81 native Jac test entries: 39 SQLite, the same 39 PostgreSQL cases,
+There are 93 native Jac test entries: 45 SQLite, the same 45 PostgreSQL cases,
 and three static-check tests. Shared fixtures live in `sql_cases.jac` and use
 standard-library assertion helpers.
 

@@ -1,0 +1,18 @@
+[dev] jac dev mode - using compiler source at /home/baichuan/jaseci/jac-sql/jac
+jac: llvm-shim runs on its floor (Python placement for native-default code, slower): not built. Run `jac native build llvm-shim`; `jac native status llvm-shim` shows what moved.
+jac: kernel runs on its floor (the bytecode compiler, slower): native pipeline unavailable: the LLVM shim is not built. Run `jac native build kernel`; `jac native status kernel` shows what moved.
+Preparing application...
+  Restoring prepared application
+
+Setting up Jac for first use (compiling and caching compiler)...
+  Compiling jaclang/sql.jac...
+A. Physical table
+SELECT "_t0"."name" AS "name" FROM "people" AS "_t0" ORDER BY "_t0"."id" ASC
+[('Ann',), ('Bob',)]
+B. CTE object
+WITH "_cte0" ("id", "name") AS (SELECT "_t0"."id" AS "id", "_t0"."name" AS "name" FROM "people" AS "_t0" WHERE (CAST(:p0 AS bigint) > "_t0"."age")) SELECT "_t1"."name" AS "name" FROM "_cte0" AS "_t1"
+[('Ann',)]
+C. Physical table with referenced CTE
+WITH "_cte0" ("id", "name") AS (SELECT "_t0"."id" AS "id", "_t0"."name" AS "name" FROM "people" AS "_t0" WHERE (CAST(:p0 AS bigint) > "_t0"."age")) SELECT "_t1"."name" AS "name" FROM "people" AS "_t1" WHERE EXISTS (SELECT "_t2"."name" AS "name" FROM "_cte0" AS "_t2") ORDER BY "_t1"."id" ASC
+[('Ann',), ('Bob',)]
+Jac setup complete (1 modules compiled and cached)

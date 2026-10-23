@@ -15,7 +15,23 @@ obj Many {}
 obj AtMostOne {}
 obj ExactlyOne {}
 
-obj DataType {
+"""SQL values are immutable; use constructors to build a changed query."""
+obj SqlValue {
+    def __setattr__(name: str, value: any) -> None {
+        if name in self.__dict__ {
+            raise SqlError('SQL values are immutable; construct a new value');
+        }
+        object.__setattr__(
+            self, name, tuple(value) if isinstance(value, list) else value
+        );
+    }
+
+    def __delattr__(name: str) -> None {
+        raise SqlError('SQL values are immutable; construct a new value');
+    }
+}
+
+obj DataType(SqlValue) {
     has name: str,
         nullable: bool = False;
 
@@ -26,19 +42,19 @@ obj DataType {
     }
 }
 
-obj SqlType[T] {
+obj SqlType[T](SqlValue) {
     has data: DataType;
 }
 
-obj FieldDef {
+obj FieldDef(SqlValue) {
     has name: str,
         dtype: DataType;
 }
 
 obj Field[T](FieldDef) {}
 
-obj Schema {
-    has fields: list[FieldDef];
+obj Schema(SqlValue) {
+    has fields: tuple[FieldDef, ...];
 
     def postinit {
         names: set[str] = set();
@@ -63,27 +79,35 @@ obj Schema {
     }
 }
 
-obj RelationNode {
-    has schema: Schema,
-        cardinality: str;
+obj RelationNode(SqlValue) {
+    has cardinality: str;
+    has schema: Schema {
+        getter {
+            raise SqlError('Unknown relation schema');
+        }
+    }
 }
 
-obj Source {
-    has schema: Schema,
-        alias: str;
+obj Source(SqlValue) {
+    has alias: str;
+    has schema: Schema {
+        getter {
+            raise SqlError('Unknown source schema');
+        }
+    }
 
     def ref -> Source {
         if isinstance(self, Table) {
-            return Table(schema=self.schema, alias='', name=list(self.name));
+            return Table(declared_schema=self.schema, alias='', name=self.name);
         }
         if isinstance(self, Derived) {
-            return Derived(schema=self.schema, alias='', query=self.query);
+            return Derived(alias='', query=self.query);
         }
         if isinstance(self, Cte) {
-            return CteUse(schema=self.schema, alias='', target=self);
+            return CteUse(alias='', target=self);
         }
         if isinstance(self, CteUse) {
-            return CteUse(schema=self.schema, alias='', target=self.target);
+            return CteUse(alias='', target=self.target);
         }
         raise SqlError('Unknown source binding');
     }
@@ -100,23 +124,97 @@ obj Source {
 }
 
 obj Table(Source) {
-    has name: list[str];
+    has declared_schema: Schema,
+        name: tuple[str, ...];
+
+    has schema: Schema {
+        getter {
+            return self.declared_schema;
+        }
+    }
 }
 
 obj Derived(Source) {
     has query: RelationNode;
+    has schema: Schema {
+        getter {
+            return self.query.schema;
+        }
+    }
+}
+
+"""One explicit construction-time hole permits recursive references."""
+obj CteBinding(SqlValue) {
+    has _definition: RelationNode | None = None,
+        _recursive: bool = False;
+
+    has definition: RelationNode | None {
+        getter {
+            return self._definition;
+        }
+    }
+
+    has recursive: bool {
+        getter {
+            return self._recursive;
+        }
+    }
+
+    def __setattr__(name: str, value: any) -> None {
+        if self.__dict__.get('_definition') is not None {
+            raise SqlError('CTE reference is already defined');
+        }
+        object.__setattr__(self, name, value);
+    }
+
+    def bind(query: RelationNode, recursive: bool) -> None {
+        if self._definition is not None {
+            raise SqlError('CTE reference is already defined');
+        }
+        self._recursive = recursive;
+        self._definition = query;
+    }
 }
 
 obj Cte(Source) {
-    has definition: RelationNode | None,
-        recursive: bool = False;
+    has binding: CteBinding,
+        declared_schema: Schema | None = None;
+
+    has definition: RelationNode | None {
+        getter {
+            return self.binding.definition;
+        }
+    }
+
+    has recursive: bool {
+        getter {
+            return self.binding.recursive;
+        }
+    }
+
+    has schema: Schema {
+        getter {
+            if self.declared_schema is not None {
+                return self.declared_schema;
+            }
+            if self.definition is not None {
+                return self.definition.schema;
+            }
+            raise SqlError('CTE reference has no schema');
+        }
+    }
 }
 
 obj CteUse(Source) {
     has target: Cte;
+    has schema: Schema {
+        getter {
+            return self.target.schema;
+        }
+    }
 }
 
-obj ExprNode {
+obj ExprNode(SqlValue) {
     has dtype: DataType;
 }
 
@@ -137,7 +235,7 @@ obj BinaryNode(ExprNode) {
 
 obj BoolNode(ExprNode) {
     has op: str,
-        terms: list[ExprNode];
+        terms: tuple[ExprNode, ...];
 }
 
 obj UnaryNode(ExprNode) {
@@ -168,11 +266,11 @@ obj ExistsNode(ExprNode) {
     has query: RelationNode;
 }
 
-obj ScalarExpr[T] {
+obj ScalarExpr[T](SqlValue) {
     has ast: ExprNode;
 }
 
-obj ProjectionDef {
+obj ProjectionDef(SqlValue) {
     has field: FieldDef,
         expr: ExprNode;
 }
@@ -183,38 +281,50 @@ obj Projection[T](ProjectionDef) {
     }
 }
 
-obj Order {
+obj Order(SqlValue) {
     has expr: ExprNode,
         descending: bool;
 }
 
-obj Join {
+obj Join(SqlValue) {
     has source: Source,
         condition: ExprNode;
 }
 
 obj SelectNode(RelationNode) {
-    has projections: list[ProjectionDef],
+    has projections: tuple[ProjectionDef, ...],
         source: Source | None,
-        joins: list[Join],
+        joins: tuple[Join, ...],
         predicate: ExprNode | None,
-        groups: list[ExprNode],
+        groups: tuple[ExprNode, ...],
         having: ExprNode | None,
-        ordering: list[Order],
+        ordering: tuple[Order, ...],
         limit: int | None;
+
+    has schema: Schema {
+        getter {
+            return Schema(tuple(p.field for p in self.projections));
+        }
+    }
 }
 
 obj UnionNode(RelationNode) {
     has left: RelationNode,
         right: RelationNode,
         keep_duplicates: bool;
+
+    has schema: Schema {
+        getter {
+            return self.left.schema;
+        }
+    }
 }
 
-obj Relation[R, C] {
+obj Relation[R, C](SqlValue) {
     has ast: RelationNode;
 
     def as_source -> Source {
-        return Derived(schema=self.ast.schema, alias='', query=self.ast);
+        return Derived(alias='', query=self.ast);
     }
 }
 
@@ -267,7 +377,7 @@ def table(
     name: str, fields: list[FieldDef], alias: str = '', namespace: str | None = None
 ) -> Source {
     parts = [name] if namespace is None else [namespace, name];
-    return Table(schema=Schema(fields), alias=alias, name=parts);
+    return Table(declared_schema=Schema(tuple(fields)), alias=alias, name=tuple(parts));
 }
 
 def param[T](
@@ -382,7 +492,7 @@ def and_(terms: list[ScalarExpr[SqlBool]]) -> ScalarExpr[SqlBool] {
         }
     }
     return ScalarExpr(
-        BoolNode(dtype=DataType('boolean'), op='AND', terms=[t.ast for t in terms])
+        BoolNode(dtype=DataType('boolean'), op='AND', terms=tuple(t.ast for t in terms))
     );
 }
 
@@ -469,18 +579,16 @@ def select(
     if limit is not None and (type(limit) is not int or limit < 0) {
         raise SqlError('LIMIT must be a non-negative integer');
     }
-    schema = Schema([p.field for p in projections]);
     return Relation(
         SelectNode(
-            schema=schema,
             cardinality='many',
-            projections=list(projections),
+            projections=tuple(projections),
             source=source,
-            joins=list(joins),
+            joins=tuple(joins),
             predicate=where.ast if where is not None else None,
-            groups=list(group_by),
+            groups=tuple(group_by),
             having=having.ast if having is not None else None,
-            ordering=list(order_by),
+            ordering=tuple(order_by),
             limit=limit
         )
     );
@@ -492,7 +600,6 @@ def limit_one[R, C](query: Relation[R, C]) -> Relation[R, AtMostOne] {
     }
     q = query.ast;
     ast = SelectNode(
-        schema=q.schema,
         cardinality='at_most_one',
         projections=q.projections,
         source=q.source,
@@ -512,8 +619,23 @@ def aggregate(
     where: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]] | None = None
 ) -> Relation[Schema, ExactlyOne] {
     q = select(projections, source=source, where=where);
-    q.ast.cardinality = 'exactly_one_aggregate';
-    return Relation(q.ast);
+    ast = q.ast;
+    if not isinstance(ast, SelectNode) {
+        raise SqlError('Aggregate requires a SELECT');
+    }
+    return Relation(
+        SelectNode(
+            cardinality='exactly_one_aggregate',
+            projections=ast.projections,
+            source=ast.source,
+            joins=ast.joins,
+            predicate=ast.predicate,
+            groups=ast.groups,
+            having=ast.having,
+            ordering=ast.ordering,
+            limit=ast.limit
+        )
+    );
 }
 
 def scalar[R, T](
@@ -562,21 +684,19 @@ def union_all[R, C, D](
     }
     return Relation(
         UnionNode(
-            schema=left.ast.schema,
-            cardinality='many',
-            left=left.ast,
-            right=right.ast,
-            keep_duplicates=True
+            cardinality='many', left=left.ast, right=right.ast, keep_duplicates=True
         )
     );
 }
 
 def cte[R, C](query: Relation[R, C]) -> Cte {
-    return Cte(schema=query.ast.schema, alias='', definition=query.ast);
+    binding = CteBinding();
+    binding.bind(query.ast, False);
+    return Cte(binding=binding, alias='');
 }
 
 def cte_ref(fields: list[FieldDef]) -> Cte {
-    return Cte(schema=Schema(fields), alias='', definition=None);
+    return Cte(binding=CteBinding(), declared_schema=Schema(tuple(fields)), alias='');
 }
 
 def define_cte[R, C](
@@ -588,29 +708,37 @@ def define_cte[R, C](
     if not _schema_equal(reference.schema, query.ast.schema, False) {
         raise SqlError('CTE output schema differs from declared schema');
     }
-    reference.definition = query.ast;
-    reference.recursive = recursive;
+    reference.binding.bind(query.ast, recursive);
     return reference;
 }
 
 
-"""PostgreSQL rendering plus structural validation; SQL strings are emitted here."""
+"""Whole-query validation produces dependency facts and a resolved query plan."""
 obj Checked {
-    has sql: str,
-        free: set[str],
+    has free: set[str],
         aggregate: bool = False;
 }
 
-obj QueryText {
-    has sql: str,
-        external: set[str];
+obj QueryFacts {
+    has external: set[str];
+}
+
+obj ValidatedQuery {
+    has query: RelationNode,
+        ctes: tuple[Cte, ...],
+        aliases: dict[int, str],
+        cte_names: dict[int, str];
 }
 
 
-def quote_identifier(name: str) -> str {
+def validate_identifier(name: str) -> None {
     if not isinstance(name, str) or not name or '\x00' in name {
         raise SqlError('Identifier must be a nonempty string without NUL');
     }
+}
+
+def quote_identifier(name: str) -> str {
+    validate_identifier(name);
     return '"' + name.replace('"', '""') + '"';
 }
 
@@ -632,16 +760,14 @@ def _schema_equal(a: Schema, b: Schema, names: bool = True) -> bool {
 }
 
 def validate_union(ast: UnionNode) -> None {
-    if not _schema_equal(ast.schema, ast.left.schema)
-        or not _schema_equal(ast.schema, ast.right.schema, False)
+    if not _schema_equal(ast.left.schema, ast.right.schema, False)
         or ast.cardinality != 'many' {
         raise SqlError('UNION schema/cardinality mismatch');
     }
 }
 
 obj QueryGraph {
-    has follow_definitions: bool = True,
-        ctes: list[Cte] = [],
+    has ctes: list[Cte] = [],
         physical_names: set[str] = set(),
         explicit_aliases: set[str] = set(),
         seen_sources: set[int] = set(),
@@ -668,14 +794,21 @@ obj QueryGraph {
             self.visit_source(src.target);
         } elif isinstance(src, Cte) {
             self.ctes.append(src);
-            if self.follow_definitions {
-                if src.definition is None {
-                    raise SqlError('CTE reference has no definition');
-                }
-                self.visit_query(src.definition);
-            }
         } else {
             raise SqlError('Unknown SQL source ast');
+        }
+    }
+
+    def collect(query: RelationNode) -> None {
+        self.visit_query(query);
+        index = 0;
+        while index < len(self.ctes) {
+            reference = self.ctes[index];
+            if reference.definition is None {
+                raise SqlError('CTE reference has no definition');
+            }
+            self.visit_query(reference.definition);
+            index += 1;
         }
     }
 
@@ -762,10 +895,8 @@ obj QueryGraph {
 }
 
 
-obj PostgresRenderer {
-    has params: dict[str, bool | int | float | str | UUID | None] = {},
-        parameter_ids: dict[int, str] = {},
-        active_queries: set[int] = set(),
+obj QueryValidator {
+    has active_queries: set[int] = set(),
         aliases: dict[int, str] = {},
         cte_names: dict[int, str] = {},
         used_names: set[str] = set(),
@@ -792,6 +923,8 @@ obj PostgresRenderer {
 
     def alias_for(src: Source) -> str {
         if isinstance(src, Table) and src.alias {
+            validate_identifier(src.alias);
+            self.aliases[id(src)] = src.alias;
             return src.alias;
         }
         if src.alias {
@@ -817,7 +950,7 @@ obj PostgresRenderer {
             raise SqlError('CTE reference has no definition');
         }
         self.cte_states[identity] = 1;
-        scan = QueryGraph(follow_definitions=False);
+        scan = QueryGraph();
         scan.visit_query(reference.definition);
         for dependency in scan.ctes {
             if dependency is reference {
@@ -834,12 +967,10 @@ obj PostgresRenderer {
         self.ordered_ctes.append(reference);
     }
 
-    def compile[R, C](query: Relation[R, C]) -> CompiledSQL {
+    def analyze[R, C](query: Relation[R, C]) -> ValidatedQuery {
         if not isinstance(query, Relation) {
             raise SqlError('Expected a relation, not a scalar or command');
         }
-        self.params = {};
-        self.parameter_ids = {};
         self.active_queries = set();
         self.aliases = {};
         self.cte_names = {};
@@ -849,7 +980,7 @@ obj PostgresRenderer {
         self.alias_counter = 0;
         self.cte_counter = 0;
         scan = QueryGraph();
-        scan.visit_query(query.ast);
+        scan.collect(query.ast);
         self.used_names = scan.physical_names | scan.explicit_aliases;
         for reference in scan.ctes {
             self.order_cte(reference);
@@ -858,7 +989,6 @@ obj PostgresRenderer {
             self.cte_names[id(reference)] = self.fresh_name('_cte');
         }
         available: list[Cte] = [];
-        definitions: list[str] = [];
         for reference in self.ordered_ctes {
             definition = reference.definition;
             if definition is None {
@@ -880,68 +1010,50 @@ obj PostgresRenderer {
                 }
                 validate_union(definition);
                 validate_recursive_step(reference, definition.right);
-                anchor = self.query(definition.left, [], available);
-                step = self.query(definition.right, [], available + [reference]);
-                body_sql = 'SELECT * FROM ('
-                    + anchor.sql
-                    + ') AS "_recursive_anchor" UNION ALL '
-                    + step.sql;
+                self.query(definition.left, [], available);
+                self.query(definition.right, [], available + [reference]);
             } else {
-                body_sql = self.query(definition, [], available).sql;
+                self.query(definition, [], available);
             }
-            columns = ', '.join(
-                [quote_identifier(f.name) for f in reference.schema.fields]
-            );
-            definitions.append(
-                quote_identifier(self.cte_names[id(reference)])
-                    + ' ('
-                    + columns
-                    + ') AS ('
-                    + body_sql
-                    + ')'
-            );
             available.append(reference);
         }
-        rendered = self.query(query.ast, [], available);
-        if rendered.external {
+        facts = self.query(query.ast, [], available);
+        if facts.external {
             raise SqlError('Top-level query has unbound correlations');
         }
-        prefix = '';
-        if definitions {
-            recursive = `any([c.recursive for c in self.ordered_ctes]);
-            prefix = 'WITH '
-                + ('RECURSIVE ' if recursive else '')
-                + ', '.join(definitions)
-                + ' ';
-        }
-        return CompiledSQL(sql=prefix + rendered.sql, params=dict(self.params));
+        return ValidatedQuery(
+            query=query.ast,
+            ctes=tuple(self.ordered_ctes),
+            aliases=dict(self.aliases),
+            cte_names=dict(self.cte_names)
+        );
     }
 
-    def source(src: Source, ctes: list[Cte]) -> str {
-        Schema(list(src.schema.fields));
-        alias = quote_identifier(self.alias_for(src));
+    def source(src: Source, ctes: list[Cte]) -> None {
+        Schema(tuple(src.schema.fields));
+        self.alias_for(src);
         if isinstance(src, Table) {
             if not src.name {
                 raise SqlError('Table needs a name');
             }
-            return '.'.join([quote_identifier(p) for p in src.name]) + ' AS ' + alias;
+            for name in src.name {
+                validate_identifier(name);
+            }
+            return;
         }
         if isinstance(src, Derived) {
-            if not _schema_equal(src.schema, src.query.schema) {
-                raise SqlError('Derived schema mismatch');
-            }
             q = self.query(src.query, [], ctes);
             if q.external {
                 raise SqlError('FROM subquery requires LATERAL for correlations');
             }
-            return '(' + q.sql + ') AS ' + alias;
+            return;
         }
         if isinstance(src, (Cte, CteUse)) {
             reference = src.target if isinstance(src, CteUse) else src;
             if not `any([x is reference for x in ctes]) {
                 raise SqlError('CTE reference is outside scope');
             }
-            return quote_identifier(self.cte_names[id(reference)]) + ' AS ' + alias;
+            return;
         }
         raise SqlError('Unknown SQL source ast');
     }
@@ -961,29 +1073,11 @@ obj PostgresRenderer {
             if not same_type(actual.dtype, ast.dtype) {
                 raise SqlError('Column type differs from source schema');
             }
-            return Checked(
-                sql=quote_identifier(self.alias_for(ast.source))
-                    + '.'
-                    + quote_identifier(ast.name),
-                free={_key(ast.source, ast.name)}
-            );
+            return Checked(free={_key(ast.source, ast.name)});
         }
         if isinstance(ast, ParamNode) {
             validate_value(ast.dtype, ast.value);
-            identity = id(ast);
-            if identity not in self.parameter_ids {
-                key = 'p' + str(len(self.params));
-                self.parameter_ids[identity] = key;
-                self.params[key] = ast.value;
-            }
-            return Checked(
-                sql='CAST(:'
-                    + self.parameter_ids[identity]
-                    + ' AS '
-                    + ast.dtype.name
-                    + ')',
-                free=set()
-            );
+            return Checked(free=set());
         }
         if isinstance(ast, BinaryNode) {
             a = self.expr(ast.left, scope, local, ctes);
@@ -1010,11 +1104,7 @@ obj PostgresRenderer {
             if not same_type(expected, ast.dtype) {
                 raise SqlError('Invalid binary result type');
             }
-            return Checked(
-                sql='(' + a.sql + ' ' + ast.op + ' ' + b.sql + ')',
-                free=a.free | b.free,
-                aggregate=a.aggregate or b.aggregate
-            );
+            return Checked(free=a.free | b.free, aggregate=a.aggregate or b.aggregate);
         }
         if isinstance(ast, BoolNode) {
             if ast.op != 'AND'
@@ -1030,11 +1120,7 @@ obj PostgresRenderer {
                 }
                 free |= result.free;
             }
-            return Checked(
-                sql='(' + ' AND '.join([c.sql for c in checked]) + ')',
-                free=free,
-                aggregate=`any([c.aggregate for c in checked])
-            );
+            return Checked(free=free, aggregate=`any([c.aggregate for c in checked]));
         }
         if isinstance(ast, UnaryNode) {
             term = self.expr(ast.term, scope, local, ctes);
@@ -1043,28 +1129,20 @@ obj PostgresRenderer {
                 or not same_type(ast.dtype, DataType('boolean')) {
                 raise SqlError('Invalid IS NULL ast');
             }
-            return Checked(
-                sql='(' + term.sql + ' IS NULL)',
-                free=term.free,
-                aggregate=term.aggregate
-            );
+            return Checked(free=term.free, aggregate=term.aggregate);
         }
         if isinstance(ast, CastNode) {
             term = self.expr(ast.term, scope, local, ctes);
             if ast.term.dtype.nullable and not ast.dtype.nullable {
                 raise SqlError('CAST cannot remove nullability');
             }
-            return Checked(
-                sql='CAST(' + term.sql + ' AS ' + ast.dtype.name + ')',
-                free=term.free,
-                aggregate=term.aggregate
-            );
+            return Checked(free=term.free, aggregate=term.aggregate);
         }
         if isinstance(ast, AggregateNode) {
             if ast.op == 'COUNT'
                 and ast.term is None
                 and same_type(ast.dtype, DataType('bigint')) {
-                return Checked(sql='COUNT(*)', free=set(), aggregate=True);
+                return Checked(free=set(), aggregate=True);
             }
             if ast.op == 'SUM' and ast.term is not None {
                 term = self.expr(ast.term, scope, local, ctes);
@@ -1081,7 +1159,7 @@ obj PostgresRenderer {
                     or not same_type(ast.dtype, DataType('double precision', True)) {
                     raise SqlError('Invalid SUM type');
                 }
-                return Checked(sql='SUM(' + term.sql + ')', free=set(), aggregate=True);
+                return Checked(free=set(), aggregate=True);
             }
             raise SqlError('Unsupported aggregate');
         }
@@ -1094,11 +1172,7 @@ obj PostgresRenderer {
                 or not same_type(ast.dtype, ast.fallback.dtype) {
                 raise SqlError('Invalid COALESCE type');
             }
-            return Checked(
-                sql='COALESCE(' + a.sql + ', ' + b.sql + ')',
-                free=a.free | b.free,
-                aggregate=a.aggregate or b.aggregate
-            );
+            return Checked(free=a.free | b.free, aggregate=a.aggregate or b.aggregate);
         }
         if isinstance(ast, ScalarNode) {
             q = self.query(ast.query, scope, ctes);
@@ -1115,19 +1189,19 @@ obj PostgresRenderer {
             if not same_type(expected, ast.dtype) {
                 raise SqlError('Scalar query result type mismatch');
             }
-            return Checked(sql='(' + q.sql + ')', free=q.external);
+            return Checked(free=q.external);
         }
         if isinstance(ast, ExistsNode) {
             q = self.query(ast.query, scope, ctes);
             if not same_type(ast.dtype, DataType('boolean')) {
                 raise SqlError('EXISTS returns a non-null boolean');
             }
-            return Checked(sql='EXISTS (' + q.sql + ')', free=q.external);
+            return Checked(free=q.external);
         }
         raise SqlError('Unknown scalar SQL ast');
     }
 
-    def query(ast: RelationNode, outer: list[Source], ctes: list[Cte]) -> QueryText {
+    def query(ast: RelationNode, outer: list[Source], ctes: list[Cte]) -> QueryFacts {
         if not isinstance(ast, RelationNode) {
             raise SqlError('Expected a relation ast');
         }
@@ -1144,8 +1218,8 @@ obj PostgresRenderer {
 
     def query_body(
         ast: RelationNode, outer: list[Source], ctes: list[Cte]
-    ) -> QueryText {
-        Schema(list(ast.schema.fields));
+    ) -> QueryFacts {
+        Schema(tuple(ast.schema.fields));
         if isinstance(ast, SelectNode) {
             return self.select_sql(ast, outer, ctes);
         }
@@ -1153,27 +1227,16 @@ obj PostgresRenderer {
             validate_union(ast);
             a = self.query(ast.left, outer, ctes);
             b = self.query(ast.right, outer, ctes);
-            op = ' UNION ALL ' if ast.keep_duplicates else ' UNION ';
-            # Derived wrappers make arm-local ORDER/LIMIT unambiguous in PostgreSQL and SQLite.
-            return QueryText(
-                sql='SELECT * FROM ('
-                    + a.sql
-                    + ') AS "_union_l"'
-                    + op
-                    + 'SELECT * FROM ('
-                    + b.sql
-                    + ') AS "_union_r"',
-                external=a.external | b.external
-            );
+            return QueryFacts(external=a.external | b.external);
         }
         raise SqlError('Unknown relational ast');
     }
 
-    def select_sql(ast: SelectNode, outer: list[Source], ctes: list[Cte]) -> QueryText {
+    def select_sql(
+        ast: SelectNode, outer: list[Source], ctes: list[Cte]
+    ) -> QueryFacts {
         fields = [p.field for p in ast.projections];
-        if not _schema_equal(ast.schema, Schema(fields)) {
-            raise SqlError('SELECT schema differs from projections');
-        }
+        Schema(tuple(fields));
         for projection in ast.projections {
             if not same_type(projection.field.dtype, projection.expr.dtype) {
                 raise SqlError(
@@ -1192,12 +1255,11 @@ obj PostgresRenderer {
         }
         local: list[Source] = [];
         used_aliases: set[str] = set();
-        from_sql = '';
         all_free: set[str] = set();
         if ast.source is not None {
             local.append(ast.source);
             used_aliases.add(self.alias_for(ast.source));
-            from_sql = ' FROM ' + self.source(ast.source, ctes);
+            self.source(ast.source, ctes);
         } elif ast.joins {
             raise SqlError('JOIN requires a FROM source');
         }
@@ -1213,10 +1275,7 @@ obj PostgresRenderer {
                 raise SqlError('JOIN ON requires a non-aggregate predicate');
             }
             all_free |= condition.free;
-            from_sql += ' INNER JOIN '
-                + self.source(join.source, ctes)
-                + ' ON '
-                + condition.sql;
+            self.source(join.source, ctes);
         }
         if `any([self.alias_for(s) in used_aliases for s in outer]) {
             raise SqlError('Nested alias shadows a correlated source');
@@ -1235,16 +1294,12 @@ obj PostgresRenderer {
         for g in groups {
             grouped |= g.free;
         }
-        predicate_sql = '';
-        having_sql = '';
-        ordering_sql = '';
         if ast.predicate is not None {
             pred = self.expr(ast.predicate, scope, local, ctes);
             if ast.predicate.dtype.name != 'boolean' or pred.aggregate {
                 raise SqlError('WHERE requires a non-aggregate boolean');
             }
             all_free |= pred.free;
-            predicate_sql = ' WHERE ' + pred.sql;
         }
         having: Checked | None = None;
         if ast.having is not None {
@@ -1252,7 +1307,6 @@ obj PostgresRenderer {
             if ast.having.dtype.name != 'boolean' {
                 raise SqlError('HAVING requires a boolean');
             }
-            having_sql = ' HAVING ' + having.sql;
         }
         ordered = [self.expr(o.expr, scope, local, ctes) for o in ast.ordering];
         checked = projected + ordered + ([having] if having is not None else []);
@@ -1270,50 +1324,194 @@ obj PostgresRenderer {
                 'Exactly-one aggregate proof requires an ungrouped, unfiltered aggregate result'
             );
         }
+        local_keys = {_key(s, f.name) for s in local for f in s.schema.fields};
         for v in checked {
             all_free |= v.free;
-            if is_aggregate and not v.free <= grouped {
+            if is_aggregate and not (v.free & local_keys) <= grouped {
                 raise SqlError('Non-aggregate column is missing from GROUP BY');
             }
         }
         for g in groups {
             all_free |= g.free;
         }
-        projection_sql = ', '.join(
-            [
-                v.sql + ' AS ' + quote_identifier(p.field.name)
-                for (p, v) in zip(ast.projections, projected)
-            ]
-        );
-        group_sql = ' GROUP BY ' + ', '.join([g.sql for g in groups]) if groups else '';
-        if ordered {
-            ordering_sql = ' ORDER BY '
-                + ', '.join(
-                    [
-                        v.sql + (' DESC' if o.descending else ' ASC')
-                        for (o, v) in zip(ast.ordering, ordered)
-                    ]
-                );
+        return QueryFacts(external=all_free - local_keys);
+    }
+}
+
+
+"""Render an already validated query; semantic rules live in QueryValidator."""
+obj PostgresRenderer {
+    has params: dict[str, bool | int | float | str | UUID | None] = {},
+        parameter_ids: dict[int, str] = {},
+        aliases: dict[int, str] = {},
+        cte_names: dict[int, str] = {};
+
+    def alias_for(src: Source) -> str {
+        return quote_identifier(self.aliases[id(src)]);
+    }
+
+    def render(plan: ValidatedQuery) -> CompiledSQL {
+        self.params = {};
+        self.parameter_ids = {};
+        self.aliases = plan.aliases;
+        self.cte_names = plan.cte_names;
+        definitions: list[str] = [];
+        for reference in plan.ctes {
+            definition = reference.definition;
+            if isinstance(definition, UnionNode) and reference.recursive {
+                body = 'SELECT * FROM ('
+                    + self.query(definition.left)
+                    + ') AS "_recursive_anchor" UNION ALL '
+                    + self.query(definition.right);
+            } elif definition is not None {
+                body = self.query(definition);
+            } else {
+                raise SqlError('Unvalidated CTE definition');
+            }
+            columns = ', '.join(
+                [quote_identifier(f.name) for f in reference.schema.fields]
+            );
+            definitions.append(
+                quote_identifier(self.cte_names[id(reference)])
+                    + ' ('
+                    + columns
+                    + ') AS ('
+                    + body
+                    + ')'
+            );
         }
-        limit_sql = ' LIMIT ' + str(ast.limit) if ast.limit is not None else '';
-        local_keys = {_key(s, f.name) for s in local for f in s.schema.fields};
-        return QueryText(
-            sql='SELECT '
-                + projection_sql
-                + from_sql
-                + predicate_sql
-                + group_sql
-                + having_sql
-                + ordering_sql
-                + limit_sql,
-            external=all_free - local_keys
+        prefix = '';
+        if definitions {
+            prefix = 'WITH '
+                + ('RECURSIVE ' if `any([c.recursive for c in plan.ctes]) else '')
+                + ', '.join(definitions)
+                + ' ';
+        }
+        return CompiledSQL(
+            sql=prefix + self.query(plan.query), params=dict(self.params)
         );
+    }
+
+    def source(src: Source) -> str {
+        if isinstance(src, Table) {
+            name = '.'.join([quote_identifier(p) for p in src.name]);
+        } elif isinstance(src, Derived) {
+            name = '(' + self.query(src.query) + ')';
+        } elif isinstance(src, (Cte, CteUse)) {
+            reference = src.target if isinstance(src, CteUse) else src;
+            name = quote_identifier(self.cte_names[id(reference)]);
+        } else {
+            raise SqlError('Unvalidated source');
+        }
+        return name + ' AS ' + self.alias_for(src);
+    }
+
+    def expr(ast: ExprNode) -> str {
+        if isinstance(ast, ColumnNode) {
+            return self.alias_for(ast.source) + '.' + quote_identifier(ast.name);
+        }
+        if isinstance(ast, ParamNode) {
+            identity = id(ast);
+            if identity not in self.parameter_ids {
+                key = 'p' + str(len(self.params));
+                self.parameter_ids[identity] = key;
+                self.params[key] = ast.value;
+            }
+            return 'CAST(:'
+                + self.parameter_ids[identity]
+                + ' AS '
+                + ast.dtype.name
+                + ')';
+        }
+        if isinstance(ast, BinaryNode) {
+            return '('
+                + self.expr(ast.left)
+                + ' '
+                + ast.op
+                + ' '
+                + self.expr(ast.right)
+                + ')';
+        }
+        if isinstance(ast, BoolNode) {
+            return '(' + ' AND '.join([self.expr(t) for t in ast.terms]) + ')';
+        }
+        if isinstance(ast, UnaryNode) {
+            return '(' + self.expr(ast.term) + ' IS NULL)';
+        }
+        if isinstance(ast, CastNode) {
+            return 'CAST(' + self.expr(ast.term) + ' AS ' + ast.dtype.name + ')';
+        }
+        if isinstance(ast, AggregateNode) {
+            return 'COUNT(*)'
+                if ast.term is None
+                else 'SUM(' + self.expr(ast.term) + ')';
+        }
+        if isinstance(ast, CoalesceNode) {
+            return 'COALESCE('
+                + self.expr(ast.term)
+                + ', '
+                + self.expr(ast.fallback)
+                + ')';
+        }
+        if isinstance(ast, ScalarNode) {
+            return '(' + self.query(ast.query) + ')';
+        }
+        if isinstance(ast, ExistsNode) {
+            return 'EXISTS (' + self.query(ast.query) + ')';
+        }
+        raise SqlError('Unvalidated expression');
+    }
+
+    def query(ast: RelationNode) -> str {
+        if isinstance(ast, UnionNode) {
+            op = ' UNION ALL ' if ast.keep_duplicates else ' UNION ';
+            return 'SELECT * FROM ('
+                + self.query(ast.left)
+                + ') AS "_union_l"'
+                + op
+                + 'SELECT * FROM ('
+                + self.query(ast.right)
+                + ') AS "_union_r"';
+        }
+        if not isinstance(ast, SelectNode) {
+            raise SqlError('Unvalidated relation');
+        }
+        from_sql = '';
+        if ast.source is not None {
+            from_sql = ' FROM ' + self.source(ast.source);
+        }
+        for join in ast.joins {
+            condition = self.expr(join.condition);
+            from_sql += ' INNER JOIN ' + self.source(join.source) + ' ON ' + condition;
+        }
+        projected = [
+            self.expr(p.expr) + ' AS ' + quote_identifier(p.field.name)
+            for p in ast.projections
+        ];
+        groups = [self.expr(g) for g in ast.groups];
+        predicate = ' WHERE ' + self.expr(ast.predicate)
+            if ast.predicate is not None
+            else '';
+        having = ' HAVING ' + self.expr(ast.having) if ast.having is not None else '';
+        ordered = [
+            self.expr(o.expr) + (' DESC' if o.descending else ' ASC')
+            for o in ast.ordering
+        ];
+        return 'SELECT '
+            + ', '.join(projected)
+            + from_sql
+            + predicate
+            + (' GROUP BY ' + ', '.join(groups) if groups else '')
+            + having
+            + (' ORDER BY ' + ', '.join(ordered) if ordered else '')
+            + (' LIMIT ' + str(ast.limit) if ast.limit is not None else '');
     }
 }
 
 
 def compile_sql[R, C](query: Relation[R, C]) -> CompiledSQL {
-    return PostgresRenderer().compile(query);
+    plan = QueryValidator().analyze(query);
+    return PostgresRenderer().render(plan);
 }
 
 

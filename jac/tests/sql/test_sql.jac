@@ -80,28 +80,28 @@ test "SQLite: aggregate validation" {
     run_case(SQLTests("test_aggregate_validation"));
 }
 
-test "SQLite: mutated ast is revalidated" {
-    run_case(SQLTests("test_mutated_ast_is_revalidated"));
+test "SQLite: query and expression are immutable" {
+    run_case(SQLTests("test_query_and_expression_are_immutable"));
 }
 
 test "SQLite: source field schema validation" {
     run_case(SQLTests("test_source_field_schema_validation"));
 }
 
-test "SQLite: projection expression type swap rejected" {
-    run_case(SQLTests("test_projection_expression_type_swap_rejected"));
+test "SQLite: projection expression is immutable" {
+    run_case(SQLTests("test_projection_expression_is_immutable"));
 }
 
-test "SQLite: projection derived arithmetic rejected" {
-    run_case(SQLTests("test_projection_derived_arithmetic_rejected"));
+test "SQLite: derived schema comes from query" {
+    run_case(SQLTests("test_derived_schema_comes_from_query"));
 }
 
-test "SQLite: projection nullability swap rejected" {
-    run_case(SQLTests("test_projection_nullability_swap_rejected"));
+test "SQLite: projection nullability is immutable" {
+    run_case(SQLTests("test_projection_nullability_is_immutable"));
 }
 
-test "SQLite: projection same type swap allowed" {
-    run_case(SQLTests("test_projection_same_type_swap_allowed"));
+test "SQLite: query rebuild preserves original" {
+    run_case(SQLTests("test_query_rebuild_preserves_original"));
 }
 
 test "SQLite: recursive anchor clauses limit" {
@@ -152,6 +152,30 @@ test "SQLite: auto source aliases for self join" {
     run_case(SQLTests("test_auto_source_aliases_for_self_join"));
 }
 
-test "SQLite: recursive union schema mutation" {
-    run_case(SQLTests("test_recursive_union_schema_mutation"));
+test "SQLite: recursive union is immutable" {
+    run_case(SQLTests("test_recursive_union_is_immutable"));
+}
+
+test "SQLite: recursive step can be reused" {
+    run_case(SQLTests("test_recursive_step_can_be_reused"));
+}
+
+test "SQLite: cte bindings share target schema" {
+    run_case(SQLTests("test_cte_bindings_share_target_schema"));
+}
+
+test "SQLite: correlated aggregate local grouping" {
+    run_case(SQLTests("test_correlated_aggregate_local_grouping"));
+}
+
+test "SQLite: constructor inputs are snapshotted" {
+    run_case(SQLTests("test_constructor_inputs_are_snapshotted"));
+}
+
+test "SQLite: validation precedes rendering" {
+    run_case(SQLTests("test_validation_precedes_rendering"));
+}
+
+test "SQLite: invalid raw nodes are rejected" {
+    run_case(SQLTests("test_invalid_raw_nodes_are_rejected"));
 }
