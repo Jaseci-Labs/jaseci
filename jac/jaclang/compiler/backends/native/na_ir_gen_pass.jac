@@ -3178,6 +3178,7 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Type | None);
 
     def _tuple_struct_of(elem_types: list[ir.Type]) -> ir.LiteralStructType;
+    def _byvalue_ret_type(ret_type: ir.Type) -> ir.Type;
     def _resolve_sig_type(type_expr: (uni.UniNode | None)) -> ir.Type;
     def _resolve_field_type(var: uni.UniNode) -> ir.Type;
     def _foreign_optional_field(tb: any) -> bool;
@@ -3500,6 +3501,7 @@ walker NaIRGenPass(CompilerPass) {
     def _isinstance_vtable_walk(
         vptr: ir.Value, names: list[str], prefix: str
     ) -> ir.Value;
+
     def _vtable_slot_certain(ty: (TypeBase | None)) -> bool;
     def _isinstance_vtable_fallback(
         hit: (ir.Value | None), vptr: ir.Value, names: list[str], prefix: str
