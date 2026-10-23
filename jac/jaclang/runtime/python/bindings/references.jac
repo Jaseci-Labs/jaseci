@@ -4,10 +4,12 @@ obj ReferenceState(NativeState) {
     has references: list[ptr[PyObject]];
 
     def clear {
-        previous = self.references;
-        self.references = [NULL for _ in previous];
-        for value in previous {
+        i = 0;
+        while i < len(self.references) {
+            value = self.references[i];
+            self.references[i] = NULL;
             jacpy_release(value);
+            i += 1;
         }
     }
 

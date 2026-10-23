@@ -313,7 +313,7 @@ impl NaIRGenPass._emit_yield_suspend(v: ir.Value) -> None {
             exc_state, [ir.Constant(i32, 0), ir.Constant(i32, 0)], name=f"rearm.env.{k}"
         );
         env_i8p = self.builder.bitcast(env_ptr, i8p, name=f"rearm.envp.{k}");
-        sj = self.builder.call(self._exc_setjmp_fn(), [env_i8p], name=f"rearm.sj.{k}");
+        sj = self._emit_exc_arm(self.builder, env_i8p, f"rearm.sj.{k}");
         is_exc = self.builder.icmp_signed(
             "!=", sj, ir.Constant(i32, 0), name=f"rearm.isexc.{k}"
         );

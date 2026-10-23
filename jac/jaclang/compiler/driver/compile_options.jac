@@ -32,6 +32,8 @@ obj CompileOptions {
         native_threads: (int | None) = None,
         rc_debug_codegen: (bool | None) = None,
         native_target: (str | None) = None,
+        native_tls: bool = False,
+        native_sjlj: bool = False,
         native_debug: (bool | None) = None,
         opt_level: (int | None) = None,
         dump_ir_path: (str | None) = None,

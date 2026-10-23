@@ -52,6 +52,9 @@ options = CompileOptions(
     aot_mode=True, default_codespace="native", skip_native_engine=True,
     native_required=True,
     memory_profile="rc", no_ir_cache=False, opt_level=2, native_target=triple,
+    # libpython is linked by the system linker, which takes TLS relocations,
+    # and every frame arms through LLVM's builtin setjmp.
+    native_tls=True, native_sjlj=True,
 )
 plan = build_link_plan(program, [str(entry) for entry in entries], options)
 if program.errors_had:
@@ -61,7 +64,14 @@ if program.errors_had:
 init_object_codegen()
 spec = plan.glue_spec(ArtifactKind.SHARED, _platform_of(plan.triple), False)
 compiled, runtime_exports = whole_program_module(plan, spec)
-native_fallbacks_in_ir(str(compiled)).require()
+compiled_ir = str(compiled)
+native_fallbacks_in_ir(compiled_ir).require()
+# Every unit must agree on how thread-local slots are held and how frames
+# arm: the accessors and the raise path are shared, so a unit lowered without
+# these options would bring back the pthread-key lookup or libc's setjmp.
+for symbol, option in (("@pthread_getspecific", "native_tls"), ("@_setjmp", "native_sjlj")):
+    if getattr(options, option) and symbol in compiled_ir:
+        raise RuntimeError(f"a JacPython unit was lowered without {option}")
 internalize_native_implementation(
     compiled, plan.pub_exports() + runtime_exports + ["__jac_shared_init"],
 )
