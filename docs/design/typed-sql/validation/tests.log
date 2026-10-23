@@ -1,58 +1,49 @@
+[dev] jac dev mode - using compiler source at /home/baichuan/jaseci/jac-sql/jac
+PASSED   SQLite: module is portable as one file  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: select parameters and order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: join and shared parameter  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: group by count  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: aggregate empty is one row  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: scalar optional empty yields null  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: scalar requires proof and one column  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: correlated exists  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: derived schema and scope  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: union schema and arm limits  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: cte  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive cte  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: cte forward reference and recursive anchor rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive step eligibility  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: nullable three valued predicate  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: parameter value type and bounds  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: injection is bound and identifiers are quoted  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: wrong expression categories and types  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: alias and join scopes  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: aggregate validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: mutated ast is revalidated  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: source field schema validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   PostgreSQL: module is portable as one file  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: select parameters and order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: join and shared parameter  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: group by count  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: aggregate empty is one row  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: scalar optional empty yields null  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: scalar requires proof and one column  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: correlated exists  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: derived schema and scope  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: union schema and arm limits  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: cte  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive cte  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: cte forward reference and recursive anchor rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive step eligibility  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: nullable three valued predicate  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: parameter value type and bounds  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: injection is bound and identifiers are quoted  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: wrong expression categories and types  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: alias and join scopes  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: aggregate validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: mutated ast is revalidated  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: source field schema validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   Static types: positive example and module  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
+PASSED   Static types: all bad calls are rejected at their lines  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 
-Setting up Jac for first use (compiling and caching compiler)...
-  Compiling jaclang/sql.jac...
-jac: llvm-shim runs on its floor (Python placement for native-default code, slower): not built. Run `jac native build llvm-shim`; `jac native status llvm-shim` shows what moved.
-jac: kernel runs on its floor (the bytecode compiler, slower): native pipeline unavailable: the LLVM shim is not built. Run `jac native build kernel`; `jac native status kernel` shows what moved.
-test_aggregate_empty_is_one_row (test_postgres.PostgresTests.test_aggregate_empty_is_one_row) ... ok
-test_aggregate_validation (test_postgres.PostgresTests.test_aggregate_validation) ... ok
-test_alias_and_join_scopes (test_postgres.PostgresTests.test_alias_and_join_scopes) ... ok
-test_correlated_exists (test_postgres.PostgresTests.test_correlated_exists) ... ok
-test_cte (test_postgres.PostgresTests.test_cte) ... ok
-test_cte_forward_reference_and_recursive_anchor_rejected (test_postgres.PostgresTests.test_cte_forward_reference_and_recursive_anchor_rejected) ... ok
-test_derived_schema_and_scope (test_postgres.PostgresTests.test_derived_schema_and_scope) ... ok
-test_group_by_count (test_postgres.PostgresTests.test_group_by_count) ... ok
-test_injection_is_bound_and_identifiers_are_quoted (test_postgres.PostgresTests.test_injection_is_bound_and_identifiers_are_quoted) ... ok
-test_join_and_shared_parameter (test_postgres.PostgresTests.test_join_and_shared_parameter) ... ok
-test_module_is_portable_as_one_file (test_postgres.PostgresTests.test_module_is_portable_as_one_file) ... jac: stubcat runs on its floor (parsing the typeshed stubs, slower): not built. Run `jac native build stubcat`; `jac native status stubcat` shows what moved.
-ok
-test_mutated_ast_is_revalidated (test_postgres.PostgresTests.test_mutated_ast_is_revalidated) ... ok
-test_nullable_three_valued_predicate (test_postgres.PostgresTests.test_nullable_three_valued_predicate) ... ok
-test_parameter_value_type_and_bounds (test_postgres.PostgresTests.test_parameter_value_type_and_bounds) ... ok
-test_recursive_cte (test_postgres.PostgresTests.test_recursive_cte) ... ok
-test_recursive_step_eligibility (test_postgres.PostgresTests.test_recursive_step_eligibility) ... ok
-test_scalar_optional_empty_yields_null (test_postgres.PostgresTests.test_scalar_optional_empty_yields_null) ... ok
-test_scalar_requires_proof_and_one_column (test_postgres.PostgresTests.test_scalar_requires_proof_and_one_column) ... ok
-test_select_parameters_and_order (test_postgres.PostgresTests.test_select_parameters_and_order) ... ok
-test_source_field_schema_validation (test_postgres.PostgresTests.test_source_field_schema_validation) ... ok
-test_union_schema_and_arm_limits (test_postgres.PostgresTests.test_union_schema_and_arm_limits) ... ok
-test_wrong_expression_categories_and_types (test_postgres.PostgresTests.test_wrong_expression_categories_and_types) ... ok
-test_aggregate_empty_is_one_row (test_sql.SQLTests.test_aggregate_empty_is_one_row) ... ok
-test_aggregate_validation (test_sql.SQLTests.test_aggregate_validation) ... ok
-test_alias_and_join_scopes (test_sql.SQLTests.test_alias_and_join_scopes) ... ok
-test_correlated_exists (test_sql.SQLTests.test_correlated_exists) ... ok
-test_cte (test_sql.SQLTests.test_cte) ... ok
-test_cte_forward_reference_and_recursive_anchor_rejected (test_sql.SQLTests.test_cte_forward_reference_and_recursive_anchor_rejected) ... ok
-test_derived_schema_and_scope (test_sql.SQLTests.test_derived_schema_and_scope) ... ok
-test_group_by_count (test_sql.SQLTests.test_group_by_count) ... ok
-test_injection_is_bound_and_identifiers_are_quoted (test_sql.SQLTests.test_injection_is_bound_and_identifiers_are_quoted) ... ok
-test_join_and_shared_parameter (test_sql.SQLTests.test_join_and_shared_parameter) ... ok
-test_module_is_portable_as_one_file (test_sql.SQLTests.test_module_is_portable_as_one_file) ... ok
-test_mutated_ast_is_revalidated (test_sql.SQLTests.test_mutated_ast_is_revalidated) ... ok
-test_nullable_three_valued_predicate (test_sql.SQLTests.test_nullable_three_valued_predicate) ... ok
-test_parameter_value_type_and_bounds (test_sql.SQLTests.test_parameter_value_type_and_bounds) ... ok
-test_recursive_cte (test_sql.SQLTests.test_recursive_cte) ... ok
-test_recursive_step_eligibility (test_sql.SQLTests.test_recursive_step_eligibility) ... ok
-test_scalar_optional_empty_yields_null (test_sql.SQLTests.test_scalar_optional_empty_yields_null) ... ok
-test_scalar_requires_proof_and_one_column (test_sql.SQLTests.test_scalar_requires_proof_and_one_column) ... ok
-test_select_parameters_and_order (test_sql.SQLTests.test_select_parameters_and_order) ... ok
-test_source_field_schema_validation (test_sql.SQLTests.test_source_field_schema_validation) ... ok
-test_union_schema_and_arm_limits (test_sql.SQLTests.test_union_schema_and_arm_limits) ... ok
-test_wrong_expression_categories_and_types (test_sql.SQLTests.test_wrong_expression_categories_and_types) ... ok
-test_all_bad_calls_are_rejected_at_their_lines (test_types.StaticTypes.test_all_bad_calls_are_rejected_at_their_lines) ... ok
-test_positive_example_and_module (test_types.StaticTypes.test_positive_example_and_module) ... ok
-
-----------------------------------------------------------------------
-Ran 46 tests in 12.972s
-
-OK
-Jac setup complete (1 modules compiled and cached)
+46 passed in 22.71s

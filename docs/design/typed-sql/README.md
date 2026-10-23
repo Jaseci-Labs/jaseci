@@ -5,6 +5,7 @@ Development branch: `feat/typed-sql`. Implementation:
 [`jac/jaclang/sql.jac`](../../../jac/jaclang/sql.jac).
 
 The module builds SQL as structured values and validates it before rendering.
+Implementation and tests use Jac; the test entry point is `jac test`.
 It has one source file, one standard-library import (`uuid`) and no dependencies
 on graph types, TTG, storage tables, drivers or project configuration. Forks can
 copy the file and its tests, or cherry-pick the scoped commit. A portability test
@@ -79,7 +80,7 @@ Actual negative Jac fixtures test rejection of:
 - Incompatible types passed to equality.
 - Scalar expressions passed directly in a projection list.
 
-`test_types.py` checks the positive module/example and asserts E1053 diagnostics
+`test_types.jac` checks the positive module/example and asserts E1053 diagnostics
 at all 11 expected invalid-call lines. Runtime/AST validation covers dynamic
 schema information and callers from Python or gradual typing.
 
@@ -138,11 +139,10 @@ from future graph analysis, logical optimization and cost-based planning.
 
 ## Verification
 
-Use a Jac-capable Python host with the source checkout on PYTHONPATH:
+Run the Jac test files from the repository root:
 
 ```sh
-PYTHONPATH=jac python -m unittest discover -s jac/tests/sql -p test_sql.py -v
-PYTHONPATH=jac python -m unittest discover -s jac/tests/sql -p test_types.py -v
+jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac -j 1 -v
 jac check jac/jaclang/sql.jac jac/examples/sql/typed_sql.jac
 jac run jac/examples/sql/typed_sql.jac
 ```
@@ -152,8 +152,12 @@ cluster socket. They create transaction-local test tables and roll back each cas
 
 ```sh
 JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
-  PYTHONPATH=jac python -m unittest discover -s jac/tests/sql -p test_postgres.py -v
+  jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
+
+There are 46 native Jac test entries: 22 SQLite, the same 22 PostgreSQL cases,
+and two static-check tests. Shared fixtures live in `sql_cases.jac` and use
+standard-library assertion helpers.
 
 The test account is `sql_test`, database `postgres`. Set up a dedicated cluster
 with trust auth for local tests. SQL construction itself opens no connections.

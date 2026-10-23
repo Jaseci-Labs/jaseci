@@ -28,20 +28,26 @@
       "sha256": "fa4695d14b8d342a09e0229b581f3afb2ee523a99ad3a82c925a0f283352a3d5"
     },
     {
-      "path": "jac/tests/sql/test_sql.py",
-      "sha256": "a49f40ebf64842d35ba9ac2c13d0f4b2fe302bd11be1332110744f9938daa45d"
+      "path": "jac/tests/sql/sql_cases.jac",
+      "sha256": "0357906794f8fb4666439b15ba545425f9e294c0f8999786aa9ed8082932e76c"
     },
     {
-      "path": "jac/tests/sql/test_postgres.py",
-      "sha256": "4ee3c4a6dccacfe95306bd386a535ef0b133e2700709dacb48725e5a68cb45ca"
+      "path": "jac/tests/sql/test_postgres.jac",
+      "sha256": "6ff68743c26f83dd17b7086a66999dc57a3017f25ddb501f6504539698dc64b4"
     },
     {
-      "path": "jac/tests/sql/test_types.py",
-      "sha256": "b2f2868e53977c9f7427529936772497fc3c9e70be341beb86b75ac5397b0c66"
+      "path": "jac/tests/sql/test_sql.jac",
+      "sha256": "cd0d9b2eaa03eefab150a92fb5734febc2c8b189977c51ed73dcba9712f9073d"
+    },
+    {
+      "path": "jac/tests/sql/test_types.jac",
+      "sha256": "22f5f92a4578b05fbc1e7ab6ba408b908edaff17f2b5406b29a3fa8b8b6afdd0"
     },
     {
       "path": "jac/tests/sql/fixtures/invalid_calls.jac",
       "sha256": "5a6ddb6b14415ea1b59ab13aa9c2ad4d614ee5033050f44ae19b9eddb3d8e645"
     }
-  ]
+  ],
+  "test_runner": "jac test (native Jac test blocks)",
+  "test_source_language": "Jac"
 }

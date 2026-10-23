@@ -10,7 +10,7 @@ export JAC_CACHE_HOME=/tmp/jac-sql-314-db
 # initdb -D /tmp/jac-sql-pgtest/data -A trust -U sql_test --no-locale --encoding=UTF8
 # pg_ctl -D /tmp/jac-sql-pgtest/data -l /tmp/jac-sql-pgtest/server.log -o "-k /tmp/jac-sql-pgtest -p 65439 -c listen_addresses=''" -w start
 export JAC_SQL_PG_SOCKET=/tmp/jac-sql-pgtest/.s.PGSQL.65439
-python -m unittest discover -s jac/tests/sql -p 'test_*.py' -v
+python -m jaclang test jac/tests/sql/test_sql.jac jac/tests/sql/test_postgres.jac jac/tests/sql/test_types.jac -j 1 -v
 python -m jaclang run jac/examples/sql/typed_sql.jac
-# test_types.py runs positive checks and verifies failure of all 11 negative calls.
+# test_types.jac runs positive checks and verifies failure of all 11 negative calls.
 # After collection: pg_ctl -D /tmp/jac-sql-pgtest/data -m fast -w stop
