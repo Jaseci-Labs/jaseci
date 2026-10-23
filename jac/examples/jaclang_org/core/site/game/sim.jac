@@ -131,12 +131,7 @@ obj Spark {
         cb: int = 0;
 }
 
-def remove_at[T](items: &mut list[own T], i: int) {
-    last = items.pop();
-    if i < len(items) {
-        items[i] = last;
-    }
-}
+def remove_at[T](items: &mut list[own T], i: int);
 
 obj EnemyPool {
     has items: list[own Enemy] = [];

@@ -2,26 +2,7 @@ import from "@jac/runtime" { Outlet, useLocation }
 
 def init_theme;
 
-def:pub SiteShell -> JsxElement {
-    init_theme();
-    location = useLocation();
-    in_app = (
-        location.pathname.startswith("/jacyac")
-        or location.pathname.startswith("/socialize")
-    );
-    return
-        <div
-            className="min-h-screen overflow-x-clip bg-background text-foreground antialiased"
-        >
-            <Navbar/>
-            <main>
-                <Outlet/>
-            </main>
-            {if not in_app {
-                <Footer/>
-            }}
-        </div>;
-}
+def:pub SiteShell -> JsxElement;
 
 impl init_theme {
     saved = localStorage.getItem("jac-theme");
