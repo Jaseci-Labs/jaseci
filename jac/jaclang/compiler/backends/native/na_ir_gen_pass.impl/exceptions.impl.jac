@@ -104,12 +104,11 @@ impl NaIRGenPass._emit_exc_arm(
         stack = b.call(self._get_or_declare_extern("llvm.stacksave.p0", i8p, []), []);
         b.store(stack, b.gep(words, [ir.Constant(i32, 2)]));
     }
+    armed = b.call(self._exc_setjmp_fn(), [env], name=name);
     if self._exc_builtin_sjlj() {
-        return b.call(
-            self._exc_setjmp_fn(), [env], name=name, attrs=("returns_twice", )
-        );
+        armed.attributes.add("returns_twice");
     }
-    return b.call(self._exc_setjmp_fn(), [env], name=name);
+    return armed;
 }
 
 impl NaIRGenPass._exc_setjmp_fn -> ir.Function {
