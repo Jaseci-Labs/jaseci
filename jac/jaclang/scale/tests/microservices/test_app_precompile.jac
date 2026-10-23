@@ -195,7 +195,11 @@ test "an unchanged project reuses its sealed bundle instead of sealing again" {
     );
     assert again == first , "the reused bundle differs from the one sealed";
     cache_dir = base / ".jac" / "seal-cache";
-    cached = [cache_dir / n for n in os.listdir(cache_dir) if n.endswith(".jab")];
+    cached = [
+        cache_dir / n
+        for n in os.listdir(cache_dir)
+        if n.endswith(".jab")
+    ];
     assert len(cached) == 1 , cached;
     with tarfile.open(str(cached[0]), mode="w:gz") as unbootable {
         unbootable.add(str(base / "svc.jac"), arcname="svc.jac");
