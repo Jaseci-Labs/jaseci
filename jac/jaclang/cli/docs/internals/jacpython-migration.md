@@ -629,6 +629,22 @@ definition's pointer parameter are one pointer-sized argument, so the two
 signatures match, and `_PyTuple_Resize(pv: ptr[ptr[PyObject]], ...)` serves
 callers that pass `&mut tuple`.
 
+`listobject.c` (`object_model/list.jac`) and `setobject.c`
+(`object_model/set.jac`) follow. `list.sort` keeps listobject.c's natural
+mergesort with its powersort merge order and galloping, and its key
+compares specialized to exact str of 1-byte characters, compact int, float,
+a common `tp_richcompare`, and non-empty tuples. The specialized compare is
+an integer mode on the merge state rather than a function pointer. The merge
+area and the pending-run stack are allocated on the first merge, so a list
+shorter than 64 items sorts without allocating either. Set's
+`setiterobject` is private to setobject.c and is declared in set.jac. Its
+dummy key and `_PySetDummy_Type` are C data there, and `_PySet_Dummy` stays
+exported for the gdb plugin. Arithmetic that C does in `size_t` (a
+slice step near `sys.maxsize`, probe indices, hash mixing) uses the
+wrapping operations, since an overflowing `i64` traps in Jac. Loops that
+compare keys read a set's table and mask again on every slot, as C does,
+because a compare can resize a set.
+
 Order after the leaf types: containers (`tupleobject.c`, `listobject.c`,
 `setobject.c`, `dictobject.c`), then numbers and text (`floatobject.c`,
 `complexobject.c`, `longobject.c`, `bytesobject.c`, `unicodeobject.c`), and

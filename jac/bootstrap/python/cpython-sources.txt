@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 140 C files / 240,197 lines; 128 headers / 118,347 lines.
-#   Total: 268 files / 358,544 source lines.
+#   Excluded: 142 C files / 247,348 lines; 130 headers / 119,375 lines.
+#   Total: 272 files / 366,723 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -236,12 +236,12 @@ Objects/clinic/floatobject.c.h
 Objects/clinic/frameobject.c.h
 Objects/clinic/funcobject.c.h
 # Objects/clinic/interpolationobject.c.h  # removed: 94 source lines
-Objects/clinic/listobject.c.h
+# Objects/clinic/listobject.c.h  # removed: 471 source lines
 Objects/clinic/longobject.c.h
 Objects/clinic/memoryobject.c.h
 Objects/clinic/moduleobject.c.h
 Objects/clinic/odictobject.c.h
-Objects/clinic/setobject.c.h
+# Objects/clinic/setobject.c.h  # removed: 557 source lines
 # Objects/clinic/structseq.c.h  # removed: 68 source lines
 # Objects/clinic/tupleobject.c.h  # removed: 130 source lines
 Objects/clinic/typeobject.c.h
@@ -261,7 +261,7 @@ Objects/funcobject.c
 Objects/genobject.c
 # Objects/interpolationobject.c  # removed: 231 source lines
 # Objects/iterobject.c  # removed: 541 source lines
-Objects/listobject.c
+# Objects/listobject.c  # removed: 4,263 source lines
 Objects/longobject.c
 Objects/memoryobject.c
 Objects/methodobject.c
@@ -295,7 +295,7 @@ Objects/obmalloc.c
 Objects/odictobject.c
 # Objects/picklebufobject.c  # removed: 224 source lines
 # Objects/rangeobject.c  # removed: 1,317 source lines
-Objects/setobject.c
+# Objects/setobject.c  # removed: 2,888 source lines
 # Objects/sliceobject.c  # removed: 710 source lines
 Objects/stringlib/
 # Objects/structseq.c  # removed: 795 source lines

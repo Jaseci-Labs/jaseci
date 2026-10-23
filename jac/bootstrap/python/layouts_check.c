@@ -17,6 +17,8 @@
 #include "internal/pycore_typeobject.h"
 #include "internal/pycore_interp_structs.h"
 #include "internal/pycore_gc.h"
+#include "internal/pycore_list.h"
+#include "internal/pycore_dict.h"
 #include <stddef.h>
 
 /* The private object structs of the ported Objects/ files, as the
@@ -417,6 +419,64 @@ SIGNED(_PyTupleIterObject, it_index, 1);
 FIELD(_PyTupleIterObject, it_seq, 24, 8);
 KIND(_PyTupleIterObject, it_seq, 5);
 LAYOUT(_PyTupleIterObject, 32, 8);
+
+/* _PyListIterObject */
+FIELD(_PyListIterObject, ob_base, 0, 16);
+KIND(_PyListIterObject, ob_base, 12);
+FIELD(_PyListIterObject, it_index, 16, 8);
+KIND(_PyListIterObject, it_index, 1);
+SIGNED(_PyListIterObject, it_index, 1);
+FIELD(_PyListIterObject, it_seq, 24, 8);
+KIND(_PyListIterObject, it_seq, 5);
+LAYOUT(_PyListIterObject, 32, 8);
+
+/* setentry */
+FIELD(setentry, key, 0, 8);
+KIND(setentry, key, 5);
+FIELD(setentry, hash, 8, 8);
+KIND(setentry, hash, 1);
+SIGNED(setentry, hash, 1);
+LAYOUT(setentry, 16, 8);
+
+/* PySetObject */
+FIELD(PySetObject, ob_base, 0, 16);
+KIND(PySetObject, ob_base, 12);
+FIELD(PySetObject, fill, 16, 8);
+KIND(PySetObject, fill, 1);
+SIGNED(PySetObject, fill, 1);
+FIELD(PySetObject, used, 24, 8);
+KIND(PySetObject, used, 1);
+SIGNED(PySetObject, used, 1);
+FIELD(PySetObject, mask, 32, 8);
+KIND(PySetObject, mask, 1);
+SIGNED(PySetObject, mask, 1);
+FIELD(PySetObject, table, 40, 8);
+KIND(PySetObject, table, 5);
+FIELD(PySetObject, hash, 48, 8);
+KIND(PySetObject, hash, 1);
+SIGNED(PySetObject, hash, 1);
+FIELD(PySetObject, finger, 56, 8);
+KIND(PySetObject, finger, 1);
+SIGNED(PySetObject, finger, 1);
+FIELD(PySetObject, smalltable[0], 64, 16);
+KIND(PySetObject, smalltable[0], 12);
+FIELD(PySetObject, smalltable[1], 80, 16);
+KIND(PySetObject, smalltable[1], 12);
+FIELD(PySetObject, smalltable[2], 96, 16);
+KIND(PySetObject, smalltable[2], 12);
+FIELD(PySetObject, smalltable[3], 112, 16);
+KIND(PySetObject, smalltable[3], 12);
+FIELD(PySetObject, smalltable[4], 128, 16);
+KIND(PySetObject, smalltable[4], 12);
+FIELD(PySetObject, smalltable[5], 144, 16);
+KIND(PySetObject, smalltable[5], 12);
+FIELD(PySetObject, smalltable[6], 160, 16);
+KIND(PySetObject, smalltable[6], 12);
+FIELD(PySetObject, smalltable[7], 176, 16);
+KIND(PySetObject, smalltable[7], 12);
+FIELD(PySetObject, weakreflist, 192, 8);
+KIND(PySetObject, weakreflist, 5);
+LAYOUT(PySetObject, 200, 8);
 
 /* _Py_freelist */
 FIELD(struct _Py_freelist, freelist, 0, 8);
@@ -1082,6 +1142,26 @@ CONSTANT(offsetof(PySliceObject, stop), 24LL);
 CONSTANT(offsetof(PySliceObject, step), 32LL);
 CONSTANT(sizeof(_PyRangeIterObject), 40LL);
 CONSTANT(sizeof(_PyTupleIterObject), 32LL);
+CONSTANT(sizeof(PyListObject), 40LL);
+CONSTANT(sizeof(_PyListIterObject), 32LL);
+CONSTANT(offsetof(PyDictObject, ma_used), 16LL);
+CONSTANT(offsetof(PySetObject, used), 24LL);
+CONSTANT(sizeof(PySetObject), 200LL);
+CONSTANT(sizeof(PyFloatObject), 24LL);
+CONSTANT(Py_DTSF_ADD_DOT_0, 2LL);
+CONSTANT(Py_TPFLAGS_LONG_SUBCLASS, 16777216LL);
+CONSTANT(Py_TPFLAGS_BYTES_SUBCLASS, 134217728LL);
+CONSTANT(Py_TPFLAGS_UNICODE_SUBCLASS, 268435456LL);
+CONSTANT(offsetof(PySetObject, smalltable), 64LL);
+CONSTANT(offsetof(PySetObject, weakreflist), 192LL);
+CONSTANT(PySet_MINSIZE, 8LL);
+CONSTANT(offsetof(PyASCIIObject, hash), 24LL);
+CONSTANT(offsetof(_PyDictViewObject, dv_dict), 16LL);
+CONSTANT(offsetof(PyASCIIObject, length), 16LL);
+CONSTANT(offsetof(PyLongObject, long_value.lv_tag), 16LL);
+CONSTANT(offsetof(PyLongObject, long_value.ob_digit), 24LL);
+CONSTANT(_PyLong_NON_SIZE_BITS, 3LL);
+CONSTANT(_PyLong_SIGN_MASK, 3LL);
 CONSTANT(sizeof(_PyNamespaceObject), 24LL);
 CONSTANT(offsetof(_PyNamespaceObject, ns_dict), 16LL);
 CONSTANT(sizeof(PyCapsule), 64LL);
@@ -1108,6 +1188,12 @@ CONSTANT(sizeof(struct _Py_freelist), 16LL);
 CONSTANT(PyTuple_MAXSAVESIZE, 20LL);
 CONSTANT(Py_tuple_MAXFREELIST, 2000LL);
 CONSTANT(Py_tuple_iters_MAXFREELIST, 10LL);
+CONSTANT(offsetof(struct _Py_freelists, lists), 352LL);
+CONSTANT(offsetof(struct _Py_freelists, list_iters), 368LL);
+CONSTANT(Py_lists_MAXFREELIST, 80LL);
+CONSTANT(Py_list_iters_MAXFREELIST, 10LL);
+CONSTANT(offsetof(struct _Py_freelists, floats), 0LL);
+CONSTANT(Py_floats_MAXFREELIST, 100LL);
 CONSTANT(offsetof(struct _Py_freelists, slices), 432LL);
 CONSTANT(offsetof(struct _Py_freelists, ranges), 448LL);
 CONSTANT(offsetof(struct _Py_freelists, range_iters), 464LL);
@@ -1124,6 +1210,10 @@ CONSTANT(Py_TPFLAGS_READY, 4096LL);
 CONSTANT(_Py_TPFLAGS_STATIC_BUILTIN, 2LL);
 CONSTANT(_Py_TYPE_VERSION_COMPLEX, 11LL);
 CONSTANT(_Py_TYPE_VERSION_TUPLE, 4LL);
+CONSTANT(_Py_TYPE_VERSION_LIST, 3LL);
+CONSTANT(_Py_TYPE_VERSION_SET, 6LL);
+CONSTANT(_Py_TYPE_VERSION_FLOAT, 2LL);
+CONSTANT(_Py_TYPE_VERSION_FROZEN_SET, 7LL);
 CONSTANT(_Py_TPFLAGS_MATCH_SELF, 4194304LL);
 CONSTANT(Py_T_DOUBLE, 4LL);
 CONSTANT(Py_T_BOOL, 14LL);

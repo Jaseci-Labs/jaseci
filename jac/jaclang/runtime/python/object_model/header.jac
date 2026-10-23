@@ -46,6 +46,25 @@ def object_decref(op: ptr[PyObject]) {
     }
 }
 
+# _Py_IMMORTAL_MINIMUM_REFCNT: a count this high makes an object immortal.
+glob:priv IMMORTAL_MINIMUM_REFCNT: i64 = 0x80000000;
+
+"""_Py_RefcntAdd: add `n` references at once; a count reaching the immortal
+range stays immortal, as Py_INCREF would leave it."""
+def refcnt_add(op: ptr[PyObject], n: i64) {
+    header = ptr[_object](op);
+    full = header.view(1)[0].ob_refcnt_full;
+    count = full & 0xFFFFFFFF;
+    if (count & 0x80000000) != 0 {
+        return;
+    }
+    added = count + n;
+    if added >= IMMORTAL_MINIMUM_REFCNT {
+        added = _Py_IMMORTAL_INITIAL_REFCNT;
+    }
+    header.view(1)[0].ob_refcnt_full = (full - count) | (added & 0xFFFFFFFF);
+}
+
 """Py_XDECREF."""
 def object_xdecref(op: ptr[PyObject]) {
     if op {

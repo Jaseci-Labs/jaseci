@@ -154,8 +154,6 @@ import from c {
 glob:priv XXPRIME_1: u64 = u64(0x9E3779B185EBCA87),
      XXPRIME_2: u64 = u64(0xC2B2AE3D27D4EB4F),
      XXPRIME_5: u64 = u64(0x27D4EB2F165667C5),
-     # _Py_IMMORTAL_MINIMUM_REFCNT: a count this high makes an object immortal.
-     IMMORTAL_MINIMUM_REFCNT: i64 = 0x80000000,
      PYREFTRACER_DESTROY: i32 = 1,
      PY_SSIZE_T_MAX: i64 = 0x7FFFFFFFFFFFFFFF;
 
@@ -206,22 +204,6 @@ def gc_may_be_tracked(ob: ptr[PyObject]) -> bool {
         return False;
     }
     return not tuple_check_exact(ob) or object_gc_is_tracked(ob);
-}
-
-"""_Py_RefcntAdd: add `n` references at once; a count reaching the immortal
-range stays immortal, as Py_INCREF would leave it."""
-def refcnt_add(op: ptr[PyObject], n: i64) {
-    header = ptr[_object](op);
-    full = header.view(1)[0].ob_refcnt_full;
-    count = full & 0xFFFFFFFF;
-    if (count & 0x80000000) != 0 {
-        return;
-    }
-    added = count + n;
-    if added >= IMMORTAL_MINIMUM_REFCNT {
-        added = _Py_IMMORTAL_INITIAL_REFCNT;
-    }
-    header.view(1)[0].ob_refcnt_full = (full - count) | (added & 0xFFFFFFFF);
 }
 
 """_PyReftracerTrack: report `op` to the runtime's reference tracer, if any."""
