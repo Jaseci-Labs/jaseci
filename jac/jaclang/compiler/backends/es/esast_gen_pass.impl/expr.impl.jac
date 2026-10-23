@@ -982,7 +982,10 @@ impl EsastGenPass._bind_once(
     value: es.Expression,
     jac_node: uni.UniNode
 ) -> es.Expression {
-    awaits = self._awaits_in_place(jac_node);
+    awaits = self._suspends_in_place(jac_node, uni.AwaitExpr);
+    if self._suspends_in_place(jac_node, uni.YieldExpr) {
+        return self._bind_once_delegated(param, body, value, awaits, jac_node);
+    }
     arrow_body: es.Expression = self.sync_loc(
         es.ArrayExpression(elements=[body]), jac_node=jac_node
     )
@@ -1003,9 +1006,72 @@ impl EsastGenPass._bind_once(
     if not awaits {
         return call;
     }
+    return self._unbox_first(
+        self.sync_loc(es.AwaitExpression(argument=call), jac_node=jac_node), jac_node
+    );
+}
+
+impl EsastGenPass._bind_once_delegated(
+    param: es.Identifier,
+    body: es.Expression,
+    value: es.Expression,
+    awaits: bool,
+    jac_node: uni.UniNode
+) -> es.Expression {
+    generator = self.sync_loc(
+        es.FunctionExpression(
+            params=[param],
+            body=self.sync_loc(
+                es.BlockStatement(
+                    body=[
+                        self.sync_loc(
+                            es.ReturnStatement(
+                                argument=self.sync_loc(
+                                    es.ArrayExpression(elements=[body]),
+                                    jac_node=jac_node
+                                )
+                            ),
+                            jac_node=jac_node
+                        )
+                    ]
+                ),
+                jac_node=jac_node
+            ),
+            generator=True,
+            async_=awaits
+        ),
+        jac_node=jac_node
+    );
+    call = self.sync_loc(
+        es.CallExpression(
+            callee=self.sync_loc(
+                es.MemberExpression(
+                    object=generator,
+                    property=self.sync_loc(
+                        es.Identifier(name='call'), jac_node=jac_node
+                    ),
+                    computed=False
+                ),
+                jac_node=jac_node
+            ),
+            arguments=[self.sync_loc(es.ThisExpression(), jac_node=jac_node), value]
+        ),
+        jac_node=jac_node
+    );
+    return self._unbox_first(
+        self.sync_loc(
+            es.YieldExpression(argument=call, delegate=True), jac_node=jac_node
+        ),
+        jac_node
+    );
+}
+
+impl EsastGenPass._unbox_first(
+    boxed: es.Expression, jac_node: uni.UniNode
+) -> es.Expression {
     return self.sync_loc(
         es.MemberExpression(
-            object=self.sync_loc(es.AwaitExpression(argument=call), jac_node=jac_node),
+            object=boxed,
             property=self.sync_loc(es.Literal(value=0), jac_node=jac_node),
             computed=True
         ),
@@ -1013,12 +1079,16 @@ impl EsastGenPass._bind_once(
     );
 }
 
-impl EsastGenPass._awaits_in_place(jac_node: uni.UniNode) -> bool {
-    for awaited in jac_node.get_all_sub_nodes(uni.AwaitExpr) {
-        cur: (uni.UniNode | None) = awaited.parent;
+impl EsastGenPass._suspends_in_place(
+    jac_node: uni.UniNode, kind: type[uni.UniNode]
+) -> bool {
+    for found in jac_node.get_all_sub_nodes(kind) {
+        cur: (uni.UniNode | None) = found.parent;
         nested = False;
         while cur is not None and cur is not jac_node {
-            if isinstance(cur, (uni.Ability, uni.LambdaExpr)) {
+            if isinstance(
+                cur, (uni.Ability, uni.ImplDef, uni.Archetype, uni.LambdaExpr)
+            ) {
                 nested = True;
                 break;
             }

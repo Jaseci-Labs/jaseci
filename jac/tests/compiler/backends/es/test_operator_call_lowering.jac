@@ -175,3 +175,73 @@ console.log(JSON.stringify(out));
             "rk"
         ] , js;
 }
+
+glob YIELD_ONCE_SRC = """
+glob seen: list[str] = [];
+def idx(i: int) -> int { seen.append("i"); return i; }
+def opts() -> any { seen.append("o"); return {"b": 5}; }
+def mk(a: any, b: any = 0) -> any { return [a, b]; }
+def add(a: any, b: any) -> any { return a + b; }
+async def tick(v: int) -> int { return v; }
+def floor_gen(a: any) -> any { a[idx(1)] //= yield 2; yield a; }
+def kw_gen() -> any { r = mk(**opts(), a=(yield "v")); yield r; }
+async def floor_agen(a: any) -> any {
+    a[idx(1)] //= add((yield 2), await tick(1));
+    yield a;
+}
+obj Acc {
+    has items: list[int] = [];
+    def shrink() -> any {
+        self.items[idx(0)] //= yield self.items[0];
+        yield self.items;
+    }
+}
+def plain_floor(a: any) -> any { a[idx(0)] //= 2; return a; }
+def plain_kw() -> any { return mk(**opts(), a=1); }
+""";
+
+test "a store or keyword call whose value yields binds its receiver once inside the generator" {
+    js = compile_client(YIELD_ONCE_SRC);
+    assert "(__jac_key => a[__jac_key] = Math.floor((a[__jac_key] / 2)))(idx(0))"
+        in js , js;
+    assert "(__jac_kwargs => mk(1, __jac_kwargs[\"b\"]))(opts())" in js , js;
+    assert "yield* (async function* (__jac_key)" in js , js;
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    probe = """
+const log = () => seen.splice(0).join("");
+const out = [];
+const g = floor_gen([0, 9]);
+out.push(g.next().value, log(), g.next(4).value, log());
+const k = kw_gen();
+out.push(k.next().value, log(), k.next(7).value, log());
+const ag = floor_agen([0, 9]);
+out.push((await ag.next()).value, log(), (await ag.next(2)).value, log());
+const s = new Acc({items: [9, 1]}).shrink();
+out.push(s.next().value, s.next(4).value, log());
+out.push(plain_floor([5]), plain_kw(), log());
+console.log(JSON.stringify(out));
+""";
+    assert run_probe(js, probe)
+        == [
+            2,
+            "i",
+            [0, 2],
+            "",
+            "v",
+            "o",
+            [7, 5],
+            "",
+            2,
+            "i",
+            [0, 3],
+            "",
+            9,
+            [2, 1],
+            "i",
+            [2],
+            [1, 5],
+            "io"
+        ] , js;
+}

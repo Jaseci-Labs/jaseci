@@ -330,3 +330,50 @@ console.log(JSON.stringify(out));
     assert json.loads(result.stdout.strip())
         == [1, 1, 2, 1, 3, 0, 1, 4, 6, 1, 4, 1, 6, 1] , result.stdout + "\n" + js;
 }
+
+glob YIELD_KEY_SRC = """
+glob seen: list[int] = [];
+def recv(x: any) -> any { seen.append(1); return x; }
+def add(a: any, b: any) -> any { return a + b; }
+async def tick(v: int) -> int { return v; }
+def key_gen(x: any) -> any { r = recv(x)?[(yield "k")]; yield r; }
+async def key_agen(x: any) -> any {
+    r = recv(x)?[add((yield "k"), await tick(1))];
+    yield r;
+}
+obj Shelf {
+    has items: list[int] = [];
+    def pick(x: any) -> any { r = recv(x)?[(yield self.items[0])]; yield r; }
+}
+def plain(x: any, k: any) -> any { return recv(x)?[k]; }
+""";
+
+test "a null-safe read whose key yields binds its receiver once inside the generator" {
+    js = compile_client(YIELD_KEY_SRC);
+    assert "(__jac_opt => ((__jac_opt == null) ? undefined : _jac.poly.getitem(__jac_opt, k)))(recv(x))"
+        in js , js;
+    assert "yield* (async function* (__jac_opt)" in js , js;
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    probe = """
+const count = () => seen.splice(0).length;
+const out = [];
+const g = key_gen([5, 6]);
+out.push(g.next().value, count(), g.next(1).value, count());
+const n = key_gen(null);
+out.push(n.next().value ?? "none", count());
+const ag = key_agen([5, 6, 7]);
+out.push((await ag.next()).value, count(), (await ag.next(1)).value, count());
+const p = new Shelf({items: [1]}).pick([3, 4]);
+out.push(p.next().value, p.next(0).value, count());
+out.push(plain([8], 0), count());
+console.log(JSON.stringify(out));
+""";
+    result = run_js_module(js + "\n" + probe, timeout=10.0);
+    assert result.returncode == 0 , result.stderr + "\n" + js;
+    assert json.loads(result.stdout.strip())
+        == ["k", 1, 6, 0, "none", 1, "k", 1, 7, 0, 1, 3, 1, 8, 1] , result.stdout
+        + "\n"
+        + js;
+}

@@ -318,7 +318,9 @@ impl JSCodeGenerator.gen_member_expression(nd: es.MemberExpression) -> str {
             es.BinaryExpression,
             es.LogicalExpression,
             es.UnaryExpression,
-
+            es.YieldExpression,
+            es.FunctionExpression,
+            es.ArrowFunctionExpression
         )
     ) {
         `obj = f"({`obj})";
@@ -511,6 +513,7 @@ impl JSCodeGenerator.gen_method_definition(nd: es.MethodDefinition) -> str {
     value = self.generate(nd.value);
     if isinstance(nd.value, es.FunctionExpression) {
         async_str = 'async ' if nd.value.async_ else '';
+        star = '*' if nd.value.generator else '';
         params = ', '.join(self.generate(p) for p in nd.value.params);
         body = self.generate(nd.value.body);
         if (nd.kind == 'constructor') {
@@ -520,7 +523,7 @@ impl JSCodeGenerator.gen_method_definition(nd: es.MethodDefinition) -> str {
         } elif (nd.kind == 'set') {
             return f"{self.indent()}{static_str}set {key}({params}) {body}";
         } else {
-            return f"{self.indent()}{static_str}{async_str}{key}({params}) {body}";
+            return f"{self.indent()}{static_str}{async_str}{star}{key}({params}) {body}";
         }
     }
     return f"{self.indent()}{static_str}{key}{value}";

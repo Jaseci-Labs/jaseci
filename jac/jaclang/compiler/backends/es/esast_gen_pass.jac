@@ -628,7 +628,16 @@ walker EsastGenPass(TreePass) {
         jac_node: uni.UniNode
     ) -> es.Expression;
 
-    def _awaits_in_place(jac_node: uni.UniNode) -> bool;
+    def _bind_once_delegated(
+        param: es.Identifier,
+        body: es.Expression,
+        value: es.Expression,
+        awaits: bool,
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _unbox_first(boxed: es.Expression, jac_node: uni.UniNode) -> es.Expression;
+    def _suspends_in_place(jac_node: uni.UniNode, kind: type[uni.UniNode]) -> bool;
     def _strip_optional_chain(expr: (es.Node | None)) -> None;
     can exit_binary_expr with uni.BinaryExpr exit;
     can exit_cfg_expr with uni.CfgExpr exit;
