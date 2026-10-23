@@ -59,7 +59,8 @@ obj Runner {
 
 glob MIN_CONFIDENCE: float = 0.6,
      MAX_REPAIRS: int = 2,
-     JOB_BUDGET_S: float = 2400.0,
+     JOB_LEASE_S: float = 7200.0,
+     LEASE_MARGIN_S: float = 300.0,
      CANDIDATES: int = 12,
      REPLY_LIMIT: int = 280,
      RUNNER: Runner = Runner(),
@@ -81,8 +82,10 @@ def gap_reply(links: list[LinkView], job_id: str) -> str;
 
 def generated_reply(job_id: str) -> str;
 
+def step_fits(deadline: float, step_s: float) -> bool;
+
 def write_verified(
-    spec: JobSpec, note: Callable
+    spec: JobSpec, note: Callable, deadline: float
 ) -> tuple[TutorialDraft | None, list[BlockView], str];
 
 def run_pipeline(spec: JobSpec, catalog: list[IndexDoc], note: Callable) -> Outcome;
@@ -123,10 +126,16 @@ impl generated_reply(job_id: str) -> str {
         + job_path(job_id);
 }
 
+impl step_fits(deadline: float, step_s: float) -> bool {
+    return deadline - time.monotonic() >= step_s;
+}
+
 impl write_verified(
-    spec: JobSpec, note: Callable
+    spec: JobSpec, note: Callable, deadline: float
 ) -> tuple[TutorialDraft | None, list[BlockView], str] {
-    deadline = time.monotonic() + JOB_BUDGET_S;
+    if not step_fits(deadline, WRITE_STEPS * MODEL_TRIES * MODEL_TIMEOUT_S) {
+        return (None, [], "not enough time left in this job to write a tutorial");
+    }
     repo_root = Path(spec.repo_root);
     open_toolbox(repo_root, agent_catalog(repo_root), note);
     note("write", "no existing answer: researching and drafting a short tutorial");
@@ -162,7 +171,7 @@ impl write_verified(
         if attempt == MAX_REPAIRS {
             break;
         }
-        if time.monotonic() > deadline {
+        if not step_fits(deadline, REPAIR_STEPS * MODEL_TRIES * MODEL_TIMEOUT_S) {
             note("repair", "out of time for this question; logging it as a docs gap");
             break;
         }
@@ -246,6 +255,7 @@ impl Runner.ack(run_ids: list[str]) -> None {
 }
 
 impl run_pipeline(spec: JobSpec, catalog: list[IndexDoc], note: Callable) -> Outcome {
+    deadline = time.monotonic() + JOB_LEASE_S - LEASE_MARGIN_S;
     out = Outcome();
     note("classify", "reading the post");
     if classify_ask(spec.question) == AskKind.OFF_TOPIC {
@@ -287,7 +297,7 @@ impl run_pipeline(spec: JobSpec, catalog: list[IndexDoc], note: Callable) -> Out
         note("retrieve", "nothing in the tutorials or docs matches");
     }
     if spec.repo_root {
-        (tutorial, blocks, why) = write_verified(spec, note);
+        (tutorial, blocks, why) = write_verified(spec, note, deadline);
         out.blocks = blocks;
         if tutorial is not None {
             note("publish", "every example passed: publishing " + tutorial.title);

@@ -92,7 +92,6 @@ edge Answered(ClawEdge): ClawTutorial --> ClawJob {}
 
 glob DAILY_JOBS: int = int(os.environ.get("NINJACLAW_DAILY_JOBS", "200") or 200),
      STALE_WORKING_S: float = 900.0,
-     JOB_LEASE_S: float = 3600.0,
      CHORE_LEASE_S: float = 7200.0,
      MAX_ATTEMPTS: int = 2,
      RECENT_LIMIT: int = 30,

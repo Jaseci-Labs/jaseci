@@ -414,6 +414,10 @@ graph import core.ninjaclaw {
     brain ++> runner {
         AskKind,
         Candidate,
+        MODEL_TIMEOUT_S,
+        MODEL_TRIES,
+        REPAIR_STEPS,
+        WRITE_STEPS,
         classify_ask,
         pick_answer,
         repair_tutorial,
@@ -437,7 +441,7 @@ graph import core.ninjaclaw {
         upkeep | verify { BlockView },
     ]
     promote ++> graph { PrResult, PromoteCandidate }
-    runner ++> graph { Outcome, WORKER_ID, stamp }
+    runner ++> graph { JOB_LEASE_S, Outcome, WORKER_ID, stamp }
     tools ++> [
         brain { list_jac_guides, read_jac_file, read_jac_guide, search_jac },
         runner { agent_catalog, open_toolbox },
