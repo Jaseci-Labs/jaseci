@@ -19,6 +19,8 @@ def run_studio(
 
 def cmd_model(root_dir: str, args: list[str], as_json: bool) -> int;
 
+def cmd_mcp(root_dir: str, args: list[str]) -> int;
+
 def format_summary(model: ProjectModel) -> str;
 
 def format_module(model: ProjectModel, key: str) -> str;
@@ -77,6 +79,9 @@ impl run_studio(
     if action == "model" {
         return cmd_model(root_dir, args, as_json);
     }
+    if action == "mcp" {
+        return cmd_mcp(root_dir, args);
+    }
     if action == "" {
         return run_tui(root_dir, agent, session);
     }
@@ -120,6 +125,27 @@ impl cmd_model(root_dir: str, args: list[str], as_json: bool) -> int {
     }
     out(format_summary(model));
     return 0;
+}
+
+impl cmd_mcp(root_dir: str, args: list[str]) -> int {
+    sock = "";
+    i = 0;
+    while i < len(args) {
+        a = args[i];
+        if a == "--socket" and i + 1 < len(args) {
+            sock = args[i + 1];
+            i += 2;
+        } elif a.startswith("--socket=") {
+            sock = a.split("=", 1)[1];
+            i += 1;
+        } else {
+            err(
+                f"jac studio mcp: unexpected argument '{a}' (usage: jac studio mcp [--socket PATH])"
+            );
+            return 2;
+        }
+    }
+    return serve_studio_mcp(sock, root_dir);
 }
 
 impl format_summary(model: ProjectModel) -> str {

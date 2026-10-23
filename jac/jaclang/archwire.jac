@@ -32785,10 +32785,27 @@ graph import server.serving {
 }
 
 graph import studio {
+    bridge ++> studio_mcp {
+        BridgeClient,
+        BridgeError,
+        BridgeUnavailable,
+        SOCKET_ENV,
+        find_studio_socket
+    }
     model ++> [
         app { ProjectModel, find_project_root },
+        bridge {
+            ProjectModel,
+            SYM_SCHEME,
+            StAbility,
+            StArchetype,
+            StImpl,
+            StModule,
+            StNode
+        },
         tui { ProjectModel, StAbility, StImpl, StModule, StNode },
     ]
+    studio_mcp ++> app { serve_studio_mcp }
     theme ++> tui {
         CODE_STYLES,
         C_SEL,
