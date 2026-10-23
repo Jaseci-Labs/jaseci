@@ -969,8 +969,12 @@ impl _cached_seal(base: Path, key: str) -> (bytes | None) {
 }
 
 impl _bundle_ships(raw: bytes, member: str) -> bool {
-    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as sealed {
-        return member in sealed.getnames();
+    try {
+        with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as sealed {
+            return member in sealed.getnames();
+        }
+    } except (OSError, EOFError, tarfile.TarError) {
+        return False;
     }
 }
 
