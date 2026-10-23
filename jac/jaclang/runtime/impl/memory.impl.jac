@@ -201,6 +201,10 @@ impl Memory.unit_depth -> int {
     return 0;
 }
 
+impl Memory.take_ro_retry -> str | None {
+    return None;
+}
+
 impl Memory.read_scope_enter {}
 
 impl Memory.read_scope_exit {}
