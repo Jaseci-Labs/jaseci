@@ -5901,6 +5901,11 @@ impl TypeEvaluator._apply_narrowing(
         if result is base_type {
             return incoming;
         }
+        if isinstance(result, NeverType) and incoming is not None {
+            return self.exclude_type_from_union(
+                target.declared_type, predicate.narrow_type
+            );
+        }
         return result;
     }
 }
