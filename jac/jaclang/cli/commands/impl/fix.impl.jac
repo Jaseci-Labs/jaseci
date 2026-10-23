@@ -1264,8 +1264,6 @@ impl _fix_dependencies(paths: list[str], dry_run: bool) -> int {
 
 impl _report_invalid_manifest(paths: list[str]) -> bool {
     import from pathlib { Path }
-    import from jaclang.project.config { JacConfig }
-    import from jaclang.project.modresolver { find_jac_project_root }
     checked: set[str] = set();
     for path in paths {
         proj = find_jac_project_root(path);
