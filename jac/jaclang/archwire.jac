@@ -1,7 +1,7 @@
 graph import {
     edge Artifacts: artifacts.* --> cli.* | client.* | compiler.* | data.* | dist.* | project.* | server.* | toolchains.*;
     edge BootstrapManifest: bootstrap_manifest --> compiler.* | dist.* | project.*;
-    edge Byllm: byllm.* --> cli.* | runtime.* | scale.*;
+    edge Byllm: byllm.* --> cli.* | runtime.* | scale.* | studio.*;
     edge Cache: cache.* --> byllm.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | scale.* | server.* | toolchains.*;
     edge Cli: cli.* --> byllm.* | client.* | compiler.* | dist.* | jac0core.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
@@ -141,10 +141,12 @@ graph import {
         when_litellm_loaded
     }
     comptime byllm.cli ++> cli.manifest { SPEC_MODEL }
-    byllm.config_loader --> runtime.runtime.JacLLM.default_llm { get_byllm_config }
+    byllm.config_loader --> runtime.runtime.JacLLM.default_llm
+        | studio.native_agent.NativeAgentSession.resolve_llm { get_byllm_config }
     byllm.exceptions --> runtime.runtime.JacLLM.default_llm { ConfigurationError }
     byllm.llm ++> runtime.runtime.JacLLM.by_operator { BaseLLM }
-    byllm.llm --> runtime.runtime.JacLLM.default_llm { Model }
+    byllm.llm --> runtime.runtime.JacLLM.default_llm
+        | studio.native_agent.NativeAgentSession.resolve_llm { Model }
     byllm.mtir ++> [
         runtime.runtime.JacLLM.by._decorator._wrapped_caller { MTIR },
         runtime.runtime.JacLLM.get_mtir { MTIR },
@@ -1335,7 +1337,9 @@ graph import {
         dist.precompile_bytecode.adopt_kernel { host_target_spec },
     ]
     compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
-    compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
+    compiler.tools.code_intel ++> cli.commands.code | studio.native_agent {
+        CodeIntelligence
+    }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
     }
@@ -32785,7 +32789,50 @@ graph import server.serving {
 }
 
 graph import studio {
-    model ++> app { ProjectModel, find_project_root }
+    acp ++> agents { AcpSession }
+    agent_session ++> [
+        acp { AgentEvent, AgentSession, blocks_text },
+        agents { AgentSession },
+        native_agent { AgentSession, blocks_text },
+        session { AgentEvent },
+    ]
+    agents ++> app { AgentRegistry }
+    context ++> [
+        app { context_blocks, resolve_key },
+        native_agent {
+            WIRE_PREFIX,
+            context_block,
+            module_of,
+            resolve_key,
+            rule_lines,
+            sig_suffix,
+            symbol_context,
+            tidy_sig,
+            wire_line
+        },
+    ]
+    model ++> [
+        app { ProjectModel, find_project_root },
+        context {
+            ProjectModel,
+            StAbility,
+            StArchetype,
+            StField,
+            StModule,
+            StNode,
+            WireInfo,
+            sym_uri
+        },
+        native_agent { ProjectModel, SKIP_DIRS },
+    ]
+    native_agent ++> agents { NativeAgentSession }
+    session ++> app {
+        StudioSession,
+        list_sessions,
+        load_session,
+        new_session,
+        sessions_dir
+    }
 }
 
 graph import testing {
