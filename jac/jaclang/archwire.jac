@@ -11,7 +11,7 @@ graph import {
     edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
     edge Jac0: jac0 --> dist.*;
     edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
-    edge Lsp: lsp.* --> cli.*;
+    edge Lsp: lsp.* --> cli.* | studio.*;
     edge MetaImporter: meta_importer --> client.*;
     edge Packages: packages.* --> cli.* | client.* | dist.* | project.*;
     edge Project: project.* --> artifacts.* | byllm.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | lsp.* | packages.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
@@ -654,12 +654,16 @@ graph import {
         cli.commands.analysis._check_file_job
             | project.compiler_host.ProjectHost.base_file
             | server.hmr
+            | studio.intel
             | testing.cl_test_runner.module_entry_for { discover_base_file },
         cli.commands.analysis._drop_covered_annexes { discover_base_file },
         cli.commands.analysis._unit_weight
             | cli.commands.architecture
             | project.compiler_host.ProjectHost.annex_files { discover_annex_files },
-        lsp.server.engine { discover_annex_files, discover_base_file },
+        lsp.server.engine | studio.intel_server {
+            discover_annex_files,
+            discover_base_file
+        },
         project.compiler_host.ProjectHost.is_annex_path_of
             | project.kernel_snapshot.session_inputs { host_layout_tables },
         project.compiler_host.ProjectHost.package_init { host_layout_tables },
@@ -710,7 +714,7 @@ graph import {
         },
         dist.precompile_bytecode.precompile_native_unit { CompileOptions },
         dist.precompile_bytecode.seal_native { CompileOptions },
-        lsp.server.engine { CancelToken },
+        lsp.server.engine | studio.intel_server { CancelToken },
     ]
     compiler.driver.compile_options --> [
         cli.commands.execution._exec_file { CompileOptions as _RunOpts },
@@ -1051,6 +1055,7 @@ graph import {
             JacSemTokenType as SemTokType
         },
         packages.api { SymbolAccess, SymbolType },
+        studio.intel_server { JacSemTokenModifier, JacSemTokenType },
     ]
     compiler.frontend.diagnostic_utils ++> cli.commands.analysis.check {
         resolve_diagnostic_tokens
@@ -1145,7 +1150,7 @@ graph import {
         | lsp.server.engine.JacLangServer.type_check_file { _replay_diags, parse_diags }
     compiler.frontend.parser.lexer ++> [
         cli.commands.fix._strip_markers { tokenize },
-        lsp.server.engine { tokenize_full },
+        lsp.server.engine | studio.intel { tokenize_full },
     ]
     compiler.frontend.parser.lexer --> [
         cli.commands.analysis._check_file_job { Lexer },
@@ -1791,6 +1796,9 @@ graph import {
         | project.modresolver._candidate_from_stub_catalog { active }
     lib.jaclib as _jaclib ++> lib;
     include lib.jaclib ++> lib;
+    lsp.protocol.server ++> studio.intel_server { Workspace }
+    lsp.protocol.types as lspt ++> studio.intel_server;
+    lsp.server.engine ++> studio.intel_server { JacLangServer }
     lsp.server.server ++> cli.commands.tools.lsp { run_lang_server }
     meta_importer ++> client.targets.desktop.native.host_boot._ensure_jac_meta_importer {
         JacMetaImporter
@@ -32785,6 +32793,14 @@ graph import server.serving {
 }
 
 graph import studio {
+    intel ++> app { CodeIntel, Span }
+    intel_server --> [
+        intel.CodeIntel._do_check { check_head, new_cancel_token },
+        intel.CodeIntel._do_invalidate { invalidate_path },
+        intel.CodeIntel._do_query { definition_at, hover_at, references_at },
+        intel.CodeIntel._ensure_engine { new_server },
+        intel.CodeIntel._run { shutdown_server },
+    ]
     model ++> app { ProjectModel, find_project_root }
 }
 
