@@ -72,3 +72,58 @@ obj PassedThenPost {
         self.x = 99;  # <-- Error
     }
 }
+
+obj ParseOrDefault {
+    has x: Final[int];
+
+    def init(s: str) {
+        try {
+            self.x = int(s);
+        } except ValueError {
+            self.x = 0;
+        }
+    }
+}
+
+obj TryTwice {
+    has x: Final[int];
+
+    def init {
+        try {
+            self.x = 1;
+            raise ValueError("retry");
+        } except ValueError {
+            self.x = 2;  # <-- Error
+        }
+    }
+}
+
+obj FailedPath {
+    has x: Final[int];
+
+    def init(flag: bool) {
+        if flag {
+            self.x = 1;
+            raise ValueError("abort");
+        }
+        self.postinit();
+    }
+
+    def postinit {
+        self.x = 2;
+    }
+}
+
+obj NestedThenFinally {
+    has x: Final[int];
+
+    def init(flag: bool) {
+        try {
+            if flag {
+                self.x = 1;
+            }
+        } finally {
+            self.x = 2;  # <-- Error
+        }
+    }
+}

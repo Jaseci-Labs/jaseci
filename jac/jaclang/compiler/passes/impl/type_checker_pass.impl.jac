@@ -497,42 +497,86 @@ impl TypeCheckPass._first_init_writes(
             by_method.setdefault(id(method), (method, []))[1].append((leaf, decl_sym));
         }
     }
+    flows: dict[int, InitFlow] = {};
     ctor_writes: dict[int, set[SymId]] = {};
-    for (method, inits) in by_method.values() {
+    for (key, (method, inits)) in by_method.items() {
+        flows[key] = self._init_flow(method, inits);
         if method.sym_name in CTOR_METHODS {
-            ctor_writes[id(method.method_owner)] = {id(sym) for (_, sym) in inits};
+            ctor_writes[id(method.method_owner)] = flows[key].set_at_exit();
         }
     }
     first: set[int] = set();
-    for (method, inits) in by_method.values() {
+    for (key, (method, inits)) in by_method.items() {
         set_before = self._set_before_initializer(method, ctor_writes);
-        gen: dict[int, set[SymId]] = {};
-        sites: list[tuple[Expr, SymId, int]] = [];
+        seen: set[tuple[int, SymId]] = set();
         for (leaf, sym) in inits {
-            anchor = id(leaf.find_parent_of_type(UniCFGNode));
-            at_anchor = gen.setdefault(anchor, set());
-            if id(sym) not in at_anchor and id(sym) not in set_before {
-                sites.append((leaf, id(sym), anchor));
-            }
-            at_anchor.add(id(sym));
-        }
-        cfg_nodes = [
-            n for part in [method, *method.linked_impls()]
-            for n in part.flatten()
-            if isinstance(n, UniCFGNode)
-        ];
-        flow_in = solve_forward(
-            cfg_nodes,
-            lambda (nd: UniCFGNode, in_set: set[SymId]) -> set[SymId] { return in_set
-                | gen.get(id(nd), set()); }
-        );
-        for (leaf, sid, anchor) in sites {
-            if sid not in flow_in.get(anchor, set()) {
+            anchor = leaf.find_parent_of_type(UniCFGNode);
+            site = (id(anchor), id(sym));
+            if site not in seen
+                and id(sym) not in set_before
+                and id(sym) not in flows[key].set_before(anchor) {
                 first.add(id(leaf));
             }
+            seen.add(site);
         }
     }
     return first;
+}
+
+impl TypeCheckPass._init_flow(
+    method: Ability, inits: list[tuple[Expr, Symbol]]
+) -> InitFlow {
+    gen: dict[int, set[SymId]] = {};
+    for (leaf, sym) in inits {
+        gen.setdefault(id(leaf.find_parent_of_type(UniCFGNode)), set()).add(id(sym));
+    }
+    parts: list[UniNode] = [method];
+    parts.extend(method.linked_impls());
+    nodes: list[UniCFGNode] = [];
+    for part in parts {
+        for n in part.flatten() {
+            if isinstance(n, UniCFGNode) and n.enclosing_decl(Ability) is method {
+                nodes.append(n);
+            }
+        }
+    }
+    flow_in = solve_forward(
+        nodes,
+        lambda (nd: UniCFGNode, in_set: set[SymId]) -> set[SymId] { return in_set
+            | gen.get(id(nd), set()); },
+        catch_edges=True
+    );
+    return InitFlow(method=method, gen=gen, flow_in=flow_in, nodes=nodes);
+}
+
+impl InitFlow.set_before(anchor: (UniCFGNode | None)) -> set[SymId] {
+    if anchor is None {
+        return set();
+    }
+    found = set(self.flow_in.get(id(anchor), set()));
+    fin = anchor.find_parent_of_type(FinallyStmt);
+    while fin is not None and fin.enclosing_decl(Ability) is self.method {
+        guarded = fin.find_parent_of_type(TryStmt);
+        for n in self.nodes {
+            if guarded is not None and n.is_within(guarded) and not n.is_within(fin) {
+                found |= self.flow_in.get(id(n), set());
+            }
+        }
+        fin = fin.find_parent_of_type(FinallyStmt);
+    }
+    return found;
+}
+
+impl InitFlow.set_at_exit -> set[SymId] {
+    found: set[SymId] = set();
+    for n in self.nodes {
+        if isinstance(n, CodeBlockStmt)
+            and not isinstance(n, RaiseStmt)
+            and is_scope_exit(n) {
+            found |= self.flow_in.get(id(n), set()) | self.gen.get(id(n), set());
+        }
+    }
+    return found;
 }
 
 impl TypeCheckPass._set_before_initializer(

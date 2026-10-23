@@ -3,6 +3,7 @@ import from typing { cast }
 walker CFGBuildPass(TreePass) {
     static has contract: PassContract = PassContract(
         provides=(
+            AnalysisFact.CFG_CATCH,
             AnalysisFact.CFG_SUCC,
             AnalysisFact.CFG_TRUE,
             AnalysisFact.CFG_FALSE,
@@ -15,6 +16,8 @@ walker CFGBuildPass(TreePass) {
     def _link_sequential(body: Sequence[CodeBlockStmt]) -> None;
     def _exit_wired(nd: UniCFGNode) -> bool;
     def _connect_tails(parent: UniNode, target: UniCFGNode) -> None;
+    def _connect_tail(k: UniNode, target: UniCFGNode) -> None;
+    def _raising_stmts(stmts: Sequence[UniNode]) -> list[CodeBlockStmt];
     def _link_body_tails_to_header(
         nd: WhileStmt | ForeverStmt | InForStmt | IterForStmt
     ) -> None;

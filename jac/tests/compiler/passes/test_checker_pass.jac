@@ -5723,8 +5723,8 @@ test "final_field_initialized_once" {
             if e.loc and e.code and e.code.code == "E1135" and "'x'" in e.msg
         ]
     );
-    assert got == [42, 54, 63, 72] , f"expected E1135 on lines 42, 54, 63, 72, got {got}:\n{all_errors}";
-    assert len(program.errors_had) == 4 , all_errors;
+    assert got == [42, 54, 63, 72, 96, 126] , f"expected E1135 on lines 42, 54, 63, 72, 96, 126, got {got}:\n{all_errors}";
+    assert len(program.errors_had) == 6 , all_errors;
 }
 
 test "none_equality_not_flagged" {

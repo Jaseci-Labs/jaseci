@@ -8380,7 +8380,7 @@ graph import compiler {
             UniNode
         },
         passes.context { ImplDef, Module, Source, TreeWalker, UniNode },
-        passes.dataflow { UniCFGNode },
+        passes.dataflow { AstElseBodyNode, UniCFGNode },
         passes.decl_impl_match_pass {
             Ability,
             Archetype,
@@ -8523,7 +8523,6 @@ graph import compiler {
             Ability,
             Archetype,
             Assignment,
-            AstElseBodyNode,
             AtomTrailer,
             BinaryExpr,
             CfgExpr,
@@ -8903,6 +8902,7 @@ graph import compiler {
             Expr,
             ExprAsItem,
             FilterCompr,
+            FinallyStmt,
             FormattedValue,
             FuncCall,
             FuncSignature,
@@ -8937,6 +8937,7 @@ graph import compiler {
             SubTag,
             Symbol,
             Token,
+            TryStmt,
             TupleVal,
             TypeAlias,
             UnaryExpr,
@@ -12070,6 +12071,7 @@ graph import compiler.frontend {
         Absorbs,
         CalleeDecl,
         CalleeSignature,
+        CfgCatch,
         CfgFalse,
         CfgSucc,
         CfgTrue,
@@ -13696,12 +13698,13 @@ graph import compiler.passes {
         ownership_check_pass {
             DataflowTransfer,
             SymId,
+            is_scope_exit,
             solve_backward,
             solve_forward,
             solve_forward_must
         },
         rc_facts_pass { SymId, solve_backward_gen_kill },
-        type_checker_pass { SymId, solve_forward },
+        type_checker_pass { SymId, is_scope_exit, solve_forward },
     ]
     execution ++> pyast_load_pass.build_python_module { new_context, walk_pass }
     import_wiring_pass ++> static_analysis_pass { report_unused_wires }
