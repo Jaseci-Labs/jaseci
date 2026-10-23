@@ -3052,20 +3052,21 @@ def load_studio_config(root_dir: str) -> dict[str, any];
 def ensure_indexed(app: Studio, key: str) -> None;
 
 impl load_studio_config(root_dir: str) -> dict[str, any] {
-    path = os.path.join(root_dir, "jac.toml");
-    if not os.path.exists(path) {
-        return {};
-    }
-    try {
-        import tomllib;
-        with open(path, "rb") as fh {
-            data = tomllib.load(fh);
+    user = read_studio_table(user_config_path());
+    proj = read_studio_table(os.path.join(root_dir, "jac.toml"));
+    merged: dict[str, any] = dict(user);
+    for (k, v) in proj.items() {
+        if k in ["verbs", "agents"]
+            and isinstance(v, dict)
+            and isinstance(merged.get(k), dict) {
+            both = dict(merged[k]);
+            both.update(v);
+            merged[k] = both;
+        } else {
+            merged[k] = v;
         }
-    } except Exception {
-        return {};
     }
-    st = data.get("studio", {});
-    return st if isinstance(st, dict) else {};
+    return merged;
 }
 
 impl ensure_indexed(app: Studio, key: str) -> None {

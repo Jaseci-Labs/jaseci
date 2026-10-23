@@ -32830,7 +32830,10 @@ graph import studio {
         native_agent { AgentSession, blocks_text },
         session | tui { AgentEvent },
     ]
-    agents ++> app | tui { AgentRegistry }
+    agents ++> [
+        app { AgentRegistry },
+        tui { AgentRegistry, read_studio_table, user_config_path },
+    ]
     bridge ++> [
         studio_mcp {
             BridgeClient,

@@ -32,6 +32,7 @@ A task-first index into the commands below. The full alphabetical list follows i
 | Manage config or profiles | `jac config` |
 | Manage byLLM local models | `jac model` |
 | Use Jac from an AI assistant | `jac guide` · `jac mcp` |
+| Work on a codebase with coding agents | `jac studio` |
 | Convert between Python, Jac, and JS | `jac tool py2jac` · `jac tool jac2py` · `jac tool jac2js` |
 | Clean caches / artifacts | `jac clean` (project) · `jac cache` (machine-wide) |
 
@@ -54,6 +55,7 @@ A task-first index into the commands below. The full alphabetical list follows i
 | `jac browse` | Automate a headless browser over CDP (navigate, click, snapshot, screenshot) |
 | `jac code` | Query code structure via the compiler (symbols, uses, walkers, slices) |
 | `jac mcp` | Start the MCP server so AI assistants can use the live Jac compiler |
+| `jac studio` | Open a compiler-backed terminal workspace for working on the project with coding agents |
 | `jac completions` | Generate (and optionally install) shell completions |
 | `jac model` | Manage byLLM local-model weights (Gemma 4, Qwen 3.5, …) |
 | `jac config` | Manage project configuration |
@@ -903,7 +905,7 @@ jac browse close
 
 ## AI-Assisted Development
 
-Two commands make Jac projects legible to (and drivable by) AI agents. See also [Agent Skills & MCP](../agent-skills-and-mcp.md) for the workflow overview.
+Three commands make Jac projects legible to (and drivable by) AI agents. See also [Agent Skills & MCP](../agent-skills-and-mcp.md) for the workflow overview.
 
 ### jac code
 
@@ -948,6 +950,25 @@ jac mcp [-t stdio|sse|streamable-http] [-p PORT] [--host HOST] [--mode lite|stan
 | `--inspect` | Print inventory of resources, tools, and prompts, then exit | off |
 
 See the [MCP Server Reference](../mcp.md) for the full tool catalog and per-client setup snippets.
+
+### jac studio
+
+Open a terminal workspace for the project: navigate it by its archwire wiring, select modules, symbols and wires as context, and have a coding agent act on them. Every edit an agent makes is checked by the compiler before it reaches disk.
+
+```bash
+jac studio [action] [args...] [-a AGENT] [-s SESSION] [-d DIR] [--json]
+```
+
+| Action | Description |
+|--------|-------------|
+| (none) | Open the workspace |
+| `model [module-or-symbol]` | Print the project model, one module, or one symbol (`--json` for JSON) |
+| `ask <symbol> "<instruction>"` | Hand a symbol and an instruction to an agent without the UI (`--yes` approves writes) |
+| `agents` | List the agents the studio can drive |
+| `sessions` | List saved sessions; `sessions fork <id>` copies one |
+| `mcp` | Run the studio's MCP server (started for agents automatically) |
+
+See the [Jac Studio reference](../studio.md) for the workspace, keys, edit review and configuration.
 
 ---
 
