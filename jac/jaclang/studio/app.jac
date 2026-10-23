@@ -40,7 +40,7 @@ def wait_tickets(
 
 def cmd_agents(root_dir: str, as_json: bool) -> int;
 
-def cmd_sessions(root_dir: str, as_json: bool, args: list[str] = []) -> int;
+def cmd_sessions(root_dir: str, as_json: bool, args: list[str]) -> int;
 
 def cmd_ask(
     root_dir: str,
@@ -577,7 +577,7 @@ impl cmd_agents(root_dir: str, as_json: bool) -> int {
     return 0;
 }
 
-impl cmd_sessions(root_dir: str, as_json: bool, args: list[str] = []) -> int {
+impl cmd_sessions(root_dir: str, as_json: bool, args: list[str]) -> int {
     if args and args[0] == "fork" {
         if len(args) < 2 {
             err("usage: jac studio sessions fork <session-id>");
