@@ -2072,13 +2072,16 @@ impl _format_single_file_worker(
                     }
                 }
                 if float_target and not float_ok {
-                    annex_ok = False;
-                    annex_error_count += 1;
+                    result['success'] = False;
+                    result['changed'] = False;
                     result['formatted_code'] = None;
-                    result['errors_strs'].append(
+                    result['impl_results'] = [];
+                    result['errors'] = annex_error_count + 1;
+                    result['syntax_errors'] = [
                         f"Left '{file_path}' unchanged: its impl annex "
                         f"'{float_target}' could not be formatted"
-                    );
+                    ];
+                    return result;
                 } elif float_target {
                     result['floated_annexes'] = [float_target];
                 }
