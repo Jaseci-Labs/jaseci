@@ -7003,6 +7003,7 @@ graph import compiler {
             E1157,
             E1158,
             E1159,
+            E1161,
             E2015,
             W1036,
             W1037,
@@ -8939,6 +8940,7 @@ graph import compiler {
             TupleVal,
             TypeAlias,
             UnaryExpr,
+            UniCFGNode,
             UniNode,
             VisitStmt,
             WhileStmt,
@@ -13699,6 +13701,7 @@ graph import compiler.passes {
             solve_forward_must
         },
         rc_facts_pass { SymId, solve_backward_gen_kill },
+        type_checker_pass { SymId, solve_forward },
     ]
     execution ++> pyast_load_pass.build_python_module { new_context, walk_pass }
     import_wiring_pass ++> static_analysis_pass { report_unused_wires }
