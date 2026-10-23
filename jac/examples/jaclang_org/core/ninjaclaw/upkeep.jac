@@ -26,7 +26,7 @@ obj Chore {
 glob CHORE: Chore = Chore();
 
 def sweep_items(
-    tutorials: list[tuple[str, str, str, str]], version: str
+    tutorials: list[tuple[str, str, str, str, str]], version: str
 ) -> list[SweepItem];
 
 def sweep(items: list[SweepItem], note: Callable) -> dict[str, list[BlockView]];
@@ -105,11 +105,11 @@ impl Chore.ack(run_id: str) -> None {
 }
 
 impl sweep_items(
-    tutorials: list[tuple[str, str, str, str]], version: str
+    tutorials: list[tuple[str, str, str, str, str]], version: str
 ) -> list[SweepItem] {
     items: list[SweepItem] = [];
-    for (slug, body, status, verified) in tutorials {
-        if status == "removed" {
+    for (slug, body, status, verified, checked) in tutorials {
+        if status == "removed" or checked == version {
             continue;
         }
         if status == "published" and verified == version {

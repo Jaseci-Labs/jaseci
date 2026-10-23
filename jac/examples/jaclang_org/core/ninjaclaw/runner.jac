@@ -1,4 +1,5 @@
 import os;
+import time;
 import socket;
 import threading;
 import from uuid { uuid4 }
@@ -58,6 +59,7 @@ obj Runner {
 
 glob MIN_CONFIDENCE: float = 0.6,
      MAX_REPAIRS: int = 2,
+     JOB_BUDGET_S: float = 2400.0,
      CANDIDATES: int = 12,
      REPLY_LIMIT: int = 280,
      RUNNER: Runner = Runner(),
@@ -124,6 +126,7 @@ impl generated_reply(job_id: str) -> str {
 impl write_verified(
     spec: JobSpec, note: Callable
 ) -> tuple[TutorialDraft | None, list[BlockView], str] {
+    deadline = time.monotonic() + JOB_BUDGET_S;
     repo_root = Path(spec.repo_root);
     open_toolbox(repo_root, agent_catalog(repo_root), note);
     note("write", "no existing answer: researching and drafting a short tutorial");
@@ -131,7 +134,7 @@ impl write_verified(
     blocks: list[BlockView] = [];
     for attempt in range(MAX_REPAIRS + 1) {
         note("write", "draft: " + draft.title);
-        blocks = verify_markdown(draft.body, note);
+        blocks = verify_markdown(draft.body, note, deadline);
         failures: list[str] = [];
         if not blocks {
             failures = [
@@ -157,6 +160,10 @@ impl write_verified(
             );
         }
         if attempt == MAX_REPAIRS {
+            break;
+        }
+        if time.monotonic() > deadline {
+            note("repair", "out of time for this question; logging it as a docs gap");
             break;
         }
         note("repair", str(len(failures)) + " problem(s); fixing the draft");

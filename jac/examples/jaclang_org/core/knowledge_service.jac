@@ -19,6 +19,7 @@ obj ReleaseLines {
 glob REPO_TICK_S: float = 60.0,
      WORK_TICK_S: float = 5.0,
      UPKEEP_TICK_S: float = 60.0,
+     SWEEP_BATCH: int = 5,
      QUEUE_LIMIT: int = 20,
      _BUNDLES: dict[str, DocBundle] = {},
      _CATALOG: dict[str, list[IndexDoc]] = {},
@@ -289,14 +290,21 @@ impl finish_chore {
 impl start_sweep(version: str) -> bool {
     items = sweep_items(sweep_inputs(), version);
     if not items {
-        apply_sweep({}, version, "");
+        apply_sweep({}, version, "", True);
         return False;
     }
+    left = len(items);
+    items = items[:SWEEP_BATCH];
     if not claim_chore() {
         return True;
     }
     log.info(
-        "ninjaclaw: re-verifying " + str(len(items)) + " tutorial(s) on jac " + version
+        "ninjaclaw: re-verifying "
+            + str(len(items))
+            + " of "
+            + str(left)
+            + " tutorial(s) on jac "
+            + version
     );
 
     def work(note: Callable) -> tuple[str, dict[str, list[BlockView]]] {

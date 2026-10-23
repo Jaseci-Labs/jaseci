@@ -4,6 +4,7 @@ import shutil;
 import subprocess;
 import sys;
 import tempfile;
+import time;
 import from pathlib { Path }
 import from jaclang.jac0core.handoff { handoff }
 
@@ -53,7 +54,9 @@ def run_jac(args: list[str], cwd: Path, timeout: int) -> tuple[bool, str];
 
 def verify_block(index: int, code: str) -> BlockView;
 
-def verify_markdown(markdown: str, note: Callable) -> list[BlockView];
+def verify_markdown(
+    markdown: str, note: Callable, deadline: float = 0.0
+) -> list[BlockView];
 
 impl code_blocks(markdown: str) -> list[str] {
     return [
@@ -302,7 +305,9 @@ impl verify_block(index: int, code: str) -> BlockView {
     }
 }
 
-impl verify_markdown(markdown: str, note: Callable) -> list[BlockView] {
+impl verify_markdown(
+    markdown: str, note: Callable, deadline: float = 0.0
+) -> list[BlockView] {
     results: list[BlockView] = [];
     blocks = code_blocks(markdown);
     if blocks and not WARMED.get("done") {
@@ -313,6 +318,17 @@ impl verify_markdown(markdown: str, note: Callable) -> list[BlockView] {
         }
     }
     for (i, code) in enumerate(blocks) {
+        if deadline and time.monotonic() > deadline {
+            results.append(
+                BlockView(
+                    index=i,
+                    mode=block_mode(code),
+                    ok=False,
+                    detail="not checked: out of time"
+                )
+            );
+            continue;
+        }
         note(
             "verify",
             "block " + str(i + 1) + " of " + str(len(blocks)) + ": " + block_mode(code)
