@@ -1,5 +1,7 @@
 import os;
 import re;
+import json;
+import hashlib;
 import time;
 import threading;
 
@@ -157,6 +159,9 @@ obj ProjectModel {
     def walkers_of(key: str) -> list[StNode];
     def rules_for(key: str) -> list[StRule];
     def link_uses(key: str) -> None;
+    def _cache_path(mod: StModule) -> str;
+    def _save_cache(mod: StModule) -> None;
+    def _load_cache(mod: StModule) -> bool;
     def rewire -> None;
     def _note_arch_mtimes -> None;
     def neighbourhood(key: str) -> (Neighbourhood | None);
@@ -562,6 +567,9 @@ impl ProjectModel.index_module(key: str) -> bool {
     if mod is None or mod.kind != "module" {
         return False;
     }
+    if not mod.indexed and self._load_cache(mod) {
+        return True;
+    }
     try {
         tree = active_host().woven_module(mod.file, self.prog);
     } except Exception as e {
@@ -610,6 +618,7 @@ impl ProjectModel.index_module(key: str) -> bool {
         mod.mtime = newest;
         mod.indexed = True;
     }
+    self._save_cache(mod);
     return True;
 }
 
@@ -1361,4 +1370,162 @@ impl wire_violation(
         }
     } except Exception {}
     return "";
+}
+
+glob INDEX_FORMAT: int = 1,
+     NODE_EXTRA: dict[str, list[str]] = {
+         "StArchetype": ["bases", "walker_targets", "impl_file", "impl_line"],
+         "StAbility": [
+             "signature",
+             "owner",
+             "event",
+             "impl_file",
+             "impl_line",
+             "impl_end_line"
+         ],
+         "StField": ["type_str", "owner"],
+         "StImpl": ["target"]
+     },
+     NODE_BASE: list[str] = [
+         "key",
+         "name",
+         "kind",
+         "file",
+         "line",
+         "end_line",
+         "col",
+         "doc"
+     ];
+
+impl ProjectModel._cache_path(mod: StModule) -> str {
+    digest = hashlib.sha1(f"{INDEX_FORMAT}:{mod.key}:{mod.file}".encode()).hexdigest()[:20];
+    return os.path.join(self.root_dir, ".jac", "studio", "index", digest + ".json");
+}
+
+impl ProjectModel._save_cache(mod: StModule) -> None {
+    records: list[dict[str, any]] = [];
+    def emit(parent: StNode) {
+        for kid in [parent->:Contains:->] {
+            cls = type(kid).__name__;
+            if cls not in NODE_EXTRA {
+                continue;
+            }
+            rec: dict[str, any] = {"cls": cls, "parent": parent.key};
+            for f in NODE_BASE + NODE_EXTRA[cls] {
+                rec[f] = getattr(kid, f);
+            }
+            records.append(rec);
+            if cls != "StImpl" {
+                emit(kid);
+            }
+        }
+    }
+    with self.lock {
+        emit(mod);
+        stamps: dict[str, float] = {};
+        for f in mod.files {
+            try {
+                stamps[f] = os.path.getmtime(f);
+            } except OSError {
+                return;
+            }
+        }
+        data = {
+            "format": INDEX_FORMAT,
+            "key": mod.key,
+            "stamps": stamps,
+            "doc": mod.doc,
+            "symbols": records
+        };
+    }
+    path = self._cache_path(mod);
+    try {
+        os.makedirs(os.path.dirname(path), exist_ok=True);
+        tmp = path + f".{os.getpid()}.tmp";
+        with open(tmp, "w", encoding="utf-8") as fh {
+            json.dump(data, fh);
+        }
+        os.replace(tmp, path);
+    } except OSError {}
+}
+
+impl ProjectModel._load_cache(mod: StModule) -> bool {
+    path = self._cache_path(mod);
+    try {
+        with open(path, encoding="utf-8") as fh {
+            data = json.load(fh);
+        }
+    } except (OSError, ValueError) {
+        return False;
+    }
+    if not isinstance(data, dict)
+        or data.get("format") != INDEX_FORMAT
+        or data.get("key") != mod.key {
+        return False;
+    }
+    stamps = data.get("stamps") or {};
+    if mod.file not in stamps {
+        return False;
+    }
+    for (f, seen) in stamps.items() {
+        try {
+            if abs(os.path.getmtime(f) - float(seen)) > 0.0001 {
+                return False;
+            }
+        } except OSError {
+            return False;
+        }
+    }
+    classes = {
+        "StArchetype": StArchetype,
+        "StAbility": StAbility,
+        "StField": StField,
+        "StImpl": StImpl
+    };
+    with self.lock {
+        self._clear_module_symbols(mod);
+        mod.error = "";
+        mod.doc = str(data.get("doc", "") or "");
+        for rec in data.get("symbols") or [] {
+            cls = classes.get(str(rec.get("cls", "")));
+            if cls is None {
+                continue;
+            }
+            kwargs = {
+                f: rec[f]
+                for f in NODE_BASE + NODE_EXTRA[rec["cls"]]
+                if f in rec
+            };
+            snode = cls(**kwargs);
+            if isinstance(snode, StImpl) {
+                if snode.file and snode.file not in mod.files {
+                    mod.files.append(snode.file);
+                    self.by_file[snode.file] = mod.key;
+                }
+                self.symbols[snode.key] = snode;
+                mod +>:Contains():+> snode;
+                decl = self.symbols.get(f"{mod.key}.{snode.target}");
+                if decl is not None {
+                    snode +>:Implements():+> decl;
+                }
+                continue;
+            }
+            parent = mod
+                if rec.get("parent") == mod.key
+                else self.symbols.get(str(rec.get("parent", "")));
+            if parent is None {
+                continue;
+            }
+            self._add_symbol(parent, snode);
+        }
+        for f in stamps {
+            if f not in mod.files {
+                mod.files.append(f);
+                self.by_file[f] = mod.key;
+            }
+        }
+        mod.mtime = max([float(v) for v in stamps.values()] or [0.0]);
+        mod.indexed = True;
+    }
+    return True;
 }
