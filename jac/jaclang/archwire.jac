@@ -672,10 +672,14 @@ graph import {
         testing.test_runner._suite_source { discover_base_file },
     ]
     compiler.driver.client_graph ++> [
-        client.jac_client_compiler.JacClientCompiler._module_text
-            | dist.publish.npm_sources.collect_npm_sources { append_link },
+        client.jac_client_compiler.JacClientCompiler._module_text { append_link },
         client.jac_client_compiler.JacClientCompiler.emit_dependencies
             | dist.publish.npm_sources._link_modules { collect_client_graph },
+        dist.publish.npm_sources.collect_npm_sources {
+            ClientLink,
+            append_link,
+            link_tail
+        },
     ]
     type compiler.driver.client_graph ++> client.jac_client_compiler
         | dist.publish.npm_sources { ClientLink }

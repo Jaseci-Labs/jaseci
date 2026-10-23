@@ -239,12 +239,11 @@ test "collect_npm_sources exports the plain names sibling modules import" {
         );
         cfg.project_root = Path(tmpdir);
         files = {
-            f.npm_path: f.js
-            for f in collect_npm_sources(cfg, project_root=Path(tmpdir))
+            f.npm_path: f for f in collect_npm_sources(cfg, project_root=Path(tmpdir))
         };
-        assert _exported_names(files["mylib/util.js"]) == ["double"] , files[
-            "mylib/util.js"
-        ];
+        util = files["mylib/util.js"];
+        assert _exported_names(util.js) == ["double"] , util.js;
+        assert util.dts == "export declare function double(x: number): number;\n" , util.dts;
     } finally {
         shutil.rmtree(tmpdir, ignore_errors=True);
     }

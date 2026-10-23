@@ -90,11 +90,15 @@ impl collect_npm_sources(
         program, {src.resolve(): mod for (src, _path, mod) in compiled}
     );
     for (src, npm_path, mod) in compiled {
-        js = append_link(mod.gen.js, links.get(src.resolve()));
+        link = links.get(src.resolve());
+        js = append_link(mod.gen.js, link);
         blocks = jsdoc_for_module(mod);
         js = inject_jsdoc(js, blocks);
         (js, externals) = _wire_externals(js, runtime_pkg);
-        dts = dts_for_module(mod);
+        dts = dts_for_module(mod, link.names if link else None);
+        if link is not None {
+            dts += link_tail(ClientLink(forwards=link.forwards));
+        }
         result.append(
             NpmSourceFile(
                 npm_path=npm_path,
