@@ -164,14 +164,19 @@ test "auth settings load nested tables and env, and name moved or unknown keys" 
             assert AuthSettings.from_table({}).registration.enabled is expected;
         }
     }
-    for typo in ['disabled', 'n', 'closed', 'flase'] {
-        with patch.dict(os.environ, {'JAC_SERVE_AUTH_REGISTRATION_ENABLED': typo}) {
+    for (variable, raw, rule) in [
+        ('JAC_SERVE_AUTH_REGISTRATION_ENABLED', 'disabled', 'must be true or false'),
+        ('JAC_SERVE_AUTH_REGISTRATION_ENABLED', 'n', 'must be true or false'),
+        ('JAC_SERVE_AUTH_REGISTRATION_ENABLED', 'closed', 'must be true or false'),
+        ('JAC_SERVE_AUTH_REGISTRATION_ENABLED', 'flase', 'must be true or false'),
+        ('JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH', 'long', 'must be an integer')
+    ] {
+        with patch.dict(os.environ, {variable: raw}) {
             try {
                 AuthSettings.from_table({});
-                assert False , f"{typo!r} was read as a boolean";
+                assert False , f"{variable}={raw!r} was accepted";
             } except ServeConfigError as refused {
-                assert 'JAC_SERVE_AUTH_REGISTRATION_ENABLED must be true or false'
-                    in str(refused) , str(refused);
+                assert f"{variable} {rule}" in str(refused) , str(refused);
             }
         }
     }
