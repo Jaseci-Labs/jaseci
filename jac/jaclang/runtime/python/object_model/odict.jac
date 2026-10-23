@@ -1,13 +1,3 @@
-"""OrderedDict: Objects/odictobject.c in native Jac.
-
-`PyODict_Type`, its iterator and the three view types are C data Jac defines
-under their C names, with the OrderedDict C API (`PyODict_New`,
-`PyODict_SetItem`, `PyODict_DelItem`). An OrderedDict is a dict that also
-keeps its keys in a doubly linked list of nodes, and a "fast nodes" table
-indexed like the dict's entries finds a key's link in O(1); the table is
-rebuilt whenever the dict's keys object changes. See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject; def PyObject_Length(o: ptr[PyObject]) -> i64;  def _PyErr_ChainExceptions1(
         exc: ptr[PyObject]
@@ -29,9 +19,7 @@ import from c {
         cls: ptr[PyObject], iterable: ptr[PyObject], value: ptr[PyObject]
     ) -> ptr[PyObject];  def _PyDictView_New(
         dict: ptr[PyObject], type: ptr[PyTypeObject]
-    ) -> ptr[PyObject];
-    # &_Py_ID(items) and &_Py_ID(keys), interned on first use.
-    glob:priv items_key: ptr[PyObject] = ptr[PyObject](),
+    ) -> ptr[PyObject];  glob:priv items_key: ptr[PyObject] = ptr[PyObject](),
          keys_name: ptr[PyObject] = ptr[PyObject](),
          odict_as_mapping: PyMappingMethods = PyMappingMethods(
              mp_ass_subscript=odict_mp_ass_sub
@@ -95,8 +83,6 @@ import from c {
                      "false."
                  )
              ),
-             # MutableMapping's keys(), values(), items() and update() have
-             # no docstrings.
              PyMethodDef(
                  ml_name=ptr[u8]("keys"),
                  ml_meth=ptr(odictkeys_new),
@@ -304,60 +290,259 @@ glob:priv DKIX_EMPTY: i64 = -1,
          "move_to_end", ["key", "last"], 1, 2, 0, parser=PARSE_KEYWORDS
      );
 
-# --------------------------------------------------- the linked list of keys
+def od_of(op: ptr[PyObject]) -> ptr[PyODictObject];
 
-def od_of(op: ptr[PyObject]) -> ptr[PyODictObject] {
+def od_first(op: ptr[PyObject]) -> ptr[_ODictNode];
+
+def od_last(op: ptr[PyObject]) -> ptr[_ODictNode];
+
+def set_first(op: ptr[PyObject], link: ptr[_ODictNode]);
+
+def set_last(op: ptr[PyObject], link: ptr[_ODictNode]);
+
+def node_next(link: ptr[_ODictNode]) -> ptr[_ODictNode];
+
+def node_prev(link: ptr[_ODictNode]) -> ptr[_ODictNode];
+
+def node_key(link: ptr[_ODictNode]) -> ptr[PyObject];
+
+def fast_nodes(op: ptr[PyObject]) -> ptr[ptr[_ODictNode]];
+
+def bump_state(op: ptr[PyObject]);
+
+def odict_check(op: ptr[PyObject]) -> bool;
+
+def odict_check_exact(op: ptr[PyObject]) -> bool;
+
+def get_index_raw(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64;
+
+def odict_resize(op: ptr[PyObject]) -> i32;
+
+def get_index(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64;
+
+def find_node_hash(
+    op: ptr[PyObject], key: ptr[PyObject], hash: i64
+) -> ptr[_ODictNode];
+
+def find_node(op: ptr[PyObject], key: ptr[PyObject]) -> ptr[_ODictNode];
+
+def add_head(op: ptr[PyObject], link: ptr[_ODictNode]);
+
+def add_tail(op: ptr[PyObject], link: ptr[_ODictNode]);
+
+def add_new_node(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def node_dealloc(link: ptr[_ODictNode]);
+
+def remove_node(op: ptr[PyObject], link: ptr[_ODictNode]);
+
+def clear_node(
+    op: ptr[PyObject], node_in: ptr[_ODictNode], key: ptr[PyObject], hash: i64
+) -> i32;
+
+def clear_nodes(op: ptr[PyObject]);
+
+def keys_equal(a: ptr[PyObject], b: ptr[PyObject]) -> i32;
+
+def set_item_known_hash(
+    op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject], hash: i64
+) -> i32;
+
+def set_item(op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]) -> i32;
+
+import from c {
+    def PyODict_New -> ptr[PyObject] {
+        return dict_new(ptr[PyObject](addressof(PyODict_Type)), NULL, NULL);
+    }  def PyODict_SetItem(
+        od: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]
+    ) -> i32 {
+        return set_item(od, key, value);
+    }  def PyODict_DelItem(od: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        hash = PyObject_Hash(key);
+        if hash == -1 {
+            return i32(-1);
+        }
+        if clear_node(od, ptr[_ODictNode](), key, hash) < 0 {
+            return i32(-1);
+        }
+        return _PyDict_DelItem_KnownHash_LockHeld(od, key, hash);
+    }
+}
+
+def odict_mp_ass_sub(od: ptr[PyObject], v: ptr[PyObject], w: ptr[PyObject]) -> i32;
+
+def odict_or(left: ptr[PyObject], right: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_inplace_or(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_fromkeys_bound(args: BoundArguments) -> ptr[PyObject];
+
+def odict_fromkeys(
+    type: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def odict___sizeof__(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odict___reduce__(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def interned_items -> ptr[PyObject];
+
+def interned_keys -> ptr[PyObject];
+
+def odict_setdefault_bound(args: BoundArguments) -> ptr[PyObject];
+
+def odict_setdefault(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def popkey_hash(
+    od: ptr[PyObject], key: ptr[PyObject], failobj: ptr[PyObject], hash: i64
+) -> ptr[PyObject];
+
+def odict_pop_bound(args: BoundArguments) -> ptr[PyObject];
+
+def odict_pop(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def bool_argument(value: ptr[PyObject]) -> i32;
+
+def odict_popitem_bound(args: BoundArguments) -> ptr[PyObject];
+
+def odict_popitem(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def odict_clear(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_copy(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_move_to_end_bound(args: BoundArguments) -> ptr[PyObject];
+
+def odict_move_to_end(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def odict_dealloc(op: ptr[PyObject]);
+
+def odict_repr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def odict_tp_clear(op: ptr[PyObject]) -> i32;
+
+def odict_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject];
+
+def odict_iter(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odict_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
+
+def oiter_of(op: ptr[PyObject]) -> ptr[odictiterobject];
+
+def oiter_odict(op: ptr[PyObject]) -> ptr[PyObject];
+
+def oiter_current(op: ptr[PyObject]) -> ptr[PyObject];
+
+def oiter_clear_odict(op: ptr[PyObject]);
+
+def oiter_clear_current(op: ptr[PyObject]);
+
+def odictiter_new(op: ptr[PyObject], kind: i32) -> ptr[PyObject];
+
+def odictiter_dealloc(op: ptr[PyObject]);
+
+def odictiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odictiter_iternext(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odictiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def view_odict(op: ptr[PyObject]) -> ptr[PyObject];
+
+def view_iter(op: ptr[PyObject], kind: i32) -> ptr[PyObject];
+
+def odictkeys_iter(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odictkeys_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odictkeys_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odictitems_iter(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odictitems_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odictitems_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odictvalues_iter(op: ptr[PyObject]) -> ptr[PyObject];
+
+def odictvalues_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def odictvalues_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def mutablemapping_add_pairs(self: ptr[PyObject], pairs: ptr[PyObject]) -> i32;
+
+def mutablemapping_update_arg(self: ptr[PyObject], arg: ptr[PyObject]) -> i32;
+
+def mutablemapping_update(
+    self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject];
+
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
+
+impl od_of(op: ptr[PyObject]) -> ptr[PyODictObject] {
     return ptr[PyODictObject](op);
 }
 
-def od_first(op: ptr[PyObject]) -> ptr[_ODictNode] {
+impl od_first(op: ptr[PyObject]) -> ptr[_ODictNode] {
     return ptr[_ODictNode](od_of(op).view(1)[0].od_first);
 }
 
-def od_last(op: ptr[PyObject]) -> ptr[_ODictNode] {
+impl od_last(op: ptr[PyObject]) -> ptr[_ODictNode] {
     return ptr[_ODictNode](od_of(op).view(1)[0].od_last);
 }
 
-def set_first(op: ptr[PyObject], link: ptr[_ODictNode]) {
+impl set_first(op: ptr[PyObject], link: ptr[_ODictNode]) {
     od_of(op).view(1)[0].od_first = ptr[_ODictNode](link);
 }
 
-def set_last(op: ptr[PyObject], link: ptr[_ODictNode]) {
+impl set_last(op: ptr[PyObject], link: ptr[_ODictNode]) {
     od_of(op).view(1)[0].od_last = ptr[_ODictNode](link);
 }
 
-def node_next(link: ptr[_ODictNode]) -> ptr[_ODictNode] {
+impl node_next(link: ptr[_ODictNode]) -> ptr[_ODictNode] {
     return ptr[_ODictNode](link.view(1)[0].next);
 }
 
-def node_prev(link: ptr[_ODictNode]) -> ptr[_ODictNode] {
+impl node_prev(link: ptr[_ODictNode]) -> ptr[_ODictNode] {
     return ptr[_ODictNode](link.view(1)[0].prev);
 }
 
-def node_key(link: ptr[_ODictNode]) -> ptr[PyObject] {
+impl node_key(link: ptr[_ODictNode]) -> ptr[PyObject] {
     return ptr[PyObject](link.view(1)[0].key);
 }
 
-def fast_nodes(op: ptr[PyObject]) -> ptr[ptr[_ODictNode]] {
+impl fast_nodes(op: ptr[PyObject]) -> ptr[ptr[_ODictNode]] {
     return ptr[ptr[_ODictNode]](od_of(op).view(1)[0].od_fast_nodes);
 }
 
-def bump_state(op: ptr[PyObject]) {
+impl bump_state(op: ptr[PyObject]) {
     od = od_of(op);
     od.view(1)[0].od_state = od.view(1)[0].od_state + u64(1);
 }
 
-def odict_check(op: ptr[PyObject]) -> bool {
+impl odict_check(op: ptr[PyObject]) -> bool {
     return object_type_check(op, addressof(PyODict_Type));
 }
 
-def odict_check_exact(op: ptr[PyObject]) -> bool {
+impl odict_check_exact(op: ptr[PyObject]) -> bool {
     return object_is_type(op, addressof(PyODict_Type));
 }
 
-"""The entry index for `key`, the next entry's index when absent, -1 on
-error."""
-def get_index_raw(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
+impl get_index_raw(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
     (ix, value) = dict_lookup(op, key, hash);
     if ix == DKIX_EMPTY {
         return dk_nentries(dict_keys_of(op));
@@ -368,8 +553,7 @@ def get_index_raw(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
     return ix;
 }
 
-"""Rebuild the fast nodes table to match the dict's keys."""
-def odict_resize(op: ptr[PyObject]) -> i32 {
+impl odict_resize(op: ptr[PyObject]) -> i32 {
     size = 1 << dk_log2_size(dict_keys_of(op));
     table = ptr[ptr[_ODictNode]](PyMem_Malloc(u64(size * 8)));
     if not table {
@@ -397,9 +581,7 @@ def odict_resize(op: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""The entry index for `key`, resizing the fast nodes table first when the
-dict's keys changed; -1 on error."""
-def get_index(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
+impl get_index(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
     k = dict_keys_of(op);
     od = od_of(op);
     if ptr[u8](od.view(1)[0].od_resize_sentinel) != k
@@ -411,8 +593,7 @@ def get_index(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i64 {
     return get_index_raw(op, key, hash);
 }
 
-"""The link of `key`, or NULL (with an error set on failure)."""
-def find_node_hash(
+impl find_node_hash(
     op: ptr[PyObject], key: ptr[PyObject], hash: i64
 ) -> ptr[_ODictNode] {
     if not od_first(op) {
@@ -425,7 +606,7 @@ def find_node_hash(
     return (fast_nodes(op) + index).view(1)[0];
 }
 
-def find_node(op: ptr[PyObject], key: ptr[PyObject]) -> ptr[_ODictNode] {
+impl find_node(op: ptr[PyObject], key: ptr[PyObject]) -> ptr[_ODictNode] {
     if not od_first(op) {
         return ptr[_ODictNode]();
     }
@@ -436,7 +617,7 @@ def find_node(op: ptr[PyObject], key: ptr[PyObject]) -> ptr[_ODictNode] {
     return find_node_hash(op, key, hash);
 }
 
-def add_head(op: ptr[PyObject], link: ptr[_ODictNode]) {
+impl add_head(op: ptr[PyObject], link: ptr[_ODictNode]) {
     link.view(1)[0].prev = ptr[_ODictNode]();
     link.view(1)[0].next = ptr[_ODictNode](od_first(op));
     if not od_first(op) {
@@ -448,7 +629,7 @@ def add_head(op: ptr[PyObject], link: ptr[_ODictNode]) {
     bump_state(op);
 }
 
-def add_tail(op: ptr[PyObject], link: ptr[_ODictNode]) {
+impl add_tail(op: ptr[PyObject], link: ptr[_ODictNode]) {
     link.view(1)[0].prev = ptr[_ODictNode](od_last(op));
     link.view(1)[0].next = ptr[_ODictNode]();
     if not od_last(op) {
@@ -460,8 +641,7 @@ def add_tail(op: ptr[PyObject], link: ptr[_ODictNode]) {
     bump_state(op);
 }
 
-"""Append a link for `key` unless it has one already."""
-def add_new_node(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl add_new_node(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     object_incref(key);
     i = get_index(op, key, hash);
     if i < 0 {
@@ -488,14 +668,12 @@ def add_new_node(op: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     return i32(0);
 }
 
-"""Release a link: its key reference goes before its memory."""
-def node_dealloc(link: ptr[_ODictNode]) {
+impl node_dealloc(link: ptr[_ODictNode]) {
     object_decref(node_key(link));
     PyMem_Free(ptr(link));
 }
 
-"""Unlink a link; repeating it is harmless."""
-def remove_node(op: ptr[PyObject], link: ptr[_ODictNode]) {
+impl remove_node(op: ptr[PyObject], link: ptr[_ODictNode]) {
     if od_first(op) == link {
         set_first(op, node_next(link));
     } elif node_prev(link) {
@@ -511,14 +689,10 @@ def remove_node(op: ptr[PyObject], link: ptr[_ODictNode]) {
     bump_state(op);
 }
 
-"""Clear the link of `key` from the fast nodes table and the list before
-the dict deletes the key: with colliding keys, the dict's lookup after a
-deletion can give an index that no longer matches the table."""
-def clear_node(
+impl clear_node(
     op: ptr[PyObject], node_in: ptr[_ODictNode], key: ptr[PyObject], hash: i64
 ) -> i32 {
     if not od_first(op) {
-        # Later code decides whether this is a KeyError.
         return i32(0);
     }
     i = get_index(op, key, hash);
@@ -538,7 +712,7 @@ def clear_node(
     return i32(0);
 }
 
-def clear_nodes(op: ptr[PyObject]) {
+impl clear_nodes(op: ptr[PyObject]) {
     od = od_of(op);
     PyMem_Free(od.view(1)[0].od_fast_nodes);
     od.view(1)[0].od_fast_nodes = ptr[ptr[_ODictNode]]();
@@ -555,9 +729,7 @@ def clear_nodes(op: ptr[PyObject]) {
     bump_state(op);
 }
 
-"""1 when both have equal keys in the same order, 0 if not, -1 on error
-(a mutation during the comparison is a RuntimeError)."""
-def keys_equal(a: ptr[PyObject], b: ptr[PyObject]) -> i32 {
+impl keys_equal(a: ptr[PyObject], b: ptr[PyObject]) -> i32 {
     state_a = od_of(a).view(1)[0].od_state;
     state_b = od_of(b).view(1)[0].od_state;
     node_a = od_first(a);
@@ -582,7 +754,7 @@ def keys_equal(a: ptr[PyObject], b: ptr[PyObject]) -> i32 {
             PyErr_SetString(PyExc_RuntimeError, "OrderedDict mutated during iteration");
             return i32(-1);
         }
-        # After the state check, so the error wins.
+
         if res == 0 {
             return i32(0);
         }
@@ -592,16 +764,13 @@ def keys_equal(a: ptr[PyObject], b: ptr[PyObject]) -> i32 {
     return i32(1);
 }
 
-# ------------------------------------------------------------ the C API
-
-def set_item_known_hash(
+impl set_item_known_hash(
     op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject], hash: i64
 ) -> i32 {
     res = _PyDict_SetItem_KnownHash_LockHeld(op, key, value, hash);
     if res == 0 {
         res = add_new_node(op, key, hash);
         if res < 0 {
-            # Undo the dict store.
             exc = PyErr_GetRaisedException();
             _PyDict_DelItem_KnownHash(op, key, hash);
             _PyErr_ChainExceptions1(exc);
@@ -610,7 +779,7 @@ def set_item_known_hash(
     return res;
 }
 
-def set_item(op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]) -> i32 {
+impl set_item(op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]) -> i32 {
     hash = PyObject_Hash(key);
     if hash == -1 {
         return i32(-1);
@@ -618,35 +787,14 @@ def set_item(op: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]) -> i32
     return set_item_known_hash(op, key, value, hash);
 }
 
-import from c {
-    def PyODict_New -> ptr[PyObject] {
-        return dict_new(ptr[PyObject](addressof(PyODict_Type)), NULL, NULL);
-    }  def PyODict_SetItem(
-        od: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]
-    ) -> i32 {
-        return set_item(od, key, value);
-    }  def PyODict_DelItem(od: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        hash = PyObject_Hash(key);
-        if hash == -1 {
-            return i32(-1);
-        }
-        if clear_node(od, ptr[_ODictNode](), key, hash) < 0 {
-            return i32(-1);
-        }
-        return _PyDict_DelItem_KnownHash_LockHeld(od, key, hash);
-    }
-}
-
-# --------------------------------------------------------------- methods
-
-def odict_mp_ass_sub(od: ptr[PyObject], v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
+impl odict_mp_ass_sub(od: ptr[PyObject], v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
     if not w {
         return PyODict_DelItem(od, v);
     }
     return PyODict_SetItem(od, v, w);
 }
 
-def odict_or(left: ptr[PyObject], right: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_or(left: ptr[PyObject], right: ptr[PyObject]) -> ptr[PyObject] {
     type = object_type(left) if odict_check(left) else object_type(right);
     other = right if odict_check(left) else left;
     if not dict_check(other) {
@@ -663,19 +811,19 @@ def odict_or(left: ptr[PyObject], right: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def odict_inplace_or(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_inplace_or(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if mutablemapping_update_arg(self, other) < 0 {
         return NULL;
     }
     return object_new_ref(self);
 }
 
-def odict_fromkeys_bound(args: BoundArguments) -> ptr[PyObject] {
+impl odict_fromkeys_bound(args: BoundArguments) -> ptr[PyObject] {
     value = args.values[1] if args.values[1] else Py_None;
     return _PyDict_FromKeys(args.context, args.values[0], value);
 }
 
-def odict_fromkeys(
+impl odict_fromkeys(
     type: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_vector(
@@ -683,7 +831,7 @@ def odict_fromkeys(
     );
 }
 
-def odict___sizeof__(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odict___sizeof__(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     res = _PyDict_SizeOf_LockHeld(self);
     res += 8 * od_of(self).view(1)[0].od_fast_nodes_size;
     if od_first(self) {
@@ -692,8 +840,7 @@ def odict___sizeof__(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObjec
     return PyLong_FromSsize_t(res);
 }
 
-def odict___reduce__(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    # Any instance state.
+impl odict___reduce__(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     state = _PyObject_GetState(od);
     if not state {
         return NULL;
@@ -720,22 +867,21 @@ def odict___reduce__(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject]
     return result;
 }
 
-def interned_items -> ptr[PyObject] {
+impl interned_items -> ptr[PyObject] {
     if not items_key {
-        items_key = PyUnicode_InternFromString("items");
+        items_key = PyUnicode_InternFromString(ptr[u8]("items"));
     }
     return items_key;
 }
 
-def interned_keys -> ptr[PyObject] {
+impl interned_keys -> ptr[PyObject] {
     if not keys_name {
-        keys_name = PyUnicode_InternFromString("keys");
+        keys_name = PyUnicode_InternFromString(ptr[u8]("keys"));
     }
     return keys_name;
 }
 
-"""setdefault() without __missing__."""
-def odict_setdefault_bound(args: BoundArguments) -> ptr[PyObject] {
+impl odict_setdefault_bound(args: BoundArguments) -> ptr[PyObject] {
     self = args.context;
     key = args.values[0];
     default_value = args.values[1] if args.values[1] else Py_None;
@@ -765,7 +911,7 @@ def odict_setdefault_bound(args: BoundArguments) -> ptr[PyObject] {
     return NULL;
 }
 
-def odict_setdefault(
+impl odict_setdefault(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_vector(
@@ -773,10 +919,7 @@ def odict_setdefault(
     );
 }
 
-"""Remove `key` (its link first, so a reentrant resize or a collision
-cannot desync the table) and return its value, `failobj` when absent, or
-NULL with KeyError when there is no failobj."""
-def popkey_hash(
+impl popkey_hash(
     od: ptr[PyObject], key: ptr[PyObject], failobj: ptr[PyObject], hash: i64
 ) -> ptr[PyObject] {
     link = find_node_hash(od, key, hash);
@@ -806,8 +949,7 @@ def popkey_hash(
     return NULL;
 }
 
-"""pop() without __missing__."""
-def odict_pop_bound(args: BoundArguments) -> ptr[PyObject] {
+impl odict_pop_bound(args: BoundArguments) -> ptr[PyObject] {
     key = args.values[0];
     hash = PyObject_Hash(key);
     if hash == -1 {
@@ -816,21 +958,20 @@ def odict_pop_bound(args: BoundArguments) -> ptr[PyObject] {
     return popkey_hash(args.context, key, args.values[1], hash);
 }
 
-def odict_pop(
+impl odict_pop(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_vector(pop_signature, args, nargs, kwnames, odict_pop_bound, self);
 }
 
-"""A `bool` clinic argument: True when absent."""
-def bool_argument(value: ptr[PyObject]) -> i32 {
+impl bool_argument(value: ptr[PyObject]) -> i32 {
     if not value {
         return i32(1);
     }
     return PyObject_IsTrue(value);
 }
 
-def odict_popitem_bound(args: BoundArguments) -> ptr[PyObject] {
+impl odict_popitem_bound(args: BoundArguments) -> ptr[PyObject] {
     self = args.context;
     last = bool_argument(args.values[0]);
     if last < 0 {
@@ -853,7 +994,7 @@ def odict_popitem_bound(args: BoundArguments) -> ptr[PyObject] {
     return item;
 }
 
-def odict_popitem(
+impl odict_popitem(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_vector(
@@ -861,13 +1002,13 @@ def odict_popitem(
     );
 }
 
-def odict_clear(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_clear(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     _PyDict_Clear_LockHeld(self);
     clear_nodes(self);
     return object_new_ref(Py_None);
 }
 
-def odict_copy(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_copy(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     exact = odict_check_exact(od);
     od_copy = PyODict_New()
         if exact
@@ -909,11 +1050,11 @@ def odict_copy(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return od_copy;
 }
 
-def odict_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return odictiter_new(op, ITER_KEYS | ITER_REVERSED);
 }
 
-def odict_move_to_end_bound(args: BoundArguments) -> ptr[PyObject] {
+impl odict_move_to_end_bound(args: BoundArguments) -> ptr[PyObject] {
     self = args.context;
     key = args.values[0];
     last = bool_argument(args.values[1]);
@@ -946,7 +1087,7 @@ def odict_move_to_end_bound(args: BoundArguments) -> ptr[PyObject] {
     return object_new_ref(Py_None);
 }
 
-def odict_move_to_end(
+impl odict_move_to_end(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_vector(
@@ -954,9 +1095,7 @@ def odict_move_to_end(
     );
 }
 
-# ------------------------------------------------------------- type slots
-
-def odict_dealloc(op: ptr[PyObject]) {
+impl odict_dealloc(op: ptr[PyObject]) {
     PyObject_GC_UnTrack(ptr(op));
     od = od_of(op);
     object_xdecref(ptr[PyObject](od.view(1)[0].od_inst_dict));
@@ -967,7 +1106,7 @@ def odict_dealloc(op: ptr[PyObject]) {
     dict_dealloc(op);
 }
 
-def odict_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     if dict_used(op) == 0 {
         return PyUnicode_FromFormat(
             "%s()", _PyType_Name(ptr[PyObject](object_type(op)))
@@ -975,7 +1114,7 @@ def odict_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     }
     i = Py_ReprEnter(op);
     if i != 0 {
-        return PyUnicode_FromString("...") if i > 0 else NULL;
+        return PyUnicode_FromString(ptr[u8]("...")) if i > 0 else NULL;
     }
     result: ptr[PyObject] = NULL;
     dcopy = PyDict_Copy(op);
@@ -989,7 +1128,7 @@ def odict_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def odict_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl odict_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(
         ptr[PyObject](od_of(op).view(1)[0].od_inst_dict), visitor, arg
     );
@@ -1007,7 +1146,7 @@ def odict_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return dict_traverse(op, visitor, arg);
 }
 
-def odict_tp_clear(op: ptr[PyObject]) -> i32 {
+impl odict_tp_clear(op: ptr[PyObject]) -> i32 {
     od = od_of(op);
     inst_dict = ptr[PyObject](od.view(1)[0].od_inst_dict);
     od.view(1)[0].od_inst_dict = ptr[PyObject]();
@@ -1017,7 +1156,7 @@ def odict_tp_clear(op: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def odict_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
+impl odict_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
     if not odict_check(v) or not dict_check(w) or (op != Py_EQ and op != Py_NE) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -1032,7 +1171,7 @@ def odict_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObje
         return cmp;
     }
     object_decref(cmp);
-    # Equal as dicts: compare the key order.
+
     eq = keys_equal(v, w);
     if eq < 0 {
         return NULL;
@@ -1040,11 +1179,11 @@ def odict_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObje
     return PyBool_FromLong(1 if (eq == 1) == (op == Py_EQ) else 0);
 }
 
-def odict_iter(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odict_iter(op: ptr[PyObject]) -> ptr[PyObject] {
     return odictiter_new(op, ITER_KEYS);
 }
 
-def odict_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
+impl odict_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
     length = PyObject_Length(args);
     if length == -1 {
         return i32(-1);
@@ -1053,7 +1192,7 @@ def odict_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) ->
         PyErr_Format(PyExc_TypeError, "expected at most 1 argument, got %zd", length);
         return i32(-1);
     }
-    # __init__() runs update().
+
     res = mutablemapping_update(self, args, kwds);
     if not res {
         return i32(-1);
@@ -1062,33 +1201,31 @@ def odict_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) ->
     return i32(0);
 }
 
-# --------------------------------------------------------------- iterator
-
-def oiter_of(op: ptr[PyObject]) -> ptr[odictiterobject] {
+impl oiter_of(op: ptr[PyObject]) -> ptr[odictiterobject] {
     return ptr[odictiterobject](op);
 }
 
-def oiter_odict(op: ptr[PyObject]) -> ptr[PyObject] {
+impl oiter_odict(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](oiter_of(op).view(1)[0].di_odict);
 }
 
-def oiter_current(op: ptr[PyObject]) -> ptr[PyObject] {
+impl oiter_current(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](oiter_of(op).view(1)[0].di_current);
 }
 
-def oiter_clear_odict(op: ptr[PyObject]) {
+impl oiter_clear_odict(op: ptr[PyObject]) {
     old = oiter_odict(op);
     oiter_of(op).view(1)[0].di_odict = ptr[PyODictObject]();
     object_xdecref(old);
 }
 
-def oiter_clear_current(op: ptr[PyObject]) {
+impl oiter_clear_current(op: ptr[PyObject]) {
     old = oiter_current(op);
     oiter_of(op).view(1)[0].di_current = ptr[PyObject]();
     object_xdecref(old);
 }
 
-def odictiter_new(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
+impl odictiter_new(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
     di = _PyObject_GC_New(ptr[PyObject](addressof(PyODictIter_Type)));
     if not di {
         return NULL;
@@ -1115,7 +1252,7 @@ def odictiter_new(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
     return di;
 }
 
-def odictiter_dealloc(op: ptr[PyObject]) {
+impl odictiter_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     object_xdecref(oiter_odict(op));
     object_xdecref(oiter_current(op));
@@ -1125,10 +1262,9 @@ def odictiter_dealloc(op: ptr[PyObject]) {
     PyObject_GC_Del(ptr(op));
 }
 
-def odictiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl odictiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(oiter_odict(op), visitor, arg);
     if status == 0 {
-        # A key may be any type.
         status = visit_reference(oiter_current(op), visitor, arg);
     }
     if status == 0 {
@@ -1139,9 +1275,7 @@ def odictiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return status;
 }
 
-"""The next key (a new reference), tracking the current key rather than
-its link so mutations are caught; NULL at the end or on error."""
-def odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject] {
     it = oiter_of(op);
     od = oiter_odict(op);
     if not od {
@@ -1160,7 +1294,7 @@ def odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject] {
         PyErr_SetString(
             PyExc_RuntimeError, "OrderedDict changed size during iteration"
         );
-        # Sticky.
+
         it.view(1)[0].di_size = -1;
         return NULL;
     }
@@ -1169,7 +1303,7 @@ def odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject] {
         if not PyErr_Occurred() {
             PyErr_SetObject(PyExc_KeyError, oiter_current(op));
         }
-        # Deleted.
+
         oiter_clear_current(op);
         return NULL;
     }
@@ -1183,7 +1317,7 @@ def odictiter_nextkey(op: ptr[PyObject]) -> ptr[PyObject] {
     return key;
 }
 
-def odictiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odictiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     it = oiter_of(op);
     key = odictiter_nextkey(op);
     if not key {
@@ -1214,11 +1348,10 @@ def odictiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     }
     result = ptr[PyObject](it.view(1)[0].di_result);
     if object_refcount(result) == 1 {
-        # Not in use: recycle it.
         object_incref(result);
         object_decref(tuple_get_item(result, 0));
         object_decref(tuple_get_item(result, 1));
-        # bpo-42536: the GC may have untracked it.
+
         tuple_recycle(result);
     } else {
         result = PyTuple_New(2);
@@ -1235,8 +1368,7 @@ def odictiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-"""iter(list(copy of the iterator)): the copy runs, the iterator does not."""
-def odictiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     it = oiter_of(op);
     tmp = _PyObject_GC_New(ptr[PyObject](addressof(PyODictIter_Type)));
     if not tmp {
@@ -1271,13 +1403,11 @@ def odictiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject]
     return Py_BuildValue("N(N)", iter, list);
 }
 
-# ------------------------------------------------------------------ views
-
-def view_odict(op: ptr[PyObject]) -> ptr[PyObject] {
+impl view_odict(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](ptr[_PyDictViewObject](op).view(1)[0].dv_dict);
 }
 
-def view_iter(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
+impl view_iter(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
     od = view_odict(op);
     if not od {
         return object_new_ref(Py_None);
@@ -1285,46 +1415,43 @@ def view_iter(op: ptr[PyObject], kind: i32) -> ptr[PyObject] {
     return odictiter_new(od, kind);
 }
 
-def odictkeys_iter(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odictkeys_iter(op: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_KEYS);
 }
 
-def odictkeys_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictkeys_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_KEYS | ITER_REVERSED);
 }
 
-def odictkeys_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictkeys_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return _PyDictView_New(od, addressof(PyODictKeys_Type));
 }
 
-def odictitems_iter(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odictitems_iter(op: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_KEYS | ITER_VALUES);
 }
 
-def odictitems_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictitems_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_KEYS | ITER_VALUES | ITER_REVERSED);
 }
 
-def odictitems_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictitems_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return _PyDictView_New(od, addressof(PyODictItems_Type));
 }
 
-def odictvalues_iter(op: ptr[PyObject]) -> ptr[PyObject] {
+impl odictvalues_iter(op: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_VALUES);
 }
 
-def odictvalues_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictvalues_reversed(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return view_iter(op, ITER_VALUES | ITER_REVERSED);
 }
 
-def odictvalues_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl odictvalues_new(od: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return _PyDictView_New(od, addressof(PyODictValues_Type));
 }
 
-# ------------------------------------------------- MutableMapping.update
-
-"""self[key] = value for each (key, value) pair of `pairs`."""
-def mutablemapping_add_pairs(self: ptr[PyObject], pairs: ptr[PyObject]) -> i32 {
+impl mutablemapping_add_pairs(self: ptr[PyObject], pairs: ptr[PyObject]) -> i32 {
     iterator = PyObject_GetIter(pairs);
     if not iterator {
         return i32(-1);
@@ -1383,7 +1510,7 @@ def mutablemapping_add_pairs(self: ptr[PyObject], pairs: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def mutablemapping_update_arg(self: ptr[PyObject], arg: ptr[PyObject]) -> i32 {
+impl mutablemapping_update_arg(self: ptr[PyObject], arg: ptr[PyObject]) -> i32 {
     if dict_check_exact(arg) {
         items = PyDict_Items(arg);
         if not items {
@@ -1445,7 +1572,7 @@ def mutablemapping_update_arg(self: ptr[PyObject], arg: ptr[PyObject]) -> i32 {
     return mutablemapping_add_pairs(self, arg);
 }
 
-def mutablemapping_update(
+impl mutablemapping_update(
     self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {
     length: i64 = 0;
@@ -1482,7 +1609,7 @@ def mutablemapping_update(
     return object_new_ref(Py_None);
 }
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
     if op {
         object_incref(op);
     }

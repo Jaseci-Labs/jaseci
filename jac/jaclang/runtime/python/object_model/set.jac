@@ -1,16 +1,3 @@
-"""The set and frozenset types and their iterator: Objects/setobject.c in
-native Jac.
-
-`PySet_Type`, `PyFrozenSet_Type` and `PySetIter_Type` are C data Jac defines
-under their C names, and the set C API (`PySet_New`, `PySet_Add`,
-`_PySet_AddTakeRef`, `_PySet_NextEntry`, ...) is defined here under its C
-names, so the evaluator and every C caller use them unchanged. The hash table
-is setobject.c's: open addressing over `setentry` slots, a run of linear
-probes before each perturbed jump, a static dummy key marking deleted slots,
-and the eight-slot table embedded in the object for small sets.
-See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject; def _PyDict_Next(
         op: ptr[PyObject],
@@ -22,9 +9,7 @@ import from c {
         op: ptr[PyObject], key: ptr[PyObject], hash: i64
     ) -> i32;  def _PyErr_SetKeyError(key: ptr[PyObject]);  def Py_FatalError(
         message: str
-    );  def memcmp(left: ptr, right: ptr, size: u64) -> i32;
-    # setobject.c's setiterobject.
-    obj setiterobject {
+    );  def memcmp(left: ptr, right: ptr, size: u64) -> i32;  obj setiterobject {
         has ob_base: _object,
             si_set: ptr[PyObject],
             si_used: i64,
@@ -354,7 +339,6 @@ import from c {
              ),
              PyMethodDef(ml_name=ptr[u8](), ml_meth=ptr(), ml_flags=0, ml_doc=ptr[u8]())
          ],
-         # The type of the dummy key that marks a deleted slot.
          _PySetDummy_Type: PyTypeObject = PyTypeObject(
              ob_base=PyVarObject(
                  ob_base=_object(
@@ -380,7 +364,6 @@ import from c {
                  ob_size=0
              ),
              tp_name=ptr[u8]("set_iterator"),
-             # sizeof(setiterobject): its header and four words.
              tp_basicsize=48,
              tp_dealloc=setiter_dealloc,
              tp_getattro=PyObject_GenericGetAttr,
@@ -463,96 +446,454 @@ import from c {
              tp_vectorcall=frozenset_vectorcall,
              tp_version_tag=_Py_TYPE_VERSION_FROZEN_SET
          ),
-         # The dummy key, exported for the gdb plugin.
          _PySet_Dummy: ptr[_object] = addressof(dummy_struct);
 }
 
 glob:priv PY_SSIZE_T_MAX: i64 = 0x7FFFFFFFFFFFFFFF,
-     # Probe this many consecutive slots before a perturbed jump.
      LINEAR_PROBES: u64 = u64(9),
      PERTURB_SHIFT: u64 = u64(5),
      SETENTRY_SIZE: i64 = 16,
      DISCARD_NOTFOUND: i32 = 0,
      DISCARD_FOUND: i32 = 1;
 
-def set_of(op: ptr[PyObject]) -> ptr[PySetObject] {
+def set_of(op: ptr[PyObject]) -> ptr[PySetObject];
+
+def setiter_of(op: ptr[PyObject]) -> ptr[setiterobject];
+
+def no_entry -> ptr[setentry];
+
+def dummy -> ptr[PyObject];
+
+def type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject];
+
+def set_type -> ptr[PyTypeObject];
+
+def frozenset_type -> ptr[PyTypeObject];
+
+def smalltable(so: ptr[PyObject]) -> ptr[setentry];
+
+def set_table(so: ptr[PyObject]) -> ptr[setentry];
+
+def set_mask(so: ptr[PyObject]) -> i64;
+
+def set_used(so: ptr[PyObject]) -> i64;
+
+def set_fill(so: ptr[PyObject]) -> i64;
+
+def entry_key(slot: ptr[setentry]) -> ptr[PyObject];
+
+def entry_hash(slot: ptr[setentry]) -> i64;
+
+def set_entry(slot: ptr[setentry], key: ptr[PyObject], hash: i64);
+
+def set_check(op: ptr[PyObject]) -> bool;
+
+def frozenset_check_exact(op: ptr[PyObject]) -> bool;
+
+def frozenset_check(op: ptr[PyObject]) -> bool;
+
+def anyset_check_exact(op: ptr[PyObject]) -> bool;
+
+def anyset_check(op: ptr[PyObject]) -> bool;
+
+def dict_check_exact(op: ptr[PyObject]) -> bool;
+
+def unicode_check_exact(op: ptr[PyObject]) -> bool;
+
+def dict_used(dict: ptr[PyObject]) -> i64;
+
+def hash_fast(op: ptr[PyObject]) -> i64;
+
+def unicode_eq(str1: ptr[PyObject], str2: ptr[PyObject]) -> bool;
+
+def next_probe(i: u64, perturb: u64, mask: u64) -> u64;
+
+def set_lookkey(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> ptr[setentry];
+
+glob:priv ADD_PROBING: i64 = 0,
+     ADD_UNUSED_OR_DUMMY: i64 = 1,
+     ADD_ACTIVE: i64 = 2,
+     ADD_ERROR: i64 = 3,
+     ADD_RESTART: i64 = 4;
+
+def set_add_entry_takeref(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def set_add_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def set_unhashable_type(key: ptr[PyObject]);
+
+def set_insert_clean(table: ptr[setentry], mask: u64, key: ptr[PyObject], hash: i64);
+
+def set_table_resize(so: ptr[PyObject], minused: i64) -> i32;
+
+def set_contains_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def set_discard_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def set_add_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set_contains_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set_discard_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set_empty_to_minsize(so: ptr[PyObject]);
+
+def set_clear_internal(so: ptr[PyObject]) -> i32;
+
+def set_next(so: ptr[PyObject], pos: i64) -> i64;
+
+def set_dealloc(so: ptr[PyObject]);
+
+def set_repr(so: ptr[PyObject]) -> ptr[PyObject];
+
+def set_len(so: ptr[PyObject]) -> i64;
+
+def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def set_pop(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def set_traverse(so: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def shuffle_bits(h: u64) -> u64;
+
+def frozenset_hash_impl(so: ptr[PyObject]) -> i64;
+
+def frozenset_hash(so: ptr[PyObject]) -> i64;
+
+def setiter_dealloc(op: ptr[PyObject]);
+
+def setiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def setiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def setiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def setiter_iternext(op: ptr[PyObject]) -> ptr[PyObject];
+
+def set_iter(so: ptr[PyObject]) -> ptr[PyObject];
+
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
+
+def set_update_dict(so: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def set_update_iterable(so: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def set_update_local(so: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def set_update_internal(so: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def set_update(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def make_new_set(type: ptr[PyTypeObject], iterable: ptr[PyObject]) -> ptr[PyObject];
+
+def make_new_set_basetype(
+    type: ptr[PyTypeObject], iterable: ptr[PyObject]
+) -> ptr[PyObject];
+
+def make_new_frozenset(
+    type: ptr[PyTypeObject], iterable: ptr[PyObject]
+) -> ptr[PyObject];
+
+def at_most_one_argument(args: ptr[PyObject], name: ptr[u8]) -> bool;
+
+def optional_iterable(args: ptr[PyObject]) -> ptr[PyObject];
+
+def frozenset_new(
+    type: ptr[PyTypeObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject];
+
+def frozenset_vectorcall(
+    type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def set_new(
+    type: ptr[PyTypeObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject];
+
+def set_swap_bodies(a: ptr[PyObject], b: ptr[PyObject]);
+
+def set_copy_impl(so: ptr[PyObject]) -> ptr[PyObject];
+
+def set_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def frozenset_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def set_clear(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def set_union(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def set_or(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_ior(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_intersection(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject];
+
+def set_intersection_multi(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def set_intersection_update(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_intersection_update_multi(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def set_and(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_iand(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_isdisjoint(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject];
+
+def set_difference_update_internal(so: ptr[PyObject], other_in: ptr[PyObject]) -> i32;
+
+def set_difference_update(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def set_copy_and_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_difference_multi(
+    so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
+) -> ptr[PyObject];
+
+def set_sub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_isub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def toggle_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32;
+
+def set_symmetric_difference_update_dict(
+    so: ptr[PyObject], other: ptr[PyObject]
+) -> i32;
+
+def set_symmetric_difference_update_set(
+    so: ptr[PyObject], other: ptr[PyObject]
+) -> i32;
+
+def set_symmetric_difference_update(
+    so: ptr[PyObject], other: ptr[PyObject]
+) -> ptr[PyObject];
+
+def set_symmetric_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_xor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_ixor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_issubset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_issuperset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def set_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject];
+
+def set_add(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def retry_as_frozenset(key: ptr[PyObject]) -> bool;
+
+def set_contains_lock_held(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set_contains(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def frozenset___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def discard_any(so: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def set_remove(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def set_discard(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def set___reduce__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def set___sizeof__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def set_init(so: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
+
+def set_vectorcall(
+    type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def dummy_repr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def dummy_dealloc(op: ptr[PyObject]);
+
+import from c {
+    def PySet_New(iterable: ptr[PyObject]) -> ptr[PyObject] {
+        return make_new_set(set_type(), iterable);
+    }  def PyFrozenSet_New(iterable: ptr[PyObject]) -> ptr[PyObject] {
+        return make_new_set(frozenset_type(), iterable);
+    }  def PySet_Size(anyset: ptr[PyObject]) -> i64 {
+        if not anyset_check(anyset) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+        return set_used(anyset);
+    }  def PySet_Clear(set: ptr[PyObject]) -> i32 {
+        if not set_check(set) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        set_clear_internal(set);
+        return i32(0);
+    }  def _PySet_Contains(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        return set_contains_lock_held(so, key);
+    }  def _PySet_ClearInternal(so: ptr[PyObject]) {
+        set_clear_internal(so);
+    }  def PySet_Contains(anyset: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        if not anyset_check(anyset) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        return set_contains_key(anyset, key);
+    }  def PySet_Discard(set: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        if not set_check(set) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        return set_discard_key(set, key);
+    }  def PySet_Add(anyset: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        if not set_check(anyset)
+            and (not frozenset_check(anyset) or object_refcount(anyset) != 1) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        return set_add_key(anyset, key);
+    }  def _PySet_AddTakeRef(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+        hash = hash_fast(key);
+        if hash == -1 {
+            set_unhashable_type(key);
+            object_decref(key);
+            return i32(-1);
+        }
+        return set_add_entry_takeref(so, key, hash);
+    }  def _PySet_NextEntry(
+        set: ptr[PyObject], pos: ptr[i64], key: ptr[ptr[PyObject]], hash: ptr[i64]
+    ) -> i32 {
+        if not anyset_check(set) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        i = set_next(set, pos.view(1)[0]);
+        if i < 0 {
+            pos.view(1)[0] = set_mask(set) + 2;
+            return i32(0);
+        }
+        pos.view(1)[0] = i + 1;
+        slot = set_table(set) + i;
+        key.view(1)[0] = entry_key(slot);
+        hash.view(1)[0] = entry_hash(slot);
+        return i32(1);
+    }  def _PySet_NextEntryRef(
+        set: ptr[PyObject], pos: ptr[i64], key: ptr[ptr[PyObject]], hash: ptr[i64]
+    ) -> i32 {
+        if not anyset_check(set) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        i = set_next(set, pos.view(1)[0]);
+        if i < 0 {
+            pos.view(1)[0] = set_mask(set) + 2;
+            return i32(0);
+        }
+        pos.view(1)[0] = i + 1;
+        slot = set_table(set) + i;
+        key.view(1)[0] = object_new_ref(entry_key(slot));
+        hash.view(1)[0] = entry_hash(slot);
+        return i32(1);
+    }  def PySet_Pop(set: ptr[PyObject]) -> ptr[PyObject] {
+        if not set_check(set) {
+            PyErr_BadInternalCall();
+            return NULL;
+        }
+        return set_pop(set, NULL);
+    }  def _PySet_Update(set: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
+        if not set_check(set) {
+            PyErr_BadInternalCall();
+            return i32(-1);
+        }
+        return set_update_internal(set, iterable);
+    }
+}
+
+impl set_of(op: ptr[PyObject]) -> ptr[PySetObject] {
     return ptr[PySetObject](op);
 }
 
-def setiter_of(op: ptr[PyObject]) -> ptr[setiterobject] {
+impl setiter_of(op: ptr[PyObject]) -> ptr[setiterobject] {
     return ptr[setiterobject](op);
 }
 
-def no_entry -> ptr[setentry] {
+impl no_entry -> ptr[setentry] {
     return ptr[setentry]();
 }
 
-"""The object used as the key of deleted slots."""
-def dummy -> ptr[PyObject] {
+impl dummy -> ptr[PyObject] {
     return ptr[PyObject](addressof(dummy_struct));
 }
 
-def type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject] {
+impl type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject] {
     return ptr[PyTypeObject](type);
 }
 
-def set_type -> ptr[PyTypeObject] {
+impl set_type -> ptr[PyTypeObject] {
     return addressof(PySet_Type);
 }
 
-def frozenset_type -> ptr[PyTypeObject] {
+impl frozenset_type -> ptr[PyTypeObject] {
     return addressof(PyFrozenSet_Type);
 }
 
-"""The table embedded in the set object."""
-def smalltable(so: ptr[PyObject]) -> ptr[setentry] {
+impl smalltable(so: ptr[PyObject]) -> ptr[setentry] {
     return ptr[setentry](ptr[u8](so) + PySetObject_SMALLTABLE);
 }
 
-def set_table(so: ptr[PyObject]) -> ptr[setentry] {
+impl set_table(so: ptr[PyObject]) -> ptr[setentry] {
     return set_of(so).view(1)[0].table;
 }
 
-def set_mask(so: ptr[PyObject]) -> i64 {
+impl set_mask(so: ptr[PyObject]) -> i64 {
     return set_of(so).view(1)[0].mask;
 }
 
-"""PySet_GET_SIZE."""
-def set_used(so: ptr[PyObject]) -> i64 {
+impl set_used(so: ptr[PyObject]) -> i64 {
     return set_of(so).view(1)[0].used;
 }
 
-def set_fill(so: ptr[PyObject]) -> i64 {
+impl set_fill(so: ptr[PyObject]) -> i64 {
     return set_of(so).view(1)[0].fill;
 }
 
-def entry_key(slot: ptr[setentry]) -> ptr[PyObject] {
+impl entry_key(slot: ptr[setentry]) -> ptr[PyObject] {
     return slot.view(1)[0].key;
 }
 
-def entry_hash(slot: ptr[setentry]) -> i64 {
+impl entry_hash(slot: ptr[setentry]) -> i64 {
     return slot.view(1)[0].hash;
 }
 
-def set_entry(slot: ptr[setentry], key: ptr[PyObject], hash: i64) {
+impl set_entry(slot: ptr[setentry], key: ptr[PyObject], hash: i64) {
     slot.view(1)[0].key = key;
     slot.view(1)[0].hash = hash;
 }
 
-"""PySet_Check."""
-def set_check(op: ptr[PyObject]) -> bool {
+impl set_check(op: ptr[PyObject]) -> bool {
     return object_is_type(op, set_type())
         or PyType_IsSubtype(ptr[PyObject](object_type(op)), ptr[PyObject](set_type()))
             != 0;
 }
 
-"""PyFrozenSet_CheckExact."""
-def frozenset_check_exact(op: ptr[PyObject]) -> bool {
+impl frozenset_check_exact(op: ptr[PyObject]) -> bool {
     return object_is_type(op, frozenset_type());
 }
 
-"""PyFrozenSet_Check."""
-def frozenset_check(op: ptr[PyObject]) -> bool {
+impl frozenset_check(op: ptr[PyObject]) -> bool {
     return frozenset_check_exact(op)
         or PyType_IsSubtype(
             ptr[PyObject](object_type(op)), ptr[PyObject](frozenset_type())
@@ -560,31 +901,27 @@ def frozenset_check(op: ptr[PyObject]) -> bool {
             != 0;
 }
 
-"""PyAnySet_CheckExact."""
-def anyset_check_exact(op: ptr[PyObject]) -> bool {
+impl anyset_check_exact(op: ptr[PyObject]) -> bool {
     return object_is_type(op, set_type()) or frozenset_check_exact(op);
 }
 
-"""PyAnySet_Check."""
-def anyset_check(op: ptr[PyObject]) -> bool {
+impl anyset_check(op: ptr[PyObject]) -> bool {
     return anyset_check_exact(op) or set_check(op) or frozenset_check(op);
 }
 
-def dict_check_exact(op: ptr[PyObject]) -> bool {
+impl dict_check_exact(op: ptr[PyObject]) -> bool {
     return object_is_type(op, type_of_object(addressof(PyDict_Type)));
 }
 
-def unicode_check_exact(op: ptr[PyObject]) -> bool {
+impl unicode_check_exact(op: ptr[PyObject]) -> bool {
     return object_is_type(op, type_of_object(addressof(PyUnicode_Type)));
 }
 
-"""PyDict_GET_SIZE."""
-def dict_used(dict: ptr[PyObject]) -> i64 {
+impl dict_used(dict: ptr[PyObject]) -> i64 {
     return ptr[i64](ptr[u8](dict) + PyDictObject_USED).view(1)[0];
 }
 
-"""_PyObject_HashFast: an exact str's cached hash, else PyObject_Hash."""
-def hash_fast(op: ptr[PyObject]) -> i64 {
+impl hash_fast(op: ptr[PyObject]) -> i64 {
     if unicode_check_exact(op) {
         hash = ptr[i64](ptr[u8](op) + PyASCIIObject_HASH).view(1)[0];
         if hash != -1 {
@@ -594,8 +931,7 @@ def hash_fast(op: ptr[PyObject]) -> i64 {
     return PyObject_Hash(op);
 }
 
-"""stringlib's unicode_eq, for two exact str with equal hashes."""
-def unicode_eq(str1: ptr[PyObject], str2: ptr[PyObject]) -> bool {
+impl unicode_eq(str1: ptr[PyObject], str2: ptr[PyObject]) -> bool {
     length = ptr[i64](ptr[u8](str1) + PyASCIIObject_LENGTH).view(1)[0];
     if ptr[i64](ptr[u8](str2) + PyASCIIObject_LENGTH).view(1)[0] != length {
         return False;
@@ -610,15 +946,11 @@ def unicode_eq(str1: ptr[PyObject], str2: ptr[PyObject]) -> bool {
         == 0;
 }
 
-"""The next probe index after `i`, mixing in the hash's higher bits."""
-def next_probe(i: u64, perturb: u64, mask: u64) -> u64 {
+impl next_probe(i: u64, perturb: u64, mask: u64) -> u64 {
     return wrapping_add(wrapping_add(wrapping_mul(i, u64(5)), u64(1)), perturb) & mask;
 }
 
-"""The slot holding `key`, or the empty slot that ends its probe sequence;
-NULL with an error set when a compare fails. A compare that changes a
-mutable set restarts the search."""
-def set_lookkey(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> ptr[setentry] {
+impl set_lookkey(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> ptr[setentry] {
     frozenset = frozenset_check_exact(so);
     while True {
         restart = False;
@@ -652,7 +984,6 @@ def set_lookkey(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> ptr[setentr
                             return no_entry();
                         }
                     } else {
-                        # The compare can remove startkey from the set.
                         object_incref(startkey);
                         cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                         object_decref(startkey);
@@ -682,15 +1013,7 @@ def set_lookkey(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> ptr[setentr
     return no_entry();
 }
 
-glob:priv ADD_PROBING: i64 = 0,
-     ADD_UNUSED_OR_DUMMY: i64 = 1,
-     ADD_ACTIVE: i64 = 2,
-     ADD_ERROR: i64 = 3,
-     ADD_RESTART: i64 = 4;
-
-"""Add `key` (stealing it) with its hash. A dummy slot found on the way is
-reused; a compare that changes the set restarts the insertion."""
-def set_add_entry_takeref(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl set_add_entry_takeref(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     while True {
         mask = u64.wrap(set_mask(so));
         i = u64.wrap(hash) & mask;
@@ -763,7 +1086,6 @@ def set_add_entry_takeref(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i
         }
         s = set_of(so);
         if freeslot {
-            # A compare may have refilled the dummy slot.
             if entry_hash(freeslot) != -1 {
                 continue;
             }
@@ -783,12 +1105,11 @@ def set_add_entry_takeref(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i
     return i32(-1);
 }
 
-def set_add_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl set_add_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     return set_add_entry_takeref(so, object_new_ref(key), hash);
 }
 
-"""Reword a TypeError from hashing `key` as one about a set element."""
-def set_unhashable_type(key: ptr[PyObject]) {
+impl set_unhashable_type(key: ptr[PyObject]) {
     exc = PyErr_GetRaisedException();
     if not object_is_type(exc, type_of_object(PyExc_TypeError)) {
         PyErr_SetRaisedException(exc);
@@ -798,10 +1119,7 @@ def set_unhashable_type(key: ptr[PyObject]) {
     object_decref(exc);
 }
 
-"""Insert a key known to be absent into a table with room and no dummies,
-without compares: set_table_resize must not call back into Python
-(issue 1456209). The caller counts it in fill and used."""
-def set_insert_clean(table: ptr[setentry], mask: u64, key: ptr[PyObject], hash: i64) {
+impl set_insert_clean(table: ptr[setentry], mask: u64, key: ptr[PyObject], hash: i64) {
     perturb = u64.wrap(hash);
     i = perturb & mask;
     while True {
@@ -824,9 +1142,7 @@ def set_insert_clean(table: ptr[setentry], mask: u64, key: ptr[PyObject], hash: 
     }
 }
 
-"""Rebuild the table with room for more than `minused` keys, dropping the
-dummies; the new table may be smaller than the old."""
-def set_table_resize(so: ptr[PyObject], minused: i64) -> i32 {
+impl set_table_resize(so: ptr[PyObject], minused: i64) -> i32 {
     s = set_of(so);
     oldmask = set_mask(so);
     newsize = u64(PySet_MINSIZE);
@@ -838,15 +1154,12 @@ def set_table_resize(so: ptr[PyObject], minused: i64) -> i32 {
     small_copy = no_entry();
     newtable = no_entry();
     if newsize == u64(PySet_MINSIZE) {
-        # A large table is shrinking, or the small table is rebuilt.
         newtable = smalltable(so);
         if newtable == oldtable {
             if set_fill(so) == set_used(so) {
-                # No dummies to purge.
                 return i32(0);
             }
-            # Rebuild in place to purge dummies (required when the table is
-            # full of them, since a failing search needs an empty slot).
+
             small_copy = ptr[setentry](
                 PyMem_Malloc(u64(PySet_MINSIZE * SETENTRY_SIZE))
             );
@@ -874,7 +1187,7 @@ def set_table_resize(so: ptr[PyObject], minused: i64) -> i32 {
     s.view(1)[0].mask = i64.wrap(newsize) - 1;
     s.view(1)[0].table = newtable;
     newmask = newsize - u64(1);
-    # Moving active entries is refcount-neutral; dummies are dropped.
+
     if set_fill(so) == set_used(so) {
         for j in range(oldmask + 1) {
             slot = oldtable + j;
@@ -901,7 +1214,7 @@ def set_table_resize(so: ptr[PyObject], minused: i64) -> i32 {
     return i32(0);
 }
 
-def set_contains_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl set_contains_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     slot = set_lookkey(so, key, hash);
     if slot {
         return i32(1) if entry_key(slot) else i32(0);
@@ -909,7 +1222,7 @@ def set_contains_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 
     return i32(-1);
 }
 
-def set_discard_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl set_discard_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     slot = set_lookkey(so, key, hash);
     if not slot {
         return i32(-1);
@@ -924,7 +1237,7 @@ def set_discard_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     return DISCARD_FOUND;
 }
 
-def set_add_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl set_add_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     hash = hash_fast(key);
     if hash == -1 {
         set_unhashable_type(key);
@@ -933,7 +1246,7 @@ def set_add_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return set_add_entry(so, key, hash);
 }
 
-def set_contains_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl set_contains_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     hash = hash_fast(key);
     if hash == -1 {
         set_unhashable_type(key);
@@ -942,7 +1255,7 @@ def set_contains_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return set_contains_entry(so, key, hash);
 }
 
-def set_discard_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl set_discard_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     hash = hash_fast(key);
     if hash == -1 {
         set_unhashable_type(key);
@@ -951,7 +1264,7 @@ def set_discard_key(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return set_discard_entry(so, key, hash);
 }
 
-def set_empty_to_minsize(so: ptr[PyObject]) {
+impl set_empty_to_minsize(so: ptr[PyObject]) {
     s = set_of(so);
     jacpy_memory_zero(ptr(smalltable(so)), PySet_MINSIZE * SETENTRY_SIZE);
     s.view(1)[0].fill = 0;
@@ -961,9 +1274,7 @@ def set_empty_to_minsize(so: ptr[PyObject]) {
     s.view(1)[0].hash = -1;
 }
 
-"""Empty the set. Releasing a key can mutate the set, so the set is made
-empty first and the old entries are released from a detached table."""
-def set_clear_internal(so: ptr[PyObject]) -> i32 {
+impl set_clear_internal(so: ptr[PyObject]) -> i32 {
     table = set_table(so);
     fill = set_fill(so);
     used = set_used(so);
@@ -972,7 +1283,6 @@ def set_clear_internal(so: ptr[PyObject]) -> i32 {
     if table_is_malloced {
         set_empty_to_minsize(so);
     } elif fill > 0 {
-        # A small table with something to clear: copy it out first.
         small_copy = ptr[setentry](PyMem_Malloc(u64(PySet_MINSIZE * SETENTRY_SIZE)));
         if not small_copy {
             PyErr_NoMemory();
@@ -1000,9 +1310,7 @@ def set_clear_internal(so: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""set_next: the index of the first active slot at or after `pos`, or -1.
-Not safe in a loop that mutates the table."""
-def set_next(so: ptr[PyObject], pos: i64) -> i64 {
+impl set_next(so: ptr[PyObject], pos: i64) -> i64 {
     mask = set_mask(so);
     table = set_table(so);
     i = pos;
@@ -1016,9 +1324,9 @@ def set_next(so: ptr[PyObject], pos: i64) -> i64 {
     return -1;
 }
 
-def set_dealloc(so: ptr[PyObject]) {
+impl set_dealloc(so: ptr[PyObject]) {
     used = set_used(so);
-    # bpo-31095: untrack before any callback.
+
     object_gc_untrack(so);
     if set_of(so).view(1)[0].weakreflist {
         PyObject_ClearWeakRefs(so);
@@ -1038,7 +1346,7 @@ def set_dealloc(so: ptr[PyObject]) {
     object_type(so).view(1)[0].tp_free(ptr(so));
 }
 
-def set_repr(so: ptr[PyObject]) -> ptr[PyObject] {
+impl set_repr(so: ptr[PyObject]) -> ptr[PyObject] {
     tp_name = object_type(so).view(1)[0].tp_name;
     status = Py_ReprEnter(so);
     if status != 0 {
@@ -1051,8 +1359,7 @@ def set_repr(so: ptr[PyObject]) -> ptr[PyObject] {
         Py_ReprLeave(so);
         return PyUnicode_FromFormat("%s()", tp_name);
     }
-    # gh-129967: build the key list directly rather than through
-    # PySequence_List, which could let the set be cleared meanwhile.
+
     result = NULL;
     keys = PyList_New(set_used(so));
     if keys {
@@ -1068,7 +1375,7 @@ def set_repr(so: ptr[PyObject]) -> ptr[PyObject] {
             (items + idx).view(1)[0] = object_new_ref(entry_key(set_table(so) + i));
             idx += 1;
         }
-        # repr(keys)[1:-1]
+
         listrepr = PyObject_Repr(keys);
         object_decref(keys);
         if listrepr {
@@ -1092,18 +1399,16 @@ def set_repr(so: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def set_len(so: ptr[PyObject]) -> i64 {
+impl set_len(so: ptr[PyObject]) -> i64 {
     return set_used(so);
 }
 
-"""Add every key of the set or frozenset `other`."""
-def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
+impl set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     s = set_of(so);
     if other == so or set_used(other) == 0 {
-        # a.update(a) or a.update(set()): nothing to do.
         return i32(0);
     }
-    # One big resize up front, expecting few overlapping keys.
+
     if (set_fill(so) + set_used(other)) * 5 >= set_mask(so) * 3 {
         if set_table_resize(so, (set_used(so) + set_used(other)) * 2) != 0 {
             return i32(-1);
@@ -1112,8 +1417,7 @@ def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     so_table = set_table(so);
     other_table = set_table(other);
     other_mask = set_mask(other);
-    # An empty table of the same size, from a table without dummies: copy
-    # the slots.
+
     if set_fill(so) == 0
         and set_mask(so) == other_mask
         and set_fill(other) == set_used(other) {
@@ -1129,7 +1433,7 @@ def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
         s.view(1)[0].used = set_used(other);
         return i32(0);
     }
-    # An empty table takes the keys without compares.
+
     if set_fill(so) == 0 {
         newmask = u64.wrap(set_mask(so));
         s.view(1)[0].fill = set_used(other);
@@ -1144,8 +1448,7 @@ def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
         }
         return i32(0);
     }
-    # Duplicates are possible: insert normally. A compare can change other,
-    # so its table and mask are read again for every slot.
+
     i = 0;
     while i <= set_mask(other) {
         slot = set_table(other) + i;
@@ -1160,7 +1463,7 @@ def set_merge(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def set_pop(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl set_pop(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     s = set_of(so);
     if set_used(so) == 0 {
         PyErr_SetString(PyExc_KeyError, "pop from an empty set");
@@ -1168,7 +1471,7 @@ def set_pop(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     }
     table = set_table(so);
     mask = set_mask(so);
-    # Start at the search finger, kept in bounds.
+
     i = s.view(1)[0].finger & mask;
     while True {
         key = entry_key(table + i);
@@ -1183,12 +1486,12 @@ def set_pop(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     key = entry_key(table + i);
     set_entry(table + i, dummy(), -1);
     s.view(1)[0].used -= 1;
-    # The next place to start.
+
     s.view(1)[0].finger = i + 1;
     return key;
 }
 
-def set_traverse(so: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl set_traverse(so: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     pos = 0;
     while True {
         i = set_next(so, pos);
@@ -1204,45 +1507,41 @@ def set_traverse(so: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return i32(0);
 }
 
-"""Spread the bits of closely spaced hashes, so combinations of few elements
-with nearby hashes do not collapse to few frozenset hashes."""
-def shuffle_bits(h: u64) -> u64 {
+impl shuffle_bits(h: u64) -> u64 {
     return wrapping_mul(
         (h ^ u64(89869747)) ^ wrapping_shl(h, u64(16)), u64(3644798167)
     );
 }
 
-"""The hash of a set's contents as a frozenset: the xor of every slot's
-shuffled hash, with the empty and dummy slots' effect removed, then mixed."""
-def frozenset_hash_impl(so: ptr[PyObject]) -> i64 {
+impl frozenset_hash_impl(so: ptr[PyObject]) -> i64 {
     hash = u64(0);
     table = set_table(so);
     mask = set_mask(so);
-    # Every slot, empty and dummy ones included, for speed.
+
     for i in range(mask + 1) {
         hash = hash ^ shuffle_bits(u64.wrap(entry_hash(table + i)));
     }
-    # Remove the effect of an odd number of empty slots.
+
     if ((mask + 1 - set_fill(so)) & 1) != 0 {
         hash = hash ^ shuffle_bits(u64(0));
     }
-    # Remove the effect of an odd number of dummy slots.
+
     if ((set_fill(so) - set_used(so)) & 1) != 0 {
         hash = hash ^ shuffle_bits(u64(0xFFFFFFFFFFFFFFFF));
     }
-    # Factor in the number of active entries.
+
     hash = hash ^ wrapping_mul(u64.wrap(set_used(so)) + u64(1), u64(1927868237));
-    # Disperse patterns arising in nested frozensets.
+
     hash = hash ^ ((hash >> u64(11)) ^ (hash >> u64(25)));
     hash = wrapping_add(wrapping_mul(hash, u64(69069)), u64(907133923));
-    # -1 is reserved as an error code.
+
     if hash == u64(0xFFFFFFFFFFFFFFFF) {
         hash = u64(590923713);
     }
     return i64.wrap(hash);
 }
 
-def frozenset_hash(so: ptr[PyObject]) -> i64 {
+impl frozenset_hash(so: ptr[PyObject]) -> i64 {
     s = set_of(so);
     if s.view(1)[0].hash != -1 {
         return s.view(1)[0].hash;
@@ -1252,20 +1551,17 @@ def frozenset_hash(so: ptr[PyObject]) -> i64 {
     return hash;
 }
 
-# ------------------------------------------------------------------ iterator
-
-def setiter_dealloc(op: ptr[PyObject]) {
-    # bpo-31095: untrack before any callback.
+impl setiter_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     object_xdecref(setiter_of(op).view(1)[0].si_set);
     PyObject_GC_Del(ptr(op));
 }
 
-def setiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl setiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(setiter_of(op).view(1)[0].si_set, visitor, arg);
 }
 
-def setiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl setiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     si = setiter_of(op);
     length: i64 = 0;
     so = si.view(1)[0].si_set;
@@ -1275,9 +1571,7 @@ def setiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return PyLong_FromSsize_t(length);
 }
 
-"""Pickle as iter(list): the keys the iterator has left, read from a copy of
-its state so the iterator itself does not advance."""
-def setiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl setiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     si = setiter_of(op);
     copy = _PyObject_GC_New(ptr[PyObject](addressof(PySetIter_Type)));
     if not copy {
@@ -1296,7 +1590,7 @@ def setiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return Py_BuildValue("N(N)", eval_builtin("iter"), keys);
 }
 
-def setiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
+impl setiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     si = setiter_of(op);
     so = si.view(1)[0].si_set;
     if not so {
@@ -1304,7 +1598,7 @@ def setiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     }
     if si.view(1)[0].si_used != set_used(so) {
         PyErr_SetString(PyExc_RuntimeError, "Set changed size during iteration");
-        # Make this state sticky.
+
         si.view(1)[0].si_used = -1;
         return NULL;
     }
@@ -1330,7 +1624,7 @@ def setiter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
     return key;
 }
 
-def set_iter(so: ptr[PyObject]) -> ptr[PyObject] {
+impl set_iter(so: ptr[PyObject]) -> ptr[PyObject] {
     size = set_used(so);
     op = _PyObject_GC_New(ptr[PyObject](addressof(PySetIter_Type)));
     if not op {
@@ -1345,18 +1639,14 @@ def set_iter(so: ptr[PyObject]) -> ptr[PyObject] {
     return op;
 }
 
-# ---------------------------------------------------------------- updating
-
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
     if op {
         object_incref(op);
     }
     return op;
 }
 
-"""Add a dict's keys, with their known hashes."""
-def set_update_dict(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
-    # One big resize up front, expecting few overlapping keys.
+impl set_update_dict(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     dictsize = dict_used(other);
     if (set_fill(so) + dictsize) * 5 >= set_mask(so) * 3 {
         if set_table_resize(so, (set_used(so) + dictsize) * 2) != 0 {
@@ -1375,7 +1665,7 @@ def set_update_dict(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def set_update_iterable(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
+impl set_update_iterable(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     it = PyObject_GetIter(other);
     if not it {
         return i32(-1);
@@ -1399,9 +1689,7 @@ def set_update_iterable(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""set_update_local / set_update_lock_held: add the keys of `other`, a set,
-a dict or any iterable."""
-def set_update_local(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
+impl set_update_local(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     if anyset_check(other) {
         return set_merge(so, other);
     }
@@ -1411,14 +1699,14 @@ def set_update_local(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     return set_update_iterable(so, other);
 }
 
-def set_update_internal(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
+impl set_update_internal(so: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     if anyset_check(other) and other == so {
         return i32(0);
     }
     return set_update_local(so, other);
 }
 
-def set_update(
+impl set_update(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     for i in range(nothers) {
@@ -1429,7 +1717,7 @@ def set_update(
     return object_new_ref(Py_None);
 }
 
-def make_new_set(type: ptr[PyTypeObject], iterable: ptr[PyObject]) -> ptr[PyObject] {
+impl make_new_set(type: ptr[PyTypeObject], iterable: ptr[PyObject]) -> ptr[PyObject] {
     so = type.view(1)[0].tp_alloc(type, 0);
     if not so {
         return NULL;
@@ -1449,7 +1737,7 @@ def make_new_set(type: ptr[PyTypeObject], iterable: ptr[PyObject]) -> ptr[PyObje
     return so;
 }
 
-def make_new_set_basetype(
+impl make_new_set_basetype(
     type: ptr[PyTypeObject], iterable: ptr[PyObject]
 ) -> ptr[PyObject] {
     base = type;
@@ -1463,22 +1751,19 @@ def make_new_set_basetype(
     return make_new_set(base, iterable);
 }
 
-def make_new_frozenset(
+impl make_new_frozenset(
     type: ptr[PyTypeObject], iterable: ptr[PyObject]
 ) -> ptr[PyObject] {
     if type != frozenset_type() {
         return make_new_set(type, iterable);
     }
     if iterable and frozenset_check_exact(iterable) {
-        # frozenset(f) is idempotent.
         return object_new_ref(iterable);
     }
     return make_new_set(type, iterable);
 }
 
-"""PyArg_UnpackTuple(args, name, 0, 1, ...)'s check: False with a TypeError
-set for more than one argument."""
-def at_most_one_argument(args: ptr[PyObject], name: ptr[u8]) -> bool {
+impl at_most_one_argument(args: ptr[PyObject], name: ptr[u8]) -> bool {
     nargs = object_size(args);
     if nargs > 1 {
         PyErr_Format(
@@ -1489,12 +1774,11 @@ def at_most_one_argument(args: ptr[PyObject], name: ptr[u8]) -> bool {
     return True;
 }
 
-"""The optional iterable argument of an args tuple (NULL when absent)."""
-def optional_iterable(args: ptr[PyObject]) -> ptr[PyObject] {
+impl optional_iterable(args: ptr[PyObject]) -> ptr[PyObject] {
     return tuple_get_item(args, 0) if object_size(args) == 1 else NULL;
 }
 
-def frozenset_new(
+impl frozenset_new(
     type: ptr[PyTypeObject], args: ptr[PyObject], kwds: ptr[PyObject]
 ) -> ptr[PyObject] {
     base = frozenset_type();
@@ -1509,7 +1793,7 @@ def frozenset_new(
     return make_new_frozenset(type, optional_iterable(args));
 }
 
-def frozenset_vectorcall(
+impl frozenset_vectorcall(
     type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if kwnames and _PyArg_NoKwnames("frozenset", kwnames) == 0 {
@@ -1523,17 +1807,13 @@ def frozenset_vectorcall(
     return make_new_frozenset(type_of_object(type), iterable);
 }
 
-def set_new(
+impl set_new(
     type: ptr[PyTypeObject], args: ptr[PyObject], kwds: ptr[PyObject]
 ) -> ptr[PyObject] {
     return make_new_set(type, NULL);
 }
 
-"""Exchange the contents of two sets, moving table pointers and swapping the
-embedded tables; frozenset hashes go along, other hashes are reset. Like
-t=set(a); a.clear(); a.update(b); b.clear(); b.update(t), but it cannot
-fail."""
-def set_swap_bodies(a: ptr[PyObject], b: ptr[PyObject]) {
+impl set_swap_bodies(a: ptr[PyObject], b: ptr[PyObject]) {
     sa = set_of(a);
     sb = set_of(b);
     t = sa.view(1)[0].fill;
@@ -1577,7 +1857,7 @@ def set_swap_bodies(a: ptr[PyObject], b: ptr[PyObject]) {
     }
 }
 
-def set_copy_impl(so: ptr[PyObject]) -> ptr[PyObject] {
+impl set_copy_impl(so: ptr[PyObject]) -> ptr[PyObject] {
     copy = make_new_set_basetype(object_type(so), NULL);
     if not copy {
         return NULL;
@@ -1589,23 +1869,23 @@ def set_copy_impl(so: ptr[PyObject]) -> ptr[PyObject] {
     return copy;
 }
 
-def set_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl set_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return set_copy_impl(so);
 }
 
-def frozenset_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl frozenset_copy(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     if frozenset_check_exact(so) {
         return object_new_ref(so);
     }
     return set_copy_impl(so);
 }
 
-def set_clear(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl set_clear(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     set_clear_internal(so);
     return object_new_ref(Py_None);
 }
 
-def set_union(
+impl set_union(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     result = set_copy_impl(so);
@@ -1625,7 +1905,7 @@ def set_union(
     return result;
 }
 
-def set_or(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_or(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(so) or not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -1643,7 +1923,7 @@ def set_or(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def set_ior(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_ior(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -1653,7 +1933,7 @@ def set_ior(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return object_new_ref(so);
 }
 
-def set_intersection(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject] {
+impl set_intersection(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject] {
     so = so_in;
     other = other_in;
     if so == other {
@@ -1664,7 +1944,6 @@ def set_intersection(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObj
         return NULL;
     }
     if anyset_check(other) {
-        # Iterate over the smaller set.
         if set_used(other) > set_used(so) {
             tmp = so;
             so = other;
@@ -1730,7 +2009,7 @@ def set_intersection(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObj
     return result;
 }
 
-def set_intersection_multi(
+impl set_intersection_multi(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     if nothers == 0 {
@@ -1749,7 +2028,7 @@ def set_intersection_multi(
     return result;
 }
 
-def set_intersection_update(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_intersection_update(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     tmp = set_intersection(so, other);
     if not tmp {
         return NULL;
@@ -1759,7 +2038,7 @@ def set_intersection_update(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyOb
     return object_new_ref(Py_None);
 }
 
-def set_intersection_update_multi(
+impl set_intersection_update_multi(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     tmp = set_intersection_multi(so, others, nothers);
@@ -1771,14 +2050,14 @@ def set_intersection_update_multi(
     return object_new_ref(Py_None);
 }
 
-def set_and(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_and(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(so) or not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
     return set_intersection(so, other);
 }
 
-def set_iand(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_iand(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -1790,14 +2069,13 @@ def set_iand(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return object_new_ref(so);
 }
 
-def set_isdisjoint(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject] {
+impl set_isdisjoint(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObject] {
     so = so_in;
     other = other_in;
     if so == other {
         return PyBool_FromLong(1 if set_used(so) == 0 else 0);
     }
     if anyset_check_exact(other) {
-        # Iterate over the smaller set.
         if set_used(other) > set_used(so) {
             tmp = so;
             so = other;
@@ -1850,14 +2128,13 @@ def set_isdisjoint(so_in: ptr[PyObject], other_in: ptr[PyObject]) -> ptr[PyObjec
     return PyBool_FromLong(1);
 }
 
-def set_difference_update_internal(so: ptr[PyObject], other_in: ptr[PyObject]) -> i32 {
+impl set_difference_update_internal(so: ptr[PyObject], other_in: ptr[PyObject]) -> i32 {
     if so == other_in {
         return set_clear_internal(so);
     }
     if anyset_check(other_in) {
         other = other_in;
-        # When the other set is more than 8 times larger, discard its
-        # intersection with this one instead.
+
         if (set_used(other) >> 3) > set_used(so) {
             other = set_intersection(so, other);
             if not other {
@@ -1905,7 +2182,7 @@ def set_difference_update_internal(so: ptr[PyObject], other_in: ptr[PyObject]) -
             return i32(-1);
         }
     }
-    # More than a quarter dummies: resize them away.
+
     if u64.wrap(set_fill(so) - set_used(so)) <= u64.wrap(set_mask(so)) / u64(4) {
         return i32(0);
     }
@@ -1913,7 +2190,7 @@ def set_difference_update_internal(so: ptr[PyObject], other_in: ptr[PyObject]) -
     return set_table_resize(so, used * 2 if used > 50000 else used * 4);
 }
 
-def set_difference_update(
+impl set_difference_update(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     for i in range(nothers) {
@@ -1924,7 +2201,7 @@ def set_difference_update(
     return object_new_ref(Py_None);
 }
 
-def set_copy_and_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_copy_and_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     result = set_copy_impl(so);
     if not result {
         return NULL;
@@ -1936,7 +2213,7 @@ def set_copy_and_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyOb
     return NULL;
 }
 
-def set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     other_size: i64 = 0;
     other_is_dict = False;
     if anyset_check(other) {
@@ -1947,7 +2224,7 @@ def set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     } else {
         return set_copy_and_difference(so, other);
     }
-    # Much larger than other: copy, then discard other's elements.
+
     if (set_used(so) >> 2) > other_size {
         return set_copy_and_difference(so, other);
     }
@@ -1955,7 +2232,7 @@ def set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not result {
         return NULL;
     }
-    # Keep the elements of so that other lacks.
+
     pos = 0;
     while True {
         i = set_next(so, pos);
@@ -1982,7 +2259,7 @@ def set_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def set_difference_multi(
+impl set_difference_multi(
     so: ptr[PyObject], others: ptr[ptr[PyObject]], nothers: i64
 ) -> ptr[PyObject] {
     if nothers == 0 {
@@ -2001,14 +2278,14 @@ def set_difference_multi(
     return result;
 }
 
-def set_sub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_sub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(so) or not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
     return set_difference(so, other);
 }
 
-def set_isub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_isub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -2018,8 +2295,7 @@ def set_isub(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return object_new_ref(so);
 }
 
-"""Toggle `key`: discard it if present, else add it."""
-def toggle_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
+impl toggle_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     rv = set_discard_entry(so, key, hash);
     if rv < 0 {
         return i32(-1);
@@ -2030,7 +2306,7 @@ def toggle_entry(so: ptr[PyObject], key: ptr[PyObject], hash: i64) -> i32 {
     return i32(0);
 }
 
-def set_symmetric_difference_update_dict(
+impl set_symmetric_difference_update_dict(
     so: ptr[PyObject], other: ptr[PyObject]
 ) -> i32 {
     pos: i64 = 0;
@@ -2048,7 +2324,7 @@ def set_symmetric_difference_update_dict(
     return i32(0);
 }
 
-def set_symmetric_difference_update_set(
+impl set_symmetric_difference_update_set(
     so: ptr[PyObject], other: ptr[PyObject]
 ) -> i32 {
     pos = 0;
@@ -2069,7 +2345,7 @@ def set_symmetric_difference_update_set(
     return i32(0);
 }
 
-def set_symmetric_difference_update(
+impl set_symmetric_difference_update(
     so: ptr[PyObject], other: ptr[PyObject]
 ) -> ptr[PyObject] {
     if so == other {
@@ -2094,7 +2370,9 @@ def set_symmetric_difference_update(
     return object_new_ref(Py_None);
 }
 
-def set_symmetric_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_symmetric_difference(
+    so: ptr[PyObject], other: ptr[PyObject]
+) -> ptr[PyObject] {
     result = make_new_set_basetype(object_type(so), NULL);
     if not result {
         return NULL;
@@ -2107,14 +2385,14 @@ def set_symmetric_difference(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyO
     return result;
 }
 
-def set_xor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_xor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(so) or not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
     return set_symmetric_difference(so, other);
 }
 
-def set_ixor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_ixor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(other) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -2126,7 +2404,7 @@ def set_ixor(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return object_new_ref(so);
 }
 
-def set_issubset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_issubset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if not anyset_check(other) {
         tmp = set_intersection(so, other);
         if not tmp {
@@ -2160,7 +2438,7 @@ def set_issubset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return PyBool_FromLong(1);
 }
 
-def set_issuperset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl set_issuperset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if anyset_check(other) {
         return set_issubset(other, so);
     }
@@ -2191,7 +2469,7 @@ def set_issuperset(so: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     return PyBool_FromLong(1);
 }
 
-def set_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
+impl set_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
     if not anyset_check(w) {
         return object_new_ref(Py_NotImplemented);
     }
@@ -2239,17 +2517,14 @@ def set_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject
     return object_new_ref(Py_NotImplemented);
 }
 
-def set_add(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl set_add(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     if set_add_key(so, key) != 0 {
         return NULL;
     }
     return object_new_ref(Py_None);
 }
 
-"""After a lookup of `key` failed: whether to retry it as the frozenset with
-the same contents, which a set key (unhashable) stands for. True clears the
-TypeError."""
-def retry_as_frozenset(key: ptr[PyObject]) -> bool {
+impl retry_as_frozenset(key: ptr[PyObject]) -> bool {
     if not set_check(key) or PyErr_ExceptionMatches(PyExc_TypeError) == 0 {
         return False;
     }
@@ -2257,7 +2532,7 @@ def retry_as_frozenset(key: ptr[PyObject]) -> bool {
     return True;
 }
 
-def set_contains_lock_held(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl set_contains_lock_held(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     rv = set_contains_key(so, key);
     if rv < 0 {
         if not retry_as_frozenset(key) {
@@ -2268,11 +2543,11 @@ def set_contains_lock_held(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return rv;
 }
 
-def set_contains(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl set_contains(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return set_contains_lock_held(so, key);
 }
 
-def set___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl set___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     result = set_contains_lock_held(so, key);
     if result < 0 {
         return NULL;
@@ -2280,12 +2555,11 @@ def set___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     return PyBool_FromLong(i64(result));
 }
 
-def frozenset___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl frozenset___contains__(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     return set___contains__(so, key);
 }
 
-"""Discard `key` (or the frozenset of a set key); -1 with an error set."""
-def discard_any(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl discard_any(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     rv = set_discard_key(so, key);
     if rv < 0 {
         if not retry_as_frozenset(key) {
@@ -2296,7 +2570,7 @@ def discard_any(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return rv;
 }
 
-def set_remove(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl set_remove(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     rv = discard_any(so, key);
     if rv < 0 {
         return NULL;
@@ -2308,14 +2582,14 @@ def set_remove(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     return object_new_ref(Py_None);
 }
 
-def set_discard(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl set_discard(so: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     if discard_any(so, key) < 0 {
         return NULL;
     }
     return object_new_ref(Py_None);
 }
 
-def set___reduce__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl set___reduce__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     result = NULL;
     args = NULL;
     state = NULL;
@@ -2335,7 +2609,7 @@ def set___reduce__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def set___sizeof__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl set___sizeof__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     res = object_type(so).view(1)[0].tp_basicsize;
     if set_table(so) != smalltable(so) {
         res += (set_mask(so) + 1) * SETENTRY_SIZE;
@@ -2343,7 +2617,7 @@ def set___sizeof__(so: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return PyLong_FromSize_t(u64(res));
 }
 
-def set_init(so: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
+impl set_init(so: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
     if kwds and _PyArg_NoKeywords("set", kwds) == 0 {
         return i32(-1);
     }
@@ -2368,7 +2642,7 @@ def set_init(so: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32
     return set_update_internal(so, iterable);
 }
 
-def set_vectorcall(
+impl set_vectorcall(
     type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if kwnames and _PyArg_NoKwnames("set", kwnames) == 0 {
@@ -2384,112 +2658,10 @@ def set_vectorcall(
     return make_new_set(type_of_object(type), NULL);
 }
 
-def dummy_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return PyUnicode_FromString("<dummy key>");
+impl dummy_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return PyUnicode_FromString(ptr[u8]("<dummy key>"));
 }
 
-def dummy_dealloc(op: ptr[PyObject]) {
+impl dummy_dealloc(op: ptr[PyObject]) {
     Py_FatalError("deallocating <dummy key>");
-}
-
-import from c {
-    def PySet_New(iterable: ptr[PyObject]) -> ptr[PyObject] {
-        return make_new_set(set_type(), iterable);
-    }  def PyFrozenSet_New(iterable: ptr[PyObject]) -> ptr[PyObject] {
-        return make_new_set(frozenset_type(), iterable);
-    }  def PySet_Size(anyset: ptr[PyObject]) -> i64 {
-        if not anyset_check(anyset) {
-            PyErr_BadInternalCall();
-            return -1;
-        }
-        return set_used(anyset);
-    }  def PySet_Clear(set: ptr[PyObject]) -> i32 {
-        if not set_check(set) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        set_clear_internal(set);
-        return i32(0);
-    }  def _PySet_Contains(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        return set_contains_lock_held(so, key);
-    }  def _PySet_ClearInternal(so: ptr[PyObject]) {
-        set_clear_internal(so);
-    }  def PySet_Contains(anyset: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        if not anyset_check(anyset) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        return set_contains_key(anyset, key);
-    }  def PySet_Discard(set: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        if not set_check(set) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        return set_discard_key(set, key);
-    }
-    # A frozenset only while it is being built (its sole reference).
-    def PySet_Add(anyset: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        if not set_check(anyset)
-            and (not frozenset_check(anyset) or object_refcount(anyset) != 1) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        return set_add_key(anyset, key);
-    }
-    # Add `key`, stealing it.
-    def _PySet_AddTakeRef(so: ptr[PyObject], key: ptr[PyObject]) -> i32 {
-        hash = hash_fast(key);
-        if hash == -1 {
-            set_unhashable_type(key);
-            object_decref(key);
-            return i32(-1);
-        }
-        return set_add_entry_takeref(so, key, hash);
-    }  def _PySet_NextEntry(
-        set: ptr[PyObject], pos: ptr[i64], key: ptr[ptr[PyObject]], hash: ptr[i64]
-    ) -> i32 {
-        if not anyset_check(set) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        i = set_next(set, pos.view(1)[0]);
-        if i < 0 {
-            pos.view(1)[0] = set_mask(set) + 2;
-            return i32(0);
-        }
-        pos.view(1)[0] = i + 1;
-        slot = set_table(set) + i;
-        key.view(1)[0] = entry_key(slot);
-        hash.view(1)[0] = entry_hash(slot);
-        return i32(1);
-    }  def _PySet_NextEntryRef(
-        set: ptr[PyObject], pos: ptr[i64], key: ptr[ptr[PyObject]], hash: ptr[i64]
-    ) -> i32 {
-        if not anyset_check(set) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        i = set_next(set, pos.view(1)[0]);
-        if i < 0 {
-            pos.view(1)[0] = set_mask(set) + 2;
-            return i32(0);
-        }
-        pos.view(1)[0] = i + 1;
-        slot = set_table(set) + i;
-        key.view(1)[0] = object_new_ref(entry_key(slot));
-        hash.view(1)[0] = entry_hash(slot);
-        return i32(1);
-    }  def PySet_Pop(set: ptr[PyObject]) -> ptr[PyObject] {
-        if not set_check(set) {
-            PyErr_BadInternalCall();
-            return NULL;
-        }
-        return set_pop(set, NULL);
-    }  def _PySet_Update(set: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
-        if not set_check(set) {
-            PyErr_BadInternalCall();
-            return i32(-1);
-        }
-        return set_update_internal(set, iterable);
-    }
 }

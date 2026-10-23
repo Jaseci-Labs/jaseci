@@ -129,6 +129,7 @@ with entry {
 }
 
 glob spans: list[tuple[int, int]] = [];
+
 with entry {
     for i in range(3) {
         spans.append(ordered(10, i));
@@ -158,6 +159,7 @@ with entry {
 }
 
 glob swap = lambda (a: int, b: int) -> tuple[int, int] { return (b * 3, a * 2); };
+
 with entry {
     print("lambda", apply(swap, 5));
     print("nested", nested(3));

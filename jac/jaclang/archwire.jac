@@ -15780,7 +15780,8 @@ graph import runtime.python {
         object_model.bytearray
             | object_model.bytes
             | object_model.long
-            | object_model.memory {
+            | object_model.memory
+            | object_model.unicode {
             BoundArguments,
             CallSignature,
             PARSE_KEYWORDS,
@@ -16019,6 +16020,7 @@ graph import runtime.python {
             | object_model.template
             | object_model.tuple
             | object_model.typevar
+            | object_model.unicode
             | object_model.union
             | object_model.weakref { visit_reference },
         modules.decimal_number { jacpy_binding_state_set, visit_reference },
@@ -16612,7 +16614,6 @@ graph import runtime.python {
             c_string_text,
             object_error,
             text_object,
-            text_value,
             type_name
         },
         modules.resource | modules.syslog { object_error, object_tuple },
@@ -16693,7 +16694,7 @@ graph import runtime.python {
     ]
     constant_keys ++> constant_output { constant_key }
     cpython_api ++> [
-        bindings.abc { PyObject, PyUnicode_InternFromString, jacpy_release },
+        bindings.abc { PyObject, jacpy_release, jacpy_unicode_intern_text },
         bindings.arguments {
             NULL,
             PyDict_Items,
@@ -16727,8 +16728,6 @@ graph import runtime.python {
             PyType_IsSubtype,
             PyUnicode_AsUTF8AndSize,
             PyUnicode_Equal,
-            PyUnicode_FromString,
-            PyUnicode_InternFromString,
             PyUnicode_ReadChar,
             Py_NewRef,
             Py_None,
@@ -16742,6 +16741,8 @@ graph import runtime.python {
             jacpy_release,
             jacpy_tuple_item,
             jacpy_tuple_items,
+            jacpy_unicode_from_text,
+            jacpy_unicode_intern_text,
             jacpy_unicode_size
         },
         bindings.array {
@@ -17140,7 +17141,7 @@ graph import runtime.python {
             PyModule_AddObjectRef,
             PyObject,
             PyObject_GenericGetAttr,
-            PyUnicode_InternFromString
+            jacpy_unicode_intern_text
         },
         bindings.errno {
             PyDict_New,
@@ -17150,8 +17151,8 @@ graph import runtime.python {
             PyLong_FromLong,
             PyModule_GetDict,
             PyObject,
-            PyUnicode_FromString,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         bindings.fcntl { PyExc_ImportError, PyModule_AddIntConstant, PyObject },
         bindings.functools {
@@ -17201,7 +17202,7 @@ graph import runtime.python {
             Py_TYPE,
             jacpy_release
         },
-        bindings.heapq { PyObject, PyUnicode_FromString },
+        bindings.heapq { PyObject, jacpy_unicode_from_text },
         bindings.hmac { PyExc_ValueError, PyModule_AddIntConstant, PyObject },
         bindings.json {
             NULL,
@@ -17311,10 +17312,10 @@ graph import runtime.python {
             PyObject,
             PyObject_SelfIter,
             PyType_Modified,
-            PyUnicode_FromString,
             PyUnicode_InternFromString,
             _PyType_AddMethod,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         bindings.posixsubprocess { PyExc_ImportError, PyObject },
         bindings.pyexpat {
@@ -17365,8 +17366,8 @@ graph import runtime.python {
             PyLong_FromLong,
             PyModule_AddIntConstant,
             PyObject,
-            PyUnicode_FromString,
-            Py_TYPE
+            Py_TYPE,
+            jacpy_unicode_from_text
         },
         bindings.sha3 {
             PyModule_AddIntConstant,
@@ -17448,15 +17449,15 @@ graph import runtime.python {
             PyType_FromSpecWithBases,
             PyType_Slot,
             PyType_Spec,
-            PyUnicode_FromString,
-            PyUnicode_InternFromString,
             Py_BuildValue,
             Py_NewRef,
             Py_TYPE,
             Py_buffer,
             jacpy_buffer_release,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text,
+            jacpy_unicode_intern_text
         },
         bindings.stat {
             NULL,
@@ -17464,7 +17465,7 @@ graph import runtime.python {
             PyLong_FromUnsignedLong,
             PyModule_AddIntConstant,
             PyObject,
-            PyUnicode_FromString
+            jacpy_unicode_from_text
         },
         bindings.struct {
             NULL,
@@ -17571,7 +17572,8 @@ graph import runtime.python {
             PyObject,
             PyUnicode_FromString,
             Py_NewRef,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         bindings.zstd {
             NULL,
@@ -17861,7 +17863,6 @@ graph import runtime.python {
             PyTuple_New,
             PyType_IsSubtype,
             PyUnicode_FromString,
-            PyUnicode_InternFromString,
             Py_NewRef,
             Py_None,
             Py_TYPE,
@@ -17871,7 +17872,8 @@ graph import runtime.python {
             jacpy_asyncio_tasks_head,
             jacpy_is_type,
             jacpy_release,
-            jacpy_tuple_set_owned
+            jacpy_tuple_set_owned,
+            jacpy_unicode_intern_text
         },
         modules.atexit {
             NULL,
@@ -17958,12 +17960,12 @@ graph import runtime.python {
             PyMem_Free,
             PyMem_Malloc,
             PyObject,
-            PyUnicode_FromString,
             Py_TYPE,
             jacpy_hacl_simd_features,
             jacpy_memory_copy,
             jacpy_memory_zero,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.bz2 {
             NULL,
@@ -18448,7 +18450,6 @@ graph import runtime.python {
             PyType_GetModule,
             PyUnicode_CompareWithASCIIString,
             PyUnicode_FromFormat,
-            PyUnicode_FromString,
             Py_BuildValue,
             Py_NewRef,
             Py_None,
@@ -18457,7 +18458,8 @@ graph import runtime.python {
             jacpy_is_dict,
             jacpy_is_list,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.decimal_convert {
             NULL,
@@ -18553,7 +18555,8 @@ graph import runtime.python {
             jacpy_is_unicode,
             jacpy_memory_copy,
             jacpy_release,
-            jacpy_unicode_decode_bytes
+            jacpy_unicode_decode_bytes,
+            jacpy_unicode_from_text
         },
         modules.decimal_objects {
             NULL,
@@ -18695,7 +18698,8 @@ graph import runtime.python {
             jacpy_release,
             jacpy_tuple_set_owned,
             jacpy_type_check,
-            jacpy_type_name
+            jacpy_type_name,
+            jacpy_unicode_from_text
         },
         modules.expat { PyMem_Free, PyMem_Malloc, PyMem_Realloc },
         modules.fcntl {
@@ -18867,7 +18871,6 @@ graph import runtime.python {
             PyThread_release_lock,
             PyUnicode_AsUTF8,
             PyUnicode_FromFormat,
-            PyUnicode_FromString,
             Py_NewRef,
             Py_None,
             Py_TYPE,
@@ -18875,7 +18878,8 @@ graph import runtime.python {
             jacpy_bytes_address,
             jacpy_bytes_from_memory,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.heapq {
             NULL,
@@ -18919,7 +18923,8 @@ graph import runtime.python {
             jacpy_bytes_from_memory,
             jacpy_hacl_simd_features,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.iterators {
             NULL,
@@ -19003,7 +19008,6 @@ graph import runtime.python {
             PyUnicodeWriter,
             PyUnicodeWriter_Discard,
             PyUnicodeWriter_Finish,
-            PyUnicodeWriter_WriteASCII,
             PyUnicodeWriter_WriteChar,
             PyUnicodeWriter_WriteStr,
             PyUnicodeWriter_WriteSubstring,
@@ -19035,7 +19039,8 @@ graph import runtime.python {
             jacpy_tuple_item,
             jacpy_unicode_data,
             jacpy_unicode_kind,
-            jacpy_unicode_size
+            jacpy_unicode_size,
+            jacpy_unicode_writer_write_text
         },
         modules.locale {
             NULL,
@@ -19152,8 +19157,6 @@ graph import runtime.python {
             PyThread_free_lock,
             PyThread_release_lock,
             PyType_GetModule,
-            PyUnicode_EqualToUTF8,
-            PyUnicode_InternFromString,
             Py_None,
             Py_TYPE,
             _PyLong_UInt32_Converter,
@@ -19163,7 +19166,9 @@ graph import runtime.python {
             jacpy_is_unicode,
             jacpy_memory_copy,
             jacpy_memory_move,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_equal_text,
+            jacpy_unicode_intern_text
         },
         modules.math {
             NULL,
@@ -19249,7 +19254,6 @@ graph import runtime.python {
             PyNumber_AsSsize_t,
             PyObject,
             PySys_AuditTuple,
-            PyUnicode_FromString,
             Py_NewRef,
             Py_buffer,
             _PyBytes_Find,
@@ -19266,7 +19270,8 @@ graph import runtime.python {
             jacpy_release,
             jacpy_set_errno,
             jacpy_slice_adjust,
-            jacpy_slice_unpack
+            jacpy_slice_unpack,
+            jacpy_unicode_from_text
         },
         modules.multibytecodec {
             NULL,
@@ -19393,14 +19398,14 @@ graph import runtime.python {
             PyList_New,
             PyLong_AsLong,
             PyObject,
-            PyUnicode_FromString,
-            PyUnicode_InternFromString,
             Py_NewRef,
             Py_None,
             _PyCompile_GetBinaryIntrinsicName,
             _PyCompile_GetUnaryIntrinsicName,
             jacpy_is_code,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text,
+            jacpy_unicode_intern_text
         },
         modules.operator {
             NULL,
@@ -19759,7 +19764,6 @@ graph import runtime.python {
             PyUnicode_AsWideCharString,
             PyUnicode_DecodeFSDefaultAndSize,
             PyUnicode_EncodeFSDefault,
-            PyUnicode_InternFromString,
             Py_NewRef,
             Py_None,
             Py_TYPE,
@@ -19788,7 +19792,8 @@ graph import runtime.python {
             jacpy_runtime_head_unlock,
             jacpy_stdio_fileno,
             jacpy_thread_state_fork_reset,
-            jacpy_thread_state_native_id
+            jacpy_thread_state_native_id,
+            jacpy_unicode_intern_text
         },
         modules.posix_fileio {
             NULL,
@@ -20196,8 +20201,8 @@ graph import runtime.python {
             PyTuple_New,
             PyType_GetModule,
             PyUnicode_AsUTF8AndSize,
-            PyUnicode_Decode,
             PyUnicode_DecodeUTF8Stateful,
+            PyUnicode_FromEncodedObject,
             PyUnicode_FromFormat,
             PyUnicode_GetLength,
             PyUnicode_ReadChar,
@@ -20209,6 +20214,7 @@ graph import runtime.python {
             _PyTraceback_Add,
             _Py_HashSecret,
             jacpy_bytes_from_memory,
+            jacpy_bytes_from_payload,
             jacpy_bytes_length,
             jacpy_is_bytearray,
             jacpy_is_bytes,
@@ -20360,7 +20366,8 @@ graph import runtime.python {
             jacpy_fast_size,
             jacpy_release,
             jacpy_set_errno,
-            jacpy_tuple_set_owned
+            jacpy_tuple_set_owned,
+            jacpy_unicode_from_text
         },
         modules.sha3 {
             NULL,
@@ -20373,11 +20380,11 @@ graph import runtime.python {
             PyMem_Malloc,
             PyObject,
             PyType_GetModule,
-            PyUnicode_FromString,
             Py_TYPE,
             _Py_strhex,
             jacpy_bytes_from_memory,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.socket {
             NULL,
@@ -20696,7 +20703,8 @@ graph import runtime.python {
             jacpy_is_unicode,
             jacpy_memory_copy,
             jacpy_release,
-            jacpy_type_check
+            jacpy_type_check,
+            jacpy_unicode_from_text
         },
         modules.sre {
             NULL,
@@ -20774,6 +20782,7 @@ graph import runtime.python {
             jacpy_is_unicode,
             jacpy_release,
             jacpy_unicode_data,
+            jacpy_unicode_from_text,
             jacpy_unicode_kind,
             jacpy_unicode_size
         },
@@ -21051,13 +21060,13 @@ graph import runtime.python {
             PySys_AuditTuple,
             PyUnicode_AsUTF8,
             PyUnicode_FindChar,
-            PyUnicode_FromString,
             PyUnicode_GetLength,
             PyUnicode_Substring,
             Py_NewRef,
             _PySys_GetOptionalAttrString,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         modules.tee {
             NULL,
@@ -21179,7 +21188,8 @@ graph import runtime.python {
             jacpy_errno,
             jacpy_is_tuple,
             jacpy_release,
-            jacpy_set_errno
+            jacpy_set_errno,
+            jacpy_unicode_from_text
         },
         modules.tracemalloc {
             NULL,
@@ -21411,12 +21421,12 @@ graph import runtime.python {
             PyErr_WarnEx,
             PyObject,
             PyObject_IsTrue,
-            PyUnicode_InternFromString,
             PyVectorcall_NARGS,
             _PyArg_CheckPositional,
             _PyArg_NoKeywords,
             _PyArg_NoKwnames,
-            _Py_SetImmortal
+            _Py_SetImmortal,
+            jacpy_unicode_intern_text
         },
         object_model.bytearray {
             NULL,
@@ -21778,7 +21788,8 @@ graph import runtime.python {
             Py_None,
             Py_NotImplemented,
             _PyArg_CheckPositional,
-            _PyObject_GC_New
+            _PyObject_GC_New,
+            jacpy_unicode_intern_text
         },
         object_model.dict {
             NULL,
@@ -21857,6 +21868,7 @@ graph import runtime.python {
             jacpy_memory_copy,
             jacpy_memory_zero,
             jacpy_unicode_data,
+            jacpy_unicode_intern_text,
             jacpy_unicode_kind
         },
         object_model.enumerate {
@@ -21899,7 +21911,8 @@ graph import runtime.python {
             _PyArg_NoKwnames,
             _PyObject_LookupSpecial,
             _PyUnicode_EqualToASCIIString,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_equal_text
         },
         object_model.exceptions {
             NULL,
@@ -21978,7 +21991,8 @@ graph import runtime.python {
             Py_buffer,
             _PyArg_NoKeywords,
             _PyArg_NoKwnames,
-            _PyType_Name
+            _PyType_Name,
+            jacpy_unicode_intern_text
         },
         object_model.file {
             NULL,
@@ -22208,7 +22222,6 @@ graph import runtime.python {
             PyUnicodeWriter_Finish,
             PyUnicodeWriter_WriteASCII,
             PyUnicodeWriter_WriteChar,
-            PyUnicode_FromString,
             PyUnicode_InternFromString,
             PyVectorcall_Function,
             Py_BuildValue,
@@ -22220,27 +22233,28 @@ graph import runtime.python {
             _PyArg_NoKeywords,
             _PyObject_GC_New,
             _PyTuple_Resize,
-            _PyUnicode_EqualToASCIIString,
             _Py_typing_type_repr,
             jacpy_is_exact_list,
             jacpy_is_list,
             jacpy_is_tuple,
             jacpy_is_type,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_equal_text,
+            jacpy_unicode_from_text
         },
         object_model.header {
             NULL,
             PyObject,
             PyThreadState_GetUnchecked,
             PyType_IsSubtype,
-            PyUnicode_InternFromString,
             Py_NewRef,
             Py_NotImplemented,
             _PyEval_GetBuiltin,
             _Py_Dealloc,
             _Py_NewReference,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_intern_text
         },
         object_model.interpolation {
             NULL,
@@ -22613,7 +22627,9 @@ graph import runtime.python {
             PyUnicode_Type,
             Py_None,
             _PyArg_BadArgument,
-            jacpy_memory_zero
+            jacpy_memory_zero,
+            jacpy_unicode_from_text,
+            jacpy_unicode_intern_text
         },
         object_model.namespace {
             NULL,
@@ -22930,7 +22946,8 @@ graph import runtime.python {
             _PyType_HasSubclasses,
             _Py_SetImmortal,
             jacpy_is_dict,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_intern_text
         },
         object_model.template {
             NULL,
@@ -23057,7 +23074,154 @@ graph import runtime.python {
             Py_NotImplemented,
             _PyArg_CheckPositional,
             _PyArg_NoKeywords,
-            _PyObject_GC_New
+            _PyObject_GC_New,
+            jacpy_unicode_from_text
+        },
+        object_model.unicode {
+            NULL,
+            PyBool_FromLong,
+            PyBuffer_Release,
+            PyByteArray_AsString,
+            PyByteArray_Type,
+            PyBytes_AsString,
+            PyBytes_FromString,
+            PyBytes_FromStringAndSize,
+            PyBytes_Size,
+            PyBytes_Type,
+            PyCodec_Decode,
+            PyCodec_Encode,
+            PyCodec_StrictErrors,
+            PyComplex_Type,
+            PyDict_Clear,
+            PyDict_New,
+            PyDict_Next,
+            PyDict_SetDefaultRef,
+            PyDict_SetItem,
+            PyDict_Type,
+            PyErr_BadArgument,
+            PyErr_BadInternalCall,
+            PyErr_Clear,
+            PyErr_ExceptionMatches,
+            PyErr_Format,
+            PyErr_FormatUnraisable,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetObject,
+            PyErr_SetString,
+            PyErr_WarnEx,
+            PyErr_WarnFormat,
+            PyExc_DeprecationWarning,
+            PyExc_IndexError,
+            PyExc_KeyError,
+            PyExc_LookupError,
+            PyExc_OverflowError,
+            PyExc_RuntimeError,
+            PyExc_RuntimeWarning,
+            PyExc_SystemError,
+            PyExc_TypeError,
+            PyExc_UnicodeDecodeError,
+            PyExc_UnicodeEncodeError,
+            PyExc_UnicodeError,
+            PyExc_ValueError,
+            PyFloat_AsDouble,
+            PyFloat_Type,
+            PyIndex_Check,
+            PyInterpreterState,
+            PyList_Append,
+            PyList_New,
+            PyList_Reverse,
+            PyLong_AsInt,
+            PyLong_AsLong,
+            PyLong_AsLongAndOverflow,
+            PyLong_AsSsize_t,
+            PyLong_FromLong,
+            PyLong_FromSsize_t,
+            PyLong_Type,
+            PyMapping_Check,
+            PyMem_Calloc,
+            PyMem_Free,
+            PyMem_Malloc,
+            PyMem_RawFree,
+            PyMem_RawMalloc,
+            PyMem_RawRealloc,
+            PyMem_Realloc,
+            PyMethodDef,
+            PyModuleDef,
+            PyMutex,
+            PyMutex_Lock,
+            PyMutex_Unlock,
+            PyNumber_AsSsize_t,
+            PyNumber_Check,
+            PyNumber_Long,
+            PyNumber_ToBase,
+            PyOS_double_to_string,
+            PyObject,
+            PyObject_CallFunction,
+            PyObject_CallOneArg,
+            PyObject_Free,
+            PyObject_GC_Del,
+            PyObject_GenericGetAttr,
+            PyObject_GetAttr,
+            PyObject_GetAttrString,
+            PyObject_GetBuffer,
+            PyObject_GetItem,
+            PyObject_Init,
+            PyObject_IsTrue,
+            PyObject_Malloc,
+            PyObject_Repr,
+            PyObject_SelfIter,
+            PyObject_Str,
+            PySequence_Check,
+            PySequence_Fast,
+            PySequence_GetItem,
+            PySlice_Type,
+            PyTuple_GetItem,
+            PyTuple_New,
+            PyTuple_Pack,
+            PyTuple_Size,
+            PyUnicodeDecodeError_Create,
+            PyUnicodeDecodeError_SetEnd,
+            PyUnicodeDecodeError_SetReason,
+            PyUnicodeDecodeError_SetStart,
+            PyUnicodeEncodeError_SetEnd,
+            PyUnicodeEncodeError_SetReason,
+            PyUnicodeEncodeError_SetStart,
+            PyUnicodeWriter,
+            PyVectorcall_NARGS,
+            Py_BuildValue,
+            Py_HashBuffer,
+            Py_None,
+            Py_NotImplemented,
+            Py_buffer,
+            _PyArg_BadArgument,
+            _PyArg_CheckPositional,
+            _PyBytes_Resize,
+            _PyEval_SliceIndex,
+            _PyInterpreterState_Main,
+            _PyNumber_Index,
+            _PyObject_GC_New,
+            _PyObject_New,
+            _PyRuntime,
+            _PyStaticType_FiniBuiltin,
+            _PyStaticType_InitBuiltin,
+            _PyTuple_FromArray,
+            _PyUnicode_IsAlpha,
+            _PyUnicode_IsDecimalDigit,
+            _PyUnicode_IsDigit,
+            _PyUnicode_IsLinebreak,
+            _PyUnicode_IsNumeric,
+            _PyUnicode_IsPrintable,
+            _PyUnicode_IsWhitespace,
+            _PyUnicode_IsXidContinue,
+            _PyUnicode_IsXidStart,
+            _PyUnicode_ToDecimalDigit,
+            _PyUnicode_ToDigit,
+            _PyUnicode_ToLowercase,
+            _PyUnicode_ToUppercase,
+            _Py_SetImmortal,
+            jacpy_char_max,
+            jacpy_memory_copy,
+            jacpy_memory_zero
         },
         object_model.union {
             NULL,
@@ -23103,7 +23267,8 @@ graph import runtime.python {
             jacpy_is_exact_tuple,
             jacpy_is_type,
             jacpy_is_unicode,
-            jacpy_release
+            jacpy_release,
+            jacpy_unicode_from_text
         },
         object_model.weakref {
             NULL,
@@ -23240,7 +23405,6 @@ graph import runtime.python {
             PyType_Type,
             PyUnicodeWriter,
             PyUnicode_DecodeUTF8Stateful,
-            PyUnicode_InternFromString,
             PyUnicode_Type,
             Py_NewRef,
             Py_TYPE,
@@ -23256,6 +23420,7 @@ graph import runtime.python {
             jacpy_tuple_set_owned,
             jacpy_type_name,
             jacpy_unicode_decode_bytes,
+            jacpy_unicode_intern_text,
             jacpy_utf8,
             jacpy_writer_new
         },
@@ -24652,6 +24817,73 @@ graph import runtime.python {
             typevartupleobject_NAME,
             typevartupleobject_SIZE
         },
+        object_model.unicode {
+            METH_FASTCALL,
+            METH_KEYWORDS,
+            METH_NOARGS,
+            METH_O,
+            METH_STATIC,
+            METH_VARARGS,
+            ModuleDef,
+            PyASCIIObject_HASH,
+            PyASCIIObject_LENGTH,
+            PyASCIIObject_SIZE,
+            PyASCIIObject_STATE,
+            PyBUF_FULL_RO,
+            PyBUF_SIMPLE,
+            PyBytesObject_OB_SVAL,
+            PyCompactUnicodeObject_SIZE,
+            PyCompactUnicodeObject_UTF8,
+            PyCompactUnicodeObject_UTF8_LENGTH,
+            PyDictObject,
+            PyListObject,
+            PyMappingMethods,
+            PyModuleDef_Base,
+            PyModuleDef_Slot,
+            PyNumberMethods,
+            PySequenceMethods,
+            PyStatus,
+            PyThreadState_INTERP,
+            PyTypeObject,
+            PyUnicodeObject_DATA,
+            PyUnicodeObject_SIZE,
+            PyVarObject,
+            Py_CLEANUP_SUPPORTED,
+            Py_EQ,
+            Py_GE,
+            Py_GT,
+            Py_LE,
+            Py_LT,
+            Py_NE,
+            Py_RTFLAGS_USE_MAIN_OBMALLOC,
+            Py_TPFLAGS_BASETYPE,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_DEFAULT,
+            Py_TPFLAGS_DICT_SUBCLASS,
+            Py_TPFLAGS_HAVE_GC,
+            Py_TPFLAGS_LIST_SUBCLASS,
+            Py_TPFLAGS_LONG_SUBCLASS,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_TPFLAGS_UNICODE_SUBCLASS,
+            Py_buffer_SIZE,
+            Py_mod_gil,
+            Py_mod_multiple_interpreters,
+            Py_unicode_writers_MAXFREELIST,
+            _PyBytesWriter_SIZE,
+            _PyBytesWriter_SMALL_BUFFER,
+            _PyStatus_TYPE_ERROR,
+            _PyStatus_TYPE_OK,
+            _PyUnicodeWriter_SIZE,
+            _Py_Identifier_INDEX,
+            _Py_Identifier_MUTEX,
+            _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+            _Py_TPFLAGS_MATCH_SELF,
+            _Py_TYPE_VERSION_STR,
+            _Py_freelists_UNICODE_WRITERS,
+            _object,
+            seqiterobject,
+            seqiterobject_SIZE
+        },
         object_model.union {
             METH_CLASS,
             METH_O,
@@ -24762,6 +24994,31 @@ graph import runtime.python {
             PyInterpreterState_CACHED_TYPEVAR_TYPE,
             PyThreadState_CURRENT_FRAME,
             _PyInterpreterFrame_F_FUNCOBJ
+        },
+        object_model.unicode {
+            PyConfig_DEV_MODE,
+            PyConfig_FILESYSTEM_ENCODING,
+            PyConfig_FILESYSTEM_ERRORS,
+            PyConfig_STDIO_ENCODING,
+            PyInterpreterState_FEATURE_FLAGS,
+            PyInterpreterState_FINALIZING,
+            PyInterpreterState_INTERNED_STRINGS,
+            PyInterpreterState_UNICODE_FS_CODEC_ENCODING,
+            PyInterpreterState_UNICODE_FS_CODEC_ERRORS,
+            PyInterpreterState_UNICODE_FS_CODEC_ERROR_HANDLER,
+            PyInterpreterState_UNICODE_FS_CODEC_UTF8,
+            PyInterpreterState_UNICODE_IDS_ARRAY,
+            PyInterpreterState_UNICODE_IDS_SIZE,
+            PyInterpreterState_UNICODE_UCNHASH_CAPI,
+            _PyRuntimeState_INTERNED_STRINGS,
+            _PyRuntimeState_STRINGS_ASCII,
+            _PyRuntimeState_STRINGS_ASCII_SIZE,
+            _PyRuntimeState_STRINGS_LATIN1,
+            _PyRuntimeState_STRINGS_LATIN1_SIZE,
+            _PyRuntimeState_STR_EMPTY,
+            _PyRuntimeState_UNICODE_IDS_MUTEX,
+            _PyRuntimeState_UNICODE_IDS_NEXT_INDEX,
+            _Py_FORCE_UTF8_FS_ENCODING
         },
     ]
     modules.abc ++> [
@@ -32269,6 +32526,19 @@ graph import runtime.python.object_model {
             py_isspace,
             py_isxdigit
         },
+        unicode {
+            bl_count,
+            bl_fastsearch,
+            bl_find,
+            bl_find_char,
+            bl_find_max_char,
+            bl_find_slice,
+            bl_rfind,
+            bl_rfind_char,
+            bl_rfind_slice,
+            py_isalnum,
+            py_tolower
+        },
     ]
     capsule ++> cfunction | module { strlen }
     cfunction ++> [
@@ -32721,6 +32991,29 @@ graph import runtime.python.object_model {
             tuple_set_item,
             type_has_feature
         },
+        unicode {
+            current_interp,
+            eval_builtin,
+            fast_items,
+            freelist,
+            freelist_push,
+            object_decref,
+            object_gc_track,
+            object_gc_untrack,
+            object_incref,
+            object_is_type,
+            object_new_ref,
+            object_refcount,
+            object_size,
+            object_type,
+            object_type_check,
+            object_xdecref,
+            refcnt_add,
+            rich_compare_values,
+            tuple_get_item,
+            tuple_set_item,
+            type_has_feature
+        },
         union {
             PyType_Type,
             _Py_FalseStruct,
@@ -32759,14 +33052,30 @@ graph import runtime.python.object_model {
     method ++> func { PyMethod_New }
     set ++> exceptions { Py_FatalError }
     slice ++> [
-        bytearray | bytes | list | memory | tuple {
+        bytearray | bytes | list | memory | tuple | unicode {
             PySlice_AdjustIndices,
             PySlice_Unpack
         },
         range { slice_check, slice_get_long_indices },
     ]
     structseq ++> float | long { PyStructSequence_New }
-    tuple ++> bytes | float | long { reftracer_track }
+    tuple ++> bytes | float | long | unicode { reftracer_track }
+    unicodetype_db ++> unicodectype {
+        LINEBREAK_LENGTH,
+        NUMERIC_LENGTH,
+        SHIFT,
+        TypeRecord,
+        WHITESPACE_LENGTH,
+        _PyUnicode_ExtendedCase,
+        _PyUnicode_TypeRecords,
+        uct_index1,
+        uct_index2,
+        uct_linebreak,
+        uct_numeric_codes,
+        uct_numeric_value_index,
+        uct_numeric_values,
+        uct_whitespace
+    }
     union ++> genericalias { _Py_union_type_or }
 }
 

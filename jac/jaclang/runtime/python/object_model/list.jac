@@ -1,16 +1,3 @@
-"""The list type and its iterators: Objects/listobject.c in native Jac.
-
-`PyList_Type`, `PyListIter_Type` and `PyListRevIter_Type` are C data Jac
-defines under their C names, and the list C API (`PyList_New`,
-`PyList_Append`, `_PyList_AppendTakeRefListResize`, `PyList_Sort`, ...) is
-defined here under its C names, so the evaluator, which reads lists and list
-iterators through `PyListObject` and `_PyListIterObject` directly, and every C
-caller use them unchanged. Lists and list iterators are recycled through the
-interpreter's freelists, and `list.sort` is listobject.c's adaptive, stable
-natural mergesort (Objects/listsort.txt) with its type-specialized compares.
-See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject,
          PyDictKeys_Type: PyTypeObject,
@@ -272,7 +259,6 @@ import from c {
              tp_iternext=listiter_next,
              tp_methods=addressof(listiter_methods)
          ),
-         # listobject.c's listreviterobject has _PyListIterObject's layout.
          PyListRevIter_Type: PyTypeObject = PyTypeObject(
              ob_base=PyVarObject(
                  ob_base=_object(
@@ -294,13 +280,10 @@ import from c {
 }
 
 glob:priv PY_SSIZE_T_MAX: i64 = 0x7FFFFFFFFFFFFFFF,
-     # The merge-pending stack holds at most 64 runs on a 64-bit build; each
-     # record is four words: keys, values, length and powersort power.
      MAX_MERGE_PENDING: i64 = 64,
      PENDING_WORDS: i64 = 4,
      MIN_GALLOP: i64 = 7,
      MAX_MINRUN: i64 = 64,
-     # The key compares list.sort specializes to (MergeState.key_compare).
      COMPARE_SAFE: i64 = 0,
      COMPARE_OBJECT: i64 = 1,
      COMPARE_LATIN: i64 = 2,
@@ -312,216 +295,53 @@ glob:priv list_sort_signature = CallSignature(
          "sort", ["key", "reverse"], 0, 0, 0, parser=PARSE_KEYWORDS
      );
 
-def list_of(op: ptr[PyObject]) -> ptr[PyListObject] {
-    return ptr[PyListObject](op);
-}
+def list_of(op: ptr[PyObject]) -> ptr[PyListObject];
 
-def listiter_of(op: ptr[PyObject]) -> ptr[_PyListIterObject] {
-    return ptr[_PyListIterObject](op);
-}
+def listiter_of(op: ptr[PyObject]) -> ptr[_PyListIterObject];
 
-def no_items -> ptr[ptr[PyObject]] {
-    return ptr[ptr[PyObject]]();
-}
+def no_items -> ptr[ptr[PyObject]];
 
-"""The list's item array (NULL for an empty list without storage)."""
-def list_items(op: ptr[PyObject]) -> ptr[ptr[PyObject]] {
-    return list_of(op).view(1)[0].ob_item;
-}
+def list_items(op: ptr[PyObject]) -> ptr[ptr[PyObject]];
 
-def set_items(op: ptr[PyObject], items: ptr[ptr[PyObject]]) {
-    list_of(op).view(1)[0].ob_item = items;
-}
+def set_items(op: ptr[PyObject], items: ptr[ptr[PyObject]]);
 
-def list_allocated(op: ptr[PyObject]) -> i64 {
-    return list_of(op).view(1)[0].allocated;
-}
+def list_allocated(op: ptr[PyObject]) -> i64;
 
-def set_allocated(op: ptr[PyObject], allocated: i64) {
-    list_of(op).view(1)[0].allocated = allocated;
-}
+def set_allocated(op: ptr[PyObject], allocated: i64);
 
-"""Py_SET_SIZE."""
-def set_size(op: ptr[PyObject], size: i64) {
-    ptr[PyVarObject](op).view(1)[0].ob_size = size;
-}
+def set_size(op: ptr[PyObject], size: i64);
 
-def item_at(items: ptr[ptr[PyObject]], index: i64) -> ptr[PyObject] {
-    return (items + index).view(1)[0];
-}
+def item_at(items: ptr[ptr[PyObject]], index: i64) -> ptr[PyObject];
 
-def set_item_at(items: ptr[ptr[PyObject]], index: i64, value: ptr[PyObject]) {
-    (items + index).view(1)[0] = value;
-}
+def set_item_at(items: ptr[ptr[PyObject]], index: i64, value: ptr[PyObject]);
 
-"""Py_XNewRef."""
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""PyList_Check: list or a subclass, by the type's fast-subclass flag."""
-def list_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_LIST_SUBCLASS);
-}
+def list_check(op: ptr[PyObject]) -> bool;
 
-"""PyList_CheckExact."""
-def list_check_exact(op: ptr[PyObject]) -> bool {
-    return object_is_type(op, addressof(PyList_Type));
-}
+def list_check_exact(op: ptr[PyObject]) -> bool;
 
-def type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject] {
-    return ptr[PyTypeObject](type);
-}
+def type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject];
 
-"""0 <= i < limit, as one unsigned compare."""
-def valid_index(i: i64, limit: i64) -> bool {
-    return u64.wrap(i) < u64.wrap(limit);
-}
+def valid_index(i: i64, limit: i64) -> bool;
 
-"""PyMem_New(PyObject *, count): NULL when the byte count overflows."""
-def items_new(count: i64) -> ptr[ptr[PyObject]] {
-    if count > PY_SSIZE_T_MAX // 8 {
-        return no_items();
-    }
-    return ptr[ptr[PyObject]](PyMem_Malloc(u64(count * 8)));
-}
+def items_new(count: i64) -> ptr[ptr[PyObject]];
 
-"""_Py_memory_repeat over item slots: fill dest[len_src:len_dest] by doubling
-the copied prefix dest[:len_src]."""
-def memory_repeat(dest: ptr[ptr[PyObject]], len_dest: i64, len_src: i64) {
-    copied = len_src;
-    while copied < len_dest {
-        chunk = min(copied, len_dest - copied);
-        jacpy_memory_copy(ptr(dest + copied), ptr(dest), chunk * 8);
-        copied += chunk;
-    }
-}
+def memory_repeat(dest: ptr[ptr[PyObject]], len_dest: i64, len_src: i64);
 
-"""Ensure the item array has room for `newsize` items and set the size to it,
-over-allocating proportionally (growth 0, 4, 8, 16, 24, 32, 40, 52, 64, 76,
-...); new slots are uninitialized. Shrinking reallocates only below half the
-allocation."""
-def list_resize(op: ptr[PyObject], newsize: i64) -> i32 {
-    allocated = list_allocated(op);
-    if allocated >= newsize and newsize >= (allocated >> 1) {
-        set_size(op, newsize);
-        return i32(0);
-    }
-    # In size_t, as C computes it: newsize * 9/8 + 6 cannot overflow.
-    wanted = u64.wrap(newsize);
-    new_allocated = (wanted + (wanted >> u64(3)) + u64(6)) & u64(0xFFFFFFFFFFFFFFFC);
-    # Do not overallocate if the new size is closer to the overallocated size
-    # than to the old size.
-    if newsize - object_size(op) > i64.wrap(new_allocated - wanted) {
-        new_allocated = (wanted + u64(3)) & u64(0xFFFFFFFFFFFFFFFC);
-    }
-    if newsize == 0 {
-        new_allocated = u64(0);
-    }
-    items = no_items();
-    if new_allocated <= u64(PY_SSIZE_T_MAX // 8) {
-        items = ptr[ptr[PyObject]](
-            PyMem_Realloc(ptr(list_items(op)), new_allocated * u64(8))
-        );
-    }
-    if not items {
-        PyErr_NoMemory();
-        return i32(-1);
-    }
-    set_items(op, items);
-    set_size(op, newsize);
-    set_allocated(op, i64.wrap(new_allocated));
-    return i32(0);
-}
+def list_resize(op: ptr[PyObject], newsize: i64) -> i32;
 
-"""Allocate storage for exactly `size` items (rounded up to even) for a list
-without storage."""
-def list_preallocate_exact(op: ptr[PyObject], size: i64) -> i32 {
-    rounded = (size + 1) & -2;
-    items = items_new(rounded);
-    if not items {
-        PyErr_NoMemory();
-        return i32(-1);
-    }
-    set_items(op, items);
-    set_allocated(op, rounded);
-    return i32(0);
-}
+def list_preallocate_exact(op: ptr[PyObject], size: i64) -> i32;
 
-"""An empty list with storage for `size` (> 0) items; the caller fills them
-and sets the size."""
-def list_new_prealloc(size: i64) -> ptr[PyObject] {
-    op = PyList_New(0);
-    if not op {
-        return NULL;
-    }
-    items = items_new(size);
-    if not items {
-        object_decref(op);
-        return PyErr_NoMemory();
-    }
-    set_items(op, items);
-    set_allocated(op, size);
-    return op;
-}
+def list_new_prealloc(size: i64) -> ptr[PyObject];
 
-def list_get_item_ref(op: ptr[PyObject], i: i64) -> ptr[PyObject] {
-    if not valid_index(i, object_size(op)) {
-        return NULL;
-    }
-    return object_new_ref(item_at(list_items(op), i));
-}
+def list_get_item_ref(op: ptr[PyObject], i: i64) -> ptr[PyObject];
 
-"""_PyList_AppendTakeRef: append `newitem`, stealing it."""
-def append_take_ref(op: ptr[PyObject], newitem: ptr[PyObject]) -> i32 {
-    length = object_size(op);
-    if list_allocated(op) > length {
-        set_item_at(list_items(op), length, newitem);
-        set_size(op, length + 1);
-        return i32(0);
-    }
-    return _PyList_AppendTakeRefListResize(op, newitem);
-}
+def append_take_ref(op: ptr[PyObject], newitem: ptr[PyObject]) -> i32;
 
-def ins1(op: ptr[PyObject], where: i64, v: ptr[PyObject]) -> i32 {
-    n = object_size(op);
-    if not v {
-        PyErr_BadInternalCall();
-        return i32(-1);
-    }
-    if list_resize(op, n + 1) < 0 {
-        return i32(-1);
-    }
-    at = where;
-    if at < 0 {
-        at += n;
-        if at < 0 {
-            at = 0;
-        }
-    }
-    if at > n {
-        at = n;
-    }
-    items = list_items(op);
-    jacpy_memory_move(ptr(items + (at + 1)), ptr(items + at), (n - at) * 8);
-    set_item_at(items, at, object_new_ref(v));
-    return i32(0);
-}
+def ins1(op: ptr[PyObject], where: i64, v: ptr[PyObject]) -> i32;
 
-"""The index argument of insert() and pop(): _PyNumber_Index, then
-PyLong_AsSsize_t; -1 with an error set on failure."""
-def index_argument(arg: ptr[PyObject]) -> i64 {
-    value: i64 = -1;
-    index = _PyNumber_Index(arg);
-    if index {
-        value = PyLong_AsSsize_t(index);
-        object_decref(index);
-    }
-    return value;
-}
+def index_argument(arg: ptr[PyObject]) -> i64;
 
 import from c {
     def _PyList_DebugMallocStats(out: ptr) {
@@ -608,9 +428,7 @@ import from c {
             return i32(-1);
         }
         return ins1(op, where, newitem);
-    }
-    # The slow path of _PyList_AppendTakeRef: the list is full.
-    def _PyList_AppendTakeRefListResize(
+    }  def _PyList_AppendTakeRefListResize(
         op: ptr[PyObject], newitem: ptr[PyObject]
     ) -> i32 {
         length = object_size(op);
@@ -694,9 +512,7 @@ import from c {
             return NULL;
         }
         return _PyTuple_FromArray(list_items(v), object_size(v));
-    }
-    # Move the items into a new tuple and leave the list empty.
-    def _PyList_AsTupleAndClear(op: ptr[PyObject]) -> ptr[PyObject] {
+    }  def _PyList_AsTupleAndClear(op: ptr[PyObject]) -> ptr[PyObject] {
         items = list_items(op);
         if not items {
             return PyTuple_New(0);
@@ -707,10 +523,7 @@ import from c {
         result = _PyTuple_FromArraySteal(items, size);
         PyMem_Free(ptr(items));
         return result;
-    }
-    # PyStackRef_AsPyObjectSteal: a reference without the deferred bit owns its
-    # count; one with it is borrowed, so the list takes a new reference.
-    def _PyList_FromStackRefStealOnSuccess(src: ptr[u64], n: i64) -> ptr[PyObject] {
+    }  def _PyList_FromStackRefStealOnSuccess(src: ptr[u64], n: i64) -> ptr[PyObject] {
         if n == 0 {
             return PyList_New(0);
         }
@@ -735,11 +548,511 @@ import from c {
     }
 }
 
-def list_dealloc(op: ptr[PyObject]) {
+def list_dealloc(op: ptr[PyObject]);
+
+def list_repr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def list_length(op: ptr[PyObject]) -> i64;
+
+def list_contains(op: ptr[PyObject], el: ptr[PyObject]) -> i32;
+
+def list_item(op: ptr[PyObject], i: i64) -> ptr[PyObject];
+
+def list_slice(a: ptr[PyObject], ilow: i64, ihigh: i64) -> ptr[PyObject];
+
+def list_concat(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject];
+
+def list_repeat(a: ptr[PyObject], n: i64) -> ptr[PyObject];
+
+def list_clear(op: ptr[PyObject]);
+
+def list_clear_slot(op: ptr[PyObject]) -> i32;
+
+def list_ass_slice_items(
+    a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]
+) -> i32;
+
+def list_ass_slice(a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]) -> i32;
+
+def list_inplace_repeat_items(op: ptr[PyObject], n: i64) -> i32;
+
+def list_inplace_repeat(op: ptr[PyObject], n: i64) -> ptr[PyObject];
+
+def list_ass_item(op: ptr[PyObject], i: i64, v: ptr[PyObject]) -> i32;
+
+def list_insert(
+    op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject];
+
+def py_list_clear(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def list_copy(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def list_append(op: ptr[PyObject], object: ptr[PyObject]) -> ptr[PyObject];
+
+def list_extend_fast(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32;
+
+def list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32;
+
+def list_extend_sequence(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32;
+
+def list_extend_set(op: ptr[PyObject], other: ptr[PyObject]) -> i32;
+
+def dict_used(dict: ptr[PyObject]) -> i64;
+
+def view_dict(view: ptr[PyObject]) -> ptr[PyObject];
+
+def list_extend_dict(op: ptr[PyObject], dict: ptr[PyObject], which_item: i64) -> i32;
+
+def list_extend_dictitems(op: ptr[PyObject], dict: ptr[PyObject]) -> i32;
+
+def list_extend_any(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32;
+
+def list_extend(op: ptr[PyObject], iterable: ptr[PyObject]) -> ptr[PyObject];
+
+def list_inplace_concat(op: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
+
+def list_pop(op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64) -> ptr[PyObject];
+
+def reverse_items(items: ptr[ptr[PyObject]], n: i64);
+
+obj MergeState {
+    has key_compare: i64 = 0,
+        tuple_elem_compare: i64 = 0,
+        key_type: ptr[PyTypeObject] = ptr[PyTypeObject](),
+        min_gallop: i64 = 7,
+        listlen: i64 = 0,
+        basekeys: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
+        has_values: bool = False,
+        a_keys: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
+        a_values: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
+        alloced: i64 = 0,
+        n: i64 = 0,
+        pending: ptr[i64] = ptr[i64]();
+}
+
+def pending_keys(ms: MergeState, i: i64) -> ptr[ptr[PyObject]];
+
+def pending_values(ms: MergeState, i: i64) -> ptr[ptr[PyObject]];
+
+def pending_len(ms: MergeState, i: i64) -> i64;
+
+def pending_power(ms: MergeState, i: i64) -> i64;
+
+def set_pending(
+    ms: MergeState,
+    i: i64,
+    keys: ptr[ptr[PyObject]],
+    values: ptr[ptr[PyObject]],
+    length: i64
+);
+
+def set_pending_len(ms: MergeState, i: i64, length: i64);
+
+def set_pending_power(ms: MergeState, i: i64, power: i64);
+
+def compact_value(op: ptr[PyObject]) -> i64;
+
+def long_is_compact(op: ptr[PyObject]) -> bool;
+
+def unicode_length(op: ptr[PyObject]) -> i64;
+
+def unsafe_latin_compare(v: ptr[PyObject], w: ptr[PyObject]) -> i32;
+
+def unsafe_object_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32;
+
+def unsafe_tuple_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32;
+
+def compare_with(ms: MergeState, mode: i64, v: ptr[PyObject], w: ptr[PyObject]) -> i32;
+
+def islt(ms: MergeState, x: ptr[PyObject], y: ptr[PyObject]) -> i32;
+
+def slice_copy(
+    dk: ptr[ptr[PyObject]],
+    dv: ptr[ptr[PyObject]],
+    i: i64,
+    sk: ptr[ptr[PyObject]],
+    sv: ptr[ptr[PyObject]],
+    j: i64,
+    has_values: bool
+);
+
+def slice_memcpy(
+    dk: ptr[ptr[PyObject]],
+    dv: ptr[ptr[PyObject]],
+    i: i64,
+    sk: ptr[ptr[PyObject]],
+    sv: ptr[ptr[PyObject]],
+    j: i64,
+    n: i64,
+    has_values: bool
+);
+
+def slice_memmove(
+    dk: ptr[ptr[PyObject]],
+    dv: ptr[ptr[PyObject]],
+    i: i64,
+    sk: ptr[ptr[PyObject]],
+    sv: ptr[ptr[PyObject]],
+    j: i64,
+    n: i64,
+    has_values: bool
+);
+
+def slice_reverse(
+    keys: ptr[ptr[PyObject]], values: ptr[ptr[PyObject]], n: i64, has_values: bool
+);
+
+def binarysort(
+    ms: MergeState,
+    keys: ptr[ptr[PyObject]],
+    values: ptr[ptr[PyObject]],
+    n: i64,
+    ok: i64
+) -> i32;
+
+def count_run(
+    ms: MergeState,
+    keys: ptr[ptr[PyObject]],
+    values: ptr[ptr[PyObject]],
+    nremaining: i64
+) -> i64;
+
+def gallop_left(
+    ms: MergeState, key: ptr[PyObject], a: ptr[ptr[PyObject]], n: i64, hint: i64
+) -> i64;
+
+def gallop_right(
+    ms: MergeState, key: ptr[PyObject], a: ptr[ptr[PyObject]], n: i64, hint: i64
+) -> i64;
+
+def merge_freemem(ms: MergeState);
+
+def merge_getmem(ms: MergeState, need: i64) -> i32;
+
+glob:priv MERGE_RUN: i64 = 0,
+     MERGE_SUCCEED: i64 = 1,
+     MERGE_FAIL: i64 = 2,
+     MERGE_COPY_REST: i64 = 3;
+
+def merge_lo(
+    ms: MergeState,
+    a_keys: ptr[ptr[PyObject]],
+    a_values: ptr[ptr[PyObject]],
+    na_in: i64,
+    b_keys: ptr[ptr[PyObject]],
+    b_values: ptr[ptr[PyObject]],
+    nb_in: i64
+) -> i64;
+
+def merge_hi(
+    ms: MergeState,
+    a_keys: ptr[ptr[PyObject]],
+    a_values: ptr[ptr[PyObject]],
+    na_in: i64,
+    b_keys: ptr[ptr[PyObject]],
+    b_values: ptr[ptr[PyObject]],
+    nb_in: i64
+) -> i64;
+
+def merge_at(ms: MergeState, i: i64) -> i64;
+
+def powerloop(s1: i64, n1: i64, n2: i64, n: i64) -> i64;
+
+def found_new_run(ms: MergeState, n2: i64) -> i32;
+
+def merge_force_collapse(ms: MergeState) -> i32;
+
+def merge_compute_minrun(n: i64) -> i64;
+
+def choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64);
+
+def merge_sort(
+    ms: MergeState, lo_keys: ptr[ptr[PyObject]], lo_values: ptr[ptr[PyObject]], n: i64
+) -> i32;
+
+def list_sort_impl(
+    op: ptr[PyObject], keyfunc_in: ptr[PyObject], reverse: i32
+) -> ptr[PyObject];
+
+def list_sort_bound(args: BoundArguments) -> ptr[PyObject];
+
+def list_sort(
+    op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def list_reverse(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def list_index(
+    op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject];
+
+def list_count(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject];
+
+def list_remove(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject];
+
+def list_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def list_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject];
+
+def list___init___impl(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32;
+
+def list___init__(
+    op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> i32;
+
+def list_vectorcall(
+    type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def list___sizeof__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def list_slice_step(
+    a: ptr[PyObject], start: i64, step: i64, length: i64
+) -> ptr[PyObject];
+
+def list_slice_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject];
+
+def slice_check(op: ptr[PyObject]) -> bool;
+
+def list_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject];
+
+def list_delete_extended(
+    op: ptr[PyObject], start_in: i64, stop_in: i64, step_in: i64, slicelength: i64
+) -> i32;
+
+def list_assign_extended(
+    op: ptr[PyObject], item: ptr[PyObject], value: ptr[PyObject]
+) -> i32;
+
+def list_ass_subscript(
+    op: ptr[PyObject], item: ptr[PyObject], value: ptr[PyObject]
+) -> i32;
+
+def list_iter(seq: ptr[PyObject]) -> ptr[PyObject];
+
+def listiter_dealloc(op: ptr[PyObject]);
+
+def listiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def listiter_next(op: ptr[PyObject]) -> ptr[PyObject];
+
+def listiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def listiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def listiter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject];
+
+def list___reversed__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def listreviter_dealloc(op: ptr[PyObject]);
+
+def listreviter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def listreviter_next(op: ptr[PyObject]) -> ptr[PyObject];
+
+def listreviter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def listreviter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def listreviter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject];
+
+def listiter_reduce_general(op: ptr[PyObject], forward: bool) -> ptr[PyObject];
+
+impl list_of(op: ptr[PyObject]) -> ptr[PyListObject] {
+    return ptr[PyListObject](op);
+}
+
+impl listiter_of(op: ptr[PyObject]) -> ptr[_PyListIterObject] {
+    return ptr[_PyListIterObject](op);
+}
+
+impl no_items -> ptr[ptr[PyObject]] {
+    return ptr[ptr[PyObject]]();
+}
+
+impl list_items(op: ptr[PyObject]) -> ptr[ptr[PyObject]] {
+    return list_of(op).view(1)[0].ob_item;
+}
+
+impl set_items(op: ptr[PyObject], items: ptr[ptr[PyObject]]) {
+    list_of(op).view(1)[0].ob_item = items;
+}
+
+impl list_allocated(op: ptr[PyObject]) -> i64 {
+    return list_of(op).view(1)[0].allocated;
+}
+
+impl set_allocated(op: ptr[PyObject], allocated: i64) {
+    list_of(op).view(1)[0].allocated = allocated;
+}
+
+impl set_size(op: ptr[PyObject], size: i64) {
+    ptr[PyVarObject](op).view(1)[0].ob_size = size;
+}
+
+impl item_at(items: ptr[ptr[PyObject]], index: i64) -> ptr[PyObject] {
+    return (items + index).view(1)[0];
+}
+
+impl set_item_at(items: ptr[ptr[PyObject]], index: i64, value: ptr[PyObject]) {
+    (items + index).view(1)[0] = value;
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl list_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_LIST_SUBCLASS);
+}
+
+impl list_check_exact(op: ptr[PyObject]) -> bool {
+    return object_is_type(op, addressof(PyList_Type));
+}
+
+impl type_of_object(type: ptr[PyObject]) -> ptr[PyTypeObject] {
+    return ptr[PyTypeObject](type);
+}
+
+impl valid_index(i: i64, limit: i64) -> bool {
+    return u64.wrap(i) < u64.wrap(limit);
+}
+
+impl items_new(count: i64) -> ptr[ptr[PyObject]] {
+    if count > PY_SSIZE_T_MAX // 8 {
+        return no_items();
+    }
+    return ptr[ptr[PyObject]](PyMem_Malloc(u64(count * 8)));
+}
+
+impl memory_repeat(dest: ptr[ptr[PyObject]], len_dest: i64, len_src: i64) {
+    copied = len_src;
+    while copied < len_dest {
+        chunk = min(copied, len_dest - copied);
+        jacpy_memory_copy(ptr(dest + copied), ptr(dest), chunk * 8);
+        copied += chunk;
+    }
+}
+
+impl list_resize(op: ptr[PyObject], newsize: i64) -> i32 {
+    allocated = list_allocated(op);
+    if allocated >= newsize and newsize >= (allocated >> 1) {
+        set_size(op, newsize);
+        return i32(0);
+    }
+
+    wanted = u64.wrap(newsize);
+    new_allocated = (wanted + (wanted >> u64(3)) + u64(6)) & u64(0xFFFFFFFFFFFFFFFC);
+
+    if newsize - object_size(op) > i64.wrap(new_allocated - wanted) {
+        new_allocated = (wanted + u64(3)) & u64(0xFFFFFFFFFFFFFFFC);
+    }
+    if newsize == 0 {
+        new_allocated = u64(0);
+    }
+    items = no_items();
+    if new_allocated <= u64(PY_SSIZE_T_MAX // 8) {
+        items = ptr[ptr[PyObject]](
+            PyMem_Realloc(ptr(list_items(op)), new_allocated * u64(8))
+        );
+    }
+    if not items {
+        PyErr_NoMemory();
+        return i32(-1);
+    }
+    set_items(op, items);
+    set_size(op, newsize);
+    set_allocated(op, i64.wrap(new_allocated));
+    return i32(0);
+}
+
+impl list_preallocate_exact(op: ptr[PyObject], size: i64) -> i32 {
+    rounded = (size + 1) & -2;
+    items = items_new(rounded);
+    if not items {
+        PyErr_NoMemory();
+        return i32(-1);
+    }
+    set_items(op, items);
+    set_allocated(op, rounded);
+    return i32(0);
+}
+
+impl list_new_prealloc(size: i64) -> ptr[PyObject] {
+    op = PyList_New(0);
+    if not op {
+        return NULL;
+    }
+    items = items_new(size);
+    if not items {
+        object_decref(op);
+        return PyErr_NoMemory();
+    }
+    set_items(op, items);
+    set_allocated(op, size);
+    return op;
+}
+
+impl list_get_item_ref(op: ptr[PyObject], i: i64) -> ptr[PyObject] {
+    if not valid_index(i, object_size(op)) {
+        return NULL;
+    }
+    return object_new_ref(item_at(list_items(op), i));
+}
+
+impl append_take_ref(op: ptr[PyObject], newitem: ptr[PyObject]) -> i32 {
+    length = object_size(op);
+    if list_allocated(op) > length {
+        set_item_at(list_items(op), length, newitem);
+        set_size(op, length + 1);
+        return i32(0);
+    }
+    return _PyList_AppendTakeRefListResize(op, newitem);
+}
+
+impl ins1(op: ptr[PyObject], where: i64, v: ptr[PyObject]) -> i32 {
+    n = object_size(op);
+    if not v {
+        PyErr_BadInternalCall();
+        return i32(-1);
+    }
+    if list_resize(op, n + 1) < 0 {
+        return i32(-1);
+    }
+    at = where;
+    if at < 0 {
+        at += n;
+        if at < 0 {
+            at = 0;
+        }
+    }
+    if at > n {
+        at = n;
+    }
+    items = list_items(op);
+    jacpy_memory_move(ptr(items + (at + 1)), ptr(items + at), (n - at) * 8);
+    set_item_at(items, at, object_new_ref(v));
+    return i32(0);
+}
+
+impl index_argument(arg: ptr[PyObject]) -> i64 {
+    value: i64 = -1;
+    index = _PyNumber_Index(arg);
+    if index {
+        value = PyLong_AsSsize_t(index);
+        object_decref(index);
+    }
+    return value;
+}
+
+impl list_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     items = list_items(op);
     if items {
-        # Backwards, for Christian Tismer (listobject.c).
         i = object_size(op);
         while i > 0 {
             i -= 1;
@@ -755,23 +1068,22 @@ def list_dealloc(op: ptr[PyObject]) {
     PyObject_GC_Del(ptr(op));
 }
 
-def list_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+impl list_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     if object_size(op) == 0 {
-        return PyUnicode_FromString("[]");
+        return PyUnicode_FromString(ptr[u8]("[]"));
     }
     res = Py_ReprEnter(op);
     if res != 0 {
-        return PyUnicode_FromString("[...]") if res > 0 else NULL;
+        return PyUnicode_FromString(ptr[u8]("[...]")) if res > 0 else NULL;
     }
-    # "[" + "1" + ", 2" * (len - 1) + "]"
+
     prealloc = 1 + 1 + (2 + 1) * (object_size(op) - 1) + 1;
     writer = PyUnicodeWriter_Create(prealloc);
     ok = False;
     if writer {
         ok = PyUnicodeWriter_WriteChar(writer, 91) >= 0;
     }
-    # repr() of an item may mutate the list: refetch the size each time and
-    # hold the item while it is written.
+
     i = 0;
     while ok and i < object_size(op) {
         item = object_xnew_ref(item_at(list_items(op), i));
@@ -794,11 +1106,11 @@ def list_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     return NULL;
 }
 
-def list_length(op: ptr[PyObject]) -> i64 {
+impl list_length(op: ptr[PyObject]) -> i64 {
     return object_size(op);
 }
 
-def list_contains(op: ptr[PyObject], el: ptr[PyObject]) -> i32 {
+impl list_contains(op: ptr[PyObject], el: ptr[PyObject]) -> i32 {
     i = 0;
     while True {
         item = list_get_item_ref(op, i);
@@ -815,7 +1127,7 @@ def list_contains(op: ptr[PyObject], el: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def list_item(op: ptr[PyObject], i: i64) -> ptr[PyObject] {
+impl list_item(op: ptr[PyObject], i: i64) -> ptr[PyObject] {
     if not valid_index(i, object_size(op)) {
         PyErr_SetString(PyExc_IndexError, "list index out of range");
         return NULL;
@@ -823,7 +1135,7 @@ def list_item(op: ptr[PyObject], i: i64) -> ptr[PyObject] {
     return object_new_ref(item_at(list_items(op), i));
 }
 
-def list_slice(a: ptr[PyObject], ilow: i64, ihigh: i64) -> ptr[PyObject] {
+impl list_slice(a: ptr[PyObject], ilow: i64, ihigh: i64) -> ptr[PyObject] {
     length = ihigh - ilow;
     if length <= 0 {
         return PyList_New(0);
@@ -841,7 +1153,7 @@ def list_slice(a: ptr[PyObject], ilow: i64, ihigh: i64) -> ptr[PyObject] {
     return np;
 }
 
-def list_concat(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
+impl list_concat(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
     if not list_check(b) {
         PyErr_Format(
             PyExc_TypeError,
@@ -873,7 +1185,7 @@ def list_concat(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
     return np;
 }
 
-def list_repeat(a: ptr[PyObject], n: i64) -> ptr[PyObject] {
+impl list_repeat(a: ptr[PyObject], n: i64) -> ptr[PyObject] {
     input_size = object_size(a);
     if input_size == 0 or n <= 0 {
         return PyList_New(0);
@@ -906,9 +1218,7 @@ def list_repeat(a: ptr[PyObject], n: i64) -> ptr[PyObject] {
     return np;
 }
 
-"""Empty the list, first detaching its items: an item's XDECREF can run code
-that uses the list (which may leave it non-empty again)."""
-def list_clear(op: ptr[PyObject]) {
+impl list_clear(op: ptr[PyObject]) {
     items = list_items(op);
     if not items {
         return;
@@ -924,15 +1234,12 @@ def list_clear(op: ptr[PyObject]) {
     PyMem_Free(ptr(items));
 }
 
-def list_clear_slot(op: ptr[PyObject]) -> i32 {
+impl list_clear_slot(op: ptr[PyObject]) -> i32 {
     list_clear(op);
     return i32(0);
 }
 
-"""a[ilow:ihigh] = v, or del a[ilow:ihigh] when v is NULL. The replaced items
-are released only once the list is back in shape, since releasing one can
-run code that uses the list."""
-def list_ass_slice_items(
+impl list_ass_slice_items(
     a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]
 ) -> i32 {
     v_as_sf = NULL;
@@ -967,7 +1274,7 @@ def list_ass_slice_items(
         return i32(0);
     }
     item = list_items(a);
-    # The items about to be removed; with norig == 0, `item` may be NULL.
+
     recycle = no_items();
     if norig > 0 {
         recycle = items_new(norig);
@@ -1016,9 +1323,8 @@ def list_ass_slice_items(
     return i32(-1) if failed else i32(0);
 }
 
-def list_ass_slice(a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]) -> i32 {
+impl list_ass_slice(a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]) -> i32 {
     if a == v {
-        # a[i:j] = a: assign from a copy.
         copy = list_slice(a, 0, object_size(a));
         if not copy {
             return i32(-1);
@@ -1030,7 +1336,7 @@ def list_ass_slice(a: ptr[PyObject], ilow: i64, ihigh: i64, v: ptr[PyObject]) ->
     return list_ass_slice_items(a, ilow, ihigh, v);
 }
 
-def list_inplace_repeat_items(op: ptr[PyObject], n: i64) -> i32 {
+impl list_inplace_repeat_items(op: ptr[PyObject], n: i64) -> i32 {
     input_size = object_size(op);
     if input_size == 0 or n == 1 {
         return i32(0);
@@ -1055,14 +1361,14 @@ def list_inplace_repeat_items(op: ptr[PyObject], n: i64) -> i32 {
     return i32(0);
 }
 
-def list_inplace_repeat(op: ptr[PyObject], n: i64) -> ptr[PyObject] {
+impl list_inplace_repeat(op: ptr[PyObject], n: i64) -> ptr[PyObject] {
     if list_inplace_repeat_items(op, n) < 0 {
         return NULL;
     }
     return object_new_ref(op);
 }
 
-def list_ass_item(op: ptr[PyObject], i: i64, v: ptr[PyObject]) -> i32 {
+impl list_ass_item(op: ptr[PyObject], i: i64, v: ptr[PyObject]) -> i32 {
     size = object_size(op);
     if not valid_index(i, size) {
         PyErr_SetString(PyExc_IndexError, "list assignment index out of range");
@@ -1080,7 +1386,7 @@ def list_ass_item(op: ptr[PyObject], i: i64, v: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def list_insert(
+impl list_insert(
     op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
 ) -> ptr[PyObject] {
     if nargs != 2 and _PyArg_CheckPositional("insert", nargs, 2, 2) == 0 {
@@ -1096,25 +1402,23 @@ def list_insert(
     return NULL;
 }
 
-def py_list_clear(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl py_list_clear(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     list_clear(op);
     return object_new_ref(Py_None);
 }
 
-def list_copy(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl list_copy(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return list_slice(op, 0, object_size(op));
 }
 
-def list_append(op: ptr[PyObject], object: ptr[PyObject]) -> ptr[PyObject] {
+impl list_append(op: ptr[PyObject], object: ptr[PyObject]) -> ptr[PyObject] {
     if append_take_ref(op, object_new_ref(object)) < 0 {
         return NULL;
     }
     return object_new_ref(Py_None);
 }
 
-"""Extend by a list or tuple's items (PySequence_Fast's result); a.extend(a)
-works too, since the list is resized before its items are read."""
-def list_extend_fast(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
+impl list_extend_fast(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     n = object_size(iterable);
     if n == 0 {
         return i32(0);
@@ -1136,13 +1440,13 @@ def list_extend_fast(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
+impl list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     it = PyObject_GetIter(iterable);
     if not it {
         return i32(-1);
     }
     iternext = object_type(it).view(1)[0].tp_iternext;
-    # Guess a result list size.
+
     n = PyObject_LengthHint(iterable, 8);
     if n < 0 {
         object_decref(it);
@@ -1150,14 +1454,13 @@ def list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     }
     m = object_size(op);
     failed = False;
-    # When m + n overflows, n may have lied: run until memory runs out.
+
     if m <= PY_SSIZE_T_MAX - n {
         if not list_items(op) {
             failed = n != 0 and list_preallocate_exact(op, n) < 0;
         } elif list_resize(op, m + n) < 0 {
             failed = True;
         } else {
-            # Make room, then make the list sane again.
             set_size(op, m);
         }
     }
@@ -1181,7 +1484,7 @@ def list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
             failed = True;
         }
     }
-    # Cut back the list if the guess was too large.
+
     if not failed
         and object_size(op) < list_allocated(op)
         and list_resize(op, object_size(op)) < 0 {
@@ -1191,7 +1494,7 @@ def list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     return i32(-1) if failed else i32(0);
 }
 
-def list_extend_sequence(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
+impl list_extend_sequence(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     seq = PySequence_Fast(iterable, "argument must be iterable");
     if not seq {
         return i32(-1);
@@ -1201,7 +1504,7 @@ def list_extend_sequence(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     return result;
 }
 
-def list_extend_set(op: ptr[PyObject], other: ptr[PyObject]) -> i32 {
+impl list_extend_set(op: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     m = object_size(op);
     n = ptr[i64](ptr[u8](other) + PySetObject_USED).view(1)[0];
     r = m + n;
@@ -1223,18 +1526,15 @@ def list_extend_set(op: ptr[PyObject], other: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""PyDict_GET_SIZE."""
-def dict_used(dict: ptr[PyObject]) -> i64 {
+impl dict_used(dict: ptr[PyObject]) -> i64 {
     return ptr[i64](ptr[u8](dict) + PyDictObject_USED).view(1)[0];
 }
 
-"""The dict a keys, values or items view reads (borrowed)."""
-def view_dict(view: ptr[PyObject]) -> ptr[PyObject] {
+impl view_dict(view: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[ptr[PyObject]](ptr[u8](view) + _PyDictViewObject_DICT).view(1)[0];
 }
 
-"""Extend by a dict's keys (`which_item` 0) or values (1)."""
-def list_extend_dict(op: ptr[PyObject], dict: ptr[PyObject], which_item: i64) -> i32 {
+impl list_extend_dict(op: ptr[PyObject], dict: ptr[PyObject], which_item: i64) -> i32 {
     m = object_size(op);
     n = dict_used(dict);
     r = m + n;
@@ -1256,7 +1556,7 @@ def list_extend_dict(op: ptr[PyObject], dict: ptr[PyObject], which_item: i64) ->
     return i32(0);
 }
 
-def list_extend_dictitems(op: ptr[PyObject], dict: ptr[PyObject]) -> i32 {
+impl list_extend_dictitems(op: ptr[PyObject], dict: ptr[PyObject]) -> i32 {
     m = object_size(op);
     n = dict_used(dict);
     r = m + n;
@@ -1285,9 +1585,7 @@ def list_extend_dictitems(op: ptr[PyObject], dict: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""_list_extend: lists, tuples, sets, dicts and dict views are copied
-directly; anything else is iterated."""
-def list_extend_any(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
+impl list_extend_any(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     if op == iterable {
         return list_inplace_repeat_items(op, 2);
     }
@@ -1315,21 +1613,23 @@ def list_extend_any(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     return list_extend_iter(op, iterable);
 }
 
-def list_extend(op: ptr[PyObject], iterable: ptr[PyObject]) -> ptr[PyObject] {
+impl list_extend(op: ptr[PyObject], iterable: ptr[PyObject]) -> ptr[PyObject] {
     if list_extend_any(op, iterable) < 0 {
         return NULL;
     }
     return object_new_ref(Py_None);
 }
 
-def list_inplace_concat(op: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+impl list_inplace_concat(op: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
     if list_extend_any(op, other) < 0 {
         return NULL;
     }
     return object_new_ref(op);
 }
 
-def list_pop(op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64) -> ptr[PyObject] {
+impl list_pop(
+    op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject] {
     if nargs > 1 and _PyArg_CheckPositional("pop", nargs, 0, 1) == 0 {
         return NULL;
     }
@@ -1342,7 +1642,6 @@ def list_pop(op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64) -> ptr[PyO
     }
     size = object_size(op);
     if size == 0 {
-        # The most common failure.
         PyErr_SetString(PyExc_IndexError, "pop from empty list");
         return NULL;
     }
@@ -1371,10 +1670,9 @@ def list_pop(op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64) -> ptr[PyO
         status = list_resize(op, size_after_pop);
     }
     if status >= 0 {
-        # v owns the reference the list had.
         return v;
     }
-    # The resize failed: put v back.
+
     jacpy_memory_move(
         ptr(items + (index + 1)), ptr(items + index), (size_after_pop - index) * 8
     );
@@ -1382,8 +1680,7 @@ def list_pop(op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64) -> ptr[PyO
     return NULL;
 }
 
-"""reverse_slice: reverse items[0:n] in place."""
-def reverse_items(items: ptr[ptr[PyObject]], n: i64) {
+impl reverse_items(items: ptr[ptr[PyObject]], n: i64) {
     lo = 0;
     hi = n - 1;
     while lo < hi {
@@ -1395,45 +1692,23 @@ def reverse_items(items: ptr[ptr[PyObject]], n: i64) {
     }
 }
 
-# ------------------------------------------------------------------ sorting
-#
-# The adaptive, stable, natural mergesort of listobject.c; Objects/listsort.txt
-# explains it. A sort slice is a keys array and a parallel values array, which
-# exists only when a key function made the keys (`has_values`); the two always
-# move together.
-
-obj MergeState {
-    has key_compare: i64 = 0,
-        tuple_elem_compare: i64 = 0,
-        key_type: ptr[PyTypeObject] = ptr[PyTypeObject](),
-        min_gallop: i64 = 7,
-        listlen: i64 = 0,
-        basekeys: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
-        has_values: bool = False,
-        a_keys: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
-        a_values: ptr[ptr[PyObject]] = ptr[ptr[PyObject]](),
-        alloced: i64 = 0,
-        n: i64 = 0,
-        pending: ptr[i64] = ptr[i64]();
-}
-
-def pending_keys(ms: MergeState, i: i64) -> ptr[ptr[PyObject]] {
+impl pending_keys(ms: MergeState, i: i64) -> ptr[ptr[PyObject]] {
     return ptr[ptr[PyObject]]((ms.pending + i * PENDING_WORDS).view(1)[0]);
 }
 
-def pending_values(ms: MergeState, i: i64) -> ptr[ptr[PyObject]] {
+impl pending_values(ms: MergeState, i: i64) -> ptr[ptr[PyObject]] {
     return ptr[ptr[PyObject]]((ms.pending + (i * PENDING_WORDS + 1)).view(1)[0]);
 }
 
-def pending_len(ms: MergeState, i: i64) -> i64 {
+impl pending_len(ms: MergeState, i: i64) -> i64 {
     return (ms.pending + (i * PENDING_WORDS + 2)).view(1)[0];
 }
 
-def pending_power(ms: MergeState, i: i64) -> i64 {
+impl pending_power(ms: MergeState, i: i64) -> i64 {
     return (ms.pending + (i * PENDING_WORDS + 3)).view(1)[0];
 }
 
-def set_pending(
+impl set_pending(
     ms: MergeState,
     i: i64,
     keys: ptr[ptr[PyObject]],
@@ -1446,33 +1721,30 @@ def set_pending(
     (record + 2).view(1)[0] = length;
 }
 
-def set_pending_len(ms: MergeState, i: i64, length: i64) {
+impl set_pending_len(ms: MergeState, i: i64, length: i64) {
     (ms.pending + (i * PENDING_WORDS + 2)).view(1)[0] = length;
 }
 
-def set_pending_power(ms: MergeState, i: i64, power: i64) {
+impl set_pending_power(ms: MergeState, i: i64, power: i64) {
     (ms.pending + (i * PENDING_WORDS + 3)).view(1)[0] = power;
 }
 
-"""_PyLong_CompactValue of a compact int."""
-def compact_value(op: ptr[PyObject]) -> i64 {
+impl compact_value(op: ptr[PyObject]) -> i64 {
     tag = ptr[u64](ptr[u8](op) + PyLongObject_TAG).view(1)[0];
     sign = 1 - i64.wrap(tag & _PyLong_SIGN_MASK);
     return sign * i64(ptr[u32](ptr[u8](op) + PyLongObject_DIGIT).view(1)[0]);
 }
 
-"""_PyLong_IsCompact: a value of at most one digit."""
-def long_is_compact(op: ptr[PyObject]) -> bool {
+impl long_is_compact(op: ptr[PyObject]) -> bool {
     tag = ptr[u64](ptr[u8](op) + PyLongObject_TAG).view(1)[0];
     return tag < (u64(2) << _PyLong_NON_SIZE_BITS);
 }
 
-def unicode_length(op: ptr[PyObject]) -> i64 {
+impl unicode_length(op: ptr[PyObject]) -> i64 {
     return ptr[i64](ptr[u8](op) + PyASCIIObject_LENGTH).view(1)[0];
 }
 
-"""Two exact str keys whose characters are all 1-byte (latin-1)."""
-def unsafe_latin_compare(v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
+impl unsafe_latin_compare(v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
     vlen = unicode_length(v);
     wlen = unicode_length(w);
     res = memcmp(jacpy_unicode_data(v), jacpy_unicode_data(w), u64(min(vlen, wlen)));
@@ -1482,9 +1754,7 @@ def unsafe_latin_compare(v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
     return i32(1) if vlen < wlen else i32(0);
 }
 
-"""Keys of one type with a tp_richcompare: call the slot directly, falling
-back to PyObject_RichCompareBool when it does not apply."""
-def unsafe_object_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
+impl unsafe_object_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
     key_type = ms.key_type;
     if int(object_type(v).view(1)[0].tp_richcompare)
         != int(key_type.view(1)[0].tp_richcompare) {
@@ -1508,9 +1778,7 @@ def unsafe_object_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) ->
     return res;
 }
 
-"""Non-empty tuple keys: compare by the first differing item, using the
-specialized compare for the first item."""
-def unsafe_tuple_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
+impl unsafe_tuple_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
     vlen = object_size(v);
     wlen = object_size(w);
     vitems = tuple_items(v);
@@ -1537,8 +1805,9 @@ def unsafe_tuple_compare(ms: MergeState, v: ptr[PyObject], w: ptr[PyObject]) -> 
     return PyObject_RichCompareBool(item_at(vitems, i), item_at(witems, i), Py_LT);
 }
 
-"""v < w by compare `mode`: 1, 0, or -1 with an error set."""
-def compare_with(ms: MergeState, mode: i64, v: ptr[PyObject], w: ptr[PyObject]) -> i32 {
+impl compare_with(
+    ms: MergeState, mode: i64, v: ptr[PyObject], w: ptr[PyObject]
+) -> i32 {
     if mode == COMPARE_LONG {
         return i32(1) if compact_value(v) < compact_value(w) else i32(0);
     }
@@ -1561,12 +1830,11 @@ def compare_with(ms: MergeState, mode: i64, v: ptr[PyObject], w: ptr[PyObject]) 
     return PyObject_RichCompareBool(v, w, Py_LT);
 }
 
-"""ISLT: x < y by the sort's key compare."""
-def islt(ms: MergeState, x: ptr[PyObject], y: ptr[PyObject]) -> i32 {
+impl islt(ms: MergeState, x: ptr[PyObject], y: ptr[PyObject]) -> i32 {
     return compare_with(ms, ms.key_compare, x, y);
 }
 
-def slice_copy(
+impl slice_copy(
     dk: ptr[ptr[PyObject]],
     dv: ptr[ptr[PyObject]],
     i: i64,
@@ -1581,7 +1849,7 @@ def slice_copy(
     }
 }
 
-def slice_memcpy(
+impl slice_memcpy(
     dk: ptr[ptr[PyObject]],
     dv: ptr[ptr[PyObject]],
     i: i64,
@@ -1597,7 +1865,7 @@ def slice_memcpy(
     }
 }
 
-def slice_memmove(
+impl slice_memmove(
     dk: ptr[ptr[PyObject]],
     dv: ptr[ptr[PyObject]],
     i: i64,
@@ -1613,7 +1881,7 @@ def slice_memmove(
     }
 }
 
-def slice_reverse(
+impl slice_reverse(
     keys: ptr[ptr[PyObject]], values: ptr[ptr[PyObject]], n: i64, has_values: bool
 ) {
     reverse_items(keys, n);
@@ -1622,10 +1890,7 @@ def slice_reverse(
     }
 }
 
-"""Sort keys[:n] (and values in lockstep) by stable binary insertion, where
-keys[:ok] is already sorted; n <= MAX_MINRUN. On an error the slice is still
-a permutation of its input."""
-def binarysort(
+impl binarysort(
     ms: MergeState,
     keys: ptr[ptr[PyObject]],
     values: ptr[ptr[PyObject]],
@@ -1649,7 +1914,7 @@ def binarysort(
                 lo = mid + 1;
             }
         }
-        # pivot belongs at lo: slide keys[lo:start] right one slot.
+
         m = start;
         while m > lo {
             set_item_at(keys, m, item_at(keys, m - 1));
@@ -1670,18 +1935,14 @@ def binarysort(
     return i32(0);
 }
 
-"""The length of the run starting at keys, at most `nremaining` long, made
-ascending in place when it is descending; -1 on an error. Equal elements in a
-descending run are reversed as they are found, so the final reversal keeps
-the sort stable."""
-def count_run(
+impl count_run(
     ms: MergeState,
     keys: ptr[ptr[PyObject]],
     values: ptr[ptr[PyObject]],
     nremaining: i64
 ) -> i64 {
     hv = ms.has_values;
-    # Try an ascending run first.
+
     n = 1;
     while n < nremaining {
         k = islt(ms, item_at(keys, n), item_at(keys, n - 1));
@@ -1696,9 +1957,7 @@ def count_run(
     if n == nremaining {
         return n;
     }
-    # keys[n] is strictly less. With n > 1 the run so far is non-descending:
-    # if it ever increased, it is an ascending run; otherwise it is all
-    # equal, and starts a descending run once reversed.
+
     if n > 1 {
         k = islt(ms, item_at(keys, 0), item_at(keys, n - 1));
         if k < 0 {
@@ -1739,7 +1998,7 @@ def count_run(
         slice_reverse(keys + (n - neq), values + (n - neq), neq, hv);
     }
     slice_reverse(keys, values, n, hv);
-    # The reversed run may continue with an ascending suffix.
+
     while n < nremaining {
         k = islt(ms, item_at(keys, n), item_at(keys, n - 1));
         if k < 0 {
@@ -1753,9 +2012,7 @@ def count_run(
     return n;
 }
 
-"""The position in the sorted a[:n] where `key` belongs, left of any equal
-elements, searching by galloping from `hint`; -1 on an error."""
-def gallop_left(
+impl gallop_left(
     ms: MergeState, key: ptr[PyObject], a: ptr[ptr[PyObject]], n: i64, hint: i64
 ) -> i64 {
     lastofs = 0;
@@ -1765,7 +2022,6 @@ def gallop_left(
         return -1;
     }
     if k != 0 {
-        # a[hint] < key: gallop right until a[hint+lastofs] < key <= a[hint+ofs].
         maxofs = n - hint;
         while ofs < maxofs {
             k = islt(ms, item_at(a, hint + ofs), key);
@@ -1784,7 +2040,6 @@ def gallop_left(
         lastofs += hint;
         ofs += hint;
     } else {
-        # key <= a[hint]: gallop left until a[hint-ofs] < key <= a[hint-lastofs].
         maxofs = hint + 1;
         while ofs < maxofs {
             k = islt(ms, item_at(a, hint - ofs), key);
@@ -1804,7 +2059,7 @@ def gallop_left(
         lastofs = hint - ofs;
         ofs = hint - last;
     }
-    # a[lastofs] < key <= a[ofs]: binary search between them.
+
     lastofs += 1;
     while lastofs < ofs {
         m = lastofs + ((ofs - lastofs) >> 1);
@@ -1821,8 +2076,7 @@ def gallop_left(
     return ofs;
 }
 
-"""gallop_left, but right of any elements equal to `key`."""
-def gallop_right(
+impl gallop_right(
     ms: MergeState, key: ptr[PyObject], a: ptr[ptr[PyObject]], n: i64, hint: i64
 ) -> i64 {
     lastofs = 0;
@@ -1832,7 +2086,6 @@ def gallop_right(
         return -1;
     }
     if k != 0 {
-        # key < a[hint]: gallop left until a[hint-ofs] <= key < a[hint-lastofs].
         maxofs = hint + 1;
         while ofs < maxofs {
             k = islt(ms, key, item_at(a, hint - ofs));
@@ -1852,7 +2105,6 @@ def gallop_right(
         lastofs = hint - ofs;
         ofs = hint - last;
     } else {
-        # a[hint] <= key: gallop right until a[hint+lastofs] <= key < a[hint+ofs].
         maxofs = n - hint;
         while ofs < maxofs {
             k = islt(ms, key, item_at(a, hint + ofs));
@@ -1887,7 +2139,7 @@ def gallop_right(
     return ofs;
 }
 
-def merge_freemem(ms: MergeState) {
+impl merge_freemem(ms: MergeState) {
     if ms.a_keys {
         PyMem_Free(ptr(ms.a_keys));
         ms.a_keys = no_items();
@@ -1896,13 +2148,12 @@ def merge_freemem(ms: MergeState) {
     }
 }
 
-"""Make the merge area hold at least `need` keys (and values)."""
-def merge_getmem(ms: MergeState, need: i64) -> i32 {
+impl merge_getmem(ms: MergeState, need: i64) -> i32 {
     if need <= ms.alloced {
         return i32(0);
     }
     multiplier = 2 if ms.has_values else 1;
-    # Free first: the old contents are not needed.
+
     merge_freemem(ms);
     if need > PY_SSIZE_T_MAX // 8 // multiplier {
         PyErr_NoMemory();
@@ -1921,16 +2172,7 @@ def merge_getmem(ms: MergeState, need: i64) -> i32 {
     return i32(0);
 }
 
-glob:priv MERGE_RUN: i64 = 0,
-     MERGE_SUCCEED: i64 = 1,
-     MERGE_FAIL: i64 = 2,
-     MERGE_COPY_REST: i64 = 3;
-
-"""Merge the na elements at ssa with the nb at ssb, which follow them, in a
-stable way, where na <= nb, ssa[0] belongs at the end of the merge and ssa
-ends with the merge's last element; -1 on an error. A goes to the merge area
-and the merge fills from the left."""
-def merge_lo(
+impl merge_lo(
     ms: MergeState,
     a_keys: ptr[ptr[PyObject]],
     a_values: ptr[ptr[PyObject]],
@@ -1967,10 +2209,9 @@ def merge_lo(
     }
     min_gallop = ms.min_gallop;
     while outcome == MERGE_RUN {
-        # How many times in a row A or B won.
         acount = 0;
         bcount = 0;
-        # One pair at a time until one run appears to win consistently.
+
         while True {
             k = islt(ms, bk.view(1)[0], ak.view(1)[0]);
             if k < 0 {
@@ -2014,7 +2255,7 @@ def merge_lo(
         if outcome != MERGE_RUN {
             break;
         }
-        # Gallop until neither run wins MIN_GALLOP in a row.
+
         min_gallop += 1;
         while True {
             if min_gallop > 1 {
@@ -2038,8 +2279,7 @@ def merge_lo(
                     outcome = MERGE_COPY_REST;
                     break;
                 }
-                # na == 0 is impossible for a consistent compare; leave
-                # cleanly if it is not.
+
                 if na == 0 {
                     outcome = MERGE_SUCCEED;
                     break;
@@ -2090,12 +2330,11 @@ def merge_lo(
         if outcome != MERGE_RUN {
             break;
         }
-        # Penalize leaving galloping mode.
+
         min_gallop += 1;
         ms.min_gallop = min_gallop;
     }
     if outcome == MERGE_COPY_REST {
-        # The last element of A belongs at the end of the merge.
         slice_memmove(dk, dv, 0, bk, bv, 0, nb, hv);
         slice_copy(dk, dv, nb, ak, av, 0, hv);
         return 0;
@@ -2106,9 +2345,7 @@ def merge_lo(
     return 0 if outcome == MERGE_SUCCEED else -1;
 }
 
-"""merge_lo for na >= nb: B goes to the merge area and the merge fills from
-the right."""
-def merge_hi(
+impl merge_hi(
     ms: MergeState,
     a_keys: ptr[ptr[PyObject]],
     a_values: ptr[ptr[PyObject]],
@@ -2246,7 +2483,7 @@ def merge_hi(
                     outcome = MERGE_COPY_REST;
                     break;
                 }
-                # nb == 0 is impossible for a consistent compare.
+
                 if nb == 0 {
                     outcome = MERGE_SUCCEED;
                     break;
@@ -2273,7 +2510,6 @@ def merge_hi(
         ms.min_gallop = min_gallop;
     }
     if outcome == MERGE_COPY_REST {
-        # The first element of B belongs at the front of the merge.
         slice_memmove(dk, dv, 1 - na, ak, av, 1 - na, na, hv);
         dk = dk - na;
         dv = dv - na;
@@ -2286,16 +2522,14 @@ def merge_hi(
     return 0 if outcome == MERGE_SUCCEED else -1;
 }
 
-"""Merge the pending runs at i and i + 1, where i is ms.n - 2 or ms.n - 3."""
-def merge_at(ms: MergeState, i: i64) -> i64 {
+impl merge_at(ms: MergeState, i: i64) -> i64 {
     a_keys = pending_keys(ms, i);
     a_values = pending_values(ms, i);
     na = pending_len(ms, i);
     b_keys = pending_keys(ms, i + 1);
     b_values = pending_values(ms, i + 1);
     nb = pending_len(ms, i + 1);
-    # Record the combined run; if i is the third-last run, slide the last
-    # one over (the last run is not involved in this merge).
+
     set_pending_len(ms, i, na + nb);
     if i == ms.n - 3 {
         set_pending(
@@ -2308,7 +2542,7 @@ def merge_at(ms: MergeState, i: i64) -> i64 {
         set_pending_power(ms, i + 1, pending_power(ms, i + 2));
     }
     ms.n -= 1;
-    # Elements of A already in place can be ignored.
+
     k = gallop_right(ms, b_keys.view(1)[0], a_keys, na, 0);
     if k < 0 {
         return -1;
@@ -2319,7 +2553,7 @@ def merge_at(ms: MergeState, i: i64) -> i64 {
     if na == 0 {
         return 0;
     }
-    # Elements of B already in place can be ignored.
+
     nb = gallop_left(ms, (a_keys + (na - 1)).view(1)[0], b_keys, nb, nb - 1);
     if nb <= 0 {
         return nb;
@@ -2330,20 +2564,16 @@ def merge_at(ms: MergeState, i: i64) -> i64 {
     return merge_hi(ms, a_keys, a_values, na, b_keys, b_values, nb);
 }
 
-"""The powersort node power of the boundary between the run at s1 of length
-n1 and the next run of length n2, in a list of n elements."""
-def powerloop(s1: i64, n1: i64, n2: i64, n: i64) -> i64 {
+impl powerloop(s1: i64, n1: i64, n2: i64, n: i64) -> i64 {
     result = 0;
     a = 2 * s1 + n1;
     b = a + n1 + n2;
     while True {
         result += 1;
         if a >= n {
-            # Both quotient bits are 1.
             a -= n;
             b -= n;
         } elif b >= n {
-            # The a/n bit is 0, the b/n bit is 1.
             break;
         }
         a = a << 1;
@@ -2352,9 +2582,7 @@ def powerloop(s1: i64, n1: i64, n2: i64, n: i64) -> i64 {
     return result;
 }
 
-"""A new run of length n2 follows the last pending run: merge the runs whose
-power is greater than the new boundary's, and record that power."""
-def found_new_run(ms: MergeState, n2: i64) -> i32 {
+impl found_new_run(ms: MergeState, n2: i64) -> i32 {
     if ms.n != 0 {
         last = ms.n - 1;
         s1 = (int(pending_keys(ms, last)) - int(ms.basekeys)) >> 3;
@@ -2370,8 +2598,7 @@ def found_new_run(ms: MergeState, n2: i64) -> i32 {
     return i32(0);
 }
 
-"""Merge all pending runs into one."""
-def merge_force_collapse(ms: MergeState) -> i32 {
+impl merge_force_collapse(ms: MergeState) -> i32 {
     while ms.n > 1 {
         n = ms.n - 2;
         if n > 0 and pending_len(ms, n - 1) < pending_len(ms, n + 1) {
@@ -2384,10 +2611,7 @@ def merge_force_collapse(ms: MergeState) -> i32 {
     return i32(0);
 }
 
-"""The minimum run length for a list of n elements: n itself below
-MAX_MINRUN, else a value in [MAX_MINRUN/2, MAX_MINRUN] that makes n/minrun a
-power of 2 or just under one."""
-def merge_compute_minrun(n: i64) -> i64 {
+impl merge_compute_minrun(n: i64) -> i64 {
     r = 0;
     m = n;
     while m >= MAX_MINRUN {
@@ -2397,10 +2621,7 @@ def merge_compute_minrun(n: i64) -> i64 {
     return m + r;
 }
 
-"""Choose the key compare: one specialized to the keys' common type (exact
-str of 1-byte characters, compact int, float, any type with a
-tp_richcompare), or to non-empty tuples whose first items share a type."""
-def choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64) {
+impl choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64) {
     tuple_type = type_of_object(addressof(PyTuple_Type));
     long_type = type_of_object(addressof(PyLong_Type));
     unicode_type = type_of_object(addressof(PyUnicode_Type));
@@ -2422,12 +2643,11 @@ def choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64) {
             keys_are_all_same_type = False;
             break;
         }
-        # For tuples the key is the first item; the check above verifies
-        # every key is a non-empty tuple.
+
         key = tuple_get_item(candidate, 0) if keys_are_in_tuples else candidate;
         if object_type(key) != key_type {
             keys_are_all_same_type = False;
-            # Tuple keys are all checked to be tuples.
+
             if not keys_are_in_tuples {
                 break;
             }
@@ -2461,7 +2681,6 @@ def choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64) {
         ms.key_compare = COMPARE_SAFE;
     }
     if keys_are_in_tuples {
-        # Tuples' first items that are themselves tuples compare safely.
         ms.tuple_elem_compare = COMPARE_SAFE
             if key_type == tuple_type
             else ms.key_compare;
@@ -2469,9 +2688,7 @@ def choose_compares(ms: MergeState, keys: ptr[ptr[PyObject]], n: i64) {
     }
 }
 
-"""Sort the keys at lo (values at lo_values), n of them, in place; -1 on an
-error, after which they are still a permutation of the input."""
-def merge_sort(
+impl merge_sort(
     ms: MergeState, lo_keys: ptr[ptr[PyObject]], lo_values: ptr[ptr[PyObject]], n: i64
 ) -> i32 {
     keys = lo_keys;
@@ -2479,8 +2696,6 @@ def merge_sort(
     nremaining = n;
     minrun = merge_compute_minrun(nremaining);
     while nremaining > 0 {
-        # Identify the next run, extended to min(minrun, nremaining) by
-        # binary insertion when it is short.
         run = count_run(ms, keys, values, nremaining);
         if run < 0 {
             return i32(-1);
@@ -2492,7 +2707,7 @@ def merge_sort(
             }
             run = force;
         }
-        # The whole list is one run: there is nothing to merge.
+
         if ms.n == 0 and run == nremaining {
             return i32(0);
         }
@@ -2508,7 +2723,7 @@ def merge_sort(
         if found_new_run(ms, run) < 0 {
             return i32(-1);
         }
-        # Push the run onto the pending stack.
+
         set_pending(ms, ms.n, keys, values, run);
         ms.n += 1;
         keys = keys + run;
@@ -2518,17 +2733,17 @@ def merge_sort(
     return merge_force_collapse(ms);
 }
 
-def list_sort_impl(
+impl list_sort_impl(
     op: ptr[PyObject], keyfunc_in: ptr[PyObject], reverse: i32
 ) -> ptr[PyObject] {
     keyfunc = NULL if keyfunc_in == Py_None else keyfunc_in;
-    # The list is empty while it is sorted, so mutating it is detectable.
+
     saved_ob_size = object_size(op);
     saved_ob_item = list_items(op);
     saved_allocated = list_allocated(op);
     set_size(op, 0);
     set_items(op, no_items());
-    # Any operation resets it to >= 0.
+
     set_allocated(op, -1);
     result = NULL;
     keys = no_items();
@@ -2568,7 +2783,6 @@ def list_sort_impl(
         }
         status = i32(0);
         if saved_ob_size >= 2 {
-            # Reverse sort stably: reverse, sort forward, reverse back.
             if reverse != 0 {
                 if keyfunc {
                     reverse_items(keys, saved_ob_size);
@@ -2598,7 +2812,7 @@ def list_sort_impl(
             PyMem_Free(ptr(ms.pending));
         }
     }
-    # Put the sorted items back, releasing whatever the list gained meanwhile.
+
     final_ob_item = list_items(op);
     i = object_size(op);
     set_size(op, saved_ob_size);
@@ -2614,7 +2828,7 @@ def list_sort_impl(
     return object_xnew_ref(result);
 }
 
-def list_sort_bound(args: BoundArguments) -> ptr[PyObject] {
+impl list_sort_bound(args: BoundArguments) -> ptr[PyObject] {
     reverse = i32(0);
     if args.values[1] {
         reverse = PyObject_IsTrue(args.values[1]);
@@ -2625,7 +2839,7 @@ def list_sort_bound(args: BoundArguments) -> ptr[PyObject] {
     return list_sort_impl(args.context, args.values[0], reverse);
 }
 
-def list_sort(
+impl list_sort(
     op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if nargs == 0 and not kwnames {
@@ -2636,14 +2850,14 @@ def list_sort(
     );
 }
 
-def list_reverse(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl list_reverse(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     if object_size(op) > 1 {
         reverse_items(list_items(op), object_size(op));
     }
     return object_new_ref(Py_None);
 }
 
-def list_index(
+impl list_index(
     op: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
 ) -> ptr[PyObject] {
     if (nargs < 1 or nargs > 3) and _PyArg_CheckPositional("index", nargs, 1, 3) == 0 {
@@ -2676,7 +2890,6 @@ def list_index(
     while i < stop {
         found = list_get_item_ref(op, i);
         if not found {
-            # Out of bounds.
             break;
         }
         cmp = PyObject_RichCompareBool(found, value, Py_EQ);
@@ -2693,7 +2906,7 @@ def list_index(
     return NULL;
 }
 
-def list_count(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
+impl list_count(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
     count: i64 = 0;
     i = 0;
     while True {
@@ -2718,7 +2931,7 @@ def list_count(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
     return PyLong_FromSsize_t(count);
 }
 
-def list_remove(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
+impl list_remove(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
     i = 0;
     while i < object_size(op) {
         found = object_new_ref(item_at(list_items(op), i));
@@ -2739,7 +2952,7 @@ def list_remove(op: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
     return NULL;
 }
 
-def list_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl list_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     items = list_items(op);
     i = object_size(op);
     while i > 0 {
@@ -2752,16 +2965,14 @@ def list_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return i32(0);
 }
 
-def list_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
+impl list_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
     if not list_check(v) or not list_check(w) {
         return object_new_ref(Py_NotImplemented);
     }
     if object_size(v) != object_size(w) and (op == Py_EQ or op == Py_NE) {
-        # Shortcut: lists of different lengths are unequal.
         return object_new_ref(py_false() if op == Py_EQ else py_true());
     }
-    # The first index where the items differ; a compare can change either
-    # list, so the sizes and items are read again each time.
+
     i = 0;
     while i < object_size(v) and i < object_size(w) {
         vitem = item_at(list_items(v), i);
@@ -2782,7 +2993,6 @@ def list_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObjec
         i += 1;
     }
     if i >= object_size(v) or i >= object_size(w) {
-        # No more items to compare: compare the sizes.
         return rich_compare_values(object_size(v), object_size(w), op);
     }
     if op == Py_EQ {
@@ -2801,8 +3011,7 @@ def list_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObjec
     return result;
 }
 
-def list___init___impl(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
-    # Empty the list if __init__ runs again.
+impl list___init___impl(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     if list_items(op) {
         list_clear(op);
     }
@@ -2812,7 +3021,7 @@ def list___init___impl(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def list___init__(
+impl list___init__(
     op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> i32 {
     base = addressof(PyList_Type);
@@ -2832,7 +3041,7 @@ def list___init__(
     return list___init___impl(op, iterable);
 }
 
-def list_vectorcall(
+impl list_vectorcall(
     type: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if kwnames and _PyArg_NoKwnames("list", kwnames) == 0 {
@@ -2853,12 +3062,12 @@ def list_vectorcall(
     return op;
 }
 
-def list___sizeof__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl list___sizeof__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     size = object_type(op).view(1)[0].tp_basicsize + list_allocated(op) * 8;
     return PyLong_FromSize_t(u64(size));
 }
 
-def list_slice_step(
+impl list_slice_step(
     a: ptr[PyObject], start: i64, step: i64, length: i64
 ) -> ptr[PyObject] {
     np = list_new_prealloc(length);
@@ -2876,7 +3085,7 @@ def list_slice_step(
     return np;
 }
 
-def list_slice_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
+impl list_slice_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
     start: i64 = 0;
     stop: i64 = 0;
     step: i64 = 0;
@@ -2893,11 +3102,11 @@ def list_slice_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject
     return list_slice_step(op, start, step, length);
 }
 
-def slice_check(op: ptr[PyObject]) -> bool {
+impl slice_check(op: ptr[PyObject]) -> bool {
     return object_is_type(op, type_of_object(addressof(PySlice_Type)));
 }
 
-def list_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
+impl list_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
     if PyIndex_Check(item) != 0 {
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if i == -1 and PyErr_Occurred() {
@@ -2919,9 +3128,7 @@ def list_subscript(op: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
     return NULL;
 }
 
-"""Delete the extended slice start:stop:step (step > 1 after
-normalization), sliding the kept items down in place."""
-def list_delete_extended(
+impl list_delete_extended(
     op: ptr[PyObject], start_in: i64, stop_in: i64, step_in: i64, slicelength: i64
 ) -> i32 {
     start = start_in;
@@ -2937,9 +3144,7 @@ def list_delete_extended(
         PyErr_NoMemory();
         return i32(-1);
     }
-    # Move each run of kept items (step - 1 of them between deleted ones,
-    # then the tail) down over the deleted ones.
-    # The cursor is a size_t, as in C: cur + step may pass PY_SSIZE_T_MAX.
+
     items = list_items(op);
     size = object_size(op);
     usize = u64.wrap(size);
@@ -2974,8 +3179,7 @@ def list_delete_extended(
     return res;
 }
 
-"""Assign `value` to the extended slice start:stop:step."""
-def list_assign_extended(
+impl list_assign_extended(
     op: ptr[PyObject], item: ptr[PyObject], value: ptr[PyObject]
 ) -> i32 {
     start: i64 = 0;
@@ -2988,7 +3192,7 @@ def list_assign_extended(
         slicelength = PySlice_AdjustIndices(
             object_size(op), &mut start, &mut stop, step
         );
-        # s[5:2] = [...] inserts before 5, not before 2.
+
         if (step < 0 and start < stop) or (step > 0 and start > stop) {
             stop = start;
         }
@@ -3000,7 +3204,7 @@ def list_assign_extended(
         }
         return list_delete_extended(op, start, stop, step, slicelength);
     }
-    # a[::-1] = a assigns from a copy.
+
     seq = NULL;
     if op == value {
         seq = list_slice(value, 0, object_size(value));
@@ -3055,7 +3259,7 @@ def list_assign_extended(
     return i32(0);
 }
 
-def list_ass_subscript(
+impl list_ass_subscript(
     op: ptr[PyObject], item: ptr[PyObject], value: ptr[PyObject]
 ) -> i32 {
     if PyIndex_Check(item) != 0 {
@@ -3079,9 +3283,7 @@ def list_ass_subscript(
     return i32(-1);
 }
 
-# ---------------------------------------------------------------- iterators
-
-def list_iter(seq: ptr[PyObject]) -> ptr[PyObject] {
+impl list_iter(seq: ptr[PyObject]) -> ptr[PyObject] {
     if not list_check(seq) {
         PyErr_BadInternalCall();
         return NULL;
@@ -3100,7 +3302,7 @@ def list_iter(seq: ptr[PyObject]) -> ptr[PyObject] {
     return op;
 }
 
-def listiter_dealloc(op: ptr[PyObject]) {
+impl listiter_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     object_xdecref(ptr[PyObject](listiter_of(op).view(1)[0].it_seq));
     if not freelist_push(_Py_freelists_LIST_ITERS, op, Py_list_iters_MAXFREELIST) {
@@ -3108,13 +3310,13 @@ def listiter_dealloc(op: ptr[PyObject]) {
     }
 }
 
-def listiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl listiter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(
         ptr[PyObject](listiter_of(op).view(1)[0].it_seq), visitor, arg
     );
 }
 
-def listiter_next(op: ptr[PyObject]) -> ptr[PyObject] {
+impl listiter_next(op: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     index = it.view(1)[0].it_index;
     if index < 0 {
@@ -3123,7 +3325,6 @@ def listiter_next(op: ptr[PyObject]) -> ptr[PyObject] {
     seq = ptr[PyObject](it.view(1)[0].it_seq);
     item = list_get_item_ref(seq, index);
     if not item {
-        # Out of bounds: the iterator is exhausted.
         it.view(1)[0].it_index = -1;
         it.view(1)[0].it_seq = ptr[PyListObject]();
         object_decref(seq);
@@ -3133,7 +3334,7 @@ def listiter_next(op: ptr[PyObject]) -> ptr[PyObject] {
     return item;
 }
 
-def listiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl listiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     index = it.view(1)[0].it_index;
     if index >= 0 {
@@ -3145,11 +3346,11 @@ def listiter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return PyLong_FromSsize_t(0);
 }
 
-def listiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl listiter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return listiter_reduce_general(op, True);
 }
 
-def listiter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] {
+impl listiter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     index = PyLong_AsSsize_t(state);
     if index == -1 and PyErr_Occurred() {
@@ -3160,7 +3361,6 @@ def listiter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] 
         if index < -1 {
             index = -1;
         } elif index > object_size(seq) {
-            # The iterator is exhausted.
             index = object_size(seq);
         }
         it.view(1)[0].it_index = index;
@@ -3168,7 +3368,7 @@ def listiter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] 
     return object_new_ref(Py_None);
 }
 
-def list___reversed__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl list___reversed__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     result = _PyObject_GC_New(ptr[PyObject](addressof(PyListRevIter_Type)));
     if not result {
         return NULL;
@@ -3180,19 +3380,19 @@ def list___reversed__(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject
     return result;
 }
 
-def listreviter_dealloc(op: ptr[PyObject]) {
+impl listreviter_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     object_xdecref(ptr[PyObject](listiter_of(op).view(1)[0].it_seq));
     PyObject_GC_Del(ptr(op));
 }
 
-def listreviter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl listreviter_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(
         ptr[PyObject](listiter_of(op).view(1)[0].it_seq), visitor, arg
     );
 }
 
-def listreviter_next(op: ptr[PyObject]) -> ptr[PyObject] {
+impl listreviter_next(op: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     index = it.view(1)[0].it_index;
     if index < 0 {
@@ -3210,7 +3410,7 @@ def listreviter_next(op: ptr[PyObject]) -> ptr[PyObject] {
     return NULL;
 }
 
-def listreviter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl listreviter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     length = it.view(1)[0].it_index + 1;
     seq = ptr[PyObject](it.view(1)[0].it_seq);
@@ -3220,11 +3420,11 @@ def listreviter_len(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] 
     return PyLong_FromSsize_t(length);
 }
 
-def listreviter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl listreviter_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return listiter_reduce_general(op, False);
 }
 
-def listreviter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] {
+impl listreviter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObject] {
     it = listiter_of(op);
     index = PyLong_AsSsize_t(state);
     if index == -1 and PyErr_Occurred() {
@@ -3242,11 +3442,7 @@ def listreviter_setstate(op: ptr[PyObject], state: ptr[PyObject]) -> ptr[PyObjec
     return object_new_ref(Py_None);
 }
 
-"""Pickling for both iterators: iter(list)/reversed(list) and the position,
-or an empty list for an exhausted iterator."""
-def listiter_reduce_general(op: ptr[PyObject], forward: bool) -> ptr[PyObject] {
-    # _PyEval_GetBuiltin can run arbitrary code: read the iterator after it
-    # (gh-101765).
+impl listiter_reduce_general(op: ptr[PyObject], forward: bool) -> ptr[PyObject] {
     iter = eval_builtin("iter" if forward else "reversed");
     it = listiter_of(op);
     index = it.view(1)[0].it_index;

@@ -1,34 +1,22 @@
-"""TypeVar, TypeVarTuple, ParamSpec, TypeAliasType and Generic:
-Objects/typevarobject.c in native Jac.
-
-`_PyNoDefault_Type`, the `typing.NoDefault` singleton (`_Py_NoDefaultStruct`)
-and `_PyTypeAlias_Type` are static C data Jac defines under their C names.
-TypeVar, TypeVarTuple, ParamSpec, ParamSpecArgs, ParamSpecKwargs, Generic and
-the internal constant evaluator are heap types `_Py_initialize_generic` makes
-from the specs here and keeps in the interpreter's cached_objects. The
-evaluator's helpers (`_Py_make_typevar`, `_Py_set_typeparam_default`,
-`_Py_subscript_generic`, ...) are defined under their C names. See
-../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject,
          _PyNone_Type: PyTypeObject; def PyType_FromSpec(
         spec: ptr[PyType_Spec]
     ) -> ptr[PyObject];  def _Py_SetImmortal(op: ptr[PyObject]);  def _PyUnicode_EqualToASCIIString(
-        a: ptr[PyObject], b: str
+        a: ptr[PyObject], b: ptr[u8]
     ) -> i32;  def _Py_union_from_tuple(args: ptr[PyObject]) -> ptr[PyObject];  def _Py_union_type_or(
         a: ptr[PyObject], b: ptr[PyObject]
     ) -> ptr[PyObject];  def PyObject_ClearManagedDict(ob: ptr[PyObject]);  def PyObject_VisitManagedDict(
         ob: ptr[PyObject], visitor: ptr, arg: ptr
-    ) -> i32;  def PyUnicodeWriter_WriteASCII(writer: ptr, s: str, size: i64) -> i32;  def PyUnicodeWriter_WriteStr(
-        writer: ptr, ob: ptr[PyObject]
-    ) -> i32;  def PyFunction_GetModule(op: ptr[PyObject]) -> ptr[PyObject];  def _PyArg_BadArgument(
+    ) -> i32;  def PyUnicodeWriter_WriteASCII(
+        writer: ptr, s: ptr[u8], size: i64
+    ) -> i32;  def PyUnicodeWriter_WriteStr(writer: ptr, ob: ptr[PyObject]) -> i32;  def PyFunction_GetModule(
+        op: ptr[PyObject]
+    ) -> ptr[PyObject];  def _PyArg_BadArgument(
         fname: str, displayname: str, expected: ptr[u8], arg: ptr[PyObject]
     );  obj TypevarCall {
         has free: Callable[[ptr], None] = 0;
     }  glob:priv call_slot: TypevarCall = TypevarCall(),
-         # &_Py_ID(...) names, interned on first use.
          origin_key: ptr[PyObject] = ptr[PyObject](),
          args_key: ptr[PyObject] = ptr[PyObject](),
          qualname_key: ptr[PyObject] = ptr[PyObject](),
@@ -416,8 +404,6 @@ import from c {
              PyType_Slot(slot=Py_tp_members, pfunc=ptr(addressof(paramspec_members))),
              PyType_Slot(slot=Py_tp_methods, pfunc=ptr(addressof(paramspec_methods))),
              PyType_Slot(slot=Py_tp_getset, pfunc=ptr(addressof(paramspec_getset))),
-             # Unions of ParamSpecs mean nothing, but the Python version
-             # allowed them.
              PyType_Slot(slot=Py_nb_or, pfunc=ptr(make_union)),
              PyType_Slot(slot=Py_tp_new, pfunc=ptr(paramspec_new)),
              PyType_Slot(slot=Py_tp_dealloc, pfunc=ptr(paramspec_dealloc)),
@@ -793,199 +779,58 @@ glob:priv typevar_signature = CallSignature(
          "paramspeckwargs", ["origin"], 1, 1, 0, parser=PARSE_KEYWORDS
      );
 
-# ----------------------------------------------------------------- helpers
+def field(op: ptr[PyObject], offset: i64) -> ptr[PyObject];
 
-def field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
-    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
-}
+def set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-def set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
-}
+def replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-def replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    old = field(op, offset);
-    set_field(op, offset, value);
-    object_xdecref(old);
-}
+def flag(op: ptr[PyObject], offset: i64) -> bool;
 
-def flag(op: ptr[PyObject], offset: i64) -> bool {
-    return (ptr[u8](op) + offset).view(1)[0] != u8(0);
-}
+def set_flag(op: ptr[PyObject], offset: i64, value: bool);
 
-def set_flag(op: ptr[PyObject], offset: i64, value: bool) {
-    (ptr[u8](op) + offset).view(1)[0] = u8(1) if value else u8(0);
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def no_default -> ptr[PyObject];
 
-def no_default -> ptr[PyObject] {
-    return ptr[PyObject](addressof(_Py_NoDefaultStruct));
-}
+def cached_type(offset: i64) -> ptr[PyTypeObject];
 
-"""_PyInterpreterState_GET()->cached_objects.<offset>."""
-def cached_type(offset: i64) -> ptr[PyTypeObject] {
-    return ptr[ptr[PyTypeObject]](current_interp() + offset).view(1)[0];
-}
+def set_cached_type(offset: i64, type: ptr[PyObject]);
 
-def set_cached_type(offset: i64, type: ptr[PyObject]) {
-    ptr[ptr[PyObject]](current_interp() + offset).view(1)[0] = type;
-}
+def heap_free(op: ptr[PyObject]);
 
-"""Py_TYPE(op)->tp_free(op), then drop the heap type's reference."""
-def heap_free(op: ptr[PyObject]) {
-    tp = object_type(op);
-    calls = addressof(call_slot);
-    calls.view(1)[0].free = int(tp.view(1)[0].tp_free);
-    calls.view(1)[0].free(ptr(op));
-    object_decref(ptr[PyObject](tp));
-}
+def interned(which: int) -> ptr[PyObject];
 
-def interned(which: int) -> ptr[PyObject] {
-    if which == 0 {
-        if not origin_key {
-            origin_key = PyUnicode_InternFromString("__origin__");
-        }
-        return origin_key;
-    }
-    if which == 1 {
-        if not args_key {
-            args_key = PyUnicode_InternFromString("__args__");
-        }
-        return args_key;
-    }
-    if which == 2 {
-        if not qualname_key {
-            qualname_key = PyUnicode_InternFromString("__qualname__");
-        }
-        return qualname_key;
-    }
-    if not module_key {
-        module_key = PyUnicode_InternFromString("__module__");
-    }
-    return module_key;
-}
+def bool_argument(value: ptr[PyObject], fallback: bool) -> i32;
 
-def bool_argument(value: ptr[PyObject], fallback: bool) -> i32 {
-    if not value {
-        return i32(1) if fallback else i32(0);
-    }
-    return PyObject_IsTrue(value);
-}
+def NoDefault_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-# --------------------------------------------------------------- NoDefault
-
-def NoDefault_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return PyUnicode_FromString("typing.NoDefault");
-}
-
-def NoDefault_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return PyUnicode_FromString("NoDefault");
-}
+def NoDefault_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
 def nodefault_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    if object_size(args) != 0 or (kwargs and PyDict_Size(kwargs) != 0) {
-        PyErr_SetString(PyExc_TypeError, "NoDefaultType takes no arguments");
-        return NULL;
-    }
-    return no_default();
-}
+) -> ptr[PyObject];
 
-"""Never called on the immortal singleton; if a stray decref gets here,
-make it immortal again instead of freeing static data."""
-def nodefault_dealloc(nodefault: ptr[PyObject]) {
-    _Py_SetImmortal(nodefault);
-}
+def nodefault_dealloc(nodefault: ptr[PyObject]);
 
-# ---------------------------------------------------------- constevaluator
+def constevaluator_dealloc(self: ptr[PyObject]);
 
-def constevaluator_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    object_xdecref(field(self, constevaluatorobject_VALUE));
-    heap_free(self);
-}
+def constevaluator_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def constevaluator_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return visit_reference(field(self, constevaluatorobject_VALUE), visitor, arg);
-}
+def constevaluator_clear(self: ptr[PyObject]) -> i32;
 
-def constevaluator_clear(self: ptr[PyObject]) -> i32 {
-    replace_field(self, constevaluatorobject_VALUE, NULL);
-    return i32(0);
-}
-
-def constevaluator_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return PyUnicode_FromFormat(
-        "<constevaluator %R>", field(self, constevaluatorobject_VALUE)
-    );
-}
+def constevaluator_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
 def constevaluator_call(
     self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    if kwargs and _PyArg_NoKeywords("constevaluator.__call__", kwargs) == 0 {
-        return NULL;
-    }
-    format: i32 = 0;
-    if PyArg_ParseTuple(args, "i:constevaluator.__call__", &mut format) == 0 {
-        return NULL;
-    }
-    value = field(self, constevaluatorobject_VALUE);
-    if format != _Py_ANNOTATE_FORMAT_STRING {
-        return object_new_ref(value);
-    }
-    # Never below 5.
-    writer = PyUnicodeWriter_Create(5);
-    if not writer {
-        return NULL;
-    }
-    ok = True;
-    if type_has_feature(object_type(value), Py_TPFLAGS_TUPLE_SUBCLASS) {
-        ok = PyUnicodeWriter_WriteChar(writer, 40) >= 0;
-        i: i64 = 0;
-        while ok and i < object_size(value) {
-            if i > 0 {
-                ok = PyUnicodeWriter_WriteASCII(ptr(writer), ", ", 2) >= 0;
-            }
-            ok = ok and _Py_typing_type_repr(writer, tuple_get_item(value, i)) >= 0;
-            i += 1;
-        }
-        ok = ok and PyUnicodeWriter_WriteChar(writer, 41) >= 0;
-    } else {
-        ok = _Py_typing_type_repr(writer, value) >= 0;
-    }
-    if not ok {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
-}
+) -> ptr[PyObject];
 
-def constevaluator_alloc(value: ptr[PyObject]) -> ptr[PyObject] {
-    tp = cached_type(PyInterpreterState_CACHED_CONSTEVALUATOR_TYPE);
-    ce = _PyObject_GC_New(ptr[PyObject](tp));
-    if not ce {
-        return NULL;
-    }
-    set_field(ce, constevaluatorobject_VALUE, object_new_ref(value));
-    object_gc_track(ce);
-    return ce;
-}
+def constevaluator_alloc(value: ptr[PyObject]) -> ptr[PyObject];
 
 import from c {
-    # The repr typing uses for a type in an annotation: "..." for Ellipsis,
-    # "None" for NoneType, the repr of a generic alias, "module.qualname"
-    # for a class (bare for builtins), else repr().
     def _Py_typing_type_repr(writer: ptr[PyUnicodeWriter], p: ptr[PyObject]) -> i32 {
         if p == Py_Ellipsis {
-            r = PyUnicode_FromString("...");
+            r = PyUnicode_FromString(ptr[u8]("..."));
             if not r {
                 return i32(-1);
             }
@@ -994,7 +839,7 @@ import from c {
             return rc;
         }
         if p == ptr[PyObject](addressof(_PyNone_Type)) {
-            return PyUnicodeWriter_WriteASCII(ptr(writer), "None", 4);
+            return PyUnicodeWriter_WriteASCII(ptr(writer), ptr[u8]("None"), 4);
         }
         qualname: ptr[PyObject] = NULL;
         module: ptr[PyObject] = NULL;
@@ -1006,7 +851,6 @@ import from c {
             rc = PyObject_HasAttrWithError(p, interned(1));
         }
         if rc > 0 {
-            # Looks like a GenericAlias.
             use_repr = True;
         } elif rc < 0 {
             failed = True;
@@ -1019,8 +863,7 @@ import from c {
         } elif not module or module == Py_None {
             use_repr = True;
         } elif type_has_feature(object_type(module), Py_TPFLAGS_UNICODE_SUBCLASS)
-            and _PyUnicode_EqualToASCIIString(module, "builtins") != 0 {
-            # Builtins need no module name.
+            and _PyUnicode_EqualToASCIIString(module, ptr[u8]("builtins")) != 0 {
             r = PyObject_Str(qualname);
         } else {
             r = PyUnicode_FromFormat("%S.%S", module, qualname);
@@ -1039,303 +882,63 @@ import from c {
     }
 }
 
-def call_typing_func_object(name: str, args: list[ptr[PyObject]]) -> ptr[PyObject] {
-    typing = PyImport_ImportModule("typing");
-    if not typing {
-        return NULL;
-    }
-    func = PyObject_GetAttrString(typing, name);
-    if not func {
-        object_decref(typing);
-        return NULL;
-    }
-    pack = PyTuple_New(len(args));
-    result: ptr[PyObject] = NULL;
-    if pack {
-        i: i64 = 0;
-        for a in args {
-            tuple_set_item(pack, i, object_new_ref(a));
-            i += 1;
-        }
-        result = PyObject_Call(func, pack, NULL);
-        object_decref(pack);
-    }
-    object_decref(func);
-    object_decref(typing);
-    return result;
-}
+def call_typing_func_object(name: str, args: list[ptr[PyObject]]) -> ptr[PyObject];
 
-"""typing._type_check, except None, which is its own type (calling
-typing.py here would be a bootstrapping problem)."""
-def type_check(arg: ptr[PyObject], msg: str) -> ptr[PyObject] {
-    if arg == Py_None {
-        return object_new_ref(ptr[PyObject](object_type(arg)));
-    }
-    message_str = PyUnicode_FromString(msg);
-    if not message_str {
-        return NULL;
-    }
-    result = call_typing_func_object("_type_check", [arg, message_str]);
-    object_decref(message_str);
-    return result;
-}
+def type_check(arg: ptr[PyObject], msg: str) -> ptr[PyObject];
 
-"""A typing.Union, the | of TypeVar and ParamSpec: string forward
-references must keep working, which types.Union does not allow."""
-def make_union(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
-    args = PyTuple_Pack(2, self, other);
-    if not args {
-        return NULL;
-    }
-    u = _Py_union_from_tuple(args);
-    object_decref(args);
-    return u;
-}
+def make_union(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject];
 
-"""The module of the calling Python function, or None."""
-def caller -> ptr[PyObject] {
-    tstate = ptr[u8](PyThreadState_GetUnchecked());
-    f = ptr[ptr[u8]](tstate + PyThreadState_CURRENT_FRAME).view(1)[0];
-    if not f {
-        return object_new_ref(Py_None);
-    }
-    funcobj = ptr[u64](f + _PyInterpreterFrame_F_FUNCOBJ).view(1)[0];
-    # PyStackRef_NULL.
-    if funcobj == u64(1) {
-        return object_new_ref(Py_None);
-    }
-    r = PyFunction_GetModule(ptr[PyObject](i64.wrap(funcobj & ~u64(1))));
-    if not r {
-        PyErr_Clear();
-        return object_new_ref(Py_None);
-    }
-    return object_new_ref(r);
-}
+def caller -> ptr[PyObject];
 
-def unpack(self: ptr[PyObject]) -> ptr[PyObject] {
-    typing = PyImport_ImportModule("typing");
-    if not typing {
-        return NULL;
-    }
-    unpack_form = PyObject_GetAttrString(typing, "Unpack");
-    if not unpack_form {
-        object_decref(typing);
-        return NULL;
-    }
-    unpacked = PyObject_GetItem(unpack_form, self);
-    object_decref(typing);
-    object_decref(unpack_form);
-    return unpacked;
-}
+def unpack(self: ptr[PyObject]) -> ptr[PyObject];
 
-def contains_typevartuple(params: ptr[PyObject]) -> bool {
-    tp = cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE);
-    for i in range(object_size(params)) {
-        if object_is_type(tuple_get_item(params, i), tp) {
-            return True;
-        }
-    }
-    return False;
-}
+def contains_typevartuple(params: ptr[PyObject]) -> bool;
 
-"""Unpack the TypeVarTuples of `params` (Generic needs them unpacked); a
-new reference."""
-def unpack_typevartuples(params: ptr[PyObject]) -> ptr[PyObject] {
-    if not contains_typevartuple(params) {
-        return object_new_ref(params);
-    }
-    n = object_size(params);
-    new_params = PyTuple_New(n);
-    if not new_params {
-        return NULL;
-    }
-    tp = cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE);
-    for i in range(n) {
-        param = tuple_get_item(params, i);
-        if object_is_type(param, tp) {
-            unpacked = unpack(param);
-            if not unpacked {
-                object_decref(new_params);
-                return NULL;
-            }
-            tuple_set_item(new_params, i, unpacked);
-        } else {
-            tuple_set_item(new_params, i, object_new_ref(param));
-        }
-    }
-    return new_params;
-}
+def unpack_typevartuples(params: ptr[PyObject]) -> ptr[PyObject];
 
-"""A lazily evaluated attribute: the cached value, else the evaluator's
-result (cached), else `fallback` (a new reference)."""
 def lazy_attribute(
     op: ptr[PyObject], value_offset: i64, evaluate_offset: i64, fallback: ptr[PyObject]
-) -> ptr[PyObject] {
-    value = field(op, value_offset);
-    if value {
-        return object_new_ref(value);
-    }
-    evaluate = field(op, evaluate_offset);
-    if not evaluate {
-        return fallback;
-    }
-    result = PyObject_CallNoArgs(evaluate);
-    set_field(op, value_offset, object_xnew_ref(result));
-    return result;
-}
+) -> ptr[PyObject];
 
-"""evaluate_*: the evaluator, else a constant evaluator of the value, else
-None."""
 def evaluator_attribute(
     op: ptr[PyObject], value_offset: i64, evaluate_offset: i64
-) -> ptr[PyObject] {
-    evaluate = field(op, evaluate_offset);
-    if evaluate {
-        return object_new_ref(evaluate);
-    }
-    value = field(op, value_offset);
-    if value {
-        return constevaluator_alloc(value);
-    }
-    return object_new_ref(Py_None);
-}
+) -> ptr[PyObject];
 
 def has_default(
     op: ptr[PyObject], default_offset: i64, evaluate_offset: i64
-) -> ptr[PyObject] {
-    value = field(op, default_offset);
-    if field(op, evaluate_offset) or (value != no_default() and value) {
-        return PyBool_FromLong(1);
-    }
-    return PyBool_FromLong(0);
-}
+) -> ptr[PyObject];
 
 def variance_repr(
     op: ptr[PyObject], name_offset: i64, covariant: i64, contravariant: i64, infer: i64
-) -> ptr[PyObject] {
-    name = field(op, name_offset);
-    if flag(op, infer) {
-        return object_new_ref(name);
-    }
-    variance = i32(43)
-        if flag(op, covariant)
-        else (i32(45) if flag(op, contravariant) else i32(126));
-    return PyUnicode_FromFormat("%c%U", variance, name);
-}
+) -> ptr[PyObject];
 
-def mro_entries_error(name: str) -> ptr[PyObject] {
-    PyErr_Format(PyExc_TypeError, "Cannot subclass an instance of %s", name);
-    return NULL;
-}
+def mro_entries_error(name: str) -> ptr[PyObject];
 
-"""Set __module__ on a new type parameter; NULL (the object released) on
-failure."""
-def with_module(op: ptr[PyObject], module: ptr[PyObject]) -> ptr[PyObject] {
-    if module and PyObject_SetAttrString(op, "__module__", module) < 0 {
-        object_decref(op);
-        return NULL;
-    }
-    return op;
-}
-
-# ----------------------------------------------------------------- TypeVar
+def with_module(op: ptr[PyObject], module: ptr[PyObject]) -> ptr[PyObject];
 
 glob:priv TYPEVAR_FIELDS: i64 = 7;
 
-def typevar_offsets -> list[i64] {
-    return [
-        typevarobject_NAME,
-        typevarobject_BOUND,
-        typevarobject_EVALUATE_BOUND,
-        typevarobject_CONSTRAINTS,
-        typevarobject_EVALUATE_CONSTRAINTS,
-        typevarobject_DEFAULT_VALUE,
-        typevarobject_EVALUATE_DEFAULT
-    ];
-}
+def typevar_offsets -> list[i64];
 
-def typevar_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    for offset in typevar_offsets() {
-        object_xdecref(field(self, offset));
-    }
-    PyObject_ClearManagedDict(self);
-    PyObject_ClearWeakRefs(self);
-    heap_free(self);
-}
+def typevar_dealloc(self: ptr[PyObject]);
 
-def typevar_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
-    for offset in typevar_offsets() {
-        if status != 0 {
-            return status;
-        }
-        status = visit_reference(field(self, offset), visitor, arg);
-    }
-    if status != 0 {
-        return status;
-    }
-    return PyObject_VisitManagedDict(self, visitor, arg);
-}
+def typevar_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def typevar_clear(op: ptr[PyObject]) -> i32 {
-    for offset in typevar_offsets() {
-        replace_field(op, offset, NULL);
-    }
-    PyObject_ClearManagedDict(op);
-    return i32(0);
-}
+def typevar_clear(op: ptr[PyObject]) -> i32;
 
-def typevar_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return variance_repr(
-        self,
-        typevarobject_NAME,
-        typevarobject_COVARIANT,
-        typevarobject_CONTRAVARIANT,
-        typevarobject_INFER_VARIANCE
-    );
-}
+def typevar_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
-def typevar_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return lazy_attribute(
-        op, typevarobject_BOUND, typevarobject_EVALUATE_BOUND, object_new_ref(Py_None)
-    );
-}
+def typevar_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevar_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return lazy_attribute(
-        op, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT, no_default()
-    );
-}
+def typevar_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevar_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    value = field(op, typevarobject_CONSTRAINTS);
-    if value {
-        return object_new_ref(value);
-    }
-    if not field(op, typevarobject_EVALUATE_CONSTRAINTS) {
-        return PyTuple_New(0);
-    }
-    return lazy_attribute(
-        op, typevarobject_CONSTRAINTS, typevarobject_EVALUATE_CONSTRAINTS, NULL
-    );
-}
+def typevar_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevar_evaluate_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return evaluator_attribute(op, typevarobject_BOUND, typevarobject_EVALUATE_BOUND);
-}
+def typevar_evaluate_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevar_evaluate_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return evaluator_attribute(
-        op, typevarobject_CONSTRAINTS, typevarobject_EVALUATE_CONSTRAINTS
-    );
-}
+def typevar_evaluate_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevar_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return evaluator_attribute(
-        op, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT
-    );
-}
+def typevar_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def typevar_alloc(
     name: ptr[PyObject],
@@ -1348,400 +951,89 @@ def typevar_alloc(
     contravariant: bool,
     infer_variance: bool,
     module: ptr[PyObject]
-) -> ptr[PyObject] {
-    tv = _PyObject_GC_New(
-        ptr[PyObject](cached_type(PyInterpreterState_CACHED_TYPEVAR_TYPE))
-    );
-    if not tv {
-        return NULL;
-    }
-    set_field(tv, typevarobject_NAME, object_new_ref(name));
-    set_field(tv, typevarobject_BOUND, object_xnew_ref(bound));
-    set_field(tv, typevarobject_EVALUATE_BOUND, object_xnew_ref(evaluate_bound));
-    set_field(tv, typevarobject_CONSTRAINTS, object_xnew_ref(constraints));
-    set_field(
-        tv, typevarobject_EVALUATE_CONSTRAINTS, object_xnew_ref(evaluate_constraints)
-    );
-    set_field(tv, typevarobject_DEFAULT_VALUE, object_xnew_ref(default_value));
-    set_field(tv, typevarobject_EVALUATE_DEFAULT, NULL);
-    set_flag(tv, typevarobject_COVARIANT, covariant);
-    set_flag(tv, typevarobject_CONTRAVARIANT, contravariant);
-    set_flag(tv, typevarobject_INFER_VARIANCE, infer_variance);
-    object_gc_track(tv);
-    return with_module(tv, module);
-}
+) -> ptr[PyObject];
 
-"""Validate the variance flags shared by TypeVar and ParamSpec."""
-def check_variance(covariant: i32, contravariant: i32, infer_variance: i32) -> bool {
-    if covariant != 0 and contravariant != 0 {
-        PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
-        return False;
-    }
-    if infer_variance != 0 and (covariant != 0 or contravariant != 0) {
-        PyErr_SetString(
-            PyExc_ValueError, "Variance cannot be specified with infer_variance."
-        );
-        return False;
-    }
-    return True;
-}
+def check_variance(covariant: i32, contravariant: i32, infer_variance: i32) -> bool;
 
-"""The variance flags of a bound call (values 3, 4, 5); status -1 on
-error."""
-def variance_flags(values: ptr[ptr[PyObject]]) -> tuple[i32, i32, i32, i32] {
-    covariant = bool_argument((values + 3).view(1)[0], False);
-    if covariant < 0 {
-        return (i32(-1), i32(0), i32(0), i32(0));
-    }
-    contravariant = bool_argument((values + 4).view(1)[0], False);
-    if contravariant < 0 {
-        return (i32(-1), i32(0), i32(0), i32(0));
-    }
-    infer_variance = bool_argument((values + 5).view(1)[0], False);
-    if infer_variance < 0 {
-        return (i32(-1), i32(0), i32(0), i32(0));
-    }
-    return (i32(0), covariant, contravariant, infer_variance);
-}
+def variance_flags(values: ptr[ptr[PyObject]]) -> tuple[i32, i32, i32, i32];
 
-def check_name(name: ptr[PyObject], fname: str) -> bool {
-    if not type_has_feature(object_type(name), Py_TPFLAGS_UNICODE_SUBCLASS) {
-        _PyArg_BadArgument(fname, "argument 'name'", ptr[u8]("str"), name);
-        return False;
-    }
-    return True;
-}
+def check_name(name: ptr[PyObject], fname: str) -> bool;
 
-"""typevar.__new__ after binding: values are name, bound, default and the
-three flags; `context` carries the constraints tuple."""
 def typevar_new_values(
     constraints: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
-) -> ptr[PyObject] {
-    name = values.view(1)[0];
-    if not check_name(name, "typevar") {
-        return NULL;
-    }
-    bound = (values + 1).view(1)[0];
-    default_value = (values + 2).view(1)[0]
-        if (values + 2).view(1)[0]
-        else no_default();
-    (status, covariant, contravariant, infer_variance) = variance_flags(values);
-    if status < 0 or not check_variance(covariant, contravariant, infer_variance) {
-        return NULL;
-    }
-    if bound == Py_None {
-        bound = NULL;
-    }
-    if bound {
-        bound = type_check(bound, "Bound must be a type.");
-        if not bound {
-            return NULL;
-        }
-    }
-    n_constraints = object_size(constraints);
-    kept = constraints;
-    if n_constraints == 1 {
-        PyErr_SetString(PyExc_TypeError, "A single constraint is not allowed");
-        object_xdecref(bound);
-        return NULL;
-    } elif n_constraints == 0 {
-        kept = NULL;
-    } elif bound {
-        PyErr_SetString(
-            PyExc_TypeError, "Constraints cannot be combined with bound=..."
-        );
-        object_xdecref(bound);
-        return NULL;
-    }
-    module = caller();
-    if not module {
-        object_xdecref(bound);
-        return NULL;
-    }
-    tv = typevar_alloc(
-        name,
-        bound,
-        NULL,
-        kept,
-        NULL,
-        default_value,
-        covariant != 0,
-        contravariant != 0,
-        infer_variance != 0,
-        module
-    );
-    object_xdecref(bound);
-    object_xdecref(module);
-    return tv;
-}
+) -> ptr[PyObject];
 
-"""TypeVar(name, *constraints, ...): the positional name and the keywords
-bind through the signature, the remaining positionals are the constraints."""
 def typevar_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    head = PyTuple_GetSlice(args, 0, 1);
-    if not head {
-        return NULL;
-    }
-    constraints = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
-    if not constraints {
-        object_decref(head);
-        return NULL;
-    }
-    result = invoke_tuple(
-        typevar_signature, head, kwargs, typevar_new_values, constraints
-    );
-    object_decref(head);
-    object_decref(constraints);
-    return result;
-}
+) -> ptr[PyObject];
 
-def typevar_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject] {
-    return call_typing_func_object("_typevar_subst", [self, arg]);
-}
+def typevar_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject];
 
 def typevar_typing_prepare_subst(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
-) -> ptr[PyObject] {
-    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
-        return NULL;
-    }
-    alias = args.view(1)[0];
-    subst_args = (args + 1).view(1)[0];
-    params = PyObject_GetAttrString(alias, "__parameters__");
-    if not params {
-        return NULL;
-    }
-    i = PySequence_Index(params, self);
-    if i == -1 {
-        object_decref(params);
-        return NULL;
-    }
-    args_len = PySequence_Length(subst_args);
-    if args_len == -1 {
-        object_decref(params);
-        return NULL;
-    }
-    if i < args_len {
-        # A value for this TypeVar exists.
-        object_decref(params);
-        return object_new_ref(subst_args);
-    }
-    if i == args_len {
-        # Use the default when there is one.
-        dflt = typevar_default(self, ptr());
-        if not dflt {
-            object_decref(params);
-            return NULL;
-        }
-        if dflt != no_default() {
-            new_args = PyTuple_Pack(1, dflt);
-            object_decref(dflt);
-            if not new_args {
-                object_decref(params);
-                return NULL;
-            }
-            result = PySequence_Concat(subst_args, new_args);
-            object_decref(params);
-            object_decref(new_args);
-            return result;
-        }
-    }
-    object_decref(params);
-    PyErr_Format(
-        PyExc_TypeError,
-        "Too few arguments for %S; actual %zd, expected at least %zd",
-        alias,
-        args_len,
-        i + 1
-    );
-    return NULL;
-}
+) -> ptr[PyObject];
 
-def typevar_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, typevarobject_NAME));
-}
+def typevar_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-def typevar_has_default(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return has_default(
-        self, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT
-    );
-}
+def typevar_has_default(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-def typevar_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
-    return mro_entries_error("TypeVar");
-}
+def typevar_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject];
 
-# ---------------------------------------------- ParamSpecArgs / ParamSpecKwargs
+def paramspecattr_dealloc(self: ptr[PyObject]);
 
-def paramspecattr_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    object_xdecref(field(self, paramspecattrobject_ORIGIN));
-    heap_free(self);
-}
+def paramspecattr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def paramspecattr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return visit_reference(field(self, paramspecattrobject_ORIGIN), visitor, arg);
-}
-
-def paramspecattr_clear(op: ptr[PyObject]) -> i32 {
-    replace_field(op, paramspecattrobject_ORIGIN, NULL);
-    return i32(0);
-}
+def paramspecattr_clear(op: ptr[PyObject]) -> i32;
 
 def paramspecattr_richcompare(
     a: ptr[PyObject], b: ptr[PyObject], op: i32
-) -> ptr[PyObject] {
-    if not object_is_type(a, object_type(b)) or (op != Py_EQ and op != Py_NE) {
-        return object_new_ref(Py_NotImplemented);
-    }
-    return PyObject_RichCompare(
-        field(a, paramspecattrobject_ORIGIN), field(b, paramspecattrobject_ORIGIN), op
-    );
-}
+) -> ptr[PyObject];
 
-def paramspecattr_new(tp: ptr[PyTypeObject], origin: ptr[PyObject]) -> ptr[PyObject] {
-    psa = _PyObject_GC_New(ptr[PyObject](tp));
-    if not psa {
-        return NULL;
-    }
-    set_field(psa, paramspecattrobject_ORIGIN, object_new_ref(origin));
-    object_gc_track(psa);
-    return psa;
-}
+def paramspecattr_new(tp: ptr[PyTypeObject], origin: ptr[PyObject]) -> ptr[PyObject];
 
-def paramspecattr_repr(self: ptr[PyObject], suffix: str) -> ptr[PyObject] {
-    origin = field(self, paramspecattrobject_ORIGIN);
-    if object_is_type(origin, cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE)) {
-        return PyUnicode_FromFormat(
-            "%U.%s", field(origin, paramspecobject_NAME), suffix
-        );
-    }
-    return PyUnicode_FromFormat("%R.%s", origin, suffix);
-}
+def paramspecattr_repr(self: ptr[PyObject], suffix: str) -> ptr[PyObject];
 
-def paramspecargs_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return paramspecattr_repr(self, "args");
-}
+def paramspecargs_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
-def paramspeckwargs_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return paramspecattr_repr(self, "kwargs");
-}
+def paramspeckwargs_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
 def paramspecattr_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
-) -> ptr[PyObject] {
-    return paramspecattr_new(ptr[PyTypeObject](type), values.view(1)[0]);
-}
+) -> ptr[PyObject];
 
 def paramspecargs_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return invoke_tuple(
-        paramspecargs_signature, args, kwargs, paramspecattr_new_values, type
-    );
-}
+) -> ptr[PyObject];
 
 def paramspeckwargs_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return invoke_tuple(
-        paramspeckwargs_signature, args, kwargs, paramspecattr_new_values, type
-    );
-}
+) -> ptr[PyObject];
 
 def paramspecargs_mro_entries(
     self: ptr[PyObject], args: ptr[PyObject]
-) -> ptr[PyObject] {
-    return mro_entries_error("ParamSpecArgs");
-}
+) -> ptr[PyObject];
 
 def paramspeckwargs_mro_entries(
     self: ptr[PyObject], args: ptr[PyObject]
-) -> ptr[PyObject] {
-    return mro_entries_error("ParamSpecKwargs");
-}
+) -> ptr[PyObject];
 
-# --------------------------------------------------------------- ParamSpec
+def paramspec_offsets -> list[i64];
 
-def paramspec_offsets -> list[i64] {
-    return [
-        paramspecobject_NAME,
-        paramspecobject_BOUND,
-        paramspecobject_DEFAULT_VALUE,
-        paramspecobject_EVALUATE_DEFAULT
-    ];
-}
+def paramspec_dealloc(self: ptr[PyObject]);
 
-def paramspec_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    for offset in paramspec_offsets() {
-        object_xdecref(field(self, offset));
-    }
-    PyObject_ClearManagedDict(self);
-    PyObject_ClearWeakRefs(self);
-    heap_free(self);
-}
+def paramspec_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def paramspec_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
-    for offset in paramspec_offsets() {
-        if status != 0 {
-            return status;
-        }
-        status = visit_reference(field(self, offset), visitor, arg);
-    }
-    if status != 0 {
-        return status;
-    }
-    return PyObject_VisitManagedDict(self, visitor, arg);
-}
+def paramspec_clear(op: ptr[PyObject]) -> i32;
 
-def paramspec_clear(op: ptr[PyObject]) -> i32 {
-    for offset in paramspec_offsets() {
-        replace_field(op, offset, NULL);
-    }
-    PyObject_ClearManagedDict(op);
-    return i32(0);
-}
+def paramspec_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
-def paramspec_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return variance_repr(
-        self,
-        paramspecobject_NAME,
-        paramspecobject_COVARIANT,
-        paramspecobject_CONTRAVARIANT,
-        paramspecobject_INFER_VARIANCE
-    );
-}
+def paramspec_args(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def paramspec_args(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return paramspecattr_new(
-        cached_type(PyInterpreterState_CACHED_PARAMSPECARGS_TYPE), self
-    );
-}
+def paramspec_kwargs(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def paramspec_kwargs(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return paramspecattr_new(
-        cached_type(PyInterpreterState_CACHED_PARAMSPECKWARGS_TYPE), self
-    );
-}
+def paramspec_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def paramspec_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return lazy_attribute(
-        op,
-        paramspecobject_DEFAULT_VALUE,
-        paramspecobject_EVALUATE_DEFAULT,
-        no_default()
-    );
-}
-
-def paramspec_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return evaluator_attribute(
-        op, paramspecobject_DEFAULT_VALUE, paramspecobject_EVALUATE_DEFAULT
-    );
-}
+def paramspec_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def paramspec_alloc(
     name: ptr[PyObject],
@@ -1751,408 +1043,101 @@ def paramspec_alloc(
     contravariant: bool,
     infer_variance: bool,
     module: ptr[PyObject]
-) -> ptr[PyObject] {
-    ps = _PyObject_GC_New(
-        ptr[PyObject](cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE))
-    );
-    if not ps {
-        return NULL;
-    }
-    set_field(ps, paramspecobject_NAME, object_new_ref(name));
-    set_field(ps, paramspecobject_BOUND, object_xnew_ref(bound));
-    set_flag(ps, paramspecobject_COVARIANT, covariant);
-    set_flag(ps, paramspecobject_CONTRAVARIANT, contravariant);
-    set_flag(ps, paramspecobject_INFER_VARIANCE, infer_variance);
-    set_field(ps, paramspecobject_DEFAULT_VALUE, object_xnew_ref(default_value));
-    set_field(ps, paramspecobject_EVALUATE_DEFAULT, NULL);
-    object_gc_track(ps);
-    return with_module(ps, module);
-}
+) -> ptr[PyObject];
 
 def paramspec_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
-) -> ptr[PyObject] {
-    name = values.view(1)[0];
-    if not check_name(name, "paramspec") {
-        return NULL;
-    }
-    bound = (values + 1).view(1)[0] if (values + 1).view(1)[0] else Py_None;
-    default_value = (values + 2).view(1)[0]
-        if (values + 2).view(1)[0]
-        else no_default();
-    (status, covariant, contravariant, infer_variance) = variance_flags(values);
-    if status < 0 or not check_variance(covariant, contravariant, infer_variance) {
-        return NULL;
-    }
-    # bound (default None) always goes through typing._type_check's None
-    # rule: None is its own type.
-    checked = type_check(bound, "Bound must be a type.");
-    if not checked {
-        return NULL;
-    }
-    module = caller();
-    if not module {
-        object_decref(checked);
-        return NULL;
-    }
-    ps = paramspec_alloc(
-        name,
-        checked,
-        default_value,
-        covariant != 0,
-        contravariant != 0,
-        infer_variance != 0,
-        module
-    );
-    object_decref(checked);
-    object_decref(module);
-    return ps;
-}
+) -> ptr[PyObject];
 
 def paramspec_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return invoke_tuple(paramspec_signature, args, kwargs, paramspec_new_values, type);
-}
+) -> ptr[PyObject];
 
-def paramspec_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject] {
-    return call_typing_func_object("_paramspec_subst", [self, arg]);
-}
+def paramspec_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject];
 
 def paramspec_typing_prepare_subst(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
-) -> ptr[PyObject] {
-    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
-        return NULL;
-    }
-    return call_typing_func_object(
-        "_paramspec_prepare_subst", [self, args.view(1)[0], (args + 1).view(1)[0]]
-    );
-}
+) -> ptr[PyObject];
 
-def paramspec_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, paramspecobject_NAME));
-}
+def paramspec_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
 def paramspec_has_default(
     self: ptr[PyObject], _unused: ptr[PyObject]
-) -> ptr[PyObject] {
-    return has_default(
-        self, paramspecobject_DEFAULT_VALUE, paramspecobject_EVALUATE_DEFAULT
-    );
-}
+) -> ptr[PyObject];
 
-def paramspec_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
-    return mro_entries_error("ParamSpec");
-}
+def paramspec_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject];
 
-# ------------------------------------------------------------ TypeVarTuple
+def typevartuple_offsets -> list[i64];
 
-def typevartuple_offsets -> list[i64] {
-    return [
-        typevartupleobject_NAME,
-        typevartupleobject_DEFAULT_VALUE,
-        typevartupleobject_EVALUATE_DEFAULT
-    ];
-}
+def typevartuple_dealloc(self: ptr[PyObject]);
 
-def typevartuple_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    for offset in typevartuple_offsets() {
-        object_xdecref(field(self, offset));
-    }
-    PyObject_ClearManagedDict(self);
-    PyObject_ClearWeakRefs(self);
-    heap_free(self);
-}
+def unpack_iter(self: ptr[PyObject]) -> ptr[PyObject];
 
-def unpack_iter(self: ptr[PyObject]) -> ptr[PyObject] {
-    unpacked = unpack(self);
-    if not unpacked {
-        return NULL;
-    }
-    tuple = PyTuple_Pack(1, unpacked);
-    if not tuple {
-        object_decref(unpacked);
-        return NULL;
-    }
-    result = PyObject_GetIter(tuple);
-    object_decref(unpacked);
-    object_decref(tuple);
-    return result;
-}
-
-def typevartuple_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, typevartupleobject_NAME));
-}
+def typevartuple_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
 def typevartuple_alloc(
     name: ptr[PyObject], module: ptr[PyObject], default_value: ptr[PyObject]
-) -> ptr[PyObject] {
-    tvt = _PyObject_GC_New(
-        ptr[PyObject](cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE))
-    );
-    if not tvt {
-        return NULL;
-    }
-    set_field(tvt, typevartupleobject_NAME, object_new_ref(name));
-    set_field(tvt, typevartupleobject_DEFAULT_VALUE, object_xnew_ref(default_value));
-    set_field(tvt, typevartupleobject_EVALUATE_DEFAULT, NULL);
-    object_gc_track(tvt);
-    return with_module(tvt, module);
-}
+) -> ptr[PyObject];
 
 def typevartuple_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
-) -> ptr[PyObject] {
-    name = values.view(1)[0];
-    if not check_name(name, "typevartuple") {
-        return NULL;
-    }
-    default_value = (values + 1).view(1)[0]
-        if (values + 1).view(1)[0]
-        else no_default();
-    module = caller();
-    if not module {
-        return NULL;
-    }
-    result = typevartuple_alloc(name, module, default_value);
-    object_decref(module);
-    return result;
-}
+) -> ptr[PyObject];
 
 def typevartuple_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return invoke_tuple(
-        typevartuple_signature, args, kwargs, typevartuple_new_values, type
-    );
-}
+) -> ptr[PyObject];
 
 def typevartuple_typing_subst(
     self: ptr[PyObject], arg: ptr[PyObject]
-) -> ptr[PyObject] {
-    PyErr_SetString(
-        PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported"
-    );
-    return NULL;
-}
+) -> ptr[PyObject];
 
 def typevartuple_typing_prepare_subst(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
-) -> ptr[PyObject] {
-    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
-        return NULL;
-    }
-    return call_typing_func_object(
-        "_typevartuple_prepare_subst", [self, args.view(1)[0], (args + 1).view(1)[0]]
-    );
-}
+) -> ptr[PyObject];
 
-def typevartuple_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, typevartupleobject_NAME));
-}
+def typevartuple_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
 def typevartuple_has_default(
     self: ptr[PyObject], _unused: ptr[PyObject]
-) -> ptr[PyObject] {
-    return has_default(
-        self, typevartupleobject_DEFAULT_VALUE, typevartupleobject_EVALUATE_DEFAULT
-    );
-}
+) -> ptr[PyObject];
 
 def typevartuple_mro_entries(
     self: ptr[PyObject], args: ptr[PyObject]
-) -> ptr[PyObject] {
-    return mro_entries_error("TypeVarTuple");
-}
+) -> ptr[PyObject];
 
-def typevartuple_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
-    for offset in typevartuple_offsets() {
-        if status != 0 {
-            return status;
-        }
-        status = visit_reference(field(self, offset), visitor, arg);
-    }
-    if status != 0 {
-        return status;
-    }
-    return PyObject_VisitManagedDict(self, visitor, arg);
-}
+def typevartuple_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def typevartuple_clear(self: ptr[PyObject]) -> i32 {
-    for offset in typevartuple_offsets() {
-        replace_field(self, offset, NULL);
-    }
-    PyObject_ClearManagedDict(self);
-    return i32(0);
-}
+def typevartuple_clear(self: ptr[PyObject]) -> i32;
 
-def typevartuple_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return lazy_attribute(
-        op,
-        typevartupleobject_DEFAULT_VALUE,
-        typevartupleobject_EVALUATE_DEFAULT,
-        no_default()
-    );
-}
+def typevartuple_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typevartuple_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return evaluator_attribute(
-        op, typevartupleobject_DEFAULT_VALUE, typevartupleobject_EVALUATE_DEFAULT
-    );
-}
+def typevartuple_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-"""A type parameter's default (a new reference, or the borrowed NoDefault
-singleton), as the type-alias check reads it."""
-def get_type_param_default(typeparam: ptr[PyObject]) -> ptr[PyObject] {
-    if object_is_type(typeparam, cached_type(PyInterpreterState_CACHED_TYPEVAR_TYPE)) {
-        return typevar_default(typeparam, ptr());
-    }
-    if object_is_type(
-        typeparam, cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE)
-    ) {
-        return paramspec_default(typeparam, ptr());
-    }
-    if object_is_type(
-        typeparam, cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE)
-    ) {
-        return typevartuple_default(typeparam, ptr());
-    }
-    PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
-    return NULL;
-}
+def get_type_param_default(typeparam: ptr[PyObject]) -> ptr[PyObject];
 
-# ----------------------------------------------------------- TypeAliasType
+def typealias_offsets -> list[i64];
 
-def typealias_offsets -> list[i64] {
-    return [
-        typealiasobject_NAME,
-        typealiasobject_TYPE_PARAMS,
-        typealiasobject_COMPUTE_VALUE,
-        typealiasobject_VALUE,
-        typealiasobject_MODULE
-    ];
-}
+def typealias_dealloc(self: ptr[PyObject]);
 
-def typealias_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    for offset in typealias_offsets() {
-        object_xdecref(field(self, offset));
-    }
-    heap_free(self);
-}
+def typealias_get_value(ta: ptr[PyObject]) -> ptr[PyObject];
 
-def typealias_get_value(ta: ptr[PyObject]) -> ptr[PyObject] {
-    value = field(ta, typealiasobject_VALUE);
-    if value {
-        return object_new_ref(value);
-    }
-    result = PyObject_CallNoArgs(field(ta, typealiasobject_COMPUTE_VALUE));
-    if not result {
-        return NULL;
-    }
-    set_field(ta, typealiasobject_VALUE, object_new_ref(result));
-    return result;
-}
+def typealias_repr(self: ptr[PyObject]) -> ptr[PyObject];
 
-def typealias_repr(self: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, typealiasobject_NAME));
-}
+def typealias_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typealias_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    return typealias_get_value(self);
-}
+def typealias_evaluate_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typealias_evaluate_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    compute = field(self, typealiasobject_COMPUTE_VALUE);
-    if compute {
-        return object_new_ref(compute);
-    }
-    return constevaluator_alloc(field(self, typealiasobject_VALUE));
-}
+def typealias_parameters(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typealias_parameters(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    params = field(self, typealiasobject_TYPE_PARAMS);
-    if not params {
-        return PyTuple_New(0);
-    }
-    return unpack_typevartuples(params);
-}
+def typealias_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typealias_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    params = field(self, typealiasobject_TYPE_PARAMS);
-    if not params {
-        return PyTuple_New(0);
-    }
-    return object_new_ref(params);
-}
+def typealias_module(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def typealias_module(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    module = field(self, typealiasobject_MODULE);
-    if module {
-        return object_new_ref(module);
-    }
-    compute = field(self, typealiasobject_COMPUTE_VALUE);
-    if compute {
-        # Borrowed; NULL for a function defined in an exec()'ed block.
-        mod = PyFunction_GetModule(compute);
-        if mod {
-            return object_new_ref(mod);
-        }
-    }
-    return object_new_ref(Py_None);
-}
-
-"""type_params unchanged (borrowed) or NULL when empty; status -1 when a
-non-default parameter follows a default one."""
 def typealias_check_type_params(
     type_params: ptr[PyObject]
-) -> tuple[i32, ptr[PyObject]] {
-    if not type_params {
-        return (i32(0), NULL);
-    }
-    length = object_size(type_params);
-    if length == 0 {
-        # An empty tuple is the same as none.
-        return (i32(0), NULL);
-    }
-    default_seen = False;
-    for index in range(length) {
-        type_param = tuple_get_item(type_params, index);
-        dflt = get_type_param_default(type_param);
-        if not dflt {
-            return (i32(-1), NULL);
-        }
-        if dflt == no_default() {
-            if default_seen {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "non-default type parameter '%R' follows default type parameter",
-                    type_param
-                );
-                return (i32(-1), NULL);
-            }
-        } else {
-            default_seen = True;
-            object_decref(dflt);
-        }
-    }
-    return (i32(0), type_params);
-}
+) -> tuple[i32, ptr[PyObject]];
 
-def typealias_convert_type_params(type_params: ptr[PyObject]) -> ptr[PyObject] {
-    if not type_params
-        or type_params == Py_None
-        or (
-            type_has_feature(object_type(type_params), Py_TPFLAGS_TUPLE_SUBCLASS)
-            and object_size(type_params) == 0
-        ) {
-        return NULL;
-    }
-    return type_params;
-}
+def typealias_convert_type_params(type_params: ptr[PyObject]) -> ptr[PyObject];
 
 def typealias_alloc(
     name: ptr[PyObject],
@@ -2160,136 +1145,39 @@ def typealias_alloc(
     compute_value: ptr[PyObject],
     value: ptr[PyObject],
     module: ptr[PyObject]
-) -> ptr[PyObject] {
-    ta = _PyObject_GC_New(ptr[PyObject](addressof(_PyTypeAlias_Type)));
-    if not ta {
-        return NULL;
-    }
-    set_field(ta, typealiasobject_NAME, object_new_ref(name));
-    set_field(ta, typealiasobject_TYPE_PARAMS, object_xnew_ref(type_params));
-    set_field(ta, typealiasobject_COMPUTE_VALUE, object_xnew_ref(compute_value));
-    set_field(ta, typealiasobject_VALUE, object_xnew_ref(value));
-    set_field(ta, typealiasobject_MODULE, object_xnew_ref(module));
-    object_gc_track(ta);
-    return ta;
-}
+) -> ptr[PyObject];
 
-def typealias_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    for offset in typealias_offsets() {
-        status = visit_reference(field(op, offset), visitor, arg);
-        if status != 0 {
-            return status;
-        }
-    }
-    return i32(0);
-}
+def typealias_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def typealias_clear(op: ptr[PyObject]) -> i32 {
-    for offset in typealias_offsets() {
-        replace_field(op, offset, NULL);
-    }
-    return i32(0);
-}
+def typealias_clear(op: ptr[PyObject]) -> i32;
 
-def typealias_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    return object_new_ref(field(self, typealiasobject_NAME));
-}
+def typealias_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-def typealias_subscript(op: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
-    if not field(op, typealiasobject_TYPE_PARAMS) {
-        PyErr_SetString(PyExc_TypeError, "Only generic type aliases are subscriptable");
-        return NULL;
-    }
-    return Py_GenericAlias(op, args);
-}
+def typealias_subscript(op: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject];
 
 def typealias_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
-) -> ptr[PyObject] {
-    name = values.view(1)[0];
-    if not check_name(name, "typealias") {
-        return NULL;
-    }
-    value = (values + 1).view(1)[0];
-    type_params = (values + 2).view(1)[0];
-    if type_params
-        and not type_has_feature(object_type(type_params), Py_TPFLAGS_TUPLE_SUBCLASS) {
-        PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
-        return NULL;
-    }
-    (status, checked_params) = typealias_check_type_params(type_params);
-    if status < 0 {
-        return NULL;
-    }
-    module = caller();
-    if not module {
-        return NULL;
-    }
-    ta = typealias_alloc(name, checked_params, NULL, value, module);
-    object_decref(module);
-    return ta;
-}
+) -> ptr[PyObject];
 
 def typealias_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return invoke_tuple(typealias_signature, args, kwargs, typealias_new_values, type);
-}
-
-# ----------------------------------------------------------------- Generic
+) -> ptr[PyObject];
 
 def call_typing_args_kwargs(
     name: str, cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    typing = PyImport_ImportModule("typing");
-    if not typing {
-        return NULL;
-    }
-    func = PyObject_GetAttrString(typing, name);
-    if not func {
-        object_decref(typing);
-        return NULL;
-    }
-    nargs = object_size(args);
-    new_args = PyTuple_New(nargs + 1);
-    if not new_args {
-        object_decref(typing);
-        object_decref(func);
-        return NULL;
-    }
-    tuple_set_item(new_args, 0, object_new_ref(cls));
-    for i in range(nargs) {
-        tuple_set_item(new_args, i + 1, object_new_ref(tuple_get_item(args, i)));
-    }
-    result = PyObject_Call(func, new_args, kwargs);
-    object_decref(typing);
-    object_decref(func);
-    object_decref(new_args);
-    return result;
-}
+) -> ptr[PyObject];
 
 def generic_init_subclass(
     cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
-}
+) -> ptr[PyObject];
 
 def generic_class_getitem(
     cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
-}
+) -> ptr[PyObject];
 
-def generic_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    heap_free(self);
-}
+def generic_dealloc(self: ptr[PyObject]);
 
-def generic_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
-}
-
-# ----------------------------------------------- the evaluator's entry points
+def generic_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
 import from c {
     def _Py_make_typevar(
@@ -2399,4 +1287,1387 @@ import from c {
         replace_field(typeparam, offset, object_new_ref(evaluate_default));
         return object_new_ref(typeparam);
     }
+}
+
+impl field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
+    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
+}
+
+impl set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
+}
+
+impl replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    old = field(op, offset);
+    set_field(op, offset, value);
+    object_xdecref(old);
+}
+
+impl flag(op: ptr[PyObject], offset: i64) -> bool {
+    return (ptr[u8](op) + offset).view(1)[0] != u8(0);
+}
+
+impl set_flag(op: ptr[PyObject], offset: i64, value: bool) {
+    (ptr[u8](op) + offset).view(1)[0] = u8(1) if value else u8(0);
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl no_default -> ptr[PyObject] {
+    return ptr[PyObject](addressof(_Py_NoDefaultStruct));
+}
+
+impl cached_type(offset: i64) -> ptr[PyTypeObject] {
+    return ptr[ptr[PyTypeObject]](current_interp() + offset).view(1)[0];
+}
+
+impl set_cached_type(offset: i64, type: ptr[PyObject]) {
+    ptr[ptr[PyObject]](current_interp() + offset).view(1)[0] = type;
+}
+
+impl heap_free(op: ptr[PyObject]) {
+    tp = object_type(op);
+    calls = addressof(call_slot);
+    calls.view(1)[0].free = int(tp.view(1)[0].tp_free);
+    calls.view(1)[0].free(ptr(op));
+    object_decref(ptr[PyObject](tp));
+}
+
+impl interned(which: int) -> ptr[PyObject] {
+    if which == 0 {
+        if not origin_key {
+            origin_key = PyUnicode_InternFromString(ptr[u8]("__origin__"));
+        }
+        return origin_key;
+    }
+    if which == 1 {
+        if not args_key {
+            args_key = PyUnicode_InternFromString(ptr[u8]("__args__"));
+        }
+        return args_key;
+    }
+    if which == 2 {
+        if not qualname_key {
+            qualname_key = PyUnicode_InternFromString(ptr[u8]("__qualname__"));
+        }
+        return qualname_key;
+    }
+    if not module_key {
+        module_key = PyUnicode_InternFromString(ptr[u8]("__module__"));
+    }
+    return module_key;
+}
+
+impl bool_argument(value: ptr[PyObject], fallback: bool) -> i32 {
+    if not value {
+        return i32(1) if fallback else i32(0);
+    }
+    return PyObject_IsTrue(value);
+}
+
+impl NoDefault_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return PyUnicode_FromString(ptr[u8]("typing.NoDefault"));
+}
+
+impl NoDefault_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return PyUnicode_FromString(ptr[u8]("NoDefault"));
+}
+
+impl nodefault_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    if object_size(args) != 0 or (kwargs and PyDict_Size(kwargs) != 0) {
+        PyErr_SetString(PyExc_TypeError, "NoDefaultType takes no arguments");
+        return NULL;
+    }
+    return no_default();
+}
+
+impl nodefault_dealloc(nodefault: ptr[PyObject]) {
+    _Py_SetImmortal(nodefault);
+}
+
+impl constevaluator_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    object_xdecref(field(self, constevaluatorobject_VALUE));
+    heap_free(self);
+}
+
+impl constevaluator_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return visit_reference(field(self, constevaluatorobject_VALUE), visitor, arg);
+}
+
+impl constevaluator_clear(self: ptr[PyObject]) -> i32 {
+    replace_field(self, constevaluatorobject_VALUE, NULL);
+    return i32(0);
+}
+
+impl constevaluator_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return PyUnicode_FromFormat(
+        "<constevaluator %R>", field(self, constevaluatorobject_VALUE)
+    );
+}
+
+impl constevaluator_call(
+    self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    if kwargs and _PyArg_NoKeywords("constevaluator.__call__", kwargs) == 0 {
+        return NULL;
+    }
+    format: i32 = 0;
+    if PyArg_ParseTuple(args, "i:constevaluator.__call__", &mut format) == 0 {
+        return NULL;
+    }
+    value = field(self, constevaluatorobject_VALUE);
+    if format != _Py_ANNOTATE_FORMAT_STRING {
+        return object_new_ref(value);
+    }
+
+    writer = PyUnicodeWriter_Create(5);
+    if not writer {
+        return NULL;
+    }
+    ok = True;
+    if type_has_feature(object_type(value), Py_TPFLAGS_TUPLE_SUBCLASS) {
+        ok = PyUnicodeWriter_WriteChar(writer, 40) >= 0;
+        i: i64 = 0;
+        while ok and i < object_size(value) {
+            if i > 0 {
+                ok = PyUnicodeWriter_WriteASCII(ptr(writer), ptr[u8](", "), 2) >= 0;
+            }
+            ok = ok and _Py_typing_type_repr(writer, tuple_get_item(value, i)) >= 0;
+            i += 1;
+        }
+        ok = ok and PyUnicodeWriter_WriteChar(writer, 41) >= 0;
+    } else {
+        ok = _Py_typing_type_repr(writer, value) >= 0;
+    }
+    if not ok {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+    return PyUnicodeWriter_Finish(writer);
+}
+
+impl constevaluator_alloc(value: ptr[PyObject]) -> ptr[PyObject] {
+    tp = cached_type(PyInterpreterState_CACHED_CONSTEVALUATOR_TYPE);
+    ce = _PyObject_GC_New(ptr[PyObject](tp));
+    if not ce {
+        return NULL;
+    }
+    set_field(ce, constevaluatorobject_VALUE, object_new_ref(value));
+    object_gc_track(ce);
+    return ce;
+}
+
+impl call_typing_func_object(name: str, args: list[ptr[PyObject]]) -> ptr[PyObject] {
+    typing = PyImport_ImportModule("typing");
+    if not typing {
+        return NULL;
+    }
+    func = PyObject_GetAttrString(typing, name);
+    if not func {
+        object_decref(typing);
+        return NULL;
+    }
+    pack = PyTuple_New(len(args));
+    result: ptr[PyObject] = NULL;
+    if pack {
+        i: i64 = 0;
+        for a in args {
+            tuple_set_item(pack, i, object_new_ref(a));
+            i += 1;
+        }
+        result = PyObject_Call(func, pack, NULL);
+        object_decref(pack);
+    }
+    object_decref(func);
+    object_decref(typing);
+    return result;
+}
+
+impl type_check(arg: ptr[PyObject], msg: str) -> ptr[PyObject] {
+    if arg == Py_None {
+        return object_new_ref(ptr[PyObject](object_type(arg)));
+    }
+    message_str = jacpy_unicode_from_text(msg);
+    if not message_str {
+        return NULL;
+    }
+    result = call_typing_func_object("_type_check", [arg, message_str]);
+    object_decref(message_str);
+    return result;
+}
+
+impl make_union(self: ptr[PyObject], other: ptr[PyObject]) -> ptr[PyObject] {
+    args = PyTuple_Pack(2, self, other);
+    if not args {
+        return NULL;
+    }
+    u = _Py_union_from_tuple(args);
+    object_decref(args);
+    return u;
+}
+
+impl caller -> ptr[PyObject] {
+    tstate = ptr[u8](PyThreadState_GetUnchecked());
+    f = ptr[ptr[u8]](tstate + PyThreadState_CURRENT_FRAME).view(1)[0];
+    if not f {
+        return object_new_ref(Py_None);
+    }
+    funcobj = ptr[u64](f + _PyInterpreterFrame_F_FUNCOBJ).view(1)[0];
+
+    if funcobj == u64(1) {
+        return object_new_ref(Py_None);
+    }
+    r = PyFunction_GetModule(ptr[PyObject](i64.wrap(funcobj & ~u64(1))));
+    if not r {
+        PyErr_Clear();
+        return object_new_ref(Py_None);
+    }
+    return object_new_ref(r);
+}
+
+impl unpack(self: ptr[PyObject]) -> ptr[PyObject] {
+    typing = PyImport_ImportModule("typing");
+    if not typing {
+        return NULL;
+    }
+    unpack_form = PyObject_GetAttrString(typing, "Unpack");
+    if not unpack_form {
+        object_decref(typing);
+        return NULL;
+    }
+    unpacked = PyObject_GetItem(unpack_form, self);
+    object_decref(typing);
+    object_decref(unpack_form);
+    return unpacked;
+}
+
+impl contains_typevartuple(params: ptr[PyObject]) -> bool {
+    tp = cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE);
+    for i in range(object_size(params)) {
+        if object_is_type(tuple_get_item(params, i), tp) {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl unpack_typevartuples(params: ptr[PyObject]) -> ptr[PyObject] {
+    if not contains_typevartuple(params) {
+        return object_new_ref(params);
+    }
+    n = object_size(params);
+    new_params = PyTuple_New(n);
+    if not new_params {
+        return NULL;
+    }
+    tp = cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE);
+    for i in range(n) {
+        param = tuple_get_item(params, i);
+        if object_is_type(param, tp) {
+            unpacked = unpack(param);
+            if not unpacked {
+                object_decref(new_params);
+                return NULL;
+            }
+            tuple_set_item(new_params, i, unpacked);
+        } else {
+            tuple_set_item(new_params, i, object_new_ref(param));
+        }
+    }
+    return new_params;
+}
+
+impl lazy_attribute(
+    op: ptr[PyObject], value_offset: i64, evaluate_offset: i64, fallback: ptr[PyObject]
+) -> ptr[PyObject] {
+    value = field(op, value_offset);
+    if value {
+        return object_new_ref(value);
+    }
+    evaluate = field(op, evaluate_offset);
+    if not evaluate {
+        return fallback;
+    }
+    result = PyObject_CallNoArgs(evaluate);
+    set_field(op, value_offset, object_xnew_ref(result));
+    return result;
+}
+
+impl evaluator_attribute(
+    op: ptr[PyObject], value_offset: i64, evaluate_offset: i64
+) -> ptr[PyObject] {
+    evaluate = field(op, evaluate_offset);
+    if evaluate {
+        return object_new_ref(evaluate);
+    }
+    value = field(op, value_offset);
+    if value {
+        return constevaluator_alloc(value);
+    }
+    return object_new_ref(Py_None);
+}
+
+impl has_default(
+    op: ptr[PyObject], default_offset: i64, evaluate_offset: i64
+) -> ptr[PyObject] {
+    value = field(op, default_offset);
+    if field(op, evaluate_offset) or (value != no_default() and value) {
+        return PyBool_FromLong(1);
+    }
+    return PyBool_FromLong(0);
+}
+
+impl variance_repr(
+    op: ptr[PyObject], name_offset: i64, covariant: i64, contravariant: i64, infer: i64
+) -> ptr[PyObject] {
+    name = field(op, name_offset);
+    if flag(op, infer) {
+        return object_new_ref(name);
+    }
+    variance = i32(43)
+        if flag(op, covariant)
+        else (i32(45) if flag(op, contravariant) else i32(126));
+    return PyUnicode_FromFormat("%c%U", variance, name);
+}
+
+impl mro_entries_error(name: str) -> ptr[PyObject] {
+    PyErr_Format(PyExc_TypeError, "Cannot subclass an instance of %s", name);
+    return NULL;
+}
+
+impl with_module(op: ptr[PyObject], module: ptr[PyObject]) -> ptr[PyObject] {
+    if module and PyObject_SetAttrString(op, "__module__", module) < 0 {
+        object_decref(op);
+        return NULL;
+    }
+    return op;
+}
+
+impl typevar_offsets -> list[i64] {
+    return [
+        typevarobject_NAME,
+        typevarobject_BOUND,
+        typevarobject_EVALUATE_BOUND,
+        typevarobject_CONSTRAINTS,
+        typevarobject_EVALUATE_CONSTRAINTS,
+        typevarobject_DEFAULT_VALUE,
+        typevarobject_EVALUATE_DEFAULT
+    ];
+}
+
+impl typevar_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    for offset in typevar_offsets() {
+        object_xdecref(field(self, offset));
+    }
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
+    heap_free(self);
+}
+
+impl typevar_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
+    for offset in typevar_offsets() {
+        if status != 0 {
+            return status;
+        }
+        status = visit_reference(field(self, offset), visitor, arg);
+    }
+    if status != 0 {
+        return status;
+    }
+    return PyObject_VisitManagedDict(self, visitor, arg);
+}
+
+impl typevar_clear(op: ptr[PyObject]) -> i32 {
+    for offset in typevar_offsets() {
+        replace_field(op, offset, NULL);
+    }
+    PyObject_ClearManagedDict(op);
+    return i32(0);
+}
+
+impl typevar_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return variance_repr(
+        self,
+        typevarobject_NAME,
+        typevarobject_COVARIANT,
+        typevarobject_CONTRAVARIANT,
+        typevarobject_INFER_VARIANCE
+    );
+}
+
+impl typevar_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return lazy_attribute(
+        op, typevarobject_BOUND, typevarobject_EVALUATE_BOUND, object_new_ref(Py_None)
+    );
+}
+
+impl typevar_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return lazy_attribute(
+        op, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT, no_default()
+    );
+}
+
+impl typevar_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    value = field(op, typevarobject_CONSTRAINTS);
+    if value {
+        return object_new_ref(value);
+    }
+    if not field(op, typevarobject_EVALUATE_CONSTRAINTS) {
+        return PyTuple_New(0);
+    }
+    return lazy_attribute(
+        op, typevarobject_CONSTRAINTS, typevarobject_EVALUATE_CONSTRAINTS, NULL
+    );
+}
+
+impl typevar_evaluate_bound(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return evaluator_attribute(op, typevarobject_BOUND, typevarobject_EVALUATE_BOUND);
+}
+
+impl typevar_evaluate_constraints(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return evaluator_attribute(
+        op, typevarobject_CONSTRAINTS, typevarobject_EVALUATE_CONSTRAINTS
+    );
+}
+
+impl typevar_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return evaluator_attribute(
+        op, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT
+    );
+}
+
+impl typevar_alloc(
+    name: ptr[PyObject],
+    bound: ptr[PyObject],
+    evaluate_bound: ptr[PyObject],
+    constraints: ptr[PyObject],
+    evaluate_constraints: ptr[PyObject],
+    default_value: ptr[PyObject],
+    covariant: bool,
+    contravariant: bool,
+    infer_variance: bool,
+    module: ptr[PyObject]
+) -> ptr[PyObject] {
+    tv = _PyObject_GC_New(
+        ptr[PyObject](cached_type(PyInterpreterState_CACHED_TYPEVAR_TYPE))
+    );
+    if not tv {
+        return NULL;
+    }
+    set_field(tv, typevarobject_NAME, object_new_ref(name));
+    set_field(tv, typevarobject_BOUND, object_xnew_ref(bound));
+    set_field(tv, typevarobject_EVALUATE_BOUND, object_xnew_ref(evaluate_bound));
+    set_field(tv, typevarobject_CONSTRAINTS, object_xnew_ref(constraints));
+    set_field(
+        tv, typevarobject_EVALUATE_CONSTRAINTS, object_xnew_ref(evaluate_constraints)
+    );
+    set_field(tv, typevarobject_DEFAULT_VALUE, object_xnew_ref(default_value));
+    set_field(tv, typevarobject_EVALUATE_DEFAULT, NULL);
+    set_flag(tv, typevarobject_COVARIANT, covariant);
+    set_flag(tv, typevarobject_CONTRAVARIANT, contravariant);
+    set_flag(tv, typevarobject_INFER_VARIANCE, infer_variance);
+    object_gc_track(tv);
+    return with_module(tv, module);
+}
+
+impl check_variance(covariant: i32, contravariant: i32, infer_variance: i32) -> bool {
+    if covariant != 0 and contravariant != 0 {
+        PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
+        return False;
+    }
+    if infer_variance != 0 and (covariant != 0 or contravariant != 0) {
+        PyErr_SetString(
+            PyExc_ValueError, "Variance cannot be specified with infer_variance."
+        );
+        return False;
+    }
+    return True;
+}
+
+impl variance_flags(values: ptr[ptr[PyObject]]) -> tuple[i32, i32, i32, i32] {
+    covariant = bool_argument((values + 3).view(1)[0], False);
+    if covariant < 0 {
+        return (i32(-1), i32(0), i32(0), i32(0));
+    }
+    contravariant = bool_argument((values + 4).view(1)[0], False);
+    if contravariant < 0 {
+        return (i32(-1), i32(0), i32(0), i32(0));
+    }
+    infer_variance = bool_argument((values + 5).view(1)[0], False);
+    if infer_variance < 0 {
+        return (i32(-1), i32(0), i32(0), i32(0));
+    }
+    return (i32(0), covariant, contravariant, infer_variance);
+}
+
+impl check_name(name: ptr[PyObject], fname: str) -> bool {
+    if not type_has_feature(object_type(name), Py_TPFLAGS_UNICODE_SUBCLASS) {
+        _PyArg_BadArgument(fname, "argument 'name'", ptr[u8]("str"), name);
+        return False;
+    }
+    return True;
+}
+
+impl typevar_new_values(
+    constraints: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject] {
+    name = values.view(1)[0];
+    if not check_name(name, "typevar") {
+        return NULL;
+    }
+    bound = (values + 1).view(1)[0];
+    default_value = (values + 2).view(1)[0]
+        if (values + 2).view(1)[0]
+        else no_default();
+    (status, covariant, contravariant, infer_variance) = variance_flags(values);
+    if status < 0 or not check_variance(covariant, contravariant, infer_variance) {
+        return NULL;
+    }
+    if bound == Py_None {
+        bound = NULL;
+    }
+    if bound {
+        bound = type_check(bound, "Bound must be a type.");
+        if not bound {
+            return NULL;
+        }
+    }
+    n_constraints = object_size(constraints);
+    kept = constraints;
+    if n_constraints == 1 {
+        PyErr_SetString(PyExc_TypeError, "A single constraint is not allowed");
+        object_xdecref(bound);
+        return NULL;
+    } elif n_constraints == 0 {
+        kept = NULL;
+    } elif bound {
+        PyErr_SetString(
+            PyExc_TypeError, "Constraints cannot be combined with bound=..."
+        );
+        object_xdecref(bound);
+        return NULL;
+    }
+    module = caller();
+    if not module {
+        object_xdecref(bound);
+        return NULL;
+    }
+    tv = typevar_alloc(
+        name,
+        bound,
+        NULL,
+        kept,
+        NULL,
+        default_value,
+        covariant != 0,
+        contravariant != 0,
+        infer_variance != 0,
+        module
+    );
+    object_xdecref(bound);
+    object_xdecref(module);
+    return tv;
+}
+
+impl typevar_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    head = PyTuple_GetSlice(args, 0, 1);
+    if not head {
+        return NULL;
+    }
+    constraints = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    if not constraints {
+        object_decref(head);
+        return NULL;
+    }
+    result = invoke_tuple(
+        typevar_signature, head, kwargs, typevar_new_values, constraints
+    );
+    object_decref(head);
+    object_decref(constraints);
+    return result;
+}
+
+impl typevar_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject] {
+    return call_typing_func_object("_typevar_subst", [self, arg]);
+}
+
+impl typevar_typing_prepare_subst(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject] {
+    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
+        return NULL;
+    }
+    alias = args.view(1)[0];
+    subst_args = (args + 1).view(1)[0];
+    params = PyObject_GetAttrString(alias, "__parameters__");
+    if not params {
+        return NULL;
+    }
+    i = PySequence_Index(params, self);
+    if i == -1 {
+        object_decref(params);
+        return NULL;
+    }
+    args_len = PySequence_Length(subst_args);
+    if args_len == -1 {
+        object_decref(params);
+        return NULL;
+    }
+    if i < args_len {
+        object_decref(params);
+        return object_new_ref(subst_args);
+    }
+    if i == args_len {
+        dflt = typevar_default(self, ptr());
+        if not dflt {
+            object_decref(params);
+            return NULL;
+        }
+        if dflt != no_default() {
+            new_args = PyTuple_Pack(1, dflt);
+            object_decref(dflt);
+            if not new_args {
+                object_decref(params);
+                return NULL;
+            }
+            result = PySequence_Concat(subst_args, new_args);
+            object_decref(params);
+            object_decref(new_args);
+            return result;
+        }
+    }
+    object_decref(params);
+    PyErr_Format(
+        PyExc_TypeError,
+        "Too few arguments for %S; actual %zd, expected at least %zd",
+        alias,
+        args_len,
+        i + 1
+    );
+    return NULL;
+}
+
+impl typevar_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, typevarobject_NAME));
+}
+
+impl typevar_has_default(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return has_default(
+        self, typevarobject_DEFAULT_VALUE, typevarobject_EVALUATE_DEFAULT
+    );
+}
+
+impl typevar_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
+    return mro_entries_error("TypeVar");
+}
+
+impl paramspecattr_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    object_xdecref(field(self, paramspecattrobject_ORIGIN));
+    heap_free(self);
+}
+
+impl paramspecattr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return visit_reference(field(self, paramspecattrobject_ORIGIN), visitor, arg);
+}
+
+impl paramspecattr_clear(op: ptr[PyObject]) -> i32 {
+    replace_field(op, paramspecattrobject_ORIGIN, NULL);
+    return i32(0);
+}
+
+impl paramspecattr_richcompare(
+    a: ptr[PyObject], b: ptr[PyObject], op: i32
+) -> ptr[PyObject] {
+    if not object_is_type(a, object_type(b)) or (op != Py_EQ and op != Py_NE) {
+        return object_new_ref(Py_NotImplemented);
+    }
+    return PyObject_RichCompare(
+        field(a, paramspecattrobject_ORIGIN), field(b, paramspecattrobject_ORIGIN), op
+    );
+}
+
+impl paramspecattr_new(tp: ptr[PyTypeObject], origin: ptr[PyObject]) -> ptr[PyObject] {
+    psa = _PyObject_GC_New(ptr[PyObject](tp));
+    if not psa {
+        return NULL;
+    }
+    set_field(psa, paramspecattrobject_ORIGIN, object_new_ref(origin));
+    object_gc_track(psa);
+    return psa;
+}
+
+impl paramspecattr_repr(self: ptr[PyObject], suffix: str) -> ptr[PyObject] {
+    origin = field(self, paramspecattrobject_ORIGIN);
+    if object_is_type(origin, cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE)) {
+        return PyUnicode_FromFormat(
+            "%U.%s", field(origin, paramspecobject_NAME), suffix
+        );
+    }
+    return PyUnicode_FromFormat("%R.%s", origin, suffix);
+}
+
+impl paramspecargs_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return paramspecattr_repr(self, "args");
+}
+
+impl paramspeckwargs_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return paramspecattr_repr(self, "kwargs");
+}
+
+impl paramspecattr_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject] {
+    return paramspecattr_new(ptr[PyTypeObject](type), values.view(1)[0]);
+}
+
+impl paramspecargs_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return invoke_tuple(
+        paramspecargs_signature, args, kwargs, paramspecattr_new_values, type
+    );
+}
+
+impl paramspeckwargs_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return invoke_tuple(
+        paramspeckwargs_signature, args, kwargs, paramspecattr_new_values, type
+    );
+}
+
+impl paramspecargs_mro_entries(
+    self: ptr[PyObject], args: ptr[PyObject]
+) -> ptr[PyObject] {
+    return mro_entries_error("ParamSpecArgs");
+}
+
+impl paramspeckwargs_mro_entries(
+    self: ptr[PyObject], args: ptr[PyObject]
+) -> ptr[PyObject] {
+    return mro_entries_error("ParamSpecKwargs");
+}
+
+impl paramspec_offsets -> list[i64] {
+    return [
+        paramspecobject_NAME,
+        paramspecobject_BOUND,
+        paramspecobject_DEFAULT_VALUE,
+        paramspecobject_EVALUATE_DEFAULT
+    ];
+}
+
+impl paramspec_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    for offset in paramspec_offsets() {
+        object_xdecref(field(self, offset));
+    }
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
+    heap_free(self);
+}
+
+impl paramspec_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
+    for offset in paramspec_offsets() {
+        if status != 0 {
+            return status;
+        }
+        status = visit_reference(field(self, offset), visitor, arg);
+    }
+    if status != 0 {
+        return status;
+    }
+    return PyObject_VisitManagedDict(self, visitor, arg);
+}
+
+impl paramspec_clear(op: ptr[PyObject]) -> i32 {
+    for offset in paramspec_offsets() {
+        replace_field(op, offset, NULL);
+    }
+    PyObject_ClearManagedDict(op);
+    return i32(0);
+}
+
+impl paramspec_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return variance_repr(
+        self,
+        paramspecobject_NAME,
+        paramspecobject_COVARIANT,
+        paramspecobject_CONTRAVARIANT,
+        paramspecobject_INFER_VARIANCE
+    );
+}
+
+impl paramspec_args(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return paramspecattr_new(
+        cached_type(PyInterpreterState_CACHED_PARAMSPECARGS_TYPE), self
+    );
+}
+
+impl paramspec_kwargs(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return paramspecattr_new(
+        cached_type(PyInterpreterState_CACHED_PARAMSPECKWARGS_TYPE), self
+    );
+}
+
+impl paramspec_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return lazy_attribute(
+        op,
+        paramspecobject_DEFAULT_VALUE,
+        paramspecobject_EVALUATE_DEFAULT,
+        no_default()
+    );
+}
+
+impl paramspec_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return evaluator_attribute(
+        op, paramspecobject_DEFAULT_VALUE, paramspecobject_EVALUATE_DEFAULT
+    );
+}
+
+impl paramspec_alloc(
+    name: ptr[PyObject],
+    bound: ptr[PyObject],
+    default_value: ptr[PyObject],
+    covariant: bool,
+    contravariant: bool,
+    infer_variance: bool,
+    module: ptr[PyObject]
+) -> ptr[PyObject] {
+    ps = _PyObject_GC_New(
+        ptr[PyObject](cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE))
+    );
+    if not ps {
+        return NULL;
+    }
+    set_field(ps, paramspecobject_NAME, object_new_ref(name));
+    set_field(ps, paramspecobject_BOUND, object_xnew_ref(bound));
+    set_flag(ps, paramspecobject_COVARIANT, covariant);
+    set_flag(ps, paramspecobject_CONTRAVARIANT, contravariant);
+    set_flag(ps, paramspecobject_INFER_VARIANCE, infer_variance);
+    set_field(ps, paramspecobject_DEFAULT_VALUE, object_xnew_ref(default_value));
+    set_field(ps, paramspecobject_EVALUATE_DEFAULT, NULL);
+    object_gc_track(ps);
+    return with_module(ps, module);
+}
+
+impl paramspec_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject] {
+    name = values.view(1)[0];
+    if not check_name(name, "paramspec") {
+        return NULL;
+    }
+    bound = (values + 1).view(1)[0] if (values + 1).view(1)[0] else Py_None;
+    default_value = (values + 2).view(1)[0]
+        if (values + 2).view(1)[0]
+        else no_default();
+    (status, covariant, contravariant, infer_variance) = variance_flags(values);
+    if status < 0 or not check_variance(covariant, contravariant, infer_variance) {
+        return NULL;
+    }
+
+    checked = type_check(bound, "Bound must be a type.");
+    if not checked {
+        return NULL;
+    }
+    module = caller();
+    if not module {
+        object_decref(checked);
+        return NULL;
+    }
+    ps = paramspec_alloc(
+        name,
+        checked,
+        default_value,
+        covariant != 0,
+        contravariant != 0,
+        infer_variance != 0,
+        module
+    );
+    object_decref(checked);
+    object_decref(module);
+    return ps;
+}
+
+impl paramspec_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return invoke_tuple(paramspec_signature, args, kwargs, paramspec_new_values, type);
+}
+
+impl paramspec_typing_subst(self: ptr[PyObject], arg: ptr[PyObject]) -> ptr[PyObject] {
+    return call_typing_func_object("_paramspec_subst", [self, arg]);
+}
+
+impl paramspec_typing_prepare_subst(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject] {
+    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
+        return NULL;
+    }
+    return call_typing_func_object(
+        "_paramspec_prepare_subst", [self, args.view(1)[0], (args + 1).view(1)[0]]
+    );
+}
+
+impl paramspec_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, paramspecobject_NAME));
+}
+
+impl paramspec_has_default(
+    self: ptr[PyObject], _unused: ptr[PyObject]
+) -> ptr[PyObject] {
+    return has_default(
+        self, paramspecobject_DEFAULT_VALUE, paramspecobject_EVALUATE_DEFAULT
+    );
+}
+
+impl paramspec_mro_entries(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
+    return mro_entries_error("ParamSpec");
+}
+
+impl typevartuple_offsets -> list[i64] {
+    return [
+        typevartupleobject_NAME,
+        typevartupleobject_DEFAULT_VALUE,
+        typevartupleobject_EVALUATE_DEFAULT
+    ];
+}
+
+impl typevartuple_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    for offset in typevartuple_offsets() {
+        object_xdecref(field(self, offset));
+    }
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
+    heap_free(self);
+}
+
+impl unpack_iter(self: ptr[PyObject]) -> ptr[PyObject] {
+    unpacked = unpack(self);
+    if not unpacked {
+        return NULL;
+    }
+    tuple = PyTuple_Pack(1, unpacked);
+    if not tuple {
+        object_decref(unpacked);
+        return NULL;
+    }
+    result = PyObject_GetIter(tuple);
+    object_decref(unpacked);
+    object_decref(tuple);
+    return result;
+}
+
+impl typevartuple_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, typevartupleobject_NAME));
+}
+
+impl typevartuple_alloc(
+    name: ptr[PyObject], module: ptr[PyObject], default_value: ptr[PyObject]
+) -> ptr[PyObject] {
+    tvt = _PyObject_GC_New(
+        ptr[PyObject](cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE))
+    );
+    if not tvt {
+        return NULL;
+    }
+    set_field(tvt, typevartupleobject_NAME, object_new_ref(name));
+    set_field(tvt, typevartupleobject_DEFAULT_VALUE, object_xnew_ref(default_value));
+    set_field(tvt, typevartupleobject_EVALUATE_DEFAULT, NULL);
+    object_gc_track(tvt);
+    return with_module(tvt, module);
+}
+
+impl typevartuple_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject] {
+    name = values.view(1)[0];
+    if not check_name(name, "typevartuple") {
+        return NULL;
+    }
+    default_value = (values + 1).view(1)[0]
+        if (values + 1).view(1)[0]
+        else no_default();
+    module = caller();
+    if not module {
+        return NULL;
+    }
+    result = typevartuple_alloc(name, module, default_value);
+    object_decref(module);
+    return result;
+}
+
+impl typevartuple_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return invoke_tuple(
+        typevartuple_signature, args, kwargs, typevartuple_new_values, type
+    );
+}
+
+impl typevartuple_typing_subst(
+    self: ptr[PyObject], arg: ptr[PyObject]
+) -> ptr[PyObject] {
+    PyErr_SetString(
+        PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported"
+    );
+    return NULL;
+}
+
+impl typevartuple_typing_prepare_subst(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject] {
+    if _PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2) == 0 {
+        return NULL;
+    }
+    return call_typing_func_object(
+        "_typevartuple_prepare_subst", [self, args.view(1)[0], (args + 1).view(1)[0]]
+    );
+}
+
+impl typevartuple_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, typevartupleobject_NAME));
+}
+
+impl typevartuple_has_default(
+    self: ptr[PyObject], _unused: ptr[PyObject]
+) -> ptr[PyObject] {
+    return has_default(
+        self, typevartupleobject_DEFAULT_VALUE, typevartupleobject_EVALUATE_DEFAULT
+    );
+}
+
+impl typevartuple_mro_entries(
+    self: ptr[PyObject], args: ptr[PyObject]
+) -> ptr[PyObject] {
+    return mro_entries_error("TypeVarTuple");
+}
+
+impl typevartuple_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    status = visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
+    for offset in typevartuple_offsets() {
+        if status != 0 {
+            return status;
+        }
+        status = visit_reference(field(self, offset), visitor, arg);
+    }
+    if status != 0 {
+        return status;
+    }
+    return PyObject_VisitManagedDict(self, visitor, arg);
+}
+
+impl typevartuple_clear(self: ptr[PyObject]) -> i32 {
+    for offset in typevartuple_offsets() {
+        replace_field(self, offset, NULL);
+    }
+    PyObject_ClearManagedDict(self);
+    return i32(0);
+}
+
+impl typevartuple_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return lazy_attribute(
+        op,
+        typevartupleobject_DEFAULT_VALUE,
+        typevartupleobject_EVALUATE_DEFAULT,
+        no_default()
+    );
+}
+
+impl typevartuple_evaluate_default(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return evaluator_attribute(
+        op, typevartupleobject_DEFAULT_VALUE, typevartupleobject_EVALUATE_DEFAULT
+    );
+}
+
+impl get_type_param_default(typeparam: ptr[PyObject]) -> ptr[PyObject] {
+    if object_is_type(typeparam, cached_type(PyInterpreterState_CACHED_TYPEVAR_TYPE)) {
+        return typevar_default(typeparam, ptr());
+    }
+    if object_is_type(
+        typeparam, cached_type(PyInterpreterState_CACHED_PARAMSPEC_TYPE)
+    ) {
+        return paramspec_default(typeparam, ptr());
+    }
+    if object_is_type(
+        typeparam, cached_type(PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE)
+    ) {
+        return typevartuple_default(typeparam, ptr());
+    }
+    PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
+    return NULL;
+}
+
+impl typealias_offsets -> list[i64] {
+    return [
+        typealiasobject_NAME,
+        typealiasobject_TYPE_PARAMS,
+        typealiasobject_COMPUTE_VALUE,
+        typealiasobject_VALUE,
+        typealiasobject_MODULE
+    ];
+}
+
+impl typealias_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    for offset in typealias_offsets() {
+        object_xdecref(field(self, offset));
+    }
+    heap_free(self);
+}
+
+impl typealias_get_value(ta: ptr[PyObject]) -> ptr[PyObject] {
+    value = field(ta, typealiasobject_VALUE);
+    if value {
+        return object_new_ref(value);
+    }
+    result = PyObject_CallNoArgs(field(ta, typealiasobject_COMPUTE_VALUE));
+    if not result {
+        return NULL;
+    }
+    set_field(ta, typealiasobject_VALUE, object_new_ref(result));
+    return result;
+}
+
+impl typealias_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, typealiasobject_NAME));
+}
+
+impl typealias_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    return typealias_get_value(self);
+}
+
+impl typealias_evaluate_value(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    compute = field(self, typealiasobject_COMPUTE_VALUE);
+    if compute {
+        return object_new_ref(compute);
+    }
+    return constevaluator_alloc(field(self, typealiasobject_VALUE));
+}
+
+impl typealias_parameters(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    params = field(self, typealiasobject_TYPE_PARAMS);
+    if not params {
+        return PyTuple_New(0);
+    }
+    return unpack_typevartuples(params);
+}
+
+impl typealias_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    params = field(self, typealiasobject_TYPE_PARAMS);
+    if not params {
+        return PyTuple_New(0);
+    }
+    return object_new_ref(params);
+}
+
+impl typealias_module(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    module = field(self, typealiasobject_MODULE);
+    if module {
+        return object_new_ref(module);
+    }
+    compute = field(self, typealiasobject_COMPUTE_VALUE);
+    if compute {
+        mod = PyFunction_GetModule(compute);
+        if mod {
+            return object_new_ref(mod);
+        }
+    }
+    return object_new_ref(Py_None);
+}
+
+impl typealias_check_type_params(
+    type_params: ptr[PyObject]
+) -> tuple[i32, ptr[PyObject]] {
+    if not type_params {
+        return (i32(0), NULL);
+    }
+    length = object_size(type_params);
+    if length == 0 {
+        return (i32(0), NULL);
+    }
+    default_seen = False;
+    for index in range(length) {
+        type_param = tuple_get_item(type_params, index);
+        dflt = get_type_param_default(type_param);
+        if not dflt {
+            return (i32(-1), NULL);
+        }
+        if dflt == no_default() {
+            if default_seen {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "non-default type parameter '%R' follows default type parameter",
+                    type_param
+                );
+                return (i32(-1), NULL);
+            }
+        } else {
+            default_seen = True;
+            object_decref(dflt);
+        }
+    }
+    return (i32(0), type_params);
+}
+
+impl typealias_convert_type_params(type_params: ptr[PyObject]) -> ptr[PyObject] {
+    if not type_params
+        or type_params == Py_None
+        or (
+            type_has_feature(object_type(type_params), Py_TPFLAGS_TUPLE_SUBCLASS)
+            and object_size(type_params) == 0
+        ) {
+        return NULL;
+    }
+    return type_params;
+}
+
+impl typealias_alloc(
+    name: ptr[PyObject],
+    type_params: ptr[PyObject],
+    compute_value: ptr[PyObject],
+    value: ptr[PyObject],
+    module: ptr[PyObject]
+) -> ptr[PyObject] {
+    ta = _PyObject_GC_New(ptr[PyObject](addressof(_PyTypeAlias_Type)));
+    if not ta {
+        return NULL;
+    }
+    set_field(ta, typealiasobject_NAME, object_new_ref(name));
+    set_field(ta, typealiasobject_TYPE_PARAMS, object_xnew_ref(type_params));
+    set_field(ta, typealiasobject_COMPUTE_VALUE, object_xnew_ref(compute_value));
+    set_field(ta, typealiasobject_VALUE, object_xnew_ref(value));
+    set_field(ta, typealiasobject_MODULE, object_xnew_ref(module));
+    object_gc_track(ta);
+    return ta;
+}
+
+impl typealias_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    for offset in typealias_offsets() {
+        status = visit_reference(field(op, offset), visitor, arg);
+        if status != 0 {
+            return status;
+        }
+    }
+    return i32(0);
+}
+
+impl typealias_clear(op: ptr[PyObject]) -> i32 {
+    for offset in typealias_offsets() {
+        replace_field(op, offset, NULL);
+    }
+    return i32(0);
+}
+
+impl typealias_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    return object_new_ref(field(self, typealiasobject_NAME));
+}
+
+impl typealias_subscript(op: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
+    if not field(op, typealiasobject_TYPE_PARAMS) {
+        PyErr_SetString(PyExc_TypeError, "Only generic type aliases are subscriptable");
+        return NULL;
+    }
+    return Py_GenericAlias(op, args);
+}
+
+impl typealias_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject] {
+    name = values.view(1)[0];
+    if not check_name(name, "typealias") {
+        return NULL;
+    }
+    value = (values + 1).view(1)[0];
+    type_params = (values + 2).view(1)[0];
+    if type_params
+        and not type_has_feature(object_type(type_params), Py_TPFLAGS_TUPLE_SUBCLASS) {
+        PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
+        return NULL;
+    }
+    (status, checked_params) = typealias_check_type_params(type_params);
+    if status < 0 {
+        return NULL;
+    }
+    module = caller();
+    if not module {
+        return NULL;
+    }
+    ta = typealias_alloc(name, checked_params, NULL, value, module);
+    object_decref(module);
+    return ta;
+}
+
+impl typealias_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return invoke_tuple(typealias_signature, args, kwargs, typealias_new_values, type);
+}
+
+impl call_typing_args_kwargs(
+    name: str, cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    typing = PyImport_ImportModule("typing");
+    if not typing {
+        return NULL;
+    }
+    func = PyObject_GetAttrString(typing, name);
+    if not func {
+        object_decref(typing);
+        return NULL;
+    }
+    nargs = object_size(args);
+    new_args = PyTuple_New(nargs + 1);
+    if not new_args {
+        object_decref(typing);
+        object_decref(func);
+        return NULL;
+    }
+    tuple_set_item(new_args, 0, object_new_ref(cls));
+    for i in range(nargs) {
+        tuple_set_item(new_args, i + 1, object_new_ref(tuple_get_item(args, i)));
+    }
+    result = PyObject_Call(func, new_args, kwargs);
+    object_decref(typing);
+    object_decref(func);
+    object_decref(new_args);
+    return result;
+}
+
+impl generic_init_subclass(
+    cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+}
+
+impl generic_class_getitem(
+    cls: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+}
+
+impl generic_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    heap_free(self);
+}
+
+impl generic_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return visit_reference(ptr[PyObject](object_type(self)), visitor, arg);
 }

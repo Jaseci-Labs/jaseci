@@ -2031,8 +2031,7 @@ impl NaIRGenPass._codegen_unary(nd: uni.UnaryExpr) -> (ir.Value | None) {
     if lent is not None {
         return self._c_lent_address(nd, lent);
     }
-    # `&mut x` for a C declaration's `&mut T` parameter, in a call lowered to
-    # the symbol's Jac definition: lend x's address, as the extern call does.
+
     if is_borrow_kind(nd.ownership) {
         borrow_param = c_lent_param(nd, allow_borrow=True);
         if borrow_param is not None and nd.parent is not None {

@@ -1,15 +1,3 @@
-"""Descriptors, mappingproxy, method-wrapper and property:
-Objects/descrobject.c in native Jac.
-
-The descriptor types (`PyMethodDescr_Type`, `PyClassMethodDescr_Type`,
-`PyMemberDescr_Type`, `PyGetSetDescr_Type`, `PyWrapperDescr_Type`),
-`PyDictProxy_Type` (mappingproxy), `_PyMethodWrapper_Type` and
-`PyProperty_Type` are C data Jac defines under their C names, with the
-`PyDescr_New*` constructors, `PyDictProxy_New` and `PyWrapper_New`. A method
-descriptor calls its `PyMethodDef.ml_meth` through the vectorcall entry its
-flags pick, as descrobject.c does. See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject; def PyObject_Type(
         o: ptr[PyObject]
@@ -32,10 +20,7 @@ import from c {
         derived: ptr[PyObject], cls: ptr[PyObject]
     ) -> i32;  def _PyObject_IsAbstract(ob: ptr[PyObject]) -> i32;  def _PyTuple_FromArray(
         src: ptr[ptr[PyObject]], n: i64
-    ) -> ptr[PyObject];
-    # The C function of a call in progress, one field per signature: the
-    # pointer is stored and then read for the call.
-    obj DescrCall {
+    ) -> ptr[PyObject];  obj DescrCall {
         has one: Callable[[ptr[PyObject], ptr[PyObject]], ptr[PyObject]] = 0,
             keywords:
                 Callable[
@@ -69,7 +54,6 @@ import from c {
             set_fn: Callable[[ptr[PyObject], ptr[PyObject], ptr], i32] = 0,
             free: Callable[[ptr], None] = 0;
     }  glob:priv call_slot: DescrCall = DescrCall(),
-         # &_Py_ID(...) names, interned on first use.
          qualname_key: ptr[PyObject] = ptr[PyObject](),
          name_key: ptr[PyObject] = ptr[PyObject](),
          doc_key: ptr[PyObject] = ptr[PyObject](),
@@ -132,7 +116,6 @@ import from c {
          mappingproxy_as_sequence: PySequenceMethods = PySequenceMethods(
              sq_contains=mappingproxy_contains
          ),
-         # They must not give access to the underlying mapping.
          mappingproxy_methods: list[PyMethodDef] = [
              PyMethodDef(
                  ml_name=ptr[u8]("get"),
@@ -315,7 +298,6 @@ import from c {
              tp_getset=addressof(method_getset),
              tp_descr_get=method_get
          ),
-         # METH_CLASS in C, not classmethod(f) in Python.
          PyClassMethodDescr_Type: PyTypeObject = PyTypeObject(
              ob_base=PyVarObject(
                  ob_base=_object(
@@ -514,729 +496,149 @@ glob:priv mappingproxy_signature = CallSignature(
          "property", ["fget", "fset", "fdel", "doc"], 0, 4, 0, parser=PARSE_KEYWORDS
      );
 
-# ------------------------------------------------------------ descriptors
+def descr_of(op: ptr[PyObject]) -> ptr[PyDescrObject];
 
-def descr_of(op: ptr[PyObject]) -> ptr[PyDescrObject] {
-    return ptr[PyDescrObject](op);
-}
+def descr_type(op: ptr[PyObject]) -> ptr[PyTypeObject];
 
-"""PyDescr_TYPE."""
-def descr_type(op: ptr[PyObject]) -> ptr[PyTypeObject] {
-    return ptr[PyTypeObject](descr_of(op).view(1)[0].d_type);
-}
+def descr_name_object(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""PyDescr_NAME."""
-def descr_name_object(op: ptr[PyObject]) -> ptr[PyObject] {
-    return ptr[PyObject](descr_of(op).view(1)[0].d_name);
-}
+def descr_field(op: ptr[PyObject], offset: i64) -> ptr;
 
-"""A pointer field of a descriptor subtype, at its layouts.jac offset (the
-subtypes start with the PyDescr_COMMON macro)."""
-def descr_field(op: ptr[PyObject], offset: i64) -> ptr {
-    return ptr[ptr](ptr[u8](op) + offset).view(1)[0];
-}
+def set_descr_field(op: ptr[PyObject], offset: i64, value: ptr);
 
-def set_descr_field(op: ptr[PyObject], offset: i64, value: ptr) {
-    ptr[ptr](ptr[u8](op) + offset).view(1)[0] = value;
-}
+def method_of(op: ptr[PyObject]) -> ptr[PyMethodDef];
 
-def method_of(op: ptr[PyObject]) -> ptr[PyMethodDef] {
-    return ptr[PyMethodDef](descr_field(op, PyMethodDescrObject_METHOD));
-}
+def member_of(op: ptr[PyObject]) -> ptr[PyMemberDef];
 
-def member_of(op: ptr[PyObject]) -> ptr[PyMemberDef] {
-    return ptr[PyMemberDef](descr_field(op, PyMemberDescrObject_MEMBER));
-}
+def getset_of(op: ptr[PyObject]) -> ptr[PyGetSetDef];
 
-def getset_of(op: ptr[PyObject]) -> ptr[PyGetSetDef] {
-    return ptr[PyGetSetDef](descr_field(op, PyGetSetDescrObject_GETSET));
-}
+def wrapper_base(op: ptr[PyObject]) -> ptr[wrapperbase];
 
-def wrapper_base(op: ptr[PyObject]) -> ptr[wrapperbase] {
-    return ptr[wrapperbase](descr_field(op, PyWrapperDescrObject_BASE));
-}
+def type_name(type: ptr[PyTypeObject]) -> ptr[u8];
 
-def type_name(type: ptr[PyTypeObject]) -> ptr[u8] {
-    return type.view(1)[0].tp_name;
-}
+def unicode_check(op: ptr[PyObject]) -> bool;
 
-def unicode_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
-}
+def type_check(op: ptr[PyObject]) -> bool;
 
-def type_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS);
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def interned(slot: int, text: str) -> ptr[PyObject];
 
-def interned(slot: int, text: str) -> ptr[PyObject] {
-    if slot == 0 {
-        if not qualname_key {
-            qualname_key = PyUnicode_InternFromString(text);
-        }
-        return qualname_key;
-    }
-    if slot == 1 {
-        if not name_key {
-            name_key = PyUnicode_InternFromString(text);
-        }
-        return name_key;
-    }
-    if not doc_key {
-        doc_key = PyUnicode_InternFromString(text);
-    }
-    return doc_key;
-}
+def descr_dealloc(self: ptr[PyObject]);
 
-def descr_dealloc(self: ptr[PyObject]) {
-    object_gc_untrack(self);
-    d = descr_of(self);
-    object_xdecref(ptr[PyObject](d.view(1)[0].d_type));
-    object_xdecref(ptr[PyObject](d.view(1)[0].d_name));
-    object_xdecref(ptr[PyObject](d.view(1)[0].d_qualname));
-    PyObject_GC_Del(ptr(self));
-}
+def descr_name(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""The descriptor's name when it is a str, else NULL (for "%V")."""
-def descr_name(op: ptr[PyObject]) -> ptr[PyObject] {
-    name = descr_name_object(op);
-    if name and unicode_check(name) {
-        return name;
-    }
-    return NULL;
-}
+def descr_repr(op: ptr[PyObject], format: str) -> ptr[PyObject];
 
-def descr_repr(op: ptr[PyObject], format: str) -> ptr[PyObject] {
-    return PyUnicode_FromFormat(format, descr_name(op), "?", type_name(descr_type(op)));
-}
+def method_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-def method_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return descr_repr(op, "<method '%V' of '%s' objects>");
-}
+def member_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-def member_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return descr_repr(op, "<member '%V' of '%s' objects>");
-}
+def getset_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-def getset_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return descr_repr(op, "<attribute '%V' of '%s' objects>");
-}
+def wrapperdescr_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-def wrapperdescr_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    return descr_repr(op, "<slot wrapper '%V' of '%s' objects>");
-}
-
-"""descr_check / descr_setcheck: -1 with TypeError unless `ob` is an
-instance of the descriptor's type."""
-def descr_check(op: ptr[PyObject], ob: ptr[PyObject]) -> i32 {
-    if not object_type_check(ob, descr_type(op)) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' for '%.100s' objects doesn't apply to a '%.100s' object",
-            descr_name(op),
-            "?",
-            type_name(descr_type(op)),
-            type_name(object_type(ob))
-        );
-        return i32(-1);
-    }
-    return i32(0);
-}
+def descr_check(op: ptr[PyObject], ob: ptr[PyObject]) -> i32;
 
 def classmethod_get(
     self: ptr[PyObject], ob: ptr[PyObject], type_in: ptr[PyObject]
-) -> ptr[PyObject] {
-    type = type_in;
-    # Class methods ignore ob, but need a type.
-    if not type {
-        if not ob {
-            PyErr_Format(
-                PyExc_TypeError,
-                "descriptor '%V' for type '%.100s' needs either an object or a type",
-                descr_name(self),
-                "?",
-                type_name(descr_type(self))
-            );
-            return NULL;
-        }
-        type = ptr[PyObject](object_type(ob));
-    }
-    if not type_check(type) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' for type '%.100s' needs a type, not a '%.100s' as arg 2",
-            descr_name(self),
-            "?",
-            type_name(descr_type(self)),
-            type_name(object_type(type))
-        );
-        return NULL;
-    }
-    if PyType_IsSubtype(type, ptr[PyObject](descr_type(self))) == 0 {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' requires a subtype of '%.100s' but received '%.100s'",
-            descr_name(self),
-            "?",
-            type_name(descr_type(self)),
-            type_name(ptr[PyTypeObject](type))
-        );
-        return NULL;
-    }
-    cls = ptr[PyTypeObject]();
-    if (method_of(self).view(1)[0].ml_flags & METH_METHOD) != 0 {
-        cls = descr_type(self);
-    }
-    return PyCMethod_New(method_of(self), type, NULL, cls);
-}
+) -> ptr[PyObject];
 
 def method_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
-) -> ptr[PyObject] {
-    if not ob {
-        return object_new_ref(self);
-    }
-    if descr_check(self, ob) < 0 {
-        return NULL;
-    }
-    if (method_of(self).view(1)[0].ml_flags & METH_METHOD) != 0 {
-        if not type or type_check(type) {
-            return PyCMethod_New(method_of(self), ob, NULL, descr_type(self));
-        }
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' needs a type, not '%s', as arg 2",
-            descr_name(self),
-            "?",
-            type_name(object_type(type))
-        );
-        return NULL;
-    }
-    return PyCFunction_NewEx(method_of(self), ob, NULL);
-}
+) -> ptr[PyObject];
 
 def member_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
-) -> ptr[PyObject] {
-    if not ob {
-        return object_new_ref(self);
-    }
-    if descr_check(self, ob) < 0 {
-        return NULL;
-    }
-    member = member_of(self);
-    if (member.view(1)[0].flags & Py_AUDIT_READ) != 0 {
-        if PySys_Audit("object.__getattr__", "Os", ob, member.view(1)[0].name) < 0 {
-            return NULL;
-        }
-    }
-    return PyMember_GetOne(ptr[u8](ob), member);
-}
+) -> ptr[PyObject];
 
 def getset_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
-) -> ptr[PyObject] {
-    if not ob {
-        return object_new_ref(self);
-    }
-    if descr_check(self, ob) < 0 {
-        return NULL;
-    }
-    getset = getset_of(self);
-    if int(getset.view(1)[0].get) != 0 {
-        calls = addressof(call_slot);
-        calls.view(1)[0].get_fn = int(getset.view(1)[0].get);
-        return calls.view(1)[0].get_fn(ob, getset.view(1)[0].closure);
-    }
-    PyErr_Format(
-        PyExc_AttributeError,
-        "attribute '%V' of '%.100s' objects is not readable",
-        descr_name(self),
-        "?",
-        type_name(descr_type(self))
-    );
-    return NULL;
-}
+) -> ptr[PyObject];
 
 def wrapperdescr_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
-) -> ptr[PyObject] {
-    if not ob {
-        return object_new_ref(self);
-    }
-    if descr_check(self, ob) < 0 {
-        return NULL;
-    }
-    return PyWrapper_New(self, ob);
-}
+) -> ptr[PyObject];
 
-def member_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32 {
-    if descr_check(self, ob) < 0 {
-        return i32(-1);
-    }
-    return PyMember_SetOne(ptr[u8](ob), member_of(self), value);
-}
+def member_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32;
 
-def getset_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32 {
-    if descr_check(self, ob) < 0 {
-        return i32(-1);
-    }
-    getset = getset_of(self);
-    if int(getset.view(1)[0].set) != 0 {
-        calls = addressof(call_slot);
-        calls.view(1)[0].set_fn = int(getset.view(1)[0].set);
-        return calls.view(1)[0].set_fn(ob, value, getset.view(1)[0].closure);
-    }
-    PyErr_Format(
-        PyExc_AttributeError,
-        "attribute '%V' of '%.100s' objects is not writable",
-        descr_name(self),
-        "?",
-        type_name(descr_type(self))
-    );
-    return i32(-1);
-}
+def getset_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32;
 
-# ------------------------------------------------------ method vectorcall
+def function_error(func: ptr[PyObject], format: str, n: i64);
 
-"""A function-string error: `format` with the function's str and `n`."""
-def function_error(func: ptr[PyObject], format: str, n: i64) {
-    funcstr = _PyObject_FunctionStr(func);
-    if funcstr {
-        PyErr_Format(PyExc_TypeError, format, funcstr, n);
-        object_decref(funcstr);
-    }
-}
-
-"""-1 unless there is a self of the descriptor's type and, when
-`no_keywords`, no keyword arguments."""
 def method_check_args(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
-) -> i32 {
-    if nargs < 1 {
-        function_error(func, "unbound method %U needs an argument", 0);
-        return i32(-1);
-    }
-    if descr_check(func, args.view(1)[0]) < 0 {
-        return i32(-1);
-    }
-    if kwnames and object_size(kwnames) != 0 {
-        function_error(func, "%U takes no keyword arguments", 0);
-        return i32(-1);
-    }
-    return i32(0);
-}
+) -> i32;
 
-"""Enter the recursion guard; the method's C function, or 0."""
-def method_enter_call(func: ptr[PyObject]) -> int {
-    if Py_EnterRecursiveCall(" while calling a Python object") != 0 {
-        return 0;
-    }
-    return int(method_of(func).view(1)[0].ml_meth);
-}
+def method_enter_call(func: ptr[PyObject]) -> int;
 
 def method_vectorcall_VARARGS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, kwnames) != 0 {
-        return NULL;
-    }
-    argstuple = _PyTuple_FromArray(args + 1, nargs - 1);
-    if not argstuple {
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        object_decref(argstuple);
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].one = meth;
-    result = calls.view(1)[0].one(args.view(1)[0], argstuple);
-    object_decref(argstuple);
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_VARARGS_KEYWORDS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, NULL) != 0 {
-        return NULL;
-    }
-    argstuple = _PyTuple_FromArray(args + 1, nargs - 1);
-    if not argstuple {
-        return NULL;
-    }
-    result: ptr[PyObject] = NULL;
-    # A temporary dict of the keyword arguments.
-    kwdict: ptr[PyObject] = NULL;
-    failed = False;
-    if kwnames and object_size(kwnames) > 0 {
-        kwdict = _PyStack_AsDict(args + nargs, kwnames);
-        failed = not kwdict;
-    }
-    if not failed {
-        meth = method_enter_call(func);
-        if meth != 0 {
-            calls = addressof(call_slot);
-            calls.view(1)[0].keywords = meth;
-            result = calls.view(1)[0].keywords(args.view(1)[0], argstuple, kwdict);
-            Py_LeaveRecursiveCall();
-        }
-    }
-    object_decref(argstuple);
-    object_xdecref(kwdict);
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_FASTCALL_KEYWORDS_METHOD(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, NULL) != 0 {
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].method = meth;
-    result = calls.view(1)[0].method(
-        args.view(1)[0], descr_type(func), args + 1, nargs - 1, kwnames
-    );
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_FASTCALL(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, kwnames) != 0 {
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].fast = meth;
-    result = calls.view(1)[0].fast(args.view(1)[0], args + 1, nargs - 1);
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_FASTCALL_KEYWORDS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, NULL) != 0 {
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].fast_keywords = meth;
-    result = calls.view(1)[0].fast_keywords(
-        args.view(1)[0], args + 1, nargs - 1, kwnames
-    );
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_NOARGS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, kwnames) != 0 {
-        return NULL;
-    }
-    if nargs != 1 {
-        function_error(func, "%U takes no arguments (%zd given)", nargs - 1);
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].one = meth;
-    result = calls.view(1)[0].one(args.view(1)[0], NULL);
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
 def method_vectorcall_O(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    nargs = PyVectorcall_NARGS(nargsf);
-    if method_check_args(func, args, nargs, kwnames) != 0 {
-        return NULL;
-    }
-    if nargs != 2 {
-        function_error(func, "%U takes exactly one argument (%zd given)", nargs - 1);
-        return NULL;
-    }
-    meth = method_enter_call(func);
-    if meth == 0 {
-        return NULL;
-    }
-    calls = addressof(call_slot);
-    calls.view(1)[0].one = meth;
-    result = calls.view(1)[0].one(args.view(1)[0], (args + 1).view(1)[0]);
-    Py_LeaveRecursiveCall();
-    return result;
-}
+) -> ptr[PyObject];
 
-"""Rarely called directly (it is reached through the class __dict__): bind
-with __get__, then call."""
 def classmethoddescr_call(
     descr: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    argc = object_size(args);
-    if argc < 1 {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' of '%.100s' object needs an argument",
-            descr_name(descr),
-            "?",
-            type_name(descr_type(descr))
-        );
-        return NULL;
-    }
-    bound = classmethod_get(descr, NULL, tuple_get_item(args, 0));
-    if not bound {
-        return NULL;
-    }
-    res = PyObject_VectorcallDict(bound, tuple_items(args) + 1, u64(argc - 1), kwds);
-    object_decref(bound);
-    return res;
-}
+) -> ptr[PyObject];
 
 def wrapperdescr_raw_call(
     descr: ptr[PyObject], self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    base = wrapper_base(descr);
-    wrapped = descr_field(descr, PyWrapperDescrObject_WRAPPED);
-    calls = addressof(call_slot);
-    if (base.view(1)[0].flags & PyWrapperFlag_KEYWORDS) != 0 {
-        calls.view(1)[0].wrapper_kwds = int(base.view(1)[0].wrapper);
-        return calls.view(1)[0].wrapper_kwds(self, args, wrapped, kwds);
-    }
-    if kwds
-        and (
-            not type_has_feature(object_type(kwds), Py_TPFLAGS_DICT_SUBCLASS)
-            or PyDict_Size(kwds) != 0
-        ) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "wrapper %s() takes no keyword arguments",
-            base.view(1)[0].name
-        );
-        return NULL;
-    }
-    calls.view(1)[0].wrapper = int(base.view(1)[0].wrapper);
-    return calls.view(1)[0].wrapper(self, args, wrapped);
-}
+) -> ptr[PyObject];
 
 def wrapperdescr_call(
     descr: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    # The first argument must be acceptable as self.
-    argc = object_size(args);
-    if argc < 1 {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' of '%.100s' object needs an argument",
-            descr_name(descr),
-            "?",
-            type_name(descr_type(descr))
-        );
-        return NULL;
-    }
-    self = tuple_get_item(args, 0);
-    if _PyObject_RealIsSubclass(
-        ptr[PyObject](object_type(self)), ptr[PyObject](descr_type(descr))
-    )
-        == 0 {
-        PyErr_Format(
-            PyExc_TypeError,
-            "descriptor '%V' requires a '%.100s' object but received a '%.100s'",
-            descr_name(descr),
-            "?",
-            type_name(descr_type(descr)),
-            type_name(object_type(self))
-        );
-        return NULL;
-    }
-    rest = PyTuple_GetSlice(args, 1, argc);
-    if not rest {
-        return NULL;
-    }
-    result = wrapperdescr_raw_call(descr, self, rest, kwds);
-    object_decref(rest);
-    return result;
-}
+) -> ptr[PyObject];
 
-def method_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    method = method_of(descr);
-    return _PyType_GetDocFromInternalDoc(
-        method.view(1)[0].ml_name, method.view(1)[0].ml_doc
-    );
-}
+def method_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def method_get_text_signature(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    method = method_of(descr);
-    return _PyType_GetTextSignatureFromInternalDoc(
-        method.view(1)[0].ml_name, method.view(1)[0].ml_doc, method.view(1)[0].ml_flags
-    );
-}
+def method_get_text_signature(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def calculate_qualname(descr: ptr[PyObject]) -> ptr[PyObject] {
-    name = descr_name_object(descr);
-    if not name or not unicode_check(name) {
-        PyErr_SetString(
-            PyExc_TypeError, "<descriptor>.__name__ is not a unicode object"
-        );
-        return NULL;
-    }
-    type_qualname = PyObject_GetAttr(
-        ptr[PyObject](descr_type(descr)), interned(0, "__qualname__")
-    );
-    if not type_qualname {
-        return NULL;
-    }
-    if not unicode_check(type_qualname) {
-        PyErr_SetString(
-            PyExc_TypeError,
-            "<descriptor>.__objclass__.__qualname__ is not a unicode object"
-        );
-        object_decref(type_qualname);
-        return NULL;
-    }
-    res = PyUnicode_FromFormat("%S.%S", type_qualname, name);
-    object_decref(type_qualname);
-    return res;
-}
+def calculate_qualname(descr: ptr[PyObject]) -> ptr[PyObject];
 
-def descr_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    d = descr_of(self);
-    if not d.view(1)[0].d_qualname {
-        d.view(1)[0].d_qualname = ptr[PyObject](calculate_qualname(self));
-    }
-    return object_xnew_ref(ptr[PyObject](d.view(1)[0].d_qualname));
-}
+def descr_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def descr_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    getattr = eval_builtin("getattr");
-    if not getattr {
-        return NULL;
-    }
-    return Py_BuildValue(
-        "N(OO)", getattr, ptr(descr_type(self)), descr_name_object(self)
-    );
-}
+def descr_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-def member_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    doc = member_of(descr).view(1)[0].doc;
-    if not doc {
-        return object_new_ref(Py_None);
-    }
-    return PyUnicode_FromString(doc);
-}
+def member_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def getset_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    doc = getset_of(descr).view(1)[0].doc;
-    if not doc {
-        return object_new_ref(Py_None);
-    }
-    return PyUnicode_FromString(doc);
-}
+def getset_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def wrapperdescr_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    base = wrapper_base(descr);
-    return _PyType_GetDocFromInternalDoc(base.view(1)[0].name, base.view(1)[0].doc);
-}
+def wrapperdescr_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def wrapperdescr_get_text_signature(
     descr: ptr[PyObject], _closure: ptr
-) -> ptr[PyObject] {
-    base = wrapper_base(descr);
-    return _PyType_GetTextSignatureFromInternalDoc(
-        base.view(1)[0].name, base.view(1)[0].doc, i32(0)
-    );
-}
+) -> ptr[PyObject];
 
-def descr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return visit_reference(ptr[PyObject](descr_type(self)), visitor, arg);
-}
+def descr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-"""descr_new: a descriptor of `descrtype` for `name` on `type`."""
 def descr_new(
     descrtype: ptr[PyTypeObject], type: ptr[PyTypeObject], name: ptr[u8]
-) -> ptr[PyObject] {
-    descr = PyType_GenericAlloc(ptr[PyObject](descrtype), 0);
-    if not descr {
-        return NULL;
-    }
-    d = descr_of(descr);
-    d.view(1)[0].d_type = ptr[PyTypeObject](object_xnew_ref(ptr[PyObject](type)));
-    interned_name = PyUnicode_InternFromString(name);
-    d.view(1)[0].d_name = ptr[PyObject](interned_name);
-    if not interned_name {
-        object_decref(descr);
-        return NULL;
-    }
-    d.view(1)[0].d_qualname = ptr[PyObject]();
-    return descr;
-}
+) -> ptr[PyObject];
 
-"""The vectorcall entry for a method's call flags, or 0."""
-def method_vectorcall_for(flags: i32) -> ptr {
-    kind = flags
-        & (
-            METH_VARARGS
-            | METH_FASTCALL
-            | METH_NOARGS
-            | METH_O
-            | METH_KEYWORDS
-            | METH_METHOD
-        );
-    if kind == METH_VARARGS {
-        return ptr(method_vectorcall_VARARGS);
-    }
-    if kind == (METH_VARARGS | METH_KEYWORDS) {
-        return ptr(method_vectorcall_VARARGS_KEYWORDS);
-    }
-    if kind == METH_FASTCALL {
-        return ptr(method_vectorcall_FASTCALL);
-    }
-    if kind == (METH_FASTCALL | METH_KEYWORDS) {
-        return ptr(method_vectorcall_FASTCALL_KEYWORDS);
-    }
-    if kind == METH_NOARGS {
-        return ptr(method_vectorcall_NOARGS);
-    }
-    if kind == METH_O {
-        return ptr(method_vectorcall_O);
-    }
-    if kind == (METH_METHOD | METH_FASTCALL | METH_KEYWORDS) {
-        return ptr(method_vectorcall_FASTCALL_KEYWORDS_METHOD);
-    }
-    return ptr();
-}
+def method_vectorcall_for(flags: i32) -> ptr;
 
 import from c {
     def PyDescr_NewMethod(
@@ -1326,21 +728,882 @@ import from c {
     }
 }
 
-# ------------------------------------------------------------ mappingproxy
+def proxy_mapping(op: ptr[PyObject]) -> ptr[PyObject];
 
-def proxy_mapping(op: ptr[PyObject]) -> ptr[PyObject] {
+def mappingproxy_len(self: ptr[PyObject]) -> i64;
+
+def mappingproxy_getitem(self: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_or(left_in: ptr[PyObject], right_in: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_ior(self: ptr[PyObject], _other: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_contains(self: ptr[PyObject], key: ptr[PyObject]) -> i32;
+
+def call_mapping_method(self: ptr[PyObject], name: str) -> ptr[PyObject];
+
+def mappingproxy_get(
+    self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
+) -> ptr[PyObject];
+
+def mappingproxy_keys(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_values(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_items(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_copy(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_reversed(
+    self: ptr[PyObject], _unused: ptr[PyObject]
+) -> ptr[PyObject];
+
+def mappingproxy_dealloc(self: ptr[PyObject]);
+
+def mappingproxy_getiter(self: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_hash(self: ptr[PyObject]) -> i64;
+
+def mappingproxy_str(self: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_repr(self: ptr[PyObject]) -> ptr[PyObject];
+
+def mappingproxy_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def mappingproxy_richcompare(
+    self: ptr[PyObject], w: ptr[PyObject], op: i32
+) -> ptr[PyObject];
+
+def mappingproxy_check_mapping(mapping: ptr[PyObject]) -> i32;
+
+def mappingproxy_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject];
+
+def mappingproxy_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject];
+
+def wrapper_descr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def wrapper_self(op: ptr[PyObject]) -> ptr[PyObject];
+
+def wrapper_dealloc(self: ptr[PyObject]);
+
+def wrapper_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject];
+
+def wrapper_hash(self: ptr[PyObject]) -> i64;
+
+def wrapper_repr(self: ptr[PyObject]) -> ptr[PyObject];
+
+def wrapper_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def wrapper_objclass(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def wrapper_name(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def wrapper_doc(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def wrapper_text_signature(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def wrapper_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def wrapper_call(
+    self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject];
+
+def wrapper_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def prop_of(op: ptr[PyObject]) -> ptr[propertyobject];
+
+def prop_get(op: ptr[PyObject]) -> ptr[PyObject];
+
+def prop_set(op: ptr[PyObject]) -> ptr[PyObject];
+
+def prop_del(op: ptr[PyObject]) -> ptr[PyObject];
+
+def prop_doc(op: ptr[PyObject]) -> ptr[PyObject];
+
+def prop_name(op: ptr[PyObject]) -> ptr[PyObject];
+
+def prop_store(op: ptr[PyObject], field: int, value: ptr[PyObject]);
+
+def property_getter(self: ptr[PyObject], getter_fn: ptr[PyObject]) -> ptr[PyObject];
+
+def property_setter(self: ptr[PyObject], setter_fn: ptr[PyObject]) -> ptr[PyObject];
+
+def property_deleter(self: ptr[PyObject], deleter_fn: ptr[PyObject]) -> ptr[PyObject];
+
+def property_set_name(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject];
+
+def property_dealloc(self: ptr[PyObject]);
+
+def property_name(op: ptr[PyObject]) -> tuple[i32, ptr[PyObject]];
+
+def missing_accessor(op: ptr[PyObject], ob: ptr[PyObject], what: str);
+
+def property_descr_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject];
+
+def property_descr_set(
+    self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]
+) -> i32;
+
+def property_copy(
+    old: ptr[PyObject],
+    get_in: ptr[PyObject],
+    set_in: ptr[PyObject],
+    del_in: ptr[PyObject]
+) -> ptr[PyObject];
+
+def property_init_impl(
+    self: ptr[PyObject],
+    fget_in: ptr[PyObject],
+    fset_in: ptr[PyObject],
+    fdel_in: ptr[PyObject],
+    doc: ptr[PyObject]
+) -> i32;
+
+def property_init_values(
+    self: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject];
+
+def property_init(
+    self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> i32;
+
+def property_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def property_set__name__(
+    op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def property_get___isabstractmethod__(
+    op: ptr[PyObject], _closure: ptr
+) -> ptr[PyObject];
+
+def property_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def property_clear(self: ptr[PyObject]) -> i32;
+
+impl descr_of(op: ptr[PyObject]) -> ptr[PyDescrObject] {
+    return ptr[PyDescrObject](op);
+}
+
+impl descr_type(op: ptr[PyObject]) -> ptr[PyTypeObject] {
+    return ptr[PyTypeObject](descr_of(op).view(1)[0].d_type);
+}
+
+impl descr_name_object(op: ptr[PyObject]) -> ptr[PyObject] {
+    return ptr[PyObject](descr_of(op).view(1)[0].d_name);
+}
+
+impl descr_field(op: ptr[PyObject], offset: i64) -> ptr {
+    return ptr[ptr](ptr[u8](op) + offset).view(1)[0];
+}
+
+impl set_descr_field(op: ptr[PyObject], offset: i64, value: ptr) {
+    ptr[ptr](ptr[u8](op) + offset).view(1)[0] = value;
+}
+
+impl method_of(op: ptr[PyObject]) -> ptr[PyMethodDef] {
+    return ptr[PyMethodDef](descr_field(op, PyMethodDescrObject_METHOD));
+}
+
+impl member_of(op: ptr[PyObject]) -> ptr[PyMemberDef] {
+    return ptr[PyMemberDef](descr_field(op, PyMemberDescrObject_MEMBER));
+}
+
+impl getset_of(op: ptr[PyObject]) -> ptr[PyGetSetDef] {
+    return ptr[PyGetSetDef](descr_field(op, PyGetSetDescrObject_GETSET));
+}
+
+impl wrapper_base(op: ptr[PyObject]) -> ptr[wrapperbase] {
+    return ptr[wrapperbase](descr_field(op, PyWrapperDescrObject_BASE));
+}
+
+impl type_name(type: ptr[PyTypeObject]) -> ptr[u8] {
+    return type.view(1)[0].tp_name;
+}
+
+impl unicode_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
+}
+
+impl type_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS);
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl interned(slot: int, text: str) -> ptr[PyObject] {
+    if slot == 0 {
+        if not qualname_key {
+            qualname_key = jacpy_unicode_intern_text(text);
+        }
+        return qualname_key;
+    }
+    if slot == 1 {
+        if not name_key {
+            name_key = jacpy_unicode_intern_text(text);
+        }
+        return name_key;
+    }
+    if not doc_key {
+        doc_key = jacpy_unicode_intern_text(text);
+    }
+    return doc_key;
+}
+
+impl descr_dealloc(self: ptr[PyObject]) {
+    object_gc_untrack(self);
+    d = descr_of(self);
+    object_xdecref(ptr[PyObject](d.view(1)[0].d_type));
+    object_xdecref(ptr[PyObject](d.view(1)[0].d_name));
+    object_xdecref(ptr[PyObject](d.view(1)[0].d_qualname));
+    PyObject_GC_Del(ptr(self));
+}
+
+impl descr_name(op: ptr[PyObject]) -> ptr[PyObject] {
+    name = descr_name_object(op);
+    if name and unicode_check(name) {
+        return name;
+    }
+    return NULL;
+}
+
+impl descr_repr(op: ptr[PyObject], format: str) -> ptr[PyObject] {
+    return PyUnicode_FromFormat(format, descr_name(op), "?", type_name(descr_type(op)));
+}
+
+impl method_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return descr_repr(op, "<method '%V' of '%s' objects>");
+}
+
+impl member_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return descr_repr(op, "<member '%V' of '%s' objects>");
+}
+
+impl getset_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return descr_repr(op, "<attribute '%V' of '%s' objects>");
+}
+
+impl wrapperdescr_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    return descr_repr(op, "<slot wrapper '%V' of '%s' objects>");
+}
+
+impl descr_check(op: ptr[PyObject], ob: ptr[PyObject]) -> i32 {
+    if not object_type_check(ob, descr_type(op)) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' for '%.100s' objects doesn't apply to a '%.100s' object",
+            descr_name(op),
+            "?",
+            type_name(descr_type(op)),
+            type_name(object_type(ob))
+        );
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl classmethod_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type_in: ptr[PyObject]
+) -> ptr[PyObject] {
+    type = type_in;
+
+    if not type {
+        if not ob {
+            PyErr_Format(
+                PyExc_TypeError,
+                "descriptor '%V' for type '%.100s' needs either an object or a type",
+                descr_name(self),
+                "?",
+                type_name(descr_type(self))
+            );
+            return NULL;
+        }
+        type = ptr[PyObject](object_type(ob));
+    }
+    if not type_check(type) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' for type '%.100s' needs a type, not a '%.100s' as arg 2",
+            descr_name(self),
+            "?",
+            type_name(descr_type(self)),
+            type_name(object_type(type))
+        );
+        return NULL;
+    }
+    if PyType_IsSubtype(type, ptr[PyObject](descr_type(self))) == 0 {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' requires a subtype of '%.100s' but received '%.100s'",
+            descr_name(self),
+            "?",
+            type_name(descr_type(self)),
+            type_name(ptr[PyTypeObject](type))
+        );
+        return NULL;
+    }
+    cls = ptr[PyTypeObject]();
+    if (method_of(self).view(1)[0].ml_flags & METH_METHOD) != 0 {
+        cls = descr_type(self);
+    }
+    return PyCMethod_New(method_of(self), type, NULL, cls);
+}
+
+impl method_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject] {
+    if not ob {
+        return object_new_ref(self);
+    }
+    if descr_check(self, ob) < 0 {
+        return NULL;
+    }
+    if (method_of(self).view(1)[0].ml_flags & METH_METHOD) != 0 {
+        if not type or type_check(type) {
+            return PyCMethod_New(method_of(self), ob, NULL, descr_type(self));
+        }
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' needs a type, not '%s', as arg 2",
+            descr_name(self),
+            "?",
+            type_name(object_type(type))
+        );
+        return NULL;
+    }
+    return PyCFunction_NewEx(method_of(self), ob, NULL);
+}
+
+impl member_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject] {
+    if not ob {
+        return object_new_ref(self);
+    }
+    if descr_check(self, ob) < 0 {
+        return NULL;
+    }
+    member = member_of(self);
+    if (member.view(1)[0].flags & Py_AUDIT_READ) != 0 {
+        if PySys_Audit("object.__getattr__", "Os", ob, member.view(1)[0].name) < 0 {
+            return NULL;
+        }
+    }
+    return PyMember_GetOne(ptr[u8](ob), member);
+}
+
+impl getset_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject] {
+    if not ob {
+        return object_new_ref(self);
+    }
+    if descr_check(self, ob) < 0 {
+        return NULL;
+    }
+    getset = getset_of(self);
+    if int(getset.view(1)[0].get) != 0 {
+        calls = addressof(call_slot);
+        calls.view(1)[0].get_fn = int(getset.view(1)[0].get);
+        return calls.view(1)[0].get_fn(ob, getset.view(1)[0].closure);
+    }
+    PyErr_Format(
+        PyExc_AttributeError,
+        "attribute '%V' of '%.100s' objects is not readable",
+        descr_name(self),
+        "?",
+        type_name(descr_type(self))
+    );
+    return NULL;
+}
+
+impl wrapperdescr_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject] {
+    if not ob {
+        return object_new_ref(self);
+    }
+    if descr_check(self, ob) < 0 {
+        return NULL;
+    }
+    return PyWrapper_New(self, ob);
+}
+
+impl member_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32 {
+    if descr_check(self, ob) < 0 {
+        return i32(-1);
+    }
+    return PyMember_SetOne(ptr[u8](ob), member_of(self), value);
+}
+
+impl getset_set(self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]) -> i32 {
+    if descr_check(self, ob) < 0 {
+        return i32(-1);
+    }
+    getset = getset_of(self);
+    if int(getset.view(1)[0].set) != 0 {
+        calls = addressof(call_slot);
+        calls.view(1)[0].set_fn = int(getset.view(1)[0].set);
+        return calls.view(1)[0].set_fn(ob, value, getset.view(1)[0].closure);
+    }
+    PyErr_Format(
+        PyExc_AttributeError,
+        "attribute '%V' of '%.100s' objects is not writable",
+        descr_name(self),
+        "?",
+        type_name(descr_type(self))
+    );
+    return i32(-1);
+}
+
+impl function_error(func: ptr[PyObject], format: str, n: i64) {
+    funcstr = _PyObject_FunctionStr(func);
+    if funcstr {
+        PyErr_Format(PyExc_TypeError, format, funcstr, n);
+        object_decref(funcstr);
+    }
+}
+
+impl method_check_args(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64, kwnames: ptr[PyObject]
+) -> i32 {
+    if nargs < 1 {
+        function_error(func, "unbound method %U needs an argument", 0);
+        return i32(-1);
+    }
+    if descr_check(func, args.view(1)[0]) < 0 {
+        return i32(-1);
+    }
+    if kwnames and object_size(kwnames) != 0 {
+        function_error(func, "%U takes no keyword arguments", 0);
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl method_enter_call(func: ptr[PyObject]) -> int {
+    if Py_EnterRecursiveCall(" while calling a Python object") != 0 {
+        return 0;
+    }
+    return int(method_of(func).view(1)[0].ml_meth);
+}
+
+impl method_vectorcall_VARARGS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, kwnames) != 0 {
+        return NULL;
+    }
+    argstuple = _PyTuple_FromArray(args + 1, nargs - 1);
+    if not argstuple {
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        object_decref(argstuple);
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].one = meth;
+    result = calls.view(1)[0].one(args.view(1)[0], argstuple);
+    object_decref(argstuple);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl method_vectorcall_VARARGS_KEYWORDS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, NULL) != 0 {
+        return NULL;
+    }
+    argstuple = _PyTuple_FromArray(args + 1, nargs - 1);
+    if not argstuple {
+        return NULL;
+    }
+    result: ptr[PyObject] = NULL;
+
+    kwdict: ptr[PyObject] = NULL;
+    failed = False;
+    if kwnames and object_size(kwnames) > 0 {
+        kwdict = _PyStack_AsDict(args + nargs, kwnames);
+        failed = not kwdict;
+    }
+    if not failed {
+        meth = method_enter_call(func);
+        if meth != 0 {
+            calls = addressof(call_slot);
+            calls.view(1)[0].keywords = meth;
+            result = calls.view(1)[0].keywords(args.view(1)[0], argstuple, kwdict);
+            Py_LeaveRecursiveCall();
+        }
+    }
+    object_decref(argstuple);
+    object_xdecref(kwdict);
+    return result;
+}
+
+impl method_vectorcall_FASTCALL_KEYWORDS_METHOD(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, NULL) != 0 {
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].method = meth;
+    result = calls.view(1)[0].method(
+        args.view(1)[0], descr_type(func), args + 1, nargs - 1, kwnames
+    );
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl method_vectorcall_FASTCALL(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, kwnames) != 0 {
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].fast = meth;
+    result = calls.view(1)[0].fast(args.view(1)[0], args + 1, nargs - 1);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl method_vectorcall_FASTCALL_KEYWORDS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, NULL) != 0 {
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].fast_keywords = meth;
+    result = calls.view(1)[0].fast_keywords(
+        args.view(1)[0], args + 1, nargs - 1, kwnames
+    );
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl method_vectorcall_NOARGS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, kwnames) != 0 {
+        return NULL;
+    }
+    if nargs != 1 {
+        function_error(func, "%U takes no arguments (%zd given)", nargs - 1);
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].one = meth;
+    result = calls.view(1)[0].one(args.view(1)[0], NULL);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl method_vectorcall_O(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    nargs = PyVectorcall_NARGS(nargsf);
+    if method_check_args(func, args, nargs, kwnames) != 0 {
+        return NULL;
+    }
+    if nargs != 2 {
+        function_error(func, "%U takes exactly one argument (%zd given)", nargs - 1);
+        return NULL;
+    }
+    meth = method_enter_call(func);
+    if meth == 0 {
+        return NULL;
+    }
+    calls = addressof(call_slot);
+    calls.view(1)[0].one = meth;
+    result = calls.view(1)[0].one(args.view(1)[0], (args + 1).view(1)[0]);
+    Py_LeaveRecursiveCall();
+    return result;
+}
+
+impl classmethoddescr_call(
+    descr: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    argc = object_size(args);
+    if argc < 1 {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' of '%.100s' object needs an argument",
+            descr_name(descr),
+            "?",
+            type_name(descr_type(descr))
+        );
+        return NULL;
+    }
+    bound = classmethod_get(descr, NULL, tuple_get_item(args, 0));
+    if not bound {
+        return NULL;
+    }
+    res = PyObject_VectorcallDict(bound, tuple_items(args) + 1, u64(argc - 1), kwds);
+    object_decref(bound);
+    return res;
+}
+
+impl wrapperdescr_raw_call(
+    descr: ptr[PyObject], self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    base = wrapper_base(descr);
+    wrapped = descr_field(descr, PyWrapperDescrObject_WRAPPED);
+    calls = addressof(call_slot);
+    if (base.view(1)[0].flags & PyWrapperFlag_KEYWORDS) != 0 {
+        calls.view(1)[0].wrapper_kwds = int(base.view(1)[0].wrapper);
+        return calls.view(1)[0].wrapper_kwds(self, args, wrapped, kwds);
+    }
+    if kwds
+        and (
+            not type_has_feature(object_type(kwds), Py_TPFLAGS_DICT_SUBCLASS)
+            or PyDict_Size(kwds) != 0
+        ) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "wrapper %s() takes no keyword arguments",
+            base.view(1)[0].name
+        );
+        return NULL;
+    }
+    calls.view(1)[0].wrapper = int(base.view(1)[0].wrapper);
+    return calls.view(1)[0].wrapper(self, args, wrapped);
+}
+
+impl wrapperdescr_call(
+    descr: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    argc = object_size(args);
+    if argc < 1 {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' of '%.100s' object needs an argument",
+            descr_name(descr),
+            "?",
+            type_name(descr_type(descr))
+        );
+        return NULL;
+    }
+    self = tuple_get_item(args, 0);
+    if _PyObject_RealIsSubclass(
+        ptr[PyObject](object_type(self)), ptr[PyObject](descr_type(descr))
+    )
+        == 0 {
+        PyErr_Format(
+            PyExc_TypeError,
+            "descriptor '%V' requires a '%.100s' object but received a '%.100s'",
+            descr_name(descr),
+            "?",
+            type_name(descr_type(descr)),
+            type_name(object_type(self))
+        );
+        return NULL;
+    }
+    rest = PyTuple_GetSlice(args, 1, argc);
+    if not rest {
+        return NULL;
+    }
+    result = wrapperdescr_raw_call(descr, self, rest, kwds);
+    object_decref(rest);
+    return result;
+}
+
+impl method_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    method = method_of(descr);
+    return _PyType_GetDocFromInternalDoc(
+        method.view(1)[0].ml_name, method.view(1)[0].ml_doc
+    );
+}
+
+impl method_get_text_signature(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    method = method_of(descr);
+    return _PyType_GetTextSignatureFromInternalDoc(
+        method.view(1)[0].ml_name, method.view(1)[0].ml_doc, method.view(1)[0].ml_flags
+    );
+}
+
+impl calculate_qualname(descr: ptr[PyObject]) -> ptr[PyObject] {
+    name = descr_name_object(descr);
+    if not name or not unicode_check(name) {
+        PyErr_SetString(
+            PyExc_TypeError, "<descriptor>.__name__ is not a unicode object"
+        );
+        return NULL;
+    }
+    type_qualname = PyObject_GetAttr(
+        ptr[PyObject](descr_type(descr)), interned(0, "__qualname__")
+    );
+    if not type_qualname {
+        return NULL;
+    }
+    if not unicode_check(type_qualname) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "<descriptor>.__objclass__.__qualname__ is not a unicode object"
+        );
+        object_decref(type_qualname);
+        return NULL;
+    }
+    res = PyUnicode_FromFormat("%S.%S", type_qualname, name);
+    object_decref(type_qualname);
+    return res;
+}
+
+impl descr_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    d = descr_of(self);
+    if not d.view(1)[0].d_qualname {
+        d.view(1)[0].d_qualname = ptr[PyObject](calculate_qualname(self));
+    }
+    return object_xnew_ref(ptr[PyObject](d.view(1)[0].d_qualname));
+}
+
+impl descr_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    getattr = eval_builtin("getattr");
+    if not getattr {
+        return NULL;
+    }
+    return Py_BuildValue(
+        "N(OO)", getattr, ptr(descr_type(self)), descr_name_object(self)
+    );
+}
+
+impl member_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    doc = member_of(descr).view(1)[0].doc;
+    if not doc {
+        return object_new_ref(Py_None);
+    }
+    return PyUnicode_FromString(doc);
+}
+
+impl getset_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    doc = getset_of(descr).view(1)[0].doc;
+    if not doc {
+        return object_new_ref(Py_None);
+    }
+    return PyUnicode_FromString(doc);
+}
+
+impl wrapperdescr_get_doc(descr: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    base = wrapper_base(descr);
+    return _PyType_GetDocFromInternalDoc(base.view(1)[0].name, base.view(1)[0].doc);
+}
+
+impl wrapperdescr_get_text_signature(
+    descr: ptr[PyObject], _closure: ptr
+) -> ptr[PyObject] {
+    base = wrapper_base(descr);
+    return _PyType_GetTextSignatureFromInternalDoc(
+        base.view(1)[0].name, base.view(1)[0].doc, i32(0)
+    );
+}
+
+impl descr_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return visit_reference(ptr[PyObject](descr_type(self)), visitor, arg);
+}
+
+impl descr_new(
+    descrtype: ptr[PyTypeObject], type: ptr[PyTypeObject], name: ptr[u8]
+) -> ptr[PyObject] {
+    descr = PyType_GenericAlloc(ptr[PyObject](descrtype), 0);
+    if not descr {
+        return NULL;
+    }
+    d = descr_of(descr);
+    d.view(1)[0].d_type = ptr[PyTypeObject](object_xnew_ref(ptr[PyObject](type)));
+    interned_name = PyUnicode_InternFromString(name);
+    d.view(1)[0].d_name = ptr[PyObject](interned_name);
+    if not interned_name {
+        object_decref(descr);
+        return NULL;
+    }
+    d.view(1)[0].d_qualname = ptr[PyObject]();
+    return descr;
+}
+
+impl method_vectorcall_for(flags: i32) -> ptr {
+    kind = flags
+        & (
+            METH_VARARGS
+            | METH_FASTCALL
+            | METH_NOARGS
+            | METH_O
+            | METH_KEYWORDS
+            | METH_METHOD
+        );
+    if kind == METH_VARARGS {
+        return ptr(method_vectorcall_VARARGS);
+    }
+    if kind == (METH_VARARGS | METH_KEYWORDS) {
+        return ptr(method_vectorcall_VARARGS_KEYWORDS);
+    }
+    if kind == METH_FASTCALL {
+        return ptr(method_vectorcall_FASTCALL);
+    }
+    if kind == (METH_FASTCALL | METH_KEYWORDS) {
+        return ptr(method_vectorcall_FASTCALL_KEYWORDS);
+    }
+    if kind == METH_NOARGS {
+        return ptr(method_vectorcall_NOARGS);
+    }
+    if kind == METH_O {
+        return ptr(method_vectorcall_O);
+    }
+    if kind == (METH_METHOD | METH_FASTCALL | METH_KEYWORDS) {
+        return ptr(method_vectorcall_FASTCALL_KEYWORDS_METHOD);
+    }
+    return ptr();
+}
+
+impl proxy_mapping(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](ptr[mappingproxyobject](op).view(1)[0].mapping);
 }
 
-def mappingproxy_len(self: ptr[PyObject]) -> i64 {
+impl mappingproxy_len(self: ptr[PyObject]) -> i64 {
     return PyObject_Size(proxy_mapping(self));
 }
 
-def mappingproxy_getitem(self: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_getitem(self: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
     return PyObject_GetItem(proxy_mapping(self), key);
 }
 
-def mappingproxy_or(left_in: ptr[PyObject], right_in: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_or(left_in: ptr[PyObject], right_in: ptr[PyObject]) -> ptr[PyObject] {
     left = left_in;
     right = right_in;
     if object_type_check(left, addressof(PyDictProxy_Type)) {
@@ -1352,7 +1615,7 @@ def mappingproxy_or(left_in: ptr[PyObject], right_in: ptr[PyObject]) -> ptr[PyOb
     return PyNumber_Or(left, right);
 }
 
-def mappingproxy_ior(self: ptr[PyObject], _other: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_ior(self: ptr[PyObject], _other: ptr[PyObject]) -> ptr[PyObject] {
     return PyErr_Format(
         PyExc_TypeError,
         "'|=' is not supported by %s; use '|' instead",
@@ -1360,7 +1623,7 @@ def mappingproxy_ior(self: ptr[PyObject], _other: ptr[PyObject]) -> ptr[PyObject
     );
 }
 
-def mappingproxy_contains(self: ptr[PyObject], key: ptr[PyObject]) -> i32 {
+impl mappingproxy_contains(self: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     mapping = proxy_mapping(self);
     if object_is_type(mapping, ptr[PyTypeObject](addressof(PyDict_Type))) {
         return PyDict_Contains(mapping, key);
@@ -1368,8 +1631,8 @@ def mappingproxy_contains(self: ptr[PyObject], key: ptr[PyObject]) -> i32 {
     return PySequence_Contains(mapping, key);
 }
 
-def call_mapping_method(self: ptr[PyObject], name: str) -> ptr[PyObject] {
-    method = PyUnicode_InternFromString(name);
+impl call_mapping_method(self: ptr[PyObject], name: str) -> ptr[PyObject] {
+    method = jacpy_unicode_intern_text(name);
     if not method {
         return NULL;
     }
@@ -1378,14 +1641,14 @@ def call_mapping_method(self: ptr[PyObject], name: str) -> ptr[PyObject] {
     return res;
 }
 
-def mappingproxy_get(
+impl mappingproxy_get(
     self: ptr[PyObject], args: ptr[ptr[PyObject]], nargs: i64
 ) -> ptr[PyObject] {
     if _PyArg_CheckPositional("get", nargs, 1, 2) == 0 {
         return NULL;
     }
     default_value = (args + 1).view(1)[0] if nargs > 1 else Py_None;
-    method = PyUnicode_InternFromString("get");
+    method = PyUnicode_InternFromString(ptr[u8]("get"));
     if not method {
         return NULL;
     }
@@ -1396,61 +1659,61 @@ def mappingproxy_get(
     return res;
 }
 
-def mappingproxy_keys(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_keys(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return call_mapping_method(self, "keys");
 }
 
-def mappingproxy_values(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_values(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return call_mapping_method(self, "values");
 }
 
-def mappingproxy_items(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_items(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return call_mapping_method(self, "items");
 }
 
-def mappingproxy_copy(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_copy(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return call_mapping_method(self, "copy");
 }
 
-def mappingproxy_reversed(
+impl mappingproxy_reversed(
     self: ptr[PyObject], _unused: ptr[PyObject]
 ) -> ptr[PyObject] {
     return call_mapping_method(self, "__reversed__");
 }
 
-def mappingproxy_dealloc(self: ptr[PyObject]) {
+impl mappingproxy_dealloc(self: ptr[PyObject]) {
     object_gc_untrack(self);
     object_decref(proxy_mapping(self));
     PyObject_GC_Del(ptr(self));
 }
 
-def mappingproxy_getiter(self: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_getiter(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyObject_GetIter(proxy_mapping(self));
 }
 
-def mappingproxy_hash(self: ptr[PyObject]) -> i64 {
+impl mappingproxy_hash(self: ptr[PyObject]) -> i64 {
     return PyObject_Hash(proxy_mapping(self));
 }
 
-def mappingproxy_str(self: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_str(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyObject_Str(proxy_mapping(self));
 }
 
-def mappingproxy_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+impl mappingproxy_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat("mappingproxy(%R)", proxy_mapping(self));
 }
 
-def mappingproxy_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl mappingproxy_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(proxy_mapping(self), visitor, arg);
 }
 
-def mappingproxy_richcompare(
+impl mappingproxy_richcompare(
     self: ptr[PyObject], w: ptr[PyObject], op: i32
 ) -> ptr[PyObject] {
     return PyObject_RichCompare(proxy_mapping(self), w, op);
 }
 
-def mappingproxy_check_mapping(mapping: ptr[PyObject]) -> i32 {
+impl mappingproxy_check_mapping(mapping: ptr[PyObject]) -> i32 {
     if PyMapping_Check(mapping) == 0
         or type_has_feature(object_type(mapping), Py_TPFLAGS_LIST_SUBCLASS)
         or type_has_feature(object_type(mapping), Py_TPFLAGS_TUPLE_SUBCLASS) {
@@ -1464,13 +1727,13 @@ def mappingproxy_check_mapping(mapping: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def mappingproxy_new_values(
+impl mappingproxy_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
 ) -> ptr[PyObject] {
     return PyDictProxy_New(values.view(1)[0]);
 }
 
-def mappingproxy_new(
+impl mappingproxy_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not kwargs and object_size(args) == 1 {
@@ -1481,24 +1744,22 @@ def mappingproxy_new(
     );
 }
 
-# ---------------------------------------------------------- method-wrapper
-
-def wrapper_descr(op: ptr[PyObject]) -> ptr[PyObject] {
+impl wrapper_descr(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](ptr[wrapperobject](op).view(1)[0].descr);
 }
 
-def wrapper_self(op: ptr[PyObject]) -> ptr[PyObject] {
+impl wrapper_self(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](ptr[wrapperobject](op).view(1)[0].self);
 }
 
-def wrapper_dealloc(self: ptr[PyObject]) {
+impl wrapper_dealloc(self: ptr[PyObject]) {
     PyObject_GC_UnTrack(ptr(self));
     object_xdecref(wrapper_descr(self));
     object_xdecref(wrapper_self(self));
     PyObject_GC_Del(ptr(self));
 }
 
-def wrapper_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
+impl wrapper_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
     wrapper_type = addressof(_PyMethodWrapper_Type);
     if (op != Py_EQ and op != Py_NE)
         or not object_is_type(a, wrapper_type)
@@ -1509,13 +1770,13 @@ def wrapper_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyOb
     return PyBool_FromLong(1 if eq == (op == Py_EQ) else 0);
 }
 
-def wrapper_hash(self: ptr[PyObject]) -> i64 {
+impl wrapper_hash(self: ptr[PyObject]) -> i64 {
     x = PyObject_GenericHash(wrapper_self(self))
         ^ Py_HashPointer(ptr(wrapper_descr(self)));
     return -2 if x == -1 else x;
 }
 
-def wrapper_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+impl wrapper_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat(
         "<method-wrapper '%s' of %s object at %p>",
         wrapper_base(wrapper_descr(self)).view(1)[0].name,
@@ -1524,7 +1785,7 @@ def wrapper_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     );
 }
 
-def wrapper_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl wrapper_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     getattr = eval_builtin("getattr");
     if not getattr {
         return NULL;
@@ -1534,37 +1795,37 @@ def wrapper_reduce(self: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject]
     );
 }
 
-def wrapper_objclass(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl wrapper_objclass(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return object_new_ref(ptr[PyObject](descr_type(wrapper_descr(wp))));
 }
 
-def wrapper_name(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl wrapper_name(wp: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return PyUnicode_FromString(wrapper_base(wrapper_descr(wp)).view(1)[0].name);
 }
 
-def wrapper_doc(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl wrapper_doc(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     base = wrapper_base(wrapper_descr(self));
     return _PyType_GetDocFromInternalDoc(base.view(1)[0].name, base.view(1)[0].doc);
 }
 
-def wrapper_text_signature(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl wrapper_text_signature(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     base = wrapper_base(wrapper_descr(self));
     return _PyType_GetTextSignatureFromInternalDoc(
         base.view(1)[0].name, base.view(1)[0].doc, i32(0)
     );
 }
 
-def wrapper_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl wrapper_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return descr_get_qualname(wrapper_descr(self), ptr());
 }
 
-def wrapper_call(
+impl wrapper_call(
     self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
 ) -> ptr[PyObject] {
     return wrapperdescr_raw_call(wrapper_descr(self), wrapper_self(self), args, kwds);
 }
 
-def wrapper_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl wrapper_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(wrapper_descr(self), visitor, arg);
     if status != 0 {
         return status;
@@ -1572,35 +1833,31 @@ def wrapper_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(wrapper_self(self), visitor, arg);
 }
 
-# ---------------------------------------------------------------- property
-
-def prop_of(op: ptr[PyObject]) -> ptr[propertyobject] {
+impl prop_of(op: ptr[PyObject]) -> ptr[propertyobject] {
     return ptr[propertyobject](op);
 }
 
-def prop_get(op: ptr[PyObject]) -> ptr[PyObject] {
+impl prop_get(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](prop_of(op).view(1)[0].prop_get);
 }
 
-def prop_set(op: ptr[PyObject]) -> ptr[PyObject] {
+impl prop_set(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](prop_of(op).view(1)[0].prop_set);
 }
 
-def prop_del(op: ptr[PyObject]) -> ptr[PyObject] {
+impl prop_del(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](prop_of(op).view(1)[0].prop_del);
 }
 
-def prop_doc(op: ptr[PyObject]) -> ptr[PyObject] {
+impl prop_doc(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](prop_of(op).view(1)[0].prop_doc);
 }
 
-def prop_name(op: ptr[PyObject]) -> ptr[PyObject] {
+impl prop_name(op: ptr[PyObject]) -> ptr[PyObject] {
     return ptr[PyObject](prop_of(op).view(1)[0].prop_name);
 }
 
-"""Py_XSETREF on one of the property's object fields (0 get, 1 set, 2 del,
-3 doc, 4 name), taking `value`."""
-def prop_store(op: ptr[PyObject], field: int, value: ptr[PyObject]) {
+impl prop_store(op: ptr[PyObject], field: int, value: ptr[PyObject]) {
     p = prop_of(op);
     old: ptr[PyObject] = NULL;
     if field == 0 {
@@ -1622,19 +1879,19 @@ def prop_store(op: ptr[PyObject], field: int, value: ptr[PyObject]) {
     object_xdecref(old);
 }
 
-def property_getter(self: ptr[PyObject], getter_fn: ptr[PyObject]) -> ptr[PyObject] {
+impl property_getter(self: ptr[PyObject], getter_fn: ptr[PyObject]) -> ptr[PyObject] {
     return property_copy(self, getter_fn, NULL, NULL);
 }
 
-def property_setter(self: ptr[PyObject], setter_fn: ptr[PyObject]) -> ptr[PyObject] {
+impl property_setter(self: ptr[PyObject], setter_fn: ptr[PyObject]) -> ptr[PyObject] {
     return property_copy(self, NULL, setter_fn, NULL);
 }
 
-def property_deleter(self: ptr[PyObject], deleter_fn: ptr[PyObject]) -> ptr[PyObject] {
+impl property_deleter(self: ptr[PyObject], deleter_fn: ptr[PyObject]) -> ptr[PyObject] {
     return property_copy(self, NULL, NULL, deleter_fn);
 }
 
-def property_set_name(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
+impl property_set_name(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
     if object_size(args) != 2 {
         PyErr_Format(
             PyExc_TypeError,
@@ -1647,7 +1904,7 @@ def property_set_name(self: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject]
     return object_new_ref(Py_None);
 }
 
-def property_dealloc(self: ptr[PyObject]) {
+impl property_dealloc(self: ptr[PyObject]) {
     object_gc_untrack(self);
     object_xdecref(prop_get(self));
     object_xdecref(prop_set(self));
@@ -1659,8 +1916,7 @@ def property_dealloc(self: ptr[PyObject]) {
     calls.view(1)[0].free(ptr(self));
 }
 
-"""The property's name, a new reference: (1 found | 0 none | -1 error)."""
-def property_name(op: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
+impl property_name(op: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
     if prop_name(op) {
         return (i32(1), object_new_ref(prop_name(op)));
     }
@@ -1672,8 +1928,7 @@ def property_name(op: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
     return (rc, name);
 }
 
-"""AttributeError for a missing getter, setter or deleter (`what`)."""
-def missing_accessor(op: ptr[PyObject], ob: ptr[PyObject], what: str) {
+impl missing_accessor(op: ptr[PyObject], ob: ptr[PyObject], what: str) {
     (rc, propname) = property_name(op);
     if rc < 0 {
         return;
@@ -1701,7 +1956,7 @@ def missing_accessor(op: ptr[PyObject], ob: ptr[PyObject], what: str) {
     object_xdecref(qualname);
 }
 
-def property_descr_get(
+impl property_descr_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not ob or ob == Py_None {
@@ -1714,7 +1969,7 @@ def property_descr_get(
     return PyObject_CallOneArg(prop_get(self), ob);
 }
 
-def property_descr_set(
+impl property_descr_set(
     self: ptr[PyObject], ob: ptr[PyObject], value: ptr[PyObject]
 ) -> i32 {
     func = prop_del(self) if not value else prop_set(self);
@@ -1735,7 +1990,7 @@ def property_descr_set(
     return i32(0);
 }
 
-def property_copy(
+impl property_copy(
     old: ptr[PyObject],
     get_in: ptr[PyObject],
     set_in: ptr[PyObject],
@@ -1758,7 +2013,7 @@ def property_copy(
         del_ = prop_del(old) if prop_del(old) else Py_None;
     }
     doc = Py_None;
-    # A getter's __doc__ is for __init__ to take.
+
     if prop_of(old).view(1)[0].getter_doc == 0 or get == Py_None {
         doc = prop_doc(old) if prop_doc(old) else Py_None;
     }
@@ -1773,7 +2028,7 @@ def property_copy(
     return result;
 }
 
-def property_init_impl(
+impl property_init_impl(
     self: ptr[PyObject],
     fget_in: ptr[PyObject],
     fset_in: ptr[PyObject],
@@ -1793,7 +2048,6 @@ def property_init_impl(
     if doc and doc != Py_None {
         doc_value = object_xnew_ref(doc);
     } elif fget {
-        # No docstring given: the getter's.
         rc = PyObject_GetOptionalAttr(fget, interned(2, "__doc__"), &mut doc_value);
         if rc < 0 {
             return rc;
@@ -1806,13 +2060,12 @@ def property_init_impl(
             prop_of(self).view(1)[0].getter_doc = i32(1);
         }
     }
-    # doc_value is NULL or a non-None new reference.
+
     if object_is_type(self, addressof(PyProperty_Type)) {
         prop_store(self, 3, doc_value);
         return i32(0);
     }
-    # A subclass instance takes __doc__ in its dict or slot, else the
-    # class's __doc__ would shadow it.
+
     if not doc_value {
         doc_value = object_new_ref(Py_None);
     }
@@ -1821,7 +2074,6 @@ def property_init_impl(
     if err < 0 {
         if prop_of(self).view(1)[0].getter_doc == 0
             and PyErr_ExceptionMatches(PyExc_AttributeError) != 0 {
-            # Silently dropped through 3.11 (gh-98963); kept.
             PyErr_Clear();
             return i32(0);
         }
@@ -1830,7 +2082,7 @@ def property_init_impl(
     return i32(0);
 }
 
-def property_init_values(
+impl property_init_values(
     self: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
 ) -> ptr[PyObject] {
     if property_init_impl(
@@ -1846,7 +2098,7 @@ def property_init_values(
     return object_new_ref(Py_None);
 }
 
-def property_init(
+impl property_init(
     self: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> i32 {
     if not kwargs and object_size(args) <= 4 {
@@ -1868,7 +2120,7 @@ def property_init(
     return i32(0);
 }
 
-def property_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl property_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     (rc, name) = property_name(op);
     if rc < 0 {
         return NULL;
@@ -1881,14 +2133,14 @@ def property_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return name;
 }
 
-def property_set__name__(
+impl property_set__name__(
     op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     prop_store(op, 4, object_xnew_ref(value));
     return i32(0);
 }
 
-def property_get___isabstractmethod__(
+impl property_get___isabstractmethod__(
     op: ptr[PyObject], _closure: ptr
 ) -> ptr[PyObject] {
     for accessor in [prop_get(op), prop_set(op), prop_del(op)] {
@@ -1903,7 +2155,7 @@ def property_get___isabstractmethod__(
     return PyBool_FromLong(0);
 }
 
-def property_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl property_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     for field in [
         prop_get(self),
         prop_set(self),
@@ -1919,7 +2171,7 @@ def property_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return i32(0);
 }
 
-def property_clear(self: ptr[PyObject]) -> i32 {
+impl property_clear(self: ptr[PyObject]) -> i32 {
     prop_store(self, 3, NULL);
     return i32(0);
 }

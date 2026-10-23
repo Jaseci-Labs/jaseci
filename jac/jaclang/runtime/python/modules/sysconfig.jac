@@ -1,8 +1,6 @@
-"""Build variables for sysconfig; derived from CPython 3.14.6 Modules/_sysconfig.c.
+def _sysconfig_config_vars_impl(module: ptr[PyObject]) -> ptr[PyObject];
 
-Release runtimes are neither free-threaded nor debug builds.
-"""
-def _sysconfig_config_vars_impl(module: ptr[PyObject]) -> ptr[PyObject] {
+impl _sysconfig_config_vars_impl(module: ptr[PyObject]) -> ptr[PyObject] {
     config = PyDict_New();
     if not config {
         return NULL;

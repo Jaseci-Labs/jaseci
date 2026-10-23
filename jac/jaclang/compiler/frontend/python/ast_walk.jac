@@ -1,31 +1,39 @@
-# Explicit AST field traversal for the native compiler.
-
-# Receives the direct children of one node in field order, so traversals
-# allocate no per-node child lists.
 obj ast_child_visitor {
     def child(field: str, value: ast_node) abst;
 }
 
-# One node's children, collected into storage reused across a traversal for
-# worklists that push them in reverse. Not reentrant.
 obj ast_child_buffer(ast_child_visitor) {
     has fields: list[str] = [],
         nodes: list[ast_node] = [];
 
-    def child(field: str, value: ast_node) {
-        self.fields.append(field);
-        self.nodes.append(value);
-    }
-
-    def collect(value: ast_node) -> int {
-        self.fields.clear();
-        self.nodes.clear();
-        visit_ast_children(value, self);
-        return len(self.nodes);
-    }
+    def child(field: str, value: ast_node);
+    def collect(value: ast_node) -> int;
 }
 
-def visit_ast_children(value: ast_node, visitor: ast_child_visitor) {
+def visit_ast_children(value: ast_node, visitor: ast_child_visitor);
+
+obj ast_visitor {}
+
+obj ast_rewriter(ast_visitor) {
+    def transform(value: ast_node) -> ast_node;
+    def visit_field(owner: ast_node, field: str) -> bool;
+}
+
+def rewrite_ast_children(value: ast_node, visitor: ast_rewriter);
+
+impl ast_child_buffer.child(field: str, value: ast_node) {
+    self.fields.append(field);
+    self.nodes.append(value);
+}
+
+impl ast_child_buffer.collect(value: ast_node) -> int {
+    self.fields.clear();
+    self.nodes.clear();
+    visit_ast_children(value, self);
+    return len(self.nodes);
+}
+
+impl visit_ast_children(value: ast_node, visitor: ast_child_visitor) {
     kind = value.kind();
     if kind == ast_kind.Module and isinstance(value, Module) {
         for child in value.body {
@@ -605,22 +613,15 @@ def visit_ast_children(value: ast_node, visitor: ast_child_visitor) {
     return;
 }
 
-# A typed visitor can rewrite child fields without Python getattr/setattr.
-# The explicit base reserves a dispatch slot when this module is compiled
-# independently of the modules declaring concrete visitors.
-obj ast_visitor {}
-
-obj ast_rewriter(ast_visitor) {
-    def transform(value: ast_node) -> ast_node {
-        return value;
-    }
-
-    def visit_field(owner: ast_node, field: str) -> bool {
-        return True;
-    }
+impl ast_rewriter.transform(value: ast_node) -> ast_node {
+    return value;
 }
 
-def rewrite_ast_children(value: ast_node, visitor: ast_rewriter) {
+impl ast_rewriter.visit_field(owner: ast_node, field: str) -> bool {
+    return True;
+}
+
+impl rewrite_ast_children(value: ast_node, visitor: ast_rewriter) {
     kind = value.kind();
     child: expr | None = None;
     if kind == ast_kind.Module and isinstance(value, Module) {

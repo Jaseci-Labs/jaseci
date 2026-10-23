@@ -1,35 +1,42 @@
-"""Shared ownership and cycle-collector visibility for Python reference fields."""
-
 obj ReferenceState(NativeState) {
     has references: list[ptr[PyObject]];
 
-    def clear {
-        i = 0;
-        while i < len(self.references) {
-            value = self.references[i];
-            self.references[i] = NULL;
-            jacpy_release(value);
-            i += 1;
-        }
-    }
+    def clear;
+    def traverse_refs(visitor: ptr, context: ptr) -> i32;
+    def drop;
+}
 
-    def traverse_refs(visitor: ptr, context: ptr) -> i32 {
-        for value in self.references {
-            result = visit_reference(value, visitor, context);
-            if result != 0 {
-                return result;
-            }
-        }
-        return i32(0);
-    }
+def owned_tuple(values: list[ptr[PyObject]]) -> ptr[PyObject];
 
-    def drop {
-        self.clear();
+def call_method(
+    target: ptr[PyObject], name: str, arguments: list[ptr[PyObject]]
+) -> ptr[PyObject];
+
+impl ReferenceState.clear {
+    i = 0;
+    while i < len(self.references) {
+        value = self.references[i];
+        self.references[i] = NULL;
+        jacpy_release(value);
+        i += 1;
     }
 }
 
-# Consume all supplied owned references, including when tuple allocation fails.
-def owned_tuple(values: list[ptr[PyObject]]) -> ptr[PyObject] {
+impl ReferenceState.traverse_refs(visitor: ptr, context: ptr) -> i32 {
+    for value in self.references {
+        result = visit_reference(value, visitor, context);
+        if result != 0 {
+            return result;
+        }
+    }
+    return i32(0);
+}
+
+impl ReferenceState.drop {
+    self.clear();
+}
+
+impl owned_tuple(values: list[ptr[PyObject]]) -> ptr[PyObject] {
     held = ReferenceState(references=values);
     for value in values {
         if value == 0 {
@@ -51,9 +58,7 @@ def owned_tuple(values: list[ptr[PyObject]]) -> ptr[PyObject] {
     return result;
 }
 
-# target.name(*arguments), as PyObject_CallMethod does with a fixed format.
-# The arguments are owned references, consumed on every path.
-def call_method(
+impl call_method(
     target: ptr[PyObject], name: str, arguments: list[ptr[PyObject]]
 ) -> ptr[PyObject] {
     packed = owned_tuple(arguments);

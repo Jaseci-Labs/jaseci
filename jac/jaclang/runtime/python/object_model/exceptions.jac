@@ -1,15 +1,3 @@
-"""The built-in exceptions: Objects/exceptions.c in native Jac.
-
-Every static exception type (`_PyExc_TypeError`, ...) and its `PyExc_*`
-pointer is C data Jac defines under its C name, with the exception C API
-(`PyException_*`, the `PyUnicode*Error_*` accessors, `_PyErr_NoMemory`,
-`_PyExc_PrepReraiseStar`) and the interpreter's init and fini entry points.
-Exception groups split and project as exceptions.c does; MemoryError keeps
-its freelist in the interpreter's exc_state, and `OSError(errno, ...)`
-picks its subclass from the errno map. Supported targets are POSIX, so the
-Windows-only `winerror` handling is not built. See ../LICENSE.cpython.
-"""
-
 import from c {
     def _PyStaticType_InitBuiltin(interp: ptr, type: ptr[PyTypeObject]) -> i32;  def _PyStaticType_FiniBuiltin(
         interp: ptr, type: ptr[PyTypeObject]
@@ -19,13 +7,10 @@ import from c {
         fname: str, displayname: str, expected: ptr[u8], arg: ptr[PyObject]
     );  def PyObject_GenericGetDict(ob: ptr[PyObject], context: ptr) -> ptr[PyObject];  def PyObject_GenericSetDict(
         ob: ptr[PyObject], value: ptr[PyObject], context: ptr
-    ) -> i32;
-    # A type's tp_alloc / tp_free, read into this record for the call.
-    obj ExcCall {
+    ) -> i32;  obj ExcCall {
         has alloc: Callable[[ptr[PyObject], i64], ptr[PyObject]] = 0,
             free: Callable[[ptr], None] = 0;
     }  glob:priv call_slot: ExcCall = ExcCall(),
-         # &_Py_ID(__notes__), interned on first use.
          notes_key: ptr[PyObject] = ptr[PyObject](),
          import_error_keywords: list[ptr[u8]] = [
              ptr[u8]("name"),
@@ -42,383 +27,88 @@ import from c {
 }
 
 
-# ------------------------------------------------------------ BaseException
+def base_of(op: ptr[PyObject]) -> ptr[PyBaseExceptionObject];
 
-def base_of(op: ptr[PyObject]) -> ptr[PyBaseExceptionObject] {
-    return ptr[PyBaseExceptionObject](op);
-}
+def exc_args(op: ptr[PyObject]) -> ptr[PyObject];
 
-def exc_args(op: ptr[PyObject]) -> ptr[PyObject] {
-    return ptr[PyObject](base_of(op).view(1)[0].args);
-}
+def base_store(op: ptr[PyObject], which: int, value: ptr[PyObject]);
 
-"""Py_XSETREF on a BaseException field (0 dict, 1 args, 2 notes,
-3 traceback, 4 context, 5 cause), taking `value`."""
-def base_store(op: ptr[PyObject], which: int, value: ptr[PyObject]) {
-    b = base_of(op);
-    old: ptr[PyObject] = NULL;
-    if which == 0 {
-        old = ptr[PyObject](b.view(1)[0].dict);
-        b.view(1)[0].dict = value;
-    } elif which == 1 {
-        old = ptr[PyObject](b.view(1)[0].args);
-        b.view(1)[0].args = value;
-    } elif which == 2 {
-        old = ptr[PyObject](b.view(1)[0].notes);
-        b.view(1)[0].notes = value;
-    } elif which == 3 {
-        old = ptr[PyObject](b.view(1)[0].traceback);
-        b.view(1)[0].traceback = value;
-    } elif which == 4 {
-        old = ptr[PyObject](b.view(1)[0].context);
-        b.view(1)[0].context = value;
-    } else {
-        old = ptr[PyObject](b.view(1)[0].cause);
-        b.view(1)[0].cause = value;
-    }
-    object_xdecref(old);
-}
+def base_field(op: ptr[PyObject], which: int) -> ptr[PyObject];
 
-def base_field(op: ptr[PyObject], which: int) -> ptr[PyObject] {
-    b = base_of(op).view(1)[0];
-    if which == 0 {
-        return ptr[PyObject](b.dict);
-    }
-    if which == 1 {
-        return ptr[PyObject](b.args);
-    }
-    if which == 2 {
-        return ptr[PyObject](b.notes);
-    }
-    if which == 3 {
-        return ptr[PyObject](b.traceback);
-    }
-    if which == 4 {
-        return ptr[PyObject](b.context);
-    }
-    return ptr[PyObject](b.cause);
-}
+def type_alloc(type: ptr[PyObject]) -> ptr[PyObject];
 
-"""type->tp_alloc(type, 0)."""
-def type_alloc(type: ptr[PyObject]) -> ptr[PyObject] {
-    calls = addressof(call_slot);
-    calls.view(1)[0].alloc = int(ptr[PyTypeObject](type).view(1)[0].tp_alloc);
-    return calls.view(1)[0].alloc(type, 0);
-}
+def type_free(op: ptr[PyObject]);
 
-"""Py_TYPE(op)->tp_free(op)."""
-def type_free(op: ptr[PyObject]) {
-    calls = addressof(call_slot);
-    calls.view(1)[0].free = int(object_type(op).view(1)[0].tp_free);
-    calls.view(1)[0].free(ptr(op));
-}
-
-"""A fresh exception: every field NULL, `args` (a new reference) stored."""
-def base_init_fields(op: ptr[PyObject], args: ptr[PyObject]) {
-    b = base_of(op);
-    # The dict is created on the fly by PyObject_GenericSetAttr.
-    b.view(1)[0].dict = NULL;
-    b.view(1)[0].notes = NULL;
-    b.view(1)[0].traceback = NULL;
-    b.view(1)[0].cause = NULL;
-    b.view(1)[0].context = NULL;
-    b.view(1)[0].suppress_context = i8(0);
-    b.view(1)[0].args = args;
-}
+def base_init_fields(op: ptr[PyObject], args: ptr[PyObject]);
 
 def BaseException_new(
     type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    self = type_alloc(type);
-    if not self {
-        return NULL;
-    }
-    if args {
-        base_init_fields(self, object_new_ref(args));
-        return self;
-    }
-    base_init_fields(self, NULL);
-    empty = PyTuple_New(0);
-    if not empty {
-        object_decref(self);
-        return NULL;
-    }
-    base_of(self).view(1)[0].args = empty;
-    return self;
-}
+) -> ptr[PyObject];
 
 def BaseException_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if kwds and _PyArg_NoKeywords(object_type(op).view(1)[0].tp_name, kwds) == 0 {
-        return i32(-1);
-    }
-    base_store(op, 1, object_new_ref(args));
-    return i32(0);
-}
+) -> i32;
 
 def BaseException_vectorcall(
     type_obj: ptr[PyObject],
     args: ptr[ptr[PyObject]],
     nargsf: u64,
     kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    if kwnames
-        and _PyArg_NoKwnames(ptr[PyTypeObject](type_obj).view(1)[0].tp_name, kwnames)
-            == 0 {
-        return NULL;
-    }
-    self = type_alloc(type_obj);
-    if not self {
-        return NULL;
-    }
-    base_init_fields(self, NULL);
-    tuple = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
-    if not tuple {
-        object_decref(self);
-        return NULL;
-    }
-    base_of(self).view(1)[0].args = tuple;
-    return self;
-}
+) -> ptr[PyObject];
 
-def BaseException_clear(op: ptr[PyObject]) -> i32 {
-    for which in [0, 1, 2, 3, 5, 4] {
-        base_store(op, which, NULL);
-    }
-    return i32(0);
-}
+def BaseException_clear(op: ptr[PyObject]) -> i32;
 
-def BaseException_dealloc(op: ptr[PyObject]) {
-    PyObject_GC_UnTrack(ptr(op));
-    # bpo-44348: the trashcan guards long __context__ / __traceback__
-    # chains in C; clearing here keeps the same order.
-    BaseException_clear(op);
-    type_free(op);
-}
+def BaseException_dealloc(op: ptr[PyObject]);
 
-def BaseException_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    for which in [0, 1, 2, 3, 5, 4] {
-        status = visit_reference(base_field(op, which), visitor, arg);
-        if status != 0 {
-            return status;
-        }
-    }
-    return i32(0);
-}
+def BaseException_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def BaseException_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    args = exc_args(op);
-    n = object_size(args);
-    if n == 0 {
-        return PyUnicode_FromString("");
-    }
-    if n == 1 {
-        return PyObject_Str(tuple_get_item(args, 0));
-    }
-    return PyObject_Str(args);
-}
+def BaseException_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-def BaseException_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    name = _PyType_Name(ptr[PyObject](object_type(op)));
-    args = exc_args(op);
-    if object_size(args) == 1 {
-        return PyUnicode_FromFormat("%s(%R)", name, tuple_get_item(args, 0));
-    }
-    return PyUnicode_FromFormat("%s%R", name, args);
-}
+def BaseException_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
 def BaseException___reduce__(
     op: ptr[PyObject], _unused: ptr[PyObject]
-) -> ptr[PyObject] {
-    args = exc_args(op);
-    d = base_field(op, 0);
-    if args and d {
-        return PyTuple_Pack(3, ptr(object_type(op)), args, d);
-    }
-    return PyTuple_Pack(2, ptr(object_type(op)), args);
-}
+) -> ptr[PyObject];
 
-"""Exceptions once kept every attribute in __dict__ (cPickle's
-load_build)."""
 def BaseException___setstate__(
     op: ptr[PyObject], state: ptr[PyObject]
-) -> ptr[PyObject] {
-    if state != Py_None {
-        if not type_has_feature(object_type(state), Py_TPFLAGS_DICT_SUBCLASS) {
-            PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
-            return NULL;
-        }
-        pos: i64 = 0;
-        key: ptr[PyObject] = NULL;
-        value: ptr[PyObject] = NULL;
-        while PyDict_Next(state, &mut pos, &mut key, &mut value) != 0 {
-            object_incref(key);
-            object_incref(value);
-            res = PyObject_SetAttr(op, key, value);
-            object_decref(value);
-            object_decref(key);
-            if res < 0 {
-                return NULL;
-            }
-        }
-    }
-    return object_new_ref(Py_None);
-}
+) -> ptr[PyObject];
 
 def BaseException_with_traceback(
     op: ptr[PyObject], tb: ptr[PyObject]
-) -> ptr[PyObject] {
-    if traceback_set(op, tb) < 0 {
-        return NULL;
-    }
-    return object_new_ref(op);
-}
+) -> ptr[PyObject];
 
-def BaseException_add_note(op: ptr[PyObject], note: ptr[PyObject]) -> ptr[PyObject] {
-    if not type_has_feature(object_type(note), Py_TPFLAGS_UNICODE_SUBCLASS) {
-        _PyArg_BadArgument("add_note", "argument", ptr[u8]("str"), note);
-        return NULL;
-    }
-    notes: ptr[PyObject] = NULL;
-    if PyObject_GetOptionalAttr(op, interned_notes(), &mut notes) < 0 {
-        return NULL;
-    }
-    if not notes {
-        notes = PyList_New(0);
-        if not notes {
-            return NULL;
-        }
-        if PyObject_SetAttr(op, interned_notes(), notes) < 0 {
-            object_decref(notes);
-            return NULL;
-        }
-    } elif not type_has_feature(object_type(notes), Py_TPFLAGS_LIST_SUBCLASS) {
-        object_decref(notes);
-        PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
-        return NULL;
-    }
-    if PyList_Append(notes, note) < 0 {
-        object_decref(notes);
-        return NULL;
-    }
-    object_decref(notes);
-    return object_new_ref(Py_None);
-}
+def BaseException_add_note(op: ptr[PyObject], note: ptr[PyObject]) -> ptr[PyObject];
 
-def interned_notes -> ptr[PyObject] {
-    if not notes_key {
-        notes_key = PyUnicode_InternFromString("__notes__");
-    }
-    return notes_key;
-}
+def interned_notes -> ptr[PyObject];
 
-def BaseException_args_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    args = exc_args(op);
-    return object_new_ref(args if args else Py_None);
-}
+def BaseException_args_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def BaseException_args_set(
     op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
-) -> i32 {
-    if not value {
-        PyErr_SetString(PyExc_TypeError, "args may not be deleted");
-        return i32(-1);
-    }
-    seq = PySequence_Tuple(value);
-    if not seq {
-        return i32(-1);
-    }
-    base_store(op, 1, seq);
-    return i32(0);
-}
+) -> i32;
 
-def BaseException___traceback___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    tb = base_field(op, 3);
-    return object_new_ref(tb if tb else Py_None);
-}
+def BaseException___traceback___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def traceback_set(op: ptr[PyObject], value: ptr[PyObject]) -> i32 {
-    if not value {
-        PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
-        return i32(-1);
-    }
-    if object_type_check(value, ptr[PyTypeObject](addressof(PyTraceBack_Type))) {
-        base_store(op, 3, object_new_ref(value));
-    } elif value == Py_None {
-        base_store(op, 3, NULL);
-    } else {
-        PyErr_SetString(PyExc_TypeError, "__traceback__ must be a traceback or None");
-        return i32(-1);
-    }
-    return i32(0);
-}
+def traceback_set(op: ptr[PyObject], value: ptr[PyObject]) -> i32;
 
 def BaseException___traceback___set(
     op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
-) -> i32 {
-    return traceback_set(op, value);
-}
+) -> i32;
 
-def exception_instance_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_BASE_EXC_SUBCLASS);
-}
+def exception_instance_check(op: ptr[PyObject]) -> bool;
 
-def BaseException___context___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    context = base_field(op, 4);
-    return object_new_ref(context if context else Py_None);
-}
+def BaseException___context___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def BaseException___context___set(
     op: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
-) -> i32 {
-    value = value_in;
-    if not value {
-        PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
-        return i32(-1);
-    }
-    if value == Py_None {
-        value = NULL;
-    } elif not exception_instance_check(value) {
-        PyErr_SetString(
-            PyExc_TypeError,
-            "exception context must be None or derive from BaseException"
-        );
-        return i32(-1);
-    } else {
-        object_incref(value);
-    }
-    base_store(op, 4, value);
-    return i32(0);
-}
+) -> i32;
 
-def BaseException___cause___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    cause = base_field(op, 5);
-    return object_new_ref(cause if cause else Py_None);
-}
+def BaseException___cause___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
 def BaseException___cause___set(
     op: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
-) -> i32 {
-    value = value_in;
-    if not value {
-        PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
-        return i32(-1);
-    }
-    if value == Py_None {
-        value = NULL;
-    } elif not exception_instance_check(value) {
-        PyErr_SetString(
-            PyExc_TypeError, "exception cause must be None or derive from BaseException"
-        );
-        return i32(-1);
-    } else {
-        # PyException_SetCause steals it.
-        object_incref(value);
-    }
-    PyException_SetCause(op, value);
-    return i32(0);
-}
+) -> i32;
 
 import from c {
     def PyException_GetTraceback(self: ptr[PyObject]) -> ptr[PyObject] {
@@ -427,16 +117,12 @@ import from c {
         return traceback_set(self, tb);
     }  def PyException_GetCause(self: ptr[PyObject]) -> ptr[PyObject] {
         return object_xnew_ref(base_field(self, 5));
-    }
-    # Steals `cause`.
-    def PyException_SetCause(self: ptr[PyObject], cause: ptr[PyObject]) {
+    }  def PyException_SetCause(self: ptr[PyObject], cause: ptr[PyObject]) {
         base_of(self).view(1)[0].suppress_context = i8(1);
         base_store(self, 5, cause);
     }  def PyException_GetContext(self: ptr[PyObject]) -> ptr[PyObject] {
         return object_xnew_ref(base_field(self, 4));
-    }
-    # Steals `context`.
-    def PyException_SetContext(self: ptr[PyObject], context: ptr[PyObject]) {
+    }  def PyException_SetContext(self: ptr[PyObject], context: ptr[PyObject]) {
         base_store(self, 4, context);
     }  def PyException_GetArgs(self: ptr[PyObject]) -> ptr[PyObject] {
         return object_new_ref(exc_args(self));
@@ -447,640 +133,105 @@ import from c {
     }
 }
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
 
-# ------------------------------------------------- StopIteration, SystemExit
+def exc_field(op: ptr[PyObject], offset: i64) -> ptr[PyObject];
 
-"""A field after the BaseException header, at its layouts.jac offset."""
-def exc_field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
-    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
-}
+def set_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-def set_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
-}
+def replace_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-"""Py_XSETREF on a field after the header, taking `value`."""
-def replace_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    old = exc_field(op, offset);
-    set_exc_field(op, offset, value);
-    object_xdecref(old);
-}
+def exc_dealloc(op: ptr[PyObject], clear: Callable[[ptr[PyObject]], i32]);
 
-"""The dealloc of an exception with extra fields: clear, then free."""
-def exc_dealloc(op: ptr[PyObject], clear: Callable[[ptr[PyObject]], i32]) {
-    PyObject_GC_UnTrack(ptr(op));
-    clear(op);
-    type_free(op);
-}
-
-"""Visit the fields at `offsets`, then the BaseException ones."""
-def exc_traverse(op: ptr[PyObject], offsets: list[i64], visitor: ptr, arg: ptr) -> i32 {
-    for offset in offsets {
-        status = visit_reference(exc_field(op, offset), visitor, arg);
-        if status != 0 {
-            return status;
-        }
-    }
-    return BaseException_traverse(op, visitor, arg);
-}
+def exc_traverse(op: ptr[PyObject], offsets: list[i64], visitor: ptr, arg: ptr) -> i32;
 
 def StopIteration_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    replace_exc_field(op, PyStopIterationObject_VALUE, NULL);
-    value = tuple_get_item(args, 0) if object_size(args) > 0 else Py_None;
-    set_exc_field(op, PyStopIterationObject_VALUE, object_new_ref(value));
-    return i32(0);
-}
+) -> i32;
 
-def StopIteration_clear(op: ptr[PyObject]) -> i32 {
-    replace_exc_field(op, PyStopIterationObject_VALUE, NULL);
-    return BaseException_clear(op);
-}
+def StopIteration_clear(op: ptr[PyObject]) -> i32;
 
-def StopIteration_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, StopIteration_clear);
-}
+def StopIteration_dealloc(op: ptr[PyObject]);
 
-def StopIteration_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(op, [PyStopIterationObject_VALUE], visitor, arg);
-}
+def StopIteration_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
 def SystemExit_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    size = object_size(args);
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    if size == 0 {
-        return i32(0);
-    }
-    code = tuple_get_item(args, 0) if size == 1 else args;
-    replace_exc_field(op, PySystemExitObject_CODE, object_new_ref(code));
-    return i32(0);
-}
+) -> i32;
 
-def SystemExit_clear(op: ptr[PyObject]) -> i32 {
-    replace_exc_field(op, PySystemExitObject_CODE, NULL);
-    return BaseException_clear(op);
-}
+def SystemExit_clear(op: ptr[PyObject]) -> i32;
 
-def SystemExit_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, SystemExit_clear);
-}
+def SystemExit_dealloc(op: ptr[PyObject]);
 
-def SystemExit_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(op, [PySystemExitObject_CODE], visitor, arg);
-}
-
-# --------------------------------------------------------- exception groups
+def SystemExit_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
 glob:priv MATCH_BY_TYPE: i32 = 0,
      MATCH_BY_PREDICATE: i32 = 1,
      MATCH_INSTANCE_IDS: i32 = 2;
 
-"""interp->exc_state.PyExc_ExceptionGroup, made by _PyExc_InitState."""
-def exception_group_slot -> ptr[ptr[PyObject]] {
-    return ptr[ptr[PyObject]](current_interp() + PyInterpreterState_EXC_GROUP);
-}
+def exception_group_slot -> ptr[ptr[PyObject]];
 
-def is_base_exception_group(op: ptr[PyObject]) -> bool {
-    return object_type_check(op, addressof(_PyExc_BaseExceptionGroup));
-}
+def is_base_exception_group(op: ptr[PyObject]) -> bool;
 
-def eg_excs(op: ptr[PyObject]) -> ptr[PyObject] {
-    return exc_field(op, PyBaseExceptionGroupObject_EXCS);
-}
+def eg_excs(op: ptr[PyObject]) -> ptr[PyObject];
 
 def BaseExceptionGroup_new(
     type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    exception_group = exception_group_slot().view(1)[0];
-    nargs = object_size(args);
-    if nargs != 2 {
-        PyErr_Format(
-            PyExc_TypeError,
-            "BaseExceptionGroup.__new__() takes exactly 2 arguments (%zd given)",
-            nargs
-        );
-        return NULL;
-    }
-    message = tuple_get_item(args, 0);
-    exceptions = tuple_get_item(args, 1);
-    if not type_has_feature(object_type(message), Py_TPFLAGS_UNICODE_SUBCLASS) {
-        _PyArg_BadArgument(
-            "BaseExceptionGroup.__new__", "argument 1", ptr[u8]("str"), message
-        );
-        return NULL;
-    }
-    if PySequence_Check(exceptions) == 0 {
-        PyErr_SetString(
-            PyExc_TypeError, "second argument (exceptions) must be a sequence"
-        );
-        return NULL;
-    }
-    # The initial sequence as a string, in case a custom one is mutated.
-    exceptions_str: ptr[PyObject] = NULL;
-    if not type_has_feature(object_type(exceptions), Py_TPFLAGS_LIST_SUBCLASS)
-        and not type_has_feature(object_type(exceptions), Py_TPFLAGS_TUPLE_SUBCLASS) {
-        exceptions_str = PyObject_Repr(exceptions);
-        if not exceptions_str {
-            return NULL;
-        }
-    }
-    excs = PySequence_Tuple(exceptions);
-    if not excs {
-        object_xdecref(exceptions_str);
-        return NULL;
-    }
-    numexcs = object_size(excs);
-    failed = False;
-    nested_base_exceptions = False;
-    if numexcs == 0 {
-        PyErr_SetString(
-            PyExc_ValueError,
-            "second argument (exceptions) must be a non-empty sequence"
-        );
-        failed = True;
-    }
-    i: i64 = 0;
-    while not failed and i < numexcs {
-        exc = tuple_get_item(excs, i);
-        if not exception_instance_check(exc) {
-            PyErr_Format(
-                PyExc_ValueError,
-                "Item %zd of second argument (exceptions) is not an exception",
-                i
-            );
-            failed = True;
-        } else {
-            is_nonbase_exception = PyObject_IsInstance(exc, PyExc_Exception);
-            if is_nonbase_exception < 0 {
-                failed = True;
-            } elif is_nonbase_exception == 0 {
-                nested_base_exceptions = True;
-            }
-        }
-        i += 1;
-    }
-    cls = type;
-    if not failed {
-        if cls == exception_group {
-            if nested_base_exceptions {
-                PyErr_SetString(
-                    PyExc_TypeError, "Cannot nest BaseExceptions in an ExceptionGroup"
-                );
-                failed = True;
-            }
-        } elif cls == PyExc_BaseExceptionGroup {
-            if not nested_base_exceptions {
-                # All Exception subclasses: an ExceptionGroup.
-                cls = exception_group;
-            }
-        } elif nested_base_exceptions {
-            # A user-defined subclass.
-            nonbase = PyObject_IsSubclass(cls, PyExc_Exception);
-            if nonbase == -1 {
-                failed = True;
-            } elif nonbase == 1 {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "Cannot nest BaseExceptions in '%.200s'",
-                    ptr[PyTypeObject](cls).view(1)[0].tp_name
-                );
-                failed = True;
-            }
-        }
-    }
-    if not failed {
-        if not cls {
-            # PyExc_ExceptionGroup may be cleared at shutdown.
-            cls = PyExc_BaseExceptionGroup;
-        }
-        self = BaseException_new(cls, args, kwds);
-        if self {
-            set_exc_field(
-                self, PyBaseExceptionGroupObject_MSG, object_new_ref(message)
-            );
-            set_exc_field(self, PyBaseExceptionGroupObject_EXCS, excs);
-            set_exc_field(self, PyBaseExceptionGroupObject_EXCS_STR, exceptions_str);
-            return self;
-        }
-    }
-    object_xdecref(excs);
-    object_xdecref(exceptions_str);
-    return NULL;
-}
+) -> ptr[PyObject];
 
 def BaseExceptionGroup_init(
     self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if kwds and _PyArg_NoKeywords(object_type(self).view(1)[0].tp_name, kwds) == 0 {
-        return i32(-1);
-    }
-    if BaseException_init(self, args, kwds) == -1 {
-        return i32(-1);
-    }
-    return i32(0);
-}
+) -> i32;
 
-def BaseExceptionGroup_clear(op: ptr[PyObject]) -> i32 {
-    replace_exc_field(op, PyBaseExceptionGroupObject_MSG, NULL);
-    replace_exc_field(op, PyBaseExceptionGroupObject_EXCS, NULL);
-    replace_exc_field(op, PyBaseExceptionGroupObject_EXCS_STR, NULL);
-    return BaseException_clear(op);
-}
+def BaseExceptionGroup_clear(op: ptr[PyObject]) -> i32;
 
-def BaseExceptionGroup_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, BaseExceptionGroup_clear);
-}
+def BaseExceptionGroup_dealloc(op: ptr[PyObject]);
 
-def BaseExceptionGroup_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(
-        op,
-        [
-            PyBaseExceptionGroupObject_MSG,
-            PyBaseExceptionGroupObject_EXCS,
-            PyBaseExceptionGroupObject_EXCS_STR
-        ],
-        visitor,
-        arg
-    );
-}
+def BaseExceptionGroup_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def BaseExceptionGroup_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    num_excs = PyTuple_Size(eg_excs(op));
-    return PyUnicode_FromFormat(
-        "%S (%zd sub-exception%s)",
-        exc_field(op, PyBaseExceptionGroupObject_MSG),
-        num_excs,
-        "s" if num_excs > 1 else ""
-    );
-}
+def BaseExceptionGroup_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-def BaseExceptionGroup_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    exceptions_str: ptr[PyObject] = NULL;
-    saved = exc_field(op, PyBaseExceptionGroupObject_EXCS_STR);
-    if saved {
-        # A custom sequence's saved repr.
-        exceptions_str = object_new_ref(saved);
-    } elif type_has_feature(
-        object_type(tuple_get_item(exc_args(op), 1)), Py_TPFLAGS_LIST_SUBCLASS
-    ) {
-        # self.exceptions, looking like args[1] once did (args may be stale).
-        exceptions_list = PySequence_List(eg_excs(op));
-        if not exceptions_list {
-            return NULL;
-        }
-        exceptions_str = PyObject_Repr(exceptions_list);
-        object_decref(exceptions_list);
-    } else {
-        exceptions_str = PyObject_Repr(eg_excs(op));
-    }
-    if not exceptions_str {
-        return NULL;
-    }
-    repr = PyUnicode_FromFormat(
-        "%s(%R, %U)",
-        _PyType_Name(ptr[PyObject](object_type(op))),
-        exc_field(op, PyBaseExceptionGroupObject_MSG),
-        exceptions_str
-    );
-    object_decref(exceptions_str);
-    return repr;
-}
+def BaseExceptionGroup_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
 def BaseExceptionGroup_derive(
     self: ptr[PyObject], excs: ptr[PyObject]
-) -> ptr[PyObject] {
-    init_args = PyTuple_Pack(2, exc_field(self, PyBaseExceptionGroupObject_MSG), excs);
-    if not init_args {
-        return NULL;
-    }
-    eg = PyObject_CallObject(PyExc_BaseExceptionGroup, init_args);
-    object_decref(init_args);
-    return eg;
-}
+) -> ptr[PyObject];
 
-"""An exception group wrapping `excs` with `orig`'s traceback, context,
-cause and a copy of its notes; NULL result (status 0) when excs is empty."""
 def exceptiongroup_subset(
     orig: ptr[PyObject], excs: ptr[PyObject]
-) -> tuple[i32, ptr[PyObject]] {
-    num_excs = PySequence_Size(excs);
-    if num_excs < 0 {
-        return (i32(-1), NULL);
-    }
-    if num_excs == 0 {
-        return (i32(0), NULL);
-    }
-    eg = PyObject_CallMethod(orig, "derive", "(O)", excs);
-    if not eg {
-        return (i32(-1), NULL);
-    }
-    if not is_base_exception_group(eg) {
-        PyErr_SetString(
-            PyExc_TypeError, "derive must return an instance of BaseExceptionGroup"
-        );
-        object_decref(eg);
-        return (i32(-1), NULL);
-    }
-    tb = PyException_GetTraceback(orig);
-    if tb {
-        res = PyException_SetTraceback(eg, tb);
-        object_decref(tb);
-        if res < 0 {
-            object_decref(eg);
-            return (i32(-1), NULL);
-        }
-    }
-    PyException_SetContext(eg, PyException_GetContext(orig));
-    PyException_SetCause(eg, PyException_GetCause(orig));
-    notes: ptr[PyObject] = NULL;
-    if PyObject_GetOptionalAttr(orig, interned_notes(), &mut notes) < 0 {
-        object_decref(eg);
-        return (i32(-1), NULL);
-    }
-    if notes {
-        if PySequence_Check(notes) != 0 {
-            # Independent notes lists for the parts.
-            notes_copy = PySequence_List(notes);
-            object_decref(notes);
-            if not notes_copy {
-                object_decref(eg);
-                return (i32(-1), NULL);
-            }
-            res = PyObject_SetAttr(eg, interned_notes(), notes_copy);
-            object_decref(notes_copy);
-            if res < 0 {
-                object_decref(eg);
-                return (i32(-1), NULL);
-            }
-        } else {
-            # Notes of a non-sequence type are left for others to report.
-            object_decref(notes);
-        }
-    }
-    return (i32(0), eg);
-}
+) -> tuple[i32, ptr[PyObject]];
 
-def exception_class_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS)
-        and type_has_feature(ptr[PyTypeObject](op), Py_TPFLAGS_BASE_EXC_SUBCLASS);
-}
+def exception_class_check(op: ptr[PyObject]) -> bool;
 
-"""The matcher kind of split()/subgroup()'s argument, -1 with TypeError."""
-def get_matcher_type(value: ptr[PyObject]) -> i32 {
-    if PyCallable_Check(value) != 0
-        and not type_has_feature(object_type(value), Py_TPFLAGS_TYPE_SUBCLASS) {
-        return MATCH_BY_PREDICATE;
-    }
-    if exception_class_check(value) {
-        return MATCH_BY_TYPE;
-    }
-    if object_is_type(value, ptr[PyTypeObject](addressof(PyTuple_Type))) {
-        ok = True;
-        for i in range(object_size(value)) {
-            if not exception_class_check(tuple_get_item(value, i)) {
-                ok = False;
-                break;
-            }
-        }
-        if ok {
-            return MATCH_BY_TYPE;
-        }
-    }
-    PyErr_SetString(
-        PyExc_TypeError,
-        "expected an exception type, a tuple of exception types, or a callable (other than a class)"
-    );
-    return i32(-1);
-}
+def get_matcher_type(value: ptr[PyObject]) -> i32;
 
 def split_check_match(
     exc: ptr[PyObject], matcher_type: i32, matcher_value: ptr[PyObject]
-) -> i32 {
-    if matcher_type == MATCH_BY_TYPE {
-        return PyErr_GivenExceptionMatches(exc, matcher_value);
-    }
-    if matcher_type == MATCH_BY_PREDICATE {
-        exc_matches = PyObject_CallOneArg(matcher_value, exc);
-        if not exc_matches {
-            return i32(-1);
-        }
-        is_true = PyObject_IsTrue(exc_matches);
-        object_decref(exc_matches);
-        return is_true;
-    }
-    if not is_base_exception_group(exc) {
-        exc_id = PyLong_FromVoidPtr(ptr(exc));
-        if not exc_id {
-            return i32(-1);
-        }
-        res = PySet_Contains(matcher_value, exc_id);
-        object_decref(exc_id);
-        return res;
-    }
-    return i32(0);
-}
+) -> i32;
 
-"""Split `exc` into (matched, rest) new references or NULLs; status -1 on
-error."""
 def split_recursive(
     exc: ptr[PyObject],
     matcher_type: i32,
     matcher_value: ptr[PyObject],
     construct_rest: bool
-) -> tuple[i32, ptr[PyObject], ptr[PyObject]] {
-    is_match = split_check_match(exc, matcher_type, matcher_value);
-    if is_match < 0 {
-        return (i32(-1), NULL, NULL);
-    }
-    if is_match != 0 {
-        # Full matched.
-        return (i32(0), object_new_ref(exc), NULL);
-    }
-    if not is_base_exception_group(exc) {
-        # A leaf that does not matched.
-        return (i32(0), NULL, object_new_ref(exc) if construct_rest else NULL);
-    }
-    # Partial matched.
-    excs = eg_excs(exc);
-    num_excs = PyTuple_Size(excs);
-    if num_excs < 0 {
-        return (i32(-1), NULL, NULL);
-    }
-    match_list = PyList_New(0);
-    if not match_list {
-        return (i32(-1), NULL, NULL);
-    }
-    rest_list: ptr[PyObject] = NULL;
-    failed = False;
-    if construct_rest {
-        rest_list = PyList_New(0);
-        failed = not rest_list;
-    }
-    i: i64 = 0;
-    while not failed and i < num_excs {
-        e = tuple_get_item(excs, i);
-        if Py_EnterRecursiveCall(" in exceptiongroup_split_recursive") != 0 {
-            failed = True;
-            break;
-        }
-        (status, rec_match, rec_rest) = split_recursive(
-            e, matcher_type, matcher_value, construct_rest
-        );
-        Py_LeaveRecursiveCall();
-        if status < 0 {
-            failed = True;
-            break;
-        }
-        if rec_match {
-            if PyList_Append(match_list, rec_match) < 0 {
-                object_decref(rec_match);
-                object_xdecref(rec_rest);
-                failed = True;
-                break;
-            }
-            object_decref(rec_match);
-        }
-        if rec_rest {
-            if PyList_Append(rest_list, rec_rest) < 0 {
-                object_decref(rec_rest);
-                failed = True;
-                break;
-            }
-            object_decref(rec_rest);
-        }
-        i += 1;
-    }
-    matched: ptr[PyObject] = NULL;
-    rest: ptr[PyObject] = NULL;
-    if not failed {
-        (status, matched) = exceptiongroup_subset(exc, match_list);
-        failed = status < 0;
-    }
-    if not failed and construct_rest {
-        (status, rest) = exceptiongroup_subset(exc, rest_list);
-        if status < 0 {
-            object_xdecref(matched);
-            matched = NULL;
-            failed = True;
-        }
-    }
-    object_decref(match_list);
-    object_xdecref(rest_list);
-    if failed {
-        object_xdecref(matched);
-        object_xdecref(rest);
-        return (i32(-1), NULL, NULL);
-    }
-    return (i32(0), matched, rest);
-}
+) -> tuple[i32, ptr[PyObject], ptr[PyObject]];
 
 def BaseExceptionGroup_split(
     self: ptr[PyObject], matcher_value: ptr[PyObject]
-) -> ptr[PyObject] {
-    matcher_type = get_matcher_type(matcher_value);
-    if matcher_type < 0 {
-        return NULL;
-    }
-    (status, matched, rest) = split_recursive(self, matcher_type, matcher_value, True);
-    if status < 0 {
-        return NULL;
-    }
-    result = PyTuple_Pack(
-        2, matched if matched else Py_None, rest if rest else Py_None
-    );
-    object_xdecref(matched);
-    object_xdecref(rest);
-    return result;
-}
+) -> ptr[PyObject];
 
 def BaseExceptionGroup_subgroup(
     self: ptr[PyObject], matcher_value: ptr[PyObject]
-) -> ptr[PyObject] {
-    matcher_type = get_matcher_type(matcher_value);
-    if matcher_type < 0 {
-        return NULL;
-    }
-    (status, matched, rest) = split_recursive(self, matcher_type, matcher_value, False);
-    if status < 0 {
-        return NULL;
-    }
-    return matched if matched else object_new_ref(Py_None);
-}
+) -> ptr[PyObject];
 
-"""Add the ids of every leaf exception of `exc` to `leaf_ids`."""
-def collect_leaf_ids(exc: ptr[PyObject], leaf_ids: ptr[PyObject]) -> i32 {
-    if exc == Py_None {
-        return i32(0);
-    }
-    if not is_base_exception_group(exc) {
-        exc_id = PyLong_FromVoidPtr(ptr(exc));
-        if not exc_id {
-            return i32(-1);
-        }
-        res = PySet_Add(leaf_ids, exc_id);
-        object_decref(exc_id);
-        return res;
-    }
-    excs = eg_excs(exc);
-    for i in range(object_size(excs)) {
-        if Py_EnterRecursiveCall(" in collect_exception_group_leaf_ids") != 0 {
-            return i32(-1);
-        }
-        res = collect_leaf_ids(tuple_get_item(excs, i), leaf_ids);
-        Py_LeaveRecursiveCall();
-        if res < 0 {
-            return i32(-1);
-        }
-    }
-    return i32(0);
-}
+def collect_leaf_ids(exc: ptr[PyObject], leaf_ids: ptr[PyObject]) -> i32;
 
-"""The sub-group of `eg` holding every leaf of the groups in `keep`, for
-re-raising at the end of try/except*."""
 def exception_group_projection(
     eg: ptr[PyObject], keep: ptr[PyObject]
-) -> ptr[PyObject] {
-    leaf_ids = PySet_New(NULL);
-    if not leaf_ids {
-        return NULL;
-    }
-    for i in range(object_size(keep)) {
-        if collect_leaf_ids(PyList_GetItem(keep, i), leaf_ids) < 0 {
-            object_decref(leaf_ids);
-            return NULL;
-        }
-    }
-    (status, matched, rest) = split_recursive(eg, MATCH_INSTANCE_IDS, leaf_ids, False);
-    object_decref(leaf_ids);
-    if status < 0 {
-        return NULL;
-    }
-    return matched if matched else object_new_ref(Py_None);
-}
+) -> ptr[PyObject];
 
-def is_same_exception_metadata(exc1: ptr[PyObject], exc2: ptr[PyObject]) -> bool {
-    for which in [2, 3, 5, 4] {
-        if base_field(exc1, which) != base_field(exc2, which) {
-            return False;
-        }
-    }
-    return True;
-}
+def is_same_exception_metadata(exc1: ptr[PyObject], exc2: ptr[PyObject]) -> bool;
 
 import from c {
     def _PyExc_CreateExceptionGroup(
@@ -1098,10 +249,7 @@ import from c {
         result = PyObject_CallObject(PyExc_BaseExceptionGroup, args);
         object_decref(args);
         return result;
-    }
-    # The exception group to raise at the end of try/except*: the re-raised
-    # ones nested as in `orig`, the newly raised ones beside them.
-    def _PyExc_PrepReraiseStar(
+    }  def _PyExc_PrepReraiseStar(
         orig: ptr[PyObject], excs: ptr[PyObject]
     ) -> ptr[PyObject] {
         numexcs = object_size(excs);
@@ -1109,7 +257,6 @@ import from c {
             return object_new_ref(Py_None);
         }
         if not is_base_exception_group(orig) {
-            # A naked exception was wrapped: one except* clause ran.
             return object_new_ref(PyList_GetItem(excs, 0));
         }
         raised_list = PyList_New(0);
@@ -1186,7 +333,7 @@ import from c {
                 return NULL;
             }
         }
-        # A raised exception always has a traceback in the interpreter.
+
         tb = PyException_GetTraceback(orig);
         if not tb {
             PyErr_Format(PyExc_ValueError, "orig must be a raised exception");
@@ -1197,164 +344,31 @@ import from c {
     }
 }
 
-def create_exception_group_class -> ptr[PyObject] {
-    bases = PyTuple_Pack(2, PyExc_BaseExceptionGroup, PyExc_Exception);
-    if not bases {
-        return NULL;
-    }
-    group = PyErr_NewException("builtins.ExceptionGroup", bases, NULL);
-    exception_group_slot().view(1)[0] = group;
-    object_decref(bases);
-    return group;
-}
+def create_exception_group_class -> ptr[PyObject];
 
-
-# -------------------------------------------------------------- ImportError
 
 def ImportError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, NULL) == -1 {
-        return i32(-1);
-    }
-    empty_tuple = PyTuple_New(0);
-    if not empty_tuple {
-        return i32(-1);
-    }
-    name: ptr[PyObject] = NULL;
-    path: ptr[PyObject] = NULL;
-    name_from: ptr[PyObject] = NULL;
-    if PyArg_ParseTupleAndKeywords(
-        empty_tuple,
-        kwds,
-        "|$OOO:ImportError",
-        ptr(addressof(import_error_keywords)),
-        &mut name,
-        &mut path,
-        &mut name_from
-    )
-        == 0 {
-        object_decref(empty_tuple);
-        return i32(-1);
-    }
-    object_decref(empty_tuple);
-    replace_exc_field(op, PyImportErrorObject_NAME, object_xnew_ref(name));
-    replace_exc_field(op, PyImportErrorObject_PATH, object_xnew_ref(path));
-    replace_exc_field(op, PyImportErrorObject_NAME_FROM, object_xnew_ref(name_from));
-    msg = object_new_ref(tuple_get_item(args, 0)) if object_size(args) == 1 else NULL;
-    replace_exc_field(op, PyImportErrorObject_MSG, msg);
-    return i32(0);
-}
+) -> i32;
 
-def ImportError_clear(op: ptr[PyObject]) -> i32 {
-    for offset in [
-        PyImportErrorObject_MSG,
-        PyImportErrorObject_NAME,
-        PyImportErrorObject_PATH,
-        PyImportErrorObject_NAME_FROM
-    ] {
-        replace_exc_field(op, offset, NULL);
-    }
-    return BaseException_clear(op);
-}
+def ImportError_clear(op: ptr[PyObject]) -> i32;
 
-def ImportError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, ImportError_clear);
-}
+def ImportError_dealloc(op: ptr[PyObject]);
 
-def ImportError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(
-        op,
-        [
-            PyImportErrorObject_MSG,
-            PyImportErrorObject_NAME,
-            PyImportErrorObject_PATH,
-            PyImportErrorObject_NAME_FROM
-        ],
-        visitor,
-        arg
-    );
-}
+def ImportError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def ImportError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    msg = exc_field(op, PyImportErrorObject_MSG);
-    if msg and object_is_type(msg, ptr[PyTypeObject](addressof(PyUnicode_Type))) {
-        return object_new_ref(msg);
-    }
-    return BaseException_str(op);
-}
+def ImportError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-def ImportError_getstate(op: ptr[PyObject]) -> ptr[PyObject] {
-    d = base_field(op, 0);
-    name = exc_field(op, PyImportErrorObject_NAME);
-    path = exc_field(op, PyImportErrorObject_PATH);
-    name_from = exc_field(op, PyImportErrorObject_NAME_FROM);
-    if name or path or name_from {
-        state = PyDict_Copy(d) if d else PyDict_New();
-        if not state {
-            return NULL;
-        }
-        if (name and PyDict_SetItemString(state, ptr[u8]("name"), name) < 0)
-            or (path and PyDict_SetItemString(state, ptr[u8]("path"), path) < 0)
-            or (
-                name_from
-                and PyDict_SetItemString(state, ptr[u8]("name_from"), name_from) < 0
-            ) {
-            object_decref(state);
-            return NULL;
-        }
-        return state;
-    }
-    return object_new_ref(d if d else Py_None);
-}
+def ImportError_getstate(op: ptr[PyObject]) -> ptr[PyObject];
 
-def ImportError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    state = ImportError_getstate(op);
-    if not state {
-        return NULL;
-    }
-    res: ptr[PyObject] = NULL;
-    if state == Py_None {
-        res = PyTuple_Pack(2, ptr(object_type(op)), exc_args(op));
-    } else {
-        res = PyTuple_Pack(3, ptr(object_type(op)), exc_args(op), state);
-    }
-    object_decref(state);
-    return res;
-}
+def ImportError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-# ------------------------------------------------------------------ OSError
-#
-# With a single filename (open(), most of os) args keeps only (errno,
-# strerror), so old code unpacking two items still works, and __str__ adds
-# the filename. Supported targets are POSIX: winerror is parsed for a
-# consistent signature and ignored.
+def os_of(op: ptr[PyObject]) -> ptr[PyOSErrorObject];
 
-def os_of(op: ptr[PyObject]) -> ptr[PyOSErrorObject] {
-    return ptr[PyOSErrorObject](op);
-}
-
-"""Unpack (errno, strerror[, filename[, winerror[, filename2]]]) when
-there are 2 to 5 arguments: (status, errno, strerror, filename, filename2),
-borrowed."""
 def oserror_parse_args(
     args: ptr[PyObject]
-) -> tuple[i32, ptr[PyObject], ptr[PyObject], ptr[PyObject], ptr[PyObject]] {
-    nargs = object_size(args);
-    if nargs >= 2 and nargs <= 5 {
-        items = tuple_items(args);
-        return (
-            i32(0),
-            items.view(1)[0],
-            (items + 1).view(1)[0],
-            (items + 2).view(1)[0] if nargs > 2 else NULL,
-            (items + 4).view(1)[0] if nargs > 4 else NULL
-        );
-    }
-    return (i32(0), NULL, NULL, NULL, NULL);
-}
+) -> tuple[i32, ptr[PyObject], ptr[PyObject], ptr[PyObject], ptr[PyObject]];
 
-"""Fill an OSError from parsed arguments, taking the reference to `args`."""
 def oserror_init(
     op: ptr[PyObject],
     args_in: ptr[PyObject],
@@ -1362,672 +376,115 @@ def oserror_init(
     strerror: ptr[PyObject],
     filename: ptr[PyObject],
     filename2: ptr[PyObject]
-) -> i32 {
-    args = args_in;
-    nargs = object_size(args);
-    o = os_of(op);
-    # filename stays None otherwise.
-    if filename and filename != Py_None {
-        if object_is_type(op, ptr[PyTypeObject](PyExc_BlockingIOError))
-            and PyNumber_Check(filename) != 0 {
-            # BlockingIOError's third argument may be the characters written.
-            written = PyNumber_AsSsize_t(filename, PyExc_ValueError);
-            o.view(1)[0].written = written;
-            if written == -1 and PyErr_Occurred() {
-                object_decref(args);
-                return i32(-1);
-            }
-        } else {
-            o.view(1)[0].filename = object_new_ref(filename);
-            if filename2 and filename2 != Py_None {
-                o.view(1)[0].filename2 = object_new_ref(filename2);
-            }
-            if nargs >= 2 and nargs <= 5 {
-                # filename, filename2 and winerror leave args (test_exceptions).
-                subslice = PyTuple_GetSlice(args, 0, 2);
-                if not subslice {
-                    object_decref(args);
-                    return i32(-1);
-                }
-                object_decref(args);
-                args = subslice;
-            }
-        }
-    }
-    o.view(1)[0].myerrno = object_xnew_ref(myerrno);
-    o.view(1)[0].strerror = object_xnew_ref(strerror);
-    base_store(op, 1, args);
-    return i32(0);
-}
+) -> i32;
 
-"""An OSError subclass that defines __init__ (without __new__) parses in
-__init__, so extra __new__ arguments are ignored (bpo-12555)."""
-def oserror_use_init(type: ptr[PyTypeObject]) -> bool {
-    return int(type.view(1)[0].tp_init) != int(ptr(OSError_init))
-        and int(type.view(1)[0].tp_new) == int(ptr(OSError_new));
-}
+def oserror_use_init(type: ptr[PyTypeObject]) -> bool;
 
-def errnomap -> ptr[PyObject] {
-    return ptr[ptr[PyObject]](current_interp() + PyInterpreterState_EXC_ERRNOMAP).view(
-        1
-    )[0];
-}
+def errnomap -> ptr[PyObject];
 
 def OSError_new(
     type_in: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    type = type_in;
-    myerrno: ptr[PyObject] = NULL;
-    strerror: ptr[PyObject] = NULL;
-    filename: ptr[PyObject] = NULL;
-    filename2: ptr[PyObject] = NULL;
-    use_init = oserror_use_init(ptr[PyTypeObject](type));
-    if not use_init {
-        if kwds
-            and _PyArg_NoKeywords(ptr[PyTypeObject](type).view(1)[0].tp_name, kwds)
-                == 0 {
-            return NULL;
-        }
-        (status, myerrno, strerror, filename, filename2) = oserror_parse_args(args);
-        mapping = errnomap();
-        if myerrno
-            and type_has_feature(object_type(myerrno), Py_TPFLAGS_LONG_SUBCLASS)
-            and mapping
-            and type == PyExc_OSError {
-            newtype = PyDict_GetItemWithError(mapping, myerrno);
-            if newtype {
-                type = newtype;
-            } elif PyErr_Occurred() {
-                return NULL;
-            }
-        }
-    }
-    self = type_alloc(type);
-    if not self {
-        return NULL;
-    }
-    b = base_of(self);
-    b.view(1)[0].dict = NULL;
-    b.view(1)[0].traceback = NULL;
-    b.view(1)[0].cause = NULL;
-    b.view(1)[0].context = NULL;
-    os_of(self).view(1)[0].written = -1;
-    if not oserror_use_init(ptr[PyTypeObject](type)) {
-        if oserror_init(
-            self, object_new_ref(args), myerrno, strerror, filename, filename2
-        )
-            != 0 {
-            object_decref(self);
-            return NULL;
-        }
-    } else {
-        empty = PyTuple_New(0);
-        if not empty {
-            object_decref(self);
-            return NULL;
-        }
-        b.view(1)[0].args = empty;
-    }
-    return self;
-}
+) -> ptr[PyObject];
 
-def OSError_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
-    if not oserror_use_init(object_type(op)) {
-        # OSError_new did it all.
-        return i32(0);
-    }
-    if kwds and _PyArg_NoKeywords(object_type(op).view(1)[0].tp_name, kwds) == 0 {
-        return i32(-1);
-    }
-    (status, myerrno, strerror, filename, filename2) = oserror_parse_args(args);
-    return oserror_init(
-        op, object_new_ref(args), myerrno, strerror, filename, filename2
-    );
-}
+def OSError_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
 
-def os_field(op: ptr[PyObject], which: int) -> ptr[PyObject] {
-    o = os_of(op).view(1)[0];
-    if which == 0 {
-        return ptr[PyObject](o.myerrno);
-    }
-    if which == 1 {
-        return ptr[PyObject](o.strerror);
-    }
-    if which == 2 {
-        return ptr[PyObject](o.filename);
-    }
-    return ptr[PyObject](o.filename2);
-}
+def os_field(op: ptr[PyObject], which: int) -> ptr[PyObject];
 
-def OSError_clear(op: ptr[PyObject]) -> i32 {
-    o = os_of(op);
-    fields = [os_field(op, 0), os_field(op, 1), os_field(op, 2), os_field(op, 3)];
-    o.view(1)[0].myerrno = NULL;
-    o.view(1)[0].strerror = NULL;
-    o.view(1)[0].filename = NULL;
-    o.view(1)[0].filename2 = NULL;
-    for value in fields {
-        object_xdecref(value);
-    }
-    return BaseException_clear(op);
-}
+def OSError_clear(op: ptr[PyObject]) -> i32;
 
-def OSError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, OSError_clear);
-}
+def OSError_dealloc(op: ptr[PyObject]);
 
-def OSError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    for which in [0, 1, 2, 3] {
-        status = visit_reference(os_field(op, which), visitor, arg);
-        if status != 0 {
-            return status;
-        }
-    }
-    return BaseException_traverse(op, visitor, arg);
-}
+def OSError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def or_none(op: ptr[PyObject]) -> ptr[PyObject] {
-    return op if op else Py_None;
-}
+def or_none(op: ptr[PyObject]) -> ptr[PyObject];
 
-def OSError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    myerrno = os_field(op, 0);
-    strerror = os_field(op, 1);
-    filename = os_field(op, 2);
-    filename2 = os_field(op, 3);
-    if filename {
-        if filename2 {
-            return PyUnicode_FromFormat(
-                "[Errno %S] %S: %R -> %R",
-                or_none(myerrno),
-                or_none(strerror),
-                filename,
-                filename2
-            );
-        }
-        return PyUnicode_FromFormat(
-            "[Errno %S] %S: %R", or_none(myerrno), or_none(strerror), filename
-        );
-    }
-    if myerrno and strerror {
-        return PyUnicode_FromFormat("[Errno %S] %S", myerrno, strerror);
-    }
-    return BaseException_str(op);
-}
+def OSError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-def OSError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    args = exc_args(op);
-    filename = os_field(op, 2);
-    filename2 = os_field(op, 3);
-    # args is only the first two real arguments when a filename was given.
-    if object_size(args) == 2 and filename {
-        size = 5 if filename2 else 3;
-        rebuilt = PyTuple_New(size);
-        if not rebuilt {
-            return NULL;
-        }
-        tuple_set_item(rebuilt, 0, object_new_ref(tuple_get_item(args, 0)));
-        tuple_set_item(rebuilt, 1, object_new_ref(tuple_get_item(args, 1)));
-        tuple_set_item(rebuilt, 2, object_new_ref(filename));
-        if filename2 {
-            # OSError(*args) needs winerror before filename2.
-            tuple_set_item(rebuilt, 3, object_new_ref(Py_None));
-            tuple_set_item(rebuilt, 4, object_new_ref(filename2));
-        }
-        args = rebuilt;
-    } else {
-        object_incref(args);
-    }
-    d = base_field(op, 0);
-    res: ptr[PyObject] = NULL;
-    if d {
-        res = PyTuple_Pack(3, ptr(object_type(op)), args, d);
-    } else {
-        res = PyTuple_Pack(2, ptr(object_type(op)), args);
-    }
-    object_decref(args);
-    return res;
-}
+def OSError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-def OSError_written_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
-    written = os_of(op).view(1)[0].written;
-    if written == -1 {
-        PyErr_SetString(PyExc_AttributeError, "characters_written");
-        return NULL;
-    }
-    return PyLong_FromSsize_t(written);
-}
+def OSError_written_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
 
-def OSError_written_set(op: ptr[PyObject], arg: ptr[PyObject], _closure: ptr) -> i32 {
-    o = os_of(op);
-    if not arg {
-        if o.view(1)[0].written == -1 {
-            PyErr_SetString(PyExc_AttributeError, "characters_written");
-            return i32(-1);
-        }
-        o.view(1)[0].written = -1;
-        return i32(0);
-    }
-    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
-    if n == -1 and PyErr_Occurred() {
-        return i32(-1);
-    }
-    o.view(1)[0].written = n;
-    return i32(0);
-}
+def OSError_written_set(op: ptr[PyObject], arg: ptr[PyObject], _closure: ptr) -> i32;
 
 
-# ------------------------------------------------ NameError, AttributeError
+def NameError_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
 
-def NameError_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
-    if BaseException_init(op, args, NULL) == -1 {
-        return i32(-1);
-    }
-    empty_tuple = PyTuple_New(0);
-    if not empty_tuple {
-        return i32(-1);
-    }
-    name: ptr[PyObject] = NULL;
-    if PyArg_ParseTupleAndKeywords(
-        empty_tuple,
-        kwds,
-        "|$O:NameError",
-        ptr(addressof(name_error_keywords)),
-        &mut name
-    )
-        == 0 {
-        object_decref(empty_tuple);
-        return i32(-1);
-    }
-    object_decref(empty_tuple);
-    replace_exc_field(op, PyNameErrorObject_NAME, object_xnew_ref(name));
-    return i32(0);
-}
+def NameError_clear(op: ptr[PyObject]) -> i32;
 
-def NameError_clear(op: ptr[PyObject]) -> i32 {
-    replace_exc_field(op, PyNameErrorObject_NAME, NULL);
-    return BaseException_clear(op);
-}
+def NameError_dealloc(op: ptr[PyObject]);
 
-def NameError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, NameError_clear);
-}
-
-def NameError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(op, [PyNameErrorObject_NAME], visitor, arg);
-}
+def NameError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
 def AttributeError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, NULL) == -1 {
-        return i32(-1);
-    }
-    empty_tuple = PyTuple_New(0);
-    if not empty_tuple {
-        return i32(-1);
-    }
-    name: ptr[PyObject] = NULL;
-    ob: ptr[PyObject] = NULL;
-    if PyArg_ParseTupleAndKeywords(
-        empty_tuple,
-        kwds,
-        "|$OO:AttributeError",
-        ptr(addressof(attribute_error_keywords)),
-        &mut name,
-        &mut ob
-    )
-        == 0 {
-        object_decref(empty_tuple);
-        return i32(-1);
-    }
-    object_decref(empty_tuple);
-    replace_exc_field(op, PyAttributeErrorObject_NAME, object_xnew_ref(name));
-    replace_exc_field(op, PyAttributeErrorObject_OBJ, object_xnew_ref(ob));
-    return i32(0);
-}
+) -> i32;
 
-def AttributeError_clear(op: ptr[PyObject]) -> i32 {
-    replace_exc_field(op, PyAttributeErrorObject_OBJ, NULL);
-    replace_exc_field(op, PyAttributeErrorObject_NAME, NULL);
-    return BaseException_clear(op);
-}
+def AttributeError_clear(op: ptr[PyObject]) -> i32;
 
-def AttributeError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, AttributeError_clear);
-}
+def AttributeError_dealloc(op: ptr[PyObject]);
 
-def AttributeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(
-        op, [PyAttributeErrorObject_OBJ, PyAttributeErrorObject_NAME], visitor, arg
-    );
-}
+def AttributeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-"""Pickle state: name and args, never obj (often unpicklable, GH-103352)."""
 def AttributeError_getstate(
     op: ptr[PyObject], _unused: ptr[PyObject]
-) -> ptr[PyObject] {
-    d = base_field(op, 0);
-    name = exc_field(op, PyAttributeErrorObject_NAME);
-    args = exc_args(op);
-    if name or args {
-        state = PyDict_Copy(d) if d else PyDict_New();
-        if not state {
-            return NULL;
-        }
-        if (name and PyDict_SetItemString(state, ptr[u8]("name"), name) < 0)
-            or (args and PyDict_SetItemString(state, ptr[u8]("args"), args) < 0) {
-            object_decref(state);
-            return NULL;
-        }
-        return state;
-    }
-    return object_new_ref(d if d else Py_None);
-}
+) -> ptr[PyObject];
 
-def AttributeError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
-    state = AttributeError_getstate(op, NULL);
-    if not state {
-        return NULL;
-    }
-    result = PyTuple_Pack(3, ptr(object_type(op)), exc_args(op), state);
-    object_decref(state);
-    return result;
-}
+def AttributeError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
 
-# -------------------------------------------------------------- SyntaxError
-
-def syntax_fields -> list[i64] {
-    return [
-        PySyntaxErrorObject_MSG,
-        PySyntaxErrorObject_FILENAME,
-        PySyntaxErrorObject_LINENO,
-        PySyntaxErrorObject_OFFSET,
-        PySyntaxErrorObject_END_LINENO,
-        PySyntaxErrorObject_END_OFFSET,
-        PySyntaxErrorObject_TEXT,
-        PySyntaxErrorObject_PRINT_FILE_AND_LINE,
-        PySyntaxErrorObject_METADATA
-    ];
-}
+def syntax_fields -> list[i64];
 
 def SyntaxError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    lenargs = object_size(args);
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    if lenargs >= 1 {
-        replace_exc_field(
-            op, PySyntaxErrorObject_MSG, object_new_ref(tuple_get_item(args, 0))
-        );
-    }
-    if lenargs == 2 {
-        info = PySequence_Tuple(tuple_get_item(args, 1));
-        if not info {
-            return i32(-1);
-        }
-        filename: ptr[PyObject] = NULL;
-        lineno: ptr[PyObject] = NULL;
-        offset: ptr[PyObject] = NULL;
-        text: ptr[PyObject] = NULL;
-        end_lineno: ptr[PyObject] = NULL;
-        end_offset: ptr[PyObject] = NULL;
-        metadata: ptr[PyObject] = NULL;
-        if PyArg_ParseTuple(
-            info,
-            "OOOO|OOO",
-            &mut filename,
-            &mut lineno,
-            &mut offset,
-            &mut text,
-            &mut end_lineno,
-            &mut end_offset,
-            &mut metadata
-        )
-            == 0 {
-            object_decref(info);
-            return i32(-1);
-        }
-        replace_exc_field(op, PySyntaxErrorObject_FILENAME, object_new_ref(filename));
-        replace_exc_field(op, PySyntaxErrorObject_LINENO, object_new_ref(lineno));
-        replace_exc_field(op, PySyntaxErrorObject_OFFSET, object_new_ref(offset));
-        replace_exc_field(op, PySyntaxErrorObject_TEXT, object_new_ref(text));
-        replace_exc_field(
-            op, PySyntaxErrorObject_END_LINENO, object_xnew_ref(end_lineno)
-        );
-        replace_exc_field(
-            op, PySyntaxErrorObject_END_OFFSET, object_xnew_ref(end_offset)
-        );
-        replace_exc_field(op, PySyntaxErrorObject_METADATA, object_xnew_ref(metadata));
-        object_decref(info);
-        if exc_field(op, PySyntaxErrorObject_END_LINENO)
-            and not exc_field(op, PySyntaxErrorObject_END_OFFSET) {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "end_offset must be provided when end_lineno is provided"
-            );
-            return i32(-1);
-        }
-    }
-    return i32(0);
-}
+) -> i32;
 
-def SyntaxError_clear(op: ptr[PyObject]) -> i32 {
-    for offset in syntax_fields() {
-        replace_exc_field(op, offset, NULL);
-    }
-    return BaseException_clear(op);
-}
+def SyntaxError_clear(op: ptr[PyObject]) -> i32;
 
-def SyntaxError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, SyntaxError_clear);
-}
+def SyntaxError_dealloc(op: ptr[PyObject]);
 
-def SyntaxError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return exc_traverse(op, syntax_fields(), visitor, arg);
-}
+def SyntaxError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-"""my_basename: the part of a path after its last SEP ('/')."""
-def my_basename(name: ptr[PyObject]) -> ptr[PyObject] {
-    size = PyUnicode_GetLength(name);
-    offset: i64 = 0;
-    for i in range(size) {
-        if PyUnicode_ReadChar(name, i) == u32(47) {
-            offset = i + 1;
-        }
-    }
-    if offset != 0 {
-        return PyUnicode_Substring(name, offset, size);
-    }
-    return object_new_ref(name);
-}
+def my_basename(name: ptr[PyObject]) -> ptr[PyObject];
 
-def SyntaxError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    msg = or_none(exc_field(op, PySyntaxErrorObject_MSG));
-    filename_field = exc_field(op, PySyntaxErrorObject_FILENAME);
-    filename: ptr[PyObject] = NULL;
-    if filename_field
-        and type_has_feature(
-            object_type(filename_field), Py_TPFLAGS_UNICODE_SUBCLASS
-        ) {
-        filename = my_basename(filename_field);
-        if not filename {
-            return NULL;
-        }
-    }
-    lineno = exc_field(op, PySyntaxErrorObject_LINENO);
-    have_lineno = lineno
-        and object_is_type(lineno, ptr[PyTypeObject](addressof(PyLong_Type)));
-    if not filename and not have_lineno {
-        return PyObject_Str(msg);
-    }
-    # Overflow prints -1 and must not raise.
-    overflow: i32 = 0;
-    result: ptr[PyObject] = NULL;
-    # A str subclass filename renders its true content, not str(filename).
-    if filename and have_lineno {
-        result = PyUnicode_FromFormat(
-            "%S (%U, line %ld)",
-            msg,
-            filename,
-            PyLong_AsLongAndOverflow(lineno, &mut overflow)
-        );
-    } elif filename {
-        result = PyUnicode_FromFormat("%S (%U)", msg, filename);
-    } else {
-        result = PyUnicode_FromFormat(
-            "%S (line %ld)", msg, PyLong_AsLongAndOverflow(lineno, &mut overflow)
-        );
-    }
-    object_xdecref(filename);
-    return result;
-}
+def SyntaxError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""repr(args[0]) for one argument, so {}[''] shows KeyError: ''."""
-def KeyError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    args = exc_args(op);
-    if object_size(args) == 1 {
-        return PyObject_Repr(tuple_get_item(args, 0));
-    }
-    return BaseException_str(op);
-}
+def KeyError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
 
-# ------------------------------------------------------------ Unicode errors
+def uerr_of(op: ptr[PyObject]) -> ptr[PyUnicodeErrorObject];
 
-def uerr_of(op: ptr[PyObject]) -> ptr[PyUnicodeErrorObject] {
-    return ptr[PyUnicodeErrorObject](op);
-}
+def uerr_encoding(op: ptr[PyObject]) -> ptr[PyObject];
 
-def uerr_encoding(op: ptr[PyObject]) -> ptr[PyObject] {
-    return ptr[PyObject](uerr_of(op).view(1)[0].encoding);
-}
+def uerr_object(op: ptr[PyObject]) -> ptr[PyObject];
 
-def uerr_object(op: ptr[PyObject]) -> ptr[PyObject] {
-    return ptr[PyObject](uerr_of(op).view(1)[0].object);
-}
+def uerr_reason(op: ptr[PyObject]) -> ptr[PyObject];
 
-def uerr_reason(op: ptr[PyObject]) -> ptr[PyObject] {
-    return ptr[PyObject](uerr_of(op).view(1)[0].reason);
-}
-
-"""Py_XSETREF on encoding (0), object (1) or reason (2), taking `value`."""
-def uerr_store(op: ptr[PyObject], which: int, value: ptr[PyObject]) {
-    u = uerr_of(op);
-    old: ptr[PyObject] = NULL;
-    if which == 0 {
-        old = uerr_encoding(op);
-        u.view(1)[0].encoding = value;
-    } elif which == 1 {
-        old = uerr_object(op);
-        u.view(1)[0].object = value;
-    } else {
-        old = uerr_reason(op);
-        u.view(1)[0].reason = value;
-    }
-    object_xdecref(old);
-}
+def uerr_store(op: ptr[PyObject], which: int, value: ptr[PyObject]);
 
 def check_unicode_error_attribute(
     attr: ptr[PyObject], name: str, as_bytes: bool
-) -> i32 {
-    if not attr {
-        PyErr_Format(PyExc_TypeError, "UnicodeError '%s' attribute is not set", name);
-        return i32(-1);
-    }
-    flag = Py_TPFLAGS_BYTES_SUBCLASS if as_bytes else Py_TPFLAGS_UNICODE_SUBCLASS;
-    if not type_has_feature(object_type(attr), flag) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "UnicodeError '%s' attribute must be a %s",
-            name,
-            "bytes" if as_bytes else "string"
-        );
-        return i32(-1);
-    }
-    return i32(0);
-}
+) -> i32;
 
 def as_unicode_error_attribute(
     attr: ptr[PyObject], name: str, as_bytes: bool
-) -> ptr[PyObject] {
-    if check_unicode_error_attribute(attr, name, as_bytes) < 0 {
-        return NULL;
-    }
-    return object_new_ref(attr);
-}
+) -> ptr[PyObject];
 
-def check_unicode_error_type(op: ptr[PyObject], expect_type: str) -> i32 {
-    if not object_type_check(op, addressof(_PyExc_UnicodeError)) {
-        PyErr_Format(PyExc_TypeError, "expecting a %s object, got %T", expect_type, op);
-        return i32(-1);
-    }
-    return i32(0);
-}
+def check_unicode_error_type(op: ptr[PyObject], expect_type: str) -> i32;
 
-def unicode_error_adjust_start(start_in: i64, objlen: i64) -> i64 {
-    start = max(start_in, 0);
-    if start >= objlen {
-        start = 0 if objlen == 0 else objlen - 1;
-    }
-    return start;
-}
+def unicode_error_adjust_start(start_in: i64, objlen: i64) -> i64;
 
-def unicode_error_adjust_end(end_in: i64, objlen: i64) -> i64 {
-    return min(max(end_in, 1), objlen);
-}
+def unicode_error_adjust_end(end_in: i64, objlen: i64) -> i64;
 
-"""The object (a new reference), its length and the clamped start, end
-and slice length: (status, object, objlen, start, end, slen)."""
 def unicode_error_params(
     op: ptr[PyObject], as_bytes: bool
-) -> tuple[i32, ptr[PyObject], i64, i64, i64, i64] {
-    r = as_unicode_error_attribute(uerr_object(op), "object", as_bytes);
-    if not r {
-        return (i32(-1), NULL, 0, 0, 0, 0);
-    }
-    n = object_size(r) if as_bytes else PyUnicode_GetLength(r);
-    start = unicode_error_adjust_start(uerr_of(op).view(1)[0].start, n);
-    end = unicode_error_adjust_end(uerr_of(op).view(1)[0].end, n);
-    return (i32(0), r, n, start, end, max(end - start, 0));
-}
+) -> tuple[i32, ptr[PyObject], i64, i64, i64, i64];
 
-def store_i64(target: ptr[i64], value: i64) {
-    if target {
-        target.view(1)[0] = value;
-    }
-}
+def store_i64(target: ptr[i64], value: i64);
 
-def unicode_error_get_start(op: ptr[PyObject], start: ptr[i64], as_bytes: bool) -> i32 {
-    (status, r, n, s, e, slen) = unicode_error_params(op, as_bytes);
-    if status < 0 {
-        return i32(-1);
-    }
-    object_decref(r);
-    store_i64(start, s);
-    return i32(0);
-}
+def unicode_error_get_start(op: ptr[PyObject], start: ptr[i64], as_bytes: bool) -> i32;
 
-def unicode_error_get_end(op: ptr[PyObject], end: ptr[i64], as_bytes: bool) -> i32 {
-    (status, r, n, s, e, slen) = unicode_error_params(op, as_bytes);
-    if status < 0 {
-        return i32(-1);
-    }
-    object_decref(r);
-    store_i64(end, e);
-    return i32(0);
-}
+def unicode_error_get_end(op: ptr[PyObject], end: ptr[i64], as_bytes: bool) -> i32;
 
-def unicode_error_set_reason(op: ptr[PyObject], reason: ptr[u8]) -> i32 {
-    value = PyUnicode_FromString(reason);
-    if not value {
-        return i32(-1);
-    }
-    uerr_store(op, 2, value);
-    return i32(0);
-}
+def unicode_error_set_reason(op: ptr[PyObject], reason: ptr[u8]) -> i32;
 
 import from c {
     def _PyUnicodeError_GetParams(
@@ -2193,470 +650,64 @@ import from c {
     }
 }
 
-def UnicodeError_clear(op: ptr[PyObject]) -> i32 {
-    uerr_store(op, 0, NULL);
-    uerr_store(op, 1, NULL);
-    uerr_store(op, 2, NULL);
-    return BaseException_clear(op);
-}
+def UnicodeError_clear(op: ptr[PyObject]) -> i32;
 
-def UnicodeError_dealloc(op: ptr[PyObject]) {
-    exc_dealloc(op, UnicodeError_clear);
-}
+def UnicodeError_dealloc(op: ptr[PyObject]);
 
-def UnicodeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    for value in [uerr_encoding(op), uerr_object(op), uerr_reason(op)] {
-        status = visit_reference(value, visitor, arg);
-        if status != 0 {
-            return status;
-        }
-    }
-    return BaseException_traverse(op, visitor, arg);
-}
+def UnicodeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
 def UnicodeEncodeError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    # Borrowed.
-    encoding: ptr[PyObject] = NULL;
-    ob: ptr[PyObject] = NULL;
-    reason: ptr[PyObject] = NULL;
-    start: i64 = -1;
-    end: i64 = -1;
-    if PyArg_ParseTuple(
-        args, "UUnnU", &mut encoding, &mut ob, &mut start, &mut end, &mut reason
-    )
-        == 0 {
-        return i32(-1);
-    }
-    uerr_store(op, 0, object_new_ref(encoding));
-    uerr_store(op, 1, object_new_ref(ob));
-    uerr_of(op).view(1)[0].start = start;
-    uerr_of(op).view(1)[0].end = end;
-    uerr_store(op, 2, object_new_ref(reason));
-    return i32(0);
-}
+) -> i32;
 
-"""The single bad character as \\xNN, \\uNNNN or \\UNNNNNNNN, by size."""
-def badchar_format(badchar: u32, prefix: str, suffix: str) -> str {
-    if badchar <= u32(0xff) {
-        return prefix + "'\\x%02x'" + suffix;
-    }
-    if badchar <= u32(0xffff) {
-        return prefix + "'\\u%04x'" + suffix;
-    }
-    return prefix + "'\\U%08x'" + suffix;
-}
+def badchar_format(badchar: u32, prefix: str, suffix: str) -> str;
 
-def UnicodeEncodeError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    if not uerr_object(op) {
-        # Not initialized.
-        return PyUnicode_FromString("");
-    }
-    # reason and encoding may have been replaced by non-str values.
-    reason_str = PyObject_Str(uerr_reason(op));
-    if not reason_str {
-        return NULL;
-    }
-    encoding_str = PyObject_Str(uerr_encoding(op));
-    result: ptr[PyObject] = NULL;
-    # str() may have mutated the object.
-    if encoding_str
-        and check_unicode_error_attribute(uerr_object(op), "object", False) == 0 {
-        length = PyUnicode_GetLength(uerr_object(op));
-        start = uerr_of(op).view(1)[0].start;
-        end = uerr_of(op).view(1)[0].end;
-        if start >= 0
-            and start < length
-            and end >= 0
-            and end <= length
-            and end == start + 1 {
-            badchar = PyUnicode_ReadChar(uerr_object(op), start);
-            result = PyUnicode_FromFormat(
-                badchar_format(
-                    badchar,
-                    "'%U' codec can't encode character ",
-                    " in position %zd: %U"
-                ),
-                encoding_str,
-                i32(badchar),
-                start,
-                reason_str
-            );
-        } else {
-            result = PyUnicode_FromFormat(
-                "'%U' codec can't encode characters in position %zd-%zd: %U",
-                encoding_str,
-                start,
-                end - 1,
-                reason_str
-            );
-        }
-    }
-    object_decref(reason_str);
-    object_xdecref(encoding_str);
-    return result;
-}
+def UnicodeEncodeError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
 def UnicodeDecodeError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    encoding: ptr[PyObject] = NULL;
-    ob: ptr[PyObject] = NULL;
-    reason: ptr[PyObject] = NULL;
-    start: i64 = -1;
-    end: i64 = -1;
-    if PyArg_ParseTuple(
-        args, "UOnnU", &mut encoding, &mut ob, &mut start, &mut end, &mut reason
-    )
-        == 0 {
-        return i32(-1);
-    }
-    if type_has_feature(object_type(ob), Py_TPFLAGS_BYTES_SUBCLASS) {
-        object_incref(ob);
-    } else {
-        view = ptr[Py_buffer](PyMem_Calloc(1, 80));
-        if not view {
-            PyErr_NoMemory();
-            return i32(-1);
-        }
-        if PyObject_GetBuffer(ob, view, PyBUF_SIMPLE) != 0 {
-            PyMem_Free(ptr(view));
-            return i32(-1);
-        }
-        ob = PyBytes_FromStringAndSize(
-            ptr[u8](view.view(1)[0].buf), view.view(1)[0].length
-        );
-        PyBuffer_Release(view);
-        PyMem_Free(ptr(view));
-        if not ob {
-            return i32(-1);
-        }
-    }
-    uerr_store(op, 0, object_new_ref(encoding));
-    # Already a new reference.
-    uerr_store(op, 1, ob);
-    uerr_of(op).view(1)[0].start = start;
-    uerr_of(op).view(1)[0].end = end;
-    uerr_store(op, 2, object_new_ref(reason));
-    return i32(0);
-}
+) -> i32;
 
-def UnicodeDecodeError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    if not uerr_object(op) {
-        return PyUnicode_FromString("");
-    }
-    reason_str = PyObject_Str(uerr_reason(op));
-    if not reason_str {
-        return NULL;
-    }
-    encoding_str = PyObject_Str(uerr_encoding(op));
-    result: ptr[PyObject] = NULL;
-    if encoding_str
-        and check_unicode_error_attribute(uerr_object(op), "object", True) == 0 {
-        ob = uerr_object(op);
-        length = object_size(ob);
-        start = uerr_of(op).view(1)[0].start;
-        end = uerr_of(op).view(1)[0].end;
-        if start >= 0
-            and start < length
-            and end >= 0
-            and end <= length
-            and end == start + 1 {
-            badbyte = i32((ptr[u8](PyBytes_AsString(ob)) + start).view(1)[0]);
-            result = PyUnicode_FromFormat(
-                "'%U' codec can't decode byte 0x%02x in position %zd: %U",
-                encoding_str,
-                badbyte,
-                start,
-                reason_str
-            );
-        } else {
-            result = PyUnicode_FromFormat(
-                "'%U' codec can't decode bytes in position %zd-%zd: %U",
-                encoding_str,
-                start,
-                end - 1,
-                reason_str
-            );
-        }
-    }
-    object_decref(reason_str);
-    object_xdecref(encoding_str);
-    return result;
-}
+def UnicodeDecodeError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
 def UnicodeTranslateError_init(
     op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> i32 {
-    if BaseException_init(op, args, kwds) == -1 {
-        return i32(-1);
-    }
-    ob: ptr[PyObject] = NULL;
-    reason: ptr[PyObject] = NULL;
-    start: i64 = -1;
-    end: i64 = -1;
-    if PyArg_ParseTuple(args, "UnnU", &mut ob, &mut start, &mut end, &mut reason)
-        == 0 {
-        return i32(-1);
-    }
-    uerr_store(op, 1, object_new_ref(ob));
-    uerr_of(op).view(1)[0].start = start;
-    uerr_of(op).view(1)[0].end = end;
-    uerr_store(op, 2, object_new_ref(reason));
-    return i32(0);
-}
+) -> i32;
 
-def UnicodeTranslateError_str(op: ptr[PyObject]) -> ptr[PyObject] {
-    if not uerr_object(op) {
-        return PyUnicode_FromString("");
-    }
-    reason_str = PyObject_Str(uerr_reason(op));
-    if not reason_str {
-        return NULL;
-    }
-    result: ptr[PyObject] = NULL;
-    if check_unicode_error_attribute(uerr_object(op), "object", False) == 0 {
-        length = PyUnicode_GetLength(uerr_object(op));
-        start = uerr_of(op).view(1)[0].start;
-        end = uerr_of(op).view(1)[0].end;
-        if start >= 0
-            and start < length
-            and end >= 0
-            and end <= length
-            and end == start + 1 {
-            badchar = PyUnicode_ReadChar(uerr_object(op), start);
-            result = PyUnicode_FromFormat(
-                badchar_format(
-                    badchar, "can't translate character ", " in position %zd: %U"
-                ),
-                i32(badchar),
-                start,
-                reason_str
-            );
-        } else {
-            result = PyUnicode_FromFormat(
-                "can't translate characters in position %zd-%zd: %U",
-                start,
-                end - 1,
-                reason_str
-            );
-        }
-    }
-    object_decref(reason_str);
-    return result;
-}
+def UnicodeTranslateError_str(op: ptr[PyObject]) -> ptr[PyObject];
 
-
-# -------------------------------------------------------------- MemoryError
-#
-# Up to MEMERRORS_SAVE freed MemoryErrors are kept in the interpreter's
-# exc_state, linked through their dict field, so raising one under memory
-# pressure needs no allocation.
 
 glob:priv MEMERRORS_SAVE: i64 = 16;
 
-def memerrors_freelist_slot -> ptr[ptr[PyObject]] {
-    return ptr[ptr[PyObject]](
-        current_interp() + PyInterpreterState_EXC_MEMERRORS_FREELIST
-    );
-}
+def memerrors_freelist_slot -> ptr[ptr[PyObject]];
 
-def memerrors_numfree_slot -> ptr[i32] {
-    return ptr[i32](current_interp() + PyInterpreterState_EXC_MEMERRORS_NUMFREE);
-}
+def memerrors_numfree_slot -> ptr[i32];
 
 def get_memory_error(
     allow_allocation: bool, args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    freelist = memerrors_freelist_slot();
-    self = freelist.view(1)[0];
-    if self {
-        # Initialize one from the freelist.
-        freelist.view(1)[0] = base_field(self, 0);
-        numfree = memerrors_numfree_slot();
-        numfree.view(1)[0] = numfree.view(1)[0] - i32(1);
-        base_of(self).view(1)[0].dict = NULL;
-        # The immortal empty tuple.
-        base_of(self).view(1)[0].args = PyTuple_New(0);
-        _Py_NewReference(self);
-        object_gc_track(self);
-        return self;
-    }
-    if not allow_allocation {
-        return object_new_ref(
-            ptr[PyObject](
-                current_interp() + PyInterpreterState_LAST_RESORT_MEMORY_ERROR
-            )
-        );
-    }
-    return BaseException_new(PyExc_MemoryError, args, kwds);
-}
+) -> ptr[PyObject];
 
 def MemoryError_new(
     type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
-) -> ptr[PyObject] {
-    # A subclass gets a fresh object.
-    if type != PyExc_MemoryError {
-        return BaseException_new(type, args, kwds);
-    }
-    return get_memory_error(True, args, kwds);
-}
+) -> ptr[PyObject];
 
-def MemoryError_dealloc(op: ptr[PyObject]) {
-    object_gc_untrack(op);
-    BaseException_clear(op);
-    if not object_is_type(op, addressof(_PyExc_MemoryError)) {
-        type_free(op);
-        return;
-    }
-    numfree = memerrors_numfree_slot();
-    if i64(numfree.view(1)[0]) < MEMERRORS_SAVE {
-        freelist = memerrors_freelist_slot();
-        base_of(op).view(1)[0].dict = freelist.view(1)[0];
-        freelist.view(1)[0] = op;
-        numfree.view(1)[0] = numfree.view(1)[0] + i32(1);
-        return;
-    }
-    type_free(op);
-}
+def MemoryError_dealloc(op: ptr[PyObject]);
 
-"""Fill the freelist: make MEMERRORS_SAVE MemoryErrors, then drop them."""
-def preallocate_memerrors -> i32 {
-    errors: list[ptr[PyObject]] = [];
-    for i in range(MEMERRORS_SAVE) {
-        error = MemoryError_new(PyExc_MemoryError, NULL, NULL);
-        if not error {
-            for made in errors {
-                object_decref(made);
-            }
-            return i32(-1);
-        }
-        errors.append(error);
-    }
-    for error in errors {
-        object_decref(error);
-    }
-    return i32(0);
-}
+def preallocate_memerrors -> i32;
 
-def free_preallocated_memerrors {
-    freelist = memerrors_freelist_slot();
-    while freelist.view(1)[0] {
-        self = freelist.view(1)[0];
-        freelist.view(1)[0] = base_field(self, 0);
-        type_free(self);
-    }
-}
+def free_preallocated_memerrors;
 
-# ------------------------------------------------------------ init and fini
+def static_exceptions -> list[tuple[ptr[PyTypeObject], str]];
 
-"""The static exception types, base classes first, with their builtins
-names (static_exceptions)."""
-def static_exceptions -> list[tuple[ptr[PyTypeObject], str]] {
-    return [
-        (addressof(_PyExc_BaseException), "BaseException"),
-        (addressof(_PyExc_BaseExceptionGroup), "BaseExceptionGroup"),
-        (addressof(_PyExc_Exception), "Exception"),
-        (addressof(_PyExc_GeneratorExit), "GeneratorExit"),
-        (addressof(_PyExc_KeyboardInterrupt), "KeyboardInterrupt"),
-        (addressof(_PyExc_SystemExit), "SystemExit"),
-        (addressof(_PyExc_ArithmeticError), "ArithmeticError"),
-        (addressof(_PyExc_AssertionError), "AssertionError"),
-        (addressof(_PyExc_AttributeError), "AttributeError"),
-        (addressof(_PyExc_BufferError), "BufferError"),
-        (addressof(_PyExc_EOFError), "EOFError"),
-        (addressof(_PyExc_ImportError), "ImportError"),
-        (addressof(_PyExc_LookupError), "LookupError"),
-        (addressof(_PyExc_MemoryError), "MemoryError"),
-        (addressof(_PyExc_NameError), "NameError"),
-        (addressof(_PyExc_OSError), "OSError"),
-        (addressof(_PyExc_ReferenceError), "ReferenceError"),
-        (addressof(_PyExc_RuntimeError), "RuntimeError"),
-        (addressof(_PyExc_StopAsyncIteration), "StopAsyncIteration"),
-        (addressof(_PyExc_StopIteration), "StopIteration"),
-        (addressof(_PyExc_SyntaxError), "SyntaxError"),
-        (addressof(_PyExc_SystemError), "SystemError"),
-        (addressof(_PyExc_TypeError), "TypeError"),
-        (addressof(_PyExc_ValueError), "ValueError"),
-        (addressof(_PyExc_Warning), "Warning"),
-        (addressof(_PyExc_FloatingPointError), "FloatingPointError"),
-        (addressof(_PyExc_OverflowError), "OverflowError"),
-        (addressof(_PyExc_ZeroDivisionError), "ZeroDivisionError"),
-        (addressof(_PyExc_BytesWarning), "BytesWarning"),
-        (addressof(_PyExc_DeprecationWarning), "DeprecationWarning"),
-        (addressof(_PyExc_EncodingWarning), "EncodingWarning"),
-        (addressof(_PyExc_FutureWarning), "FutureWarning"),
-        (addressof(_PyExc_ImportWarning), "ImportWarning"),
-        (addressof(_PyExc_PendingDeprecationWarning), "PendingDeprecationWarning"),
-        (addressof(_PyExc_ResourceWarning), "ResourceWarning"),
-        (addressof(_PyExc_RuntimeWarning), "RuntimeWarning"),
-        (addressof(_PyExc_SyntaxWarning), "SyntaxWarning"),
-        (addressof(_PyExc_UnicodeWarning), "UnicodeWarning"),
-        (addressof(_PyExc_UserWarning), "UserWarning"),
-        (addressof(_PyExc_BlockingIOError), "BlockingIOError"),
-        (addressof(_PyExc_ChildProcessError), "ChildProcessError"),
-        (addressof(_PyExc_ConnectionError), "ConnectionError"),
-        (addressof(_PyExc_FileExistsError), "FileExistsError"),
-        (addressof(_PyExc_FileNotFoundError), "FileNotFoundError"),
-        (addressof(_PyExc_InterruptedError), "InterruptedError"),
-        (addressof(_PyExc_IsADirectoryError), "IsADirectoryError"),
-        (addressof(_PyExc_NotADirectoryError), "NotADirectoryError"),
-        (addressof(_PyExc_PermissionError), "PermissionError"),
-        (addressof(_PyExc_ProcessLookupError), "ProcessLookupError"),
-        (addressof(_PyExc_TimeoutError), "TimeoutError"),
-        (addressof(_PyExc_IndentationError), "IndentationError"),
-        (addressof(_PyExc_IncompleteInputError), "_IncompleteInputError"),
-        (addressof(_PyExc_IndexError), "IndexError"),
-        (addressof(_PyExc_KeyError), "KeyError"),
-        (addressof(_PyExc_ModuleNotFoundError), "ModuleNotFoundError"),
-        (addressof(_PyExc_NotImplementedError), "NotImplementedError"),
-        (addressof(_PyExc_PythonFinalizationError), "PythonFinalizationError"),
-        (addressof(_PyExc_RecursionError), "RecursionError"),
-        (addressof(_PyExc_UnboundLocalError), "UnboundLocalError"),
-        (addressof(_PyExc_UnicodeError), "UnicodeError"),
-        (addressof(_PyExc_BrokenPipeError), "BrokenPipeError"),
-        (addressof(_PyExc_ConnectionAbortedError), "ConnectionAbortedError"),
-        (addressof(_PyExc_ConnectionRefusedError), "ConnectionRefusedError"),
-        (addressof(_PyExc_ConnectionResetError), "ConnectionResetError"),
-        (addressof(_PyExc_TabError), "TabError"),
-        (addressof(_PyExc_UnicodeDecodeError), "UnicodeDecodeError"),
-        (addressof(_PyExc_UnicodeEncodeError), "UnicodeEncodeError"),
-        (addressof(_PyExc_UnicodeTranslateError), "UnicodeTranslateError")
-    ];
-}
+def status_ok -> PyStatus;
 
-def status_ok -> PyStatus {
-    return PyStatus(
-        _type=_PyStatus_TYPE_OK, func=ptr[u8](), err_msg=ptr[u8](), exitcode=0
-    );
-}
+def status_err(func: ptr[u8], msg: ptr[u8]) -> PyStatus;
 
-"""_PyStatus_ERR(msg) raised in `func`."""
-def status_err(func: ptr[u8], msg: ptr[u8]) -> PyStatus {
-    return PyStatus(_type=_PyStatus_TYPE_ERROR, func=func, err_msg=msg, exitcode=0);
-}
-
-def add_errno(mapping: ptr[PyObject], type: ptr[PyObject], code: i64) -> bool {
-    code_obj = PyLong_FromLong(code);
-    if not code_obj or PyDict_SetItem(mapping, code_obj, type) != 0 {
-        object_xdecref(code_obj);
-        return False;
-    }
-    object_decref(code_obj);
-    return True;
-}
+def add_errno(mapping: ptr[PyObject], type: ptr[PyObject], code: i64) -> bool;
 
 import from c {
     def _PyErr_NoMemory(tstate: ptr) -> ptr[PyObject] {
         if not object_type(PyExc_MemoryError) {
-            # PyErr_NoMemory before _PyExc_Init readied the type.
             Py_FatalError("Out of memory and PyExc_MemoryError is not initialized yet");
         }
         err = get_memory_error(False, NULL, NULL);
@@ -2721,15 +772,13 @@ import from c {
             }
         }
         return status_ok();
-    }
-    # Adds the exception types to the builtins module.
-    def _PyBuiltins_AddExceptions(bltinmod: ptr[PyObject]) -> i32 {
+    }  def _PyBuiltins_AddExceptions(bltinmod: ptr[PyObject]) -> i32 {
         mod_dict = PyModule_GetDict(bltinmod);
         if not mod_dict {
             return i32(-1);
         }
         for (exc, name) in static_exceptions() {
-            key = PyUnicode_InternFromString(name);
+            key = jacpy_unicode_intern_text(name);
             if not key {
                 return i32(-1);
             }
@@ -2789,8 +838,6 @@ import from c {
         return res;
     }
 }
-
-# ------------------------------------------------------------ the types
 
 import from c {
     glob:priv BaseException_methods: list[PyMethodDef] = [
@@ -4735,7 +2782,2227 @@ import from c {
          PyExc_ResourceWarning: ptr[PyObject] = ptr[PyObject](
              addressof(_PyExc_ResourceWarning)
          ),
-         # Aliases of OSError, set by _PyBuiltins_AddExceptions.
          PyExc_EnvironmentError: ptr[PyObject] = ptr[PyObject](),
          PyExc_IOError: ptr[PyObject] = ptr[PyObject]();
+}
+
+impl base_of(op: ptr[PyObject]) -> ptr[PyBaseExceptionObject] {
+    return ptr[PyBaseExceptionObject](op);
+}
+
+impl exc_args(op: ptr[PyObject]) -> ptr[PyObject] {
+    return ptr[PyObject](base_of(op).view(1)[0].args);
+}
+
+impl base_store(op: ptr[PyObject], which: int, value: ptr[PyObject]) {
+    b = base_of(op);
+    old: ptr[PyObject] = NULL;
+    if which == 0 {
+        old = ptr[PyObject](b.view(1)[0].dict);
+        b.view(1)[0].dict = value;
+    } elif which == 1 {
+        old = ptr[PyObject](b.view(1)[0].args);
+        b.view(1)[0].args = value;
+    } elif which == 2 {
+        old = ptr[PyObject](b.view(1)[0].notes);
+        b.view(1)[0].notes = value;
+    } elif which == 3 {
+        old = ptr[PyObject](b.view(1)[0].traceback);
+        b.view(1)[0].traceback = value;
+    } elif which == 4 {
+        old = ptr[PyObject](b.view(1)[0].context);
+        b.view(1)[0].context = value;
+    } else {
+        old = ptr[PyObject](b.view(1)[0].cause);
+        b.view(1)[0].cause = value;
+    }
+    object_xdecref(old);
+}
+
+impl base_field(op: ptr[PyObject], which: int) -> ptr[PyObject] {
+    b = base_of(op).view(1)[0];
+    if which == 0 {
+        return ptr[PyObject](b.dict);
+    }
+    if which == 1 {
+        return ptr[PyObject](b.args);
+    }
+    if which == 2 {
+        return ptr[PyObject](b.notes);
+    }
+    if which == 3 {
+        return ptr[PyObject](b.traceback);
+    }
+    if which == 4 {
+        return ptr[PyObject](b.context);
+    }
+    return ptr[PyObject](b.cause);
+}
+
+impl type_alloc(type: ptr[PyObject]) -> ptr[PyObject] {
+    calls = addressof(call_slot);
+    calls.view(1)[0].alloc = int(ptr[PyTypeObject](type).view(1)[0].tp_alloc);
+    return calls.view(1)[0].alloc(type, 0);
+}
+
+impl type_free(op: ptr[PyObject]) {
+    calls = addressof(call_slot);
+    calls.view(1)[0].free = int(object_type(op).view(1)[0].tp_free);
+    calls.view(1)[0].free(ptr(op));
+}
+
+impl base_init_fields(op: ptr[PyObject], args: ptr[PyObject]) {
+    b = base_of(op);
+
+    b.view(1)[0].dict = NULL;
+    b.view(1)[0].notes = NULL;
+    b.view(1)[0].traceback = NULL;
+    b.view(1)[0].cause = NULL;
+    b.view(1)[0].context = NULL;
+    b.view(1)[0].suppress_context = i8(0);
+    b.view(1)[0].args = args;
+}
+
+impl BaseException_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    self = type_alloc(type);
+    if not self {
+        return NULL;
+    }
+    if args {
+        base_init_fields(self, object_new_ref(args));
+        return self;
+    }
+    base_init_fields(self, NULL);
+    empty = PyTuple_New(0);
+    if not empty {
+        object_decref(self);
+        return NULL;
+    }
+    base_of(self).view(1)[0].args = empty;
+    return self;
+}
+
+impl BaseException_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if kwds and _PyArg_NoKeywords(object_type(op).view(1)[0].tp_name, kwds) == 0 {
+        return i32(-1);
+    }
+    base_store(op, 1, object_new_ref(args));
+    return i32(0);
+}
+
+impl BaseException_vectorcall(
+    type_obj: ptr[PyObject],
+    args: ptr[ptr[PyObject]],
+    nargsf: u64,
+    kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    if kwnames
+        and _PyArg_NoKwnames(ptr[PyTypeObject](type_obj).view(1)[0].tp_name, kwnames)
+            == 0 {
+        return NULL;
+    }
+    self = type_alloc(type_obj);
+    if not self {
+        return NULL;
+    }
+    base_init_fields(self, NULL);
+    tuple = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    if not tuple {
+        object_decref(self);
+        return NULL;
+    }
+    base_of(self).view(1)[0].args = tuple;
+    return self;
+}
+
+impl BaseException_clear(op: ptr[PyObject]) -> i32 {
+    for which in [0, 1, 2, 3, 5, 4] {
+        base_store(op, which, NULL);
+    }
+    return i32(0);
+}
+
+impl BaseException_dealloc(op: ptr[PyObject]) {
+    PyObject_GC_UnTrack(ptr(op));
+
+    BaseException_clear(op);
+    type_free(op);
+}
+
+impl BaseException_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    for which in [0, 1, 2, 3, 5, 4] {
+        status = visit_reference(base_field(op, which), visitor, arg);
+        if status != 0 {
+            return status;
+        }
+    }
+    return i32(0);
+}
+
+impl BaseException_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    args = exc_args(op);
+    n = object_size(args);
+    if n == 0 {
+        return PyUnicode_FromString(ptr[u8](""));
+    }
+    if n == 1 {
+        return PyObject_Str(tuple_get_item(args, 0));
+    }
+    return PyObject_Str(args);
+}
+
+impl BaseException_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    name = _PyType_Name(ptr[PyObject](object_type(op)));
+    args = exc_args(op);
+    if object_size(args) == 1 {
+        return PyUnicode_FromFormat("%s(%R)", name, tuple_get_item(args, 0));
+    }
+    return PyUnicode_FromFormat("%s%R", name, args);
+}
+
+impl BaseException___reduce__(
+    op: ptr[PyObject], _unused: ptr[PyObject]
+) -> ptr[PyObject] {
+    args = exc_args(op);
+    d = base_field(op, 0);
+    if args and d {
+        return PyTuple_Pack(3, ptr(object_type(op)), args, d);
+    }
+    return PyTuple_Pack(2, ptr(object_type(op)), args);
+}
+
+impl BaseException___setstate__(
+    op: ptr[PyObject], state: ptr[PyObject]
+) -> ptr[PyObject] {
+    if state != Py_None {
+        if not type_has_feature(object_type(state), Py_TPFLAGS_DICT_SUBCLASS) {
+            PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
+            return NULL;
+        }
+        pos: i64 = 0;
+        key: ptr[PyObject] = NULL;
+        value: ptr[PyObject] = NULL;
+        while PyDict_Next(state, &mut pos, &mut key, &mut value) != 0 {
+            object_incref(key);
+            object_incref(value);
+            res = PyObject_SetAttr(op, key, value);
+            object_decref(value);
+            object_decref(key);
+            if res < 0 {
+                return NULL;
+            }
+        }
+    }
+    return object_new_ref(Py_None);
+}
+
+impl BaseException_with_traceback(
+    op: ptr[PyObject], tb: ptr[PyObject]
+) -> ptr[PyObject] {
+    if traceback_set(op, tb) < 0 {
+        return NULL;
+    }
+    return object_new_ref(op);
+}
+
+impl BaseException_add_note(op: ptr[PyObject], note: ptr[PyObject]) -> ptr[PyObject] {
+    if not type_has_feature(object_type(note), Py_TPFLAGS_UNICODE_SUBCLASS) {
+        _PyArg_BadArgument("add_note", "argument", ptr[u8]("str"), note);
+        return NULL;
+    }
+    notes: ptr[PyObject] = NULL;
+    if PyObject_GetOptionalAttr(op, interned_notes(), &mut notes) < 0 {
+        return NULL;
+    }
+    if not notes {
+        notes = PyList_New(0);
+        if not notes {
+            return NULL;
+        }
+        if PyObject_SetAttr(op, interned_notes(), notes) < 0 {
+            object_decref(notes);
+            return NULL;
+        }
+    } elif not type_has_feature(object_type(notes), Py_TPFLAGS_LIST_SUBCLASS) {
+        object_decref(notes);
+        PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
+        return NULL;
+    }
+    if PyList_Append(notes, note) < 0 {
+        object_decref(notes);
+        return NULL;
+    }
+    object_decref(notes);
+    return object_new_ref(Py_None);
+}
+
+impl interned_notes -> ptr[PyObject] {
+    if not notes_key {
+        notes_key = PyUnicode_InternFromString(ptr[u8]("__notes__"));
+    }
+    return notes_key;
+}
+
+impl BaseException_args_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    args = exc_args(op);
+    return object_new_ref(args or Py_None);
+}
+
+impl BaseException_args_set(
+    op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
+    if not value {
+        PyErr_SetString(PyExc_TypeError, "args may not be deleted");
+        return i32(-1);
+    }
+    seq = PySequence_Tuple(value);
+    if not seq {
+        return i32(-1);
+    }
+    base_store(op, 1, seq);
+    return i32(0);
+}
+
+impl BaseException___traceback___get(
+    op: ptr[PyObject], _closure: ptr
+) -> ptr[PyObject] {
+    tb = base_field(op, 3);
+    return object_new_ref(tb or Py_None);
+}
+
+impl traceback_set(op: ptr[PyObject], value: ptr[PyObject]) -> i32 {
+    if not value {
+        PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
+        return i32(-1);
+    }
+    if object_type_check(value, ptr[PyTypeObject](addressof(PyTraceBack_Type))) {
+        base_store(op, 3, object_new_ref(value));
+    } elif value == Py_None {
+        base_store(op, 3, NULL);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "__traceback__ must be a traceback or None");
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl BaseException___traceback___set(
+    op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
+    return traceback_set(op, value);
+}
+
+impl exception_instance_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_BASE_EXC_SUBCLASS);
+}
+
+impl BaseException___context___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    context = base_field(op, 4);
+    return object_new_ref(context or Py_None);
+}
+
+impl BaseException___context___set(
+    op: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
+) -> i32 {
+    value = value_in;
+    if not value {
+        PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
+        return i32(-1);
+    }
+    if value == Py_None {
+        value = NULL;
+    } elif not exception_instance_check(value) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "exception context must be None or derive from BaseException"
+        );
+        return i32(-1);
+    } else {
+        object_incref(value);
+    }
+    base_store(op, 4, value);
+    return i32(0);
+}
+
+impl BaseException___cause___get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    cause = base_field(op, 5);
+    return object_new_ref(cause or Py_None);
+}
+
+impl BaseException___cause___set(
+    op: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
+) -> i32 {
+    value = value_in;
+    if not value {
+        PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
+        return i32(-1);
+    }
+    if value == Py_None {
+        value = NULL;
+    } elif not exception_instance_check(value) {
+        PyErr_SetString(
+            PyExc_TypeError, "exception cause must be None or derive from BaseException"
+        );
+        return i32(-1);
+    } else {
+        object_incref(value);
+    }
+    PyException_SetCause(op, value);
+    return i32(0);
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+
+impl exc_field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
+    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
+}
+
+impl set_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
+}
+
+impl replace_exc_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    old = exc_field(op, offset);
+    set_exc_field(op, offset, value);
+    object_xdecref(old);
+}
+
+impl exc_dealloc(op: ptr[PyObject], clear: Callable[[ptr[PyObject]], i32]) {
+    PyObject_GC_UnTrack(ptr(op));
+    clear(op);
+    type_free(op);
+}
+
+impl exc_traverse(
+    op: ptr[PyObject], offsets: list[i64], visitor: ptr, arg: ptr
+) -> i32 {
+    for offset in offsets {
+        status = visit_reference(exc_field(op, offset), visitor, arg);
+        if status != 0 {
+            return status;
+        }
+    }
+    return BaseException_traverse(op, visitor, arg);
+}
+
+impl StopIteration_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+    replace_exc_field(op, PyStopIterationObject_VALUE, NULL);
+    value = tuple_get_item(args, 0) if object_size(args) > 0 else Py_None;
+    set_exc_field(op, PyStopIterationObject_VALUE, object_new_ref(value));
+    return i32(0);
+}
+
+impl StopIteration_clear(op: ptr[PyObject]) -> i32 {
+    replace_exc_field(op, PyStopIterationObject_VALUE, NULL);
+    return BaseException_clear(op);
+}
+
+impl StopIteration_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, StopIteration_clear);
+}
+
+impl StopIteration_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(op, [PyStopIterationObject_VALUE], visitor, arg);
+}
+
+impl SystemExit_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    size = object_size(args);
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+    if size == 0 {
+        return i32(0);
+    }
+    code = tuple_get_item(args, 0) if size == 1 else args;
+    replace_exc_field(op, PySystemExitObject_CODE, object_new_ref(code));
+    return i32(0);
+}
+
+impl SystemExit_clear(op: ptr[PyObject]) -> i32 {
+    replace_exc_field(op, PySystemExitObject_CODE, NULL);
+    return BaseException_clear(op);
+}
+
+impl SystemExit_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, SystemExit_clear);
+}
+
+impl SystemExit_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(op, [PySystemExitObject_CODE], visitor, arg);
+}
+
+impl exception_group_slot -> ptr[ptr[PyObject]] {
+    return ptr[ptr[PyObject]](current_interp() + PyInterpreterState_EXC_GROUP);
+}
+
+impl is_base_exception_group(op: ptr[PyObject]) -> bool {
+    return object_type_check(op, addressof(_PyExc_BaseExceptionGroup));
+}
+
+impl eg_excs(op: ptr[PyObject]) -> ptr[PyObject] {
+    return exc_field(op, PyBaseExceptionGroupObject_EXCS);
+}
+
+impl BaseExceptionGroup_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    exception_group = exception_group_slot().view(1)[0];
+    nargs = object_size(args);
+    if nargs != 2 {
+        PyErr_Format(
+            PyExc_TypeError,
+            "BaseExceptionGroup.__new__() takes exactly 2 arguments (%zd given)",
+            nargs
+        );
+        return NULL;
+    }
+    message = tuple_get_item(args, 0);
+    exceptions = tuple_get_item(args, 1);
+    if not type_has_feature(object_type(message), Py_TPFLAGS_UNICODE_SUBCLASS) {
+        _PyArg_BadArgument(
+            "BaseExceptionGroup.__new__", "argument 1", ptr[u8]("str"), message
+        );
+        return NULL;
+    }
+    if PySequence_Check(exceptions) == 0 {
+        PyErr_SetString(
+            PyExc_TypeError, "second argument (exceptions) must be a sequence"
+        );
+        return NULL;
+    }
+
+    exceptions_str: ptr[PyObject] = NULL;
+    if not type_has_feature(object_type(exceptions), Py_TPFLAGS_LIST_SUBCLASS)
+        and not type_has_feature(object_type(exceptions), Py_TPFLAGS_TUPLE_SUBCLASS) {
+        exceptions_str = PyObject_Repr(exceptions);
+        if not exceptions_str {
+            return NULL;
+        }
+    }
+    excs = PySequence_Tuple(exceptions);
+    if not excs {
+        object_xdecref(exceptions_str);
+        return NULL;
+    }
+    numexcs = object_size(excs);
+    failed = False;
+    nested_base_exceptions = False;
+    if numexcs == 0 {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "second argument (exceptions) must be a non-empty sequence"
+        );
+        failed = True;
+    }
+    i: i64 = 0;
+    while not failed and i < numexcs {
+        exc = tuple_get_item(excs, i);
+        if not exception_instance_check(exc) {
+            PyErr_Format(
+                PyExc_ValueError,
+                "Item %zd of second argument (exceptions) is not an exception",
+                i
+            );
+            failed = True;
+        } else {
+            is_nonbase_exception = PyObject_IsInstance(exc, PyExc_Exception);
+            if is_nonbase_exception < 0 {
+                failed = True;
+            } elif is_nonbase_exception == 0 {
+                nested_base_exceptions = True;
+            }
+        }
+        i += 1;
+    }
+    cls = type;
+    if not failed {
+        if cls == exception_group {
+            if nested_base_exceptions {
+                PyErr_SetString(
+                    PyExc_TypeError, "Cannot nest BaseExceptions in an ExceptionGroup"
+                );
+                failed = True;
+            }
+        } elif cls == PyExc_BaseExceptionGroup {
+            if not nested_base_exceptions {
+                cls = exception_group;
+            }
+        } elif nested_base_exceptions {
+            nonbase = PyObject_IsSubclass(cls, PyExc_Exception);
+            if nonbase == -1 {
+                failed = True;
+            } elif nonbase == 1 {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "Cannot nest BaseExceptions in '%.200s'",
+                    ptr[PyTypeObject](cls).view(1)[0].tp_name
+                );
+                failed = True;
+            }
+        }
+    }
+    if not failed {
+        if not cls {
+            cls = PyExc_BaseExceptionGroup;
+        }
+        self = BaseException_new(cls, args, kwds);
+        if self {
+            set_exc_field(
+                self, PyBaseExceptionGroupObject_MSG, object_new_ref(message)
+            );
+            set_exc_field(self, PyBaseExceptionGroupObject_EXCS, excs);
+            set_exc_field(self, PyBaseExceptionGroupObject_EXCS_STR, exceptions_str);
+            return self;
+        }
+    }
+    object_xdecref(excs);
+    object_xdecref(exceptions_str);
+    return NULL;
+}
+
+impl BaseExceptionGroup_init(
+    self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if kwds and _PyArg_NoKeywords(object_type(self).view(1)[0].tp_name, kwds) == 0 {
+        return i32(-1);
+    }
+    if BaseException_init(self, args, kwds) == -1 {
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl BaseExceptionGroup_clear(op: ptr[PyObject]) -> i32 {
+    replace_exc_field(op, PyBaseExceptionGroupObject_MSG, NULL);
+    replace_exc_field(op, PyBaseExceptionGroupObject_EXCS, NULL);
+    replace_exc_field(op, PyBaseExceptionGroupObject_EXCS_STR, NULL);
+    return BaseException_clear(op);
+}
+
+impl BaseExceptionGroup_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, BaseExceptionGroup_clear);
+}
+
+impl BaseExceptionGroup_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(
+        op,
+        [
+            PyBaseExceptionGroupObject_MSG,
+            PyBaseExceptionGroupObject_EXCS,
+            PyBaseExceptionGroupObject_EXCS_STR
+        ],
+        visitor,
+        arg
+    );
+}
+
+impl BaseExceptionGroup_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    num_excs = PyTuple_Size(eg_excs(op));
+    return PyUnicode_FromFormat(
+        "%S (%zd sub-exception%s)",
+        exc_field(op, PyBaseExceptionGroupObject_MSG),
+        num_excs,
+        "s" if num_excs > 1 else ""
+    );
+}
+
+impl BaseExceptionGroup_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    exceptions_str: ptr[PyObject] = NULL;
+    saved = exc_field(op, PyBaseExceptionGroupObject_EXCS_STR);
+    if saved {
+        exceptions_str = object_new_ref(saved);
+    } elif type_has_feature(
+        object_type(tuple_get_item(exc_args(op), 1)), Py_TPFLAGS_LIST_SUBCLASS
+    ) {
+        exceptions_list = PySequence_List(eg_excs(op));
+        if not exceptions_list {
+            return NULL;
+        }
+        exceptions_str = PyObject_Repr(exceptions_list);
+        object_decref(exceptions_list);
+    } else {
+        exceptions_str = PyObject_Repr(eg_excs(op));
+    }
+    if not exceptions_str {
+        return NULL;
+    }
+    repr = PyUnicode_FromFormat(
+        "%s(%R, %U)",
+        _PyType_Name(ptr[PyObject](object_type(op))),
+        exc_field(op, PyBaseExceptionGroupObject_MSG),
+        exceptions_str
+    );
+    object_decref(exceptions_str);
+    return repr;
+}
+
+impl BaseExceptionGroup_derive(
+    self: ptr[PyObject], excs: ptr[PyObject]
+) -> ptr[PyObject] {
+    init_args = PyTuple_Pack(2, exc_field(self, PyBaseExceptionGroupObject_MSG), excs);
+    if not init_args {
+        return NULL;
+    }
+    eg = PyObject_CallObject(PyExc_BaseExceptionGroup, init_args);
+    object_decref(init_args);
+    return eg;
+}
+
+impl exceptiongroup_subset(
+    orig: ptr[PyObject], excs: ptr[PyObject]
+) -> tuple[i32, ptr[PyObject]] {
+    num_excs = PySequence_Size(excs);
+    if num_excs < 0 {
+        return (i32(-1), NULL);
+    }
+    if num_excs == 0 {
+        return (i32(0), NULL);
+    }
+    eg = PyObject_CallMethod(orig, "derive", "(O)", excs);
+    if not eg {
+        return (i32(-1), NULL);
+    }
+    if not is_base_exception_group(eg) {
+        PyErr_SetString(
+            PyExc_TypeError, "derive must return an instance of BaseExceptionGroup"
+        );
+        object_decref(eg);
+        return (i32(-1), NULL);
+    }
+    tb = PyException_GetTraceback(orig);
+    if tb {
+        res = PyException_SetTraceback(eg, tb);
+        object_decref(tb);
+        if res < 0 {
+            object_decref(eg);
+            return (i32(-1), NULL);
+        }
+    }
+    PyException_SetContext(eg, PyException_GetContext(orig));
+    PyException_SetCause(eg, PyException_GetCause(orig));
+    notes: ptr[PyObject] = NULL;
+    if PyObject_GetOptionalAttr(orig, interned_notes(), &mut notes) < 0 {
+        object_decref(eg);
+        return (i32(-1), NULL);
+    }
+    if notes {
+        if PySequence_Check(notes) != 0 {
+            notes_copy = PySequence_List(notes);
+            object_decref(notes);
+            if not notes_copy {
+                object_decref(eg);
+                return (i32(-1), NULL);
+            }
+            res = PyObject_SetAttr(eg, interned_notes(), notes_copy);
+            object_decref(notes_copy);
+            if res < 0 {
+                object_decref(eg);
+                return (i32(-1), NULL);
+            }
+        } else {
+            object_decref(notes);
+        }
+    }
+    return (i32(0), eg);
+}
+
+impl exception_class_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS)
+        and type_has_feature(ptr[PyTypeObject](op), Py_TPFLAGS_BASE_EXC_SUBCLASS);
+}
+
+impl get_matcher_type(value: ptr[PyObject]) -> i32 {
+    if PyCallable_Check(value) != 0
+        and not type_has_feature(object_type(value), Py_TPFLAGS_TYPE_SUBCLASS) {
+        return MATCH_BY_PREDICATE;
+    }
+    if exception_class_check(value) {
+        return MATCH_BY_TYPE;
+    }
+    if object_is_type(value, ptr[PyTypeObject](addressof(PyTuple_Type))) {
+        ok = True;
+        for i in range(object_size(value)) {
+            if not exception_class_check(tuple_get_item(value, i)) {
+                ok = False;
+                break;
+            }
+        }
+        if ok {
+            return MATCH_BY_TYPE;
+        }
+    }
+    PyErr_SetString(
+        PyExc_TypeError,
+        "expected an exception type, a tuple of exception types, or a callable (other than a class)"
+    );
+    return i32(-1);
+}
+
+impl split_check_match(
+    exc: ptr[PyObject], matcher_type: i32, matcher_value: ptr[PyObject]
+) -> i32 {
+    if matcher_type == MATCH_BY_TYPE {
+        return PyErr_GivenExceptionMatches(exc, matcher_value);
+    }
+    if matcher_type == MATCH_BY_PREDICATE {
+        exc_matches = PyObject_CallOneArg(matcher_value, exc);
+        if not exc_matches {
+            return i32(-1);
+        }
+        is_true = PyObject_IsTrue(exc_matches);
+        object_decref(exc_matches);
+        return is_true;
+    }
+    if not is_base_exception_group(exc) {
+        exc_id = PyLong_FromVoidPtr(ptr(exc));
+        if not exc_id {
+            return i32(-1);
+        }
+        res = PySet_Contains(matcher_value, exc_id);
+        object_decref(exc_id);
+        return res;
+    }
+    return i32(0);
+}
+
+impl split_recursive(
+    exc: ptr[PyObject],
+    matcher_type: i32,
+    matcher_value: ptr[PyObject],
+    construct_rest: bool
+) -> tuple[i32, ptr[PyObject], ptr[PyObject]] {
+    is_match = split_check_match(exc, matcher_type, matcher_value);
+    if is_match < 0 {
+        return (i32(-1), NULL, NULL);
+    }
+    if is_match != 0 {
+        return (i32(0), object_new_ref(exc), NULL);
+    }
+    if not is_base_exception_group(exc) {
+        return (i32(0), NULL, object_new_ref(exc) if construct_rest else NULL);
+    }
+
+    excs = eg_excs(exc);
+    num_excs = PyTuple_Size(excs);
+    if num_excs < 0 {
+        return (i32(-1), NULL, NULL);
+    }
+    match_list = PyList_New(0);
+    if not match_list {
+        return (i32(-1), NULL, NULL);
+    }
+    rest_list: ptr[PyObject] = NULL;
+    failed = False;
+    if construct_rest {
+        rest_list = PyList_New(0);
+        failed = not rest_list;
+    }
+    i: i64 = 0;
+    while not failed and i < num_excs {
+        e = tuple_get_item(excs, i);
+        if Py_EnterRecursiveCall(" in exceptiongroup_split_recursive") != 0 {
+            failed = True;
+            break;
+        }
+        (status, rec_match, rec_rest) = split_recursive(
+            e, matcher_type, matcher_value, construct_rest
+        );
+        Py_LeaveRecursiveCall();
+        if status < 0 {
+            failed = True;
+            break;
+        }
+        if rec_match {
+            if PyList_Append(match_list, rec_match) < 0 {
+                object_decref(rec_match);
+                object_xdecref(rec_rest);
+                failed = True;
+                break;
+            }
+            object_decref(rec_match);
+        }
+        if rec_rest {
+            if PyList_Append(rest_list, rec_rest) < 0 {
+                object_decref(rec_rest);
+                failed = True;
+                break;
+            }
+            object_decref(rec_rest);
+        }
+        i += 1;
+    }
+    matched: ptr[PyObject] = NULL;
+    rest: ptr[PyObject] = NULL;
+    if not failed {
+        (status, matched) = exceptiongroup_subset(exc, match_list);
+        failed = status < 0;
+    }
+    if not failed and construct_rest {
+        (status, rest) = exceptiongroup_subset(exc, rest_list);
+        if status < 0 {
+            object_xdecref(matched);
+            matched = NULL;
+            failed = True;
+        }
+    }
+    object_decref(match_list);
+    object_xdecref(rest_list);
+    if failed {
+        object_xdecref(matched);
+        object_xdecref(rest);
+        return (i32(-1), NULL, NULL);
+    }
+    return (i32(0), matched, rest);
+}
+
+impl BaseExceptionGroup_split(
+    self: ptr[PyObject], matcher_value: ptr[PyObject]
+) -> ptr[PyObject] {
+    matcher_type = get_matcher_type(matcher_value);
+    if matcher_type < 0 {
+        return NULL;
+    }
+    (status, matched, rest) = split_recursive(self, matcher_type, matcher_value, True);
+    if status < 0 {
+        return NULL;
+    }
+    result = PyTuple_Pack(2, matched or Py_None, rest or Py_None);
+    object_xdecref(matched);
+    object_xdecref(rest);
+    return result;
+}
+
+impl BaseExceptionGroup_subgroup(
+    self: ptr[PyObject], matcher_value: ptr[PyObject]
+) -> ptr[PyObject] {
+    matcher_type = get_matcher_type(matcher_value);
+    if matcher_type < 0 {
+        return NULL;
+    }
+    (status, matched, rest) = split_recursive(self, matcher_type, matcher_value, False);
+    if status < 0 {
+        return NULL;
+    }
+    return matched or object_new_ref(Py_None);
+}
+
+impl collect_leaf_ids(exc: ptr[PyObject], leaf_ids: ptr[PyObject]) -> i32 {
+    if exc == Py_None {
+        return i32(0);
+    }
+    if not is_base_exception_group(exc) {
+        exc_id = PyLong_FromVoidPtr(ptr(exc));
+        if not exc_id {
+            return i32(-1);
+        }
+        res = PySet_Add(leaf_ids, exc_id);
+        object_decref(exc_id);
+        return res;
+    }
+    excs = eg_excs(exc);
+    for i in range(object_size(excs)) {
+        if Py_EnterRecursiveCall(" in collect_exception_group_leaf_ids") != 0 {
+            return i32(-1);
+        }
+        res = collect_leaf_ids(tuple_get_item(excs, i), leaf_ids);
+        Py_LeaveRecursiveCall();
+        if res < 0 {
+            return i32(-1);
+        }
+    }
+    return i32(0);
+}
+
+impl exception_group_projection(
+    eg: ptr[PyObject], keep: ptr[PyObject]
+) -> ptr[PyObject] {
+    leaf_ids = PySet_New(NULL);
+    if not leaf_ids {
+        return NULL;
+    }
+    for i in range(object_size(keep)) {
+        if collect_leaf_ids(PyList_GetItem(keep, i), leaf_ids) < 0 {
+            object_decref(leaf_ids);
+            return NULL;
+        }
+    }
+    (status, matched, rest) = split_recursive(eg, MATCH_INSTANCE_IDS, leaf_ids, False);
+    object_decref(leaf_ids);
+    if status < 0 {
+        return NULL;
+    }
+    return matched or object_new_ref(Py_None);
+}
+
+impl is_same_exception_metadata(exc1: ptr[PyObject], exc2: ptr[PyObject]) -> bool {
+    for which in [2, 3, 5, 4] {
+        if base_field(exc1, which) != base_field(exc2, which) {
+            return False;
+        }
+    }
+    return True;
+}
+
+impl create_exception_group_class -> ptr[PyObject] {
+    bases = PyTuple_Pack(2, PyExc_BaseExceptionGroup, PyExc_Exception);
+    if not bases {
+        return NULL;
+    }
+    group = PyErr_NewException("builtins.ExceptionGroup", bases, NULL);
+    exception_group_slot().view(1)[0] = group;
+    object_decref(bases);
+    return group;
+}
+
+
+impl ImportError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, NULL) == -1 {
+        return i32(-1);
+    }
+    empty_tuple = PyTuple_New(0);
+    if not empty_tuple {
+        return i32(-1);
+    }
+    name: ptr[PyObject] = NULL;
+    path: ptr[PyObject] = NULL;
+    name_from: ptr[PyObject] = NULL;
+    if PyArg_ParseTupleAndKeywords(
+        empty_tuple,
+        kwds,
+        "|$OOO:ImportError",
+        ptr(addressof(import_error_keywords)),
+        &mut name,
+        &mut path,
+        &mut name_from
+    )
+        == 0 {
+        object_decref(empty_tuple);
+        return i32(-1);
+    }
+    object_decref(empty_tuple);
+    replace_exc_field(op, PyImportErrorObject_NAME, object_xnew_ref(name));
+    replace_exc_field(op, PyImportErrorObject_PATH, object_xnew_ref(path));
+    replace_exc_field(op, PyImportErrorObject_NAME_FROM, object_xnew_ref(name_from));
+    msg = object_new_ref(tuple_get_item(args, 0)) if object_size(args) == 1 else NULL;
+    replace_exc_field(op, PyImportErrorObject_MSG, msg);
+    return i32(0);
+}
+
+impl ImportError_clear(op: ptr[PyObject]) -> i32 {
+    for offset in [
+        PyImportErrorObject_MSG,
+        PyImportErrorObject_NAME,
+        PyImportErrorObject_PATH,
+        PyImportErrorObject_NAME_FROM
+    ] {
+        replace_exc_field(op, offset, NULL);
+    }
+    return BaseException_clear(op);
+}
+
+impl ImportError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, ImportError_clear);
+}
+
+impl ImportError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(
+        op,
+        [
+            PyImportErrorObject_MSG,
+            PyImportErrorObject_NAME,
+            PyImportErrorObject_PATH,
+            PyImportErrorObject_NAME_FROM
+        ],
+        visitor,
+        arg
+    );
+}
+
+impl ImportError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    msg = exc_field(op, PyImportErrorObject_MSG);
+    if msg and object_is_type(msg, ptr[PyTypeObject](addressof(PyUnicode_Type))) {
+        return object_new_ref(msg);
+    }
+    return BaseException_str(op);
+}
+
+impl ImportError_getstate(op: ptr[PyObject]) -> ptr[PyObject] {
+    d = base_field(op, 0);
+    name = exc_field(op, PyImportErrorObject_NAME);
+    path = exc_field(op, PyImportErrorObject_PATH);
+    name_from = exc_field(op, PyImportErrorObject_NAME_FROM);
+    if name or path or name_from {
+        state = PyDict_Copy(d) if d else PyDict_New();
+        if not state {
+            return NULL;
+        }
+        if (name and PyDict_SetItemString(state, ptr[u8]("name"), name) < 0)
+            or (path and PyDict_SetItemString(state, ptr[u8]("path"), path) < 0)
+            or (
+                name_from
+                and PyDict_SetItemString(state, ptr[u8]("name_from"), name_from) < 0
+            ) {
+            object_decref(state);
+            return NULL;
+        }
+        return state;
+    }
+    return object_new_ref(d or Py_None);
+}
+
+impl ImportError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    state = ImportError_getstate(op);
+    if not state {
+        return NULL;
+    }
+    res: ptr[PyObject] = NULL;
+    if state == Py_None {
+        res = PyTuple_Pack(2, ptr(object_type(op)), exc_args(op));
+    } else {
+        res = PyTuple_Pack(3, ptr(object_type(op)), exc_args(op), state);
+    }
+    object_decref(state);
+    return res;
+}
+
+impl os_of(op: ptr[PyObject]) -> ptr[PyOSErrorObject] {
+    return ptr[PyOSErrorObject](op);
+}
+
+impl oserror_parse_args(
+    args: ptr[PyObject]
+) -> tuple[i32, ptr[PyObject], ptr[PyObject], ptr[PyObject], ptr[PyObject]] {
+    nargs = object_size(args);
+    if nargs >= 2 and nargs <= 5 {
+        items = tuple_items(args);
+        return (
+            i32(0),
+            items.view(1)[0],
+            (items + 1).view(1)[0],
+            (items + 2).view(1)[0] if nargs > 2 else NULL,
+            (items + 4).view(1)[0] if nargs > 4 else NULL
+        );
+    }
+    return (i32(0), NULL, NULL, NULL, NULL);
+}
+
+impl oserror_init(
+    op: ptr[PyObject],
+    args_in: ptr[PyObject],
+    myerrno: ptr[PyObject],
+    strerror: ptr[PyObject],
+    filename: ptr[PyObject],
+    filename2: ptr[PyObject]
+) -> i32 {
+    args = args_in;
+    nargs = object_size(args);
+    o = os_of(op);
+
+    if filename and filename != Py_None {
+        if object_is_type(op, ptr[PyTypeObject](PyExc_BlockingIOError))
+            and PyNumber_Check(filename) != 0 {
+            written = PyNumber_AsSsize_t(filename, PyExc_ValueError);
+            o.view(1)[0].written = written;
+            if written == -1 and PyErr_Occurred() {
+                object_decref(args);
+                return i32(-1);
+            }
+        } else {
+            o.view(1)[0].filename = object_new_ref(filename);
+            if filename2 and filename2 != Py_None {
+                o.view(1)[0].filename2 = object_new_ref(filename2);
+            }
+            if nargs >= 2 and nargs <= 5 {
+                subslice = PyTuple_GetSlice(args, 0, 2);
+                if not subslice {
+                    object_decref(args);
+                    return i32(-1);
+                }
+                object_decref(args);
+                args = subslice;
+            }
+        }
+    }
+    o.view(1)[0].myerrno = object_xnew_ref(myerrno);
+    o.view(1)[0].strerror = object_xnew_ref(strerror);
+    base_store(op, 1, args);
+    return i32(0);
+}
+
+impl oserror_use_init(type: ptr[PyTypeObject]) -> bool {
+    return int(type.view(1)[0].tp_init) != int(ptr(OSError_init))
+        and int(type.view(1)[0].tp_new) == int(ptr(OSError_new));
+}
+
+impl errnomap -> ptr[PyObject] {
+    return ptr[ptr[PyObject]](current_interp() + PyInterpreterState_EXC_ERRNOMAP).view(
+        1
+    )[0];
+}
+
+impl OSError_new(
+    type_in: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    type = type_in;
+    myerrno: ptr[PyObject] = NULL;
+    strerror: ptr[PyObject] = NULL;
+    filename: ptr[PyObject] = NULL;
+    filename2: ptr[PyObject] = NULL;
+    use_init = oserror_use_init(ptr[PyTypeObject](type));
+    if not use_init {
+        if kwds
+            and _PyArg_NoKeywords(ptr[PyTypeObject](type).view(1)[0].tp_name, kwds)
+                == 0 {
+            return NULL;
+        }
+        (status, myerrno, strerror, filename, filename2) = oserror_parse_args(args);
+        mapping = errnomap();
+        if myerrno
+            and type_has_feature(object_type(myerrno), Py_TPFLAGS_LONG_SUBCLASS)
+            and mapping
+            and type == PyExc_OSError {
+            newtype = PyDict_GetItemWithError(mapping, myerrno);
+            if newtype {
+                type = newtype;
+            } elif PyErr_Occurred() {
+                return NULL;
+            }
+        }
+    }
+    self = type_alloc(type);
+    if not self {
+        return NULL;
+    }
+    b = base_of(self);
+    b.view(1)[0].dict = NULL;
+    b.view(1)[0].traceback = NULL;
+    b.view(1)[0].cause = NULL;
+    b.view(1)[0].context = NULL;
+    os_of(self).view(1)[0].written = -1;
+    if not oserror_use_init(ptr[PyTypeObject](type)) {
+        if oserror_init(
+            self, object_new_ref(args), myerrno, strerror, filename, filename2
+        )
+            != 0 {
+            object_decref(self);
+            return NULL;
+        }
+    } else {
+        empty = PyTuple_New(0);
+        if not empty {
+            object_decref(self);
+            return NULL;
+        }
+        b.view(1)[0].args = empty;
+    }
+    return self;
+}
+
+impl OSError_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
+    if not oserror_use_init(object_type(op)) {
+        return i32(0);
+    }
+    if kwds and _PyArg_NoKeywords(object_type(op).view(1)[0].tp_name, kwds) == 0 {
+        return i32(-1);
+    }
+    (status, myerrno, strerror, filename, filename2) = oserror_parse_args(args);
+    return oserror_init(
+        op, object_new_ref(args), myerrno, strerror, filename, filename2
+    );
+}
+
+impl os_field(op: ptr[PyObject], which: int) -> ptr[PyObject] {
+    o = os_of(op).view(1)[0];
+    if which == 0 {
+        return ptr[PyObject](o.myerrno);
+    }
+    if which == 1 {
+        return ptr[PyObject](o.strerror);
+    }
+    if which == 2 {
+        return ptr[PyObject](o.filename);
+    }
+    return ptr[PyObject](o.filename2);
+}
+
+impl OSError_clear(op: ptr[PyObject]) -> i32 {
+    o = os_of(op);
+    fields = [os_field(op, 0), os_field(op, 1), os_field(op, 2), os_field(op, 3)];
+    o.view(1)[0].myerrno = NULL;
+    o.view(1)[0].strerror = NULL;
+    o.view(1)[0].filename = NULL;
+    o.view(1)[0].filename2 = NULL;
+    for value in fields {
+        object_xdecref(value);
+    }
+    return BaseException_clear(op);
+}
+
+impl OSError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, OSError_clear);
+}
+
+impl OSError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    for which in [0, 1, 2, 3] {
+        status = visit_reference(os_field(op, which), visitor, arg);
+        if status != 0 {
+            return status;
+        }
+    }
+    return BaseException_traverse(op, visitor, arg);
+}
+
+impl or_none(op: ptr[PyObject]) -> ptr[PyObject] {
+    return op or Py_None;
+}
+
+impl OSError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    myerrno = os_field(op, 0);
+    strerror = os_field(op, 1);
+    filename = os_field(op, 2);
+    filename2 = os_field(op, 3);
+    if filename {
+        if filename2 {
+            return PyUnicode_FromFormat(
+                "[Errno %S] %S: %R -> %R",
+                or_none(myerrno),
+                or_none(strerror),
+                filename,
+                filename2
+            );
+        }
+        return PyUnicode_FromFormat(
+            "[Errno %S] %S: %R", or_none(myerrno), or_none(strerror), filename
+        );
+    }
+    if myerrno and strerror {
+        return PyUnicode_FromFormat("[Errno %S] %S", myerrno, strerror);
+    }
+    return BaseException_str(op);
+}
+
+impl OSError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    args = exc_args(op);
+    filename = os_field(op, 2);
+    filename2 = os_field(op, 3);
+
+    if object_size(args) == 2 and filename {
+        size = 5 if filename2 else 3;
+        rebuilt = PyTuple_New(size);
+        if not rebuilt {
+            return NULL;
+        }
+        tuple_set_item(rebuilt, 0, object_new_ref(tuple_get_item(args, 0)));
+        tuple_set_item(rebuilt, 1, object_new_ref(tuple_get_item(args, 1)));
+        tuple_set_item(rebuilt, 2, object_new_ref(filename));
+        if filename2 {
+            tuple_set_item(rebuilt, 3, object_new_ref(Py_None));
+            tuple_set_item(rebuilt, 4, object_new_ref(filename2));
+        }
+        args = rebuilt;
+    } else {
+        object_incref(args);
+    }
+    d = base_field(op, 0);
+    res: ptr[PyObject] = NULL;
+    if d {
+        res = PyTuple_Pack(3, ptr(object_type(op)), args, d);
+    } else {
+        res = PyTuple_Pack(2, ptr(object_type(op)), args);
+    }
+    object_decref(args);
+    return res;
+}
+
+impl OSError_written_get(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+    written = os_of(op).view(1)[0].written;
+    if written == -1 {
+        PyErr_SetString(PyExc_AttributeError, "characters_written");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(written);
+}
+
+impl OSError_written_set(op: ptr[PyObject], arg: ptr[PyObject], _closure: ptr) -> i32 {
+    o = os_of(op);
+    if not arg {
+        if o.view(1)[0].written == -1 {
+            PyErr_SetString(PyExc_AttributeError, "characters_written");
+            return i32(-1);
+        }
+        o.view(1)[0].written = -1;
+        return i32(0);
+    }
+    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    if n == -1 and PyErr_Occurred() {
+        return i32(-1);
+    }
+    o.view(1)[0].written = n;
+    return i32(0);
+}
+
+
+impl NameError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, NULL) == -1 {
+        return i32(-1);
+    }
+    empty_tuple = PyTuple_New(0);
+    if not empty_tuple {
+        return i32(-1);
+    }
+    name: ptr[PyObject] = NULL;
+    if PyArg_ParseTupleAndKeywords(
+        empty_tuple,
+        kwds,
+        "|$O:NameError",
+        ptr(addressof(name_error_keywords)),
+        &mut name
+    )
+        == 0 {
+        object_decref(empty_tuple);
+        return i32(-1);
+    }
+    object_decref(empty_tuple);
+    replace_exc_field(op, PyNameErrorObject_NAME, object_xnew_ref(name));
+    return i32(0);
+}
+
+impl NameError_clear(op: ptr[PyObject]) -> i32 {
+    replace_exc_field(op, PyNameErrorObject_NAME, NULL);
+    return BaseException_clear(op);
+}
+
+impl NameError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, NameError_clear);
+}
+
+impl NameError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(op, [PyNameErrorObject_NAME], visitor, arg);
+}
+
+impl AttributeError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, NULL) == -1 {
+        return i32(-1);
+    }
+    empty_tuple = PyTuple_New(0);
+    if not empty_tuple {
+        return i32(-1);
+    }
+    name: ptr[PyObject] = NULL;
+    ob: ptr[PyObject] = NULL;
+    if PyArg_ParseTupleAndKeywords(
+        empty_tuple,
+        kwds,
+        "|$OO:AttributeError",
+        ptr(addressof(attribute_error_keywords)),
+        &mut name,
+        &mut ob
+    )
+        == 0 {
+        object_decref(empty_tuple);
+        return i32(-1);
+    }
+    object_decref(empty_tuple);
+    replace_exc_field(op, PyAttributeErrorObject_NAME, object_xnew_ref(name));
+    replace_exc_field(op, PyAttributeErrorObject_OBJ, object_xnew_ref(ob));
+    return i32(0);
+}
+
+impl AttributeError_clear(op: ptr[PyObject]) -> i32 {
+    replace_exc_field(op, PyAttributeErrorObject_OBJ, NULL);
+    replace_exc_field(op, PyAttributeErrorObject_NAME, NULL);
+    return BaseException_clear(op);
+}
+
+impl AttributeError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, AttributeError_clear);
+}
+
+impl AttributeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(
+        op, [PyAttributeErrorObject_OBJ, PyAttributeErrorObject_NAME], visitor, arg
+    );
+}
+
+impl AttributeError_getstate(
+    op: ptr[PyObject], _unused: ptr[PyObject]
+) -> ptr[PyObject] {
+    d = base_field(op, 0);
+    name = exc_field(op, PyAttributeErrorObject_NAME);
+    args = exc_args(op);
+    if name or args {
+        state = PyDict_Copy(d) if d else PyDict_New();
+        if not state {
+            return NULL;
+        }
+        if (name and PyDict_SetItemString(state, ptr[u8]("name"), name) < 0)
+            or (args and PyDict_SetItemString(state, ptr[u8]("args"), args) < 0) {
+            object_decref(state);
+            return NULL;
+        }
+        return state;
+    }
+    return object_new_ref(d or Py_None);
+}
+
+impl AttributeError_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+    state = AttributeError_getstate(op, NULL);
+    if not state {
+        return NULL;
+    }
+    result = PyTuple_Pack(3, ptr(object_type(op)), exc_args(op), state);
+    object_decref(state);
+    return result;
+}
+
+impl syntax_fields -> list[i64] {
+    return [
+        PySyntaxErrorObject_MSG,
+        PySyntaxErrorObject_FILENAME,
+        PySyntaxErrorObject_LINENO,
+        PySyntaxErrorObject_OFFSET,
+        PySyntaxErrorObject_END_LINENO,
+        PySyntaxErrorObject_END_OFFSET,
+        PySyntaxErrorObject_TEXT,
+        PySyntaxErrorObject_PRINT_FILE_AND_LINE,
+        PySyntaxErrorObject_METADATA
+    ];
+}
+
+impl SyntaxError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    lenargs = object_size(args);
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+    if lenargs >= 1 {
+        replace_exc_field(
+            op, PySyntaxErrorObject_MSG, object_new_ref(tuple_get_item(args, 0))
+        );
+    }
+    if lenargs == 2 {
+        info = PySequence_Tuple(tuple_get_item(args, 1));
+        if not info {
+            return i32(-1);
+        }
+        filename: ptr[PyObject] = NULL;
+        lineno: ptr[PyObject] = NULL;
+        offset: ptr[PyObject] = NULL;
+        text: ptr[PyObject] = NULL;
+        end_lineno: ptr[PyObject] = NULL;
+        end_offset: ptr[PyObject] = NULL;
+        metadata: ptr[PyObject] = NULL;
+        if PyArg_ParseTuple(
+            info,
+            "OOOO|OOO",
+            &mut filename,
+            &mut lineno,
+            &mut offset,
+            &mut text,
+            &mut end_lineno,
+            &mut end_offset,
+            &mut metadata
+        )
+            == 0 {
+            object_decref(info);
+            return i32(-1);
+        }
+        replace_exc_field(op, PySyntaxErrorObject_FILENAME, object_new_ref(filename));
+        replace_exc_field(op, PySyntaxErrorObject_LINENO, object_new_ref(lineno));
+        replace_exc_field(op, PySyntaxErrorObject_OFFSET, object_new_ref(offset));
+        replace_exc_field(op, PySyntaxErrorObject_TEXT, object_new_ref(text));
+        replace_exc_field(
+            op, PySyntaxErrorObject_END_LINENO, object_xnew_ref(end_lineno)
+        );
+        replace_exc_field(
+            op, PySyntaxErrorObject_END_OFFSET, object_xnew_ref(end_offset)
+        );
+        replace_exc_field(op, PySyntaxErrorObject_METADATA, object_xnew_ref(metadata));
+        object_decref(info);
+        if exc_field(op, PySyntaxErrorObject_END_LINENO)
+            and not exc_field(op, PySyntaxErrorObject_END_OFFSET) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "end_offset must be provided when end_lineno is provided"
+            );
+            return i32(-1);
+        }
+    }
+    return i32(0);
+}
+
+impl SyntaxError_clear(op: ptr[PyObject]) -> i32 {
+    for offset in syntax_fields() {
+        replace_exc_field(op, offset, NULL);
+    }
+    return BaseException_clear(op);
+}
+
+impl SyntaxError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, SyntaxError_clear);
+}
+
+impl SyntaxError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return exc_traverse(op, syntax_fields(), visitor, arg);
+}
+
+impl my_basename(name: ptr[PyObject]) -> ptr[PyObject] {
+    size = PyUnicode_GetLength(name);
+    offset: i64 = 0;
+    for i in range(size) {
+        if PyUnicode_ReadChar(name, i) == u32(47) {
+            offset = i + 1;
+        }
+    }
+    if offset != 0 {
+        return PyUnicode_Substring(name, offset, size);
+    }
+    return object_new_ref(name);
+}
+
+impl SyntaxError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    msg = or_none(exc_field(op, PySyntaxErrorObject_MSG));
+    filename_field = exc_field(op, PySyntaxErrorObject_FILENAME);
+    filename: ptr[PyObject] = NULL;
+    if filename_field
+        and type_has_feature(
+            object_type(filename_field), Py_TPFLAGS_UNICODE_SUBCLASS
+        ) {
+        filename = my_basename(filename_field);
+        if not filename {
+            return NULL;
+        }
+    }
+    lineno = exc_field(op, PySyntaxErrorObject_LINENO);
+    have_lineno = lineno
+        and object_is_type(lineno, ptr[PyTypeObject](addressof(PyLong_Type)));
+    if not filename and not have_lineno {
+        return PyObject_Str(msg);
+    }
+
+    overflow: i32 = 0;
+    result: ptr[PyObject] = NULL;
+
+    if filename and have_lineno {
+        result = PyUnicode_FromFormat(
+            "%S (%U, line %ld)",
+            msg,
+            filename,
+            PyLong_AsLongAndOverflow(lineno, &mut overflow)
+        );
+    } elif filename {
+        result = PyUnicode_FromFormat("%S (%U)", msg, filename);
+    } else {
+        result = PyUnicode_FromFormat(
+            "%S (line %ld)", msg, PyLong_AsLongAndOverflow(lineno, &mut overflow)
+        );
+    }
+    object_xdecref(filename);
+    return result;
+}
+
+impl KeyError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    args = exc_args(op);
+    if object_size(args) == 1 {
+        return PyObject_Repr(tuple_get_item(args, 0));
+    }
+    return BaseException_str(op);
+}
+
+
+impl uerr_of(op: ptr[PyObject]) -> ptr[PyUnicodeErrorObject] {
+    return ptr[PyUnicodeErrorObject](op);
+}
+
+impl uerr_encoding(op: ptr[PyObject]) -> ptr[PyObject] {
+    return ptr[PyObject](uerr_of(op).view(1)[0].encoding);
+}
+
+impl uerr_object(op: ptr[PyObject]) -> ptr[PyObject] {
+    return ptr[PyObject](uerr_of(op).view(1)[0].object);
+}
+
+impl uerr_reason(op: ptr[PyObject]) -> ptr[PyObject] {
+    return ptr[PyObject](uerr_of(op).view(1)[0].reason);
+}
+
+impl uerr_store(op: ptr[PyObject], which: int, value: ptr[PyObject]) {
+    u = uerr_of(op);
+    old: ptr[PyObject] = NULL;
+    if which == 0 {
+        old = uerr_encoding(op);
+        u.view(1)[0].encoding = value;
+    } elif which == 1 {
+        old = uerr_object(op);
+        u.view(1)[0].object = value;
+    } else {
+        old = uerr_reason(op);
+        u.view(1)[0].reason = value;
+    }
+    object_xdecref(old);
+}
+
+impl check_unicode_error_attribute(
+    attr: ptr[PyObject], name: str, as_bytes: bool
+) -> i32 {
+    if not attr {
+        PyErr_Format(PyExc_TypeError, "UnicodeError '%s' attribute is not set", name);
+        return i32(-1);
+    }
+    flag = Py_TPFLAGS_BYTES_SUBCLASS if as_bytes else Py_TPFLAGS_UNICODE_SUBCLASS;
+    if not type_has_feature(object_type(attr), flag) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "UnicodeError '%s' attribute must be a %s",
+            name,
+            "bytes" if as_bytes else "string"
+        );
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl as_unicode_error_attribute(
+    attr: ptr[PyObject], name: str, as_bytes: bool
+) -> ptr[PyObject] {
+    if check_unicode_error_attribute(attr, name, as_bytes) < 0 {
+        return NULL;
+    }
+    return object_new_ref(attr);
+}
+
+impl check_unicode_error_type(op: ptr[PyObject], expect_type: str) -> i32 {
+    if not object_type_check(op, addressof(_PyExc_UnicodeError)) {
+        PyErr_Format(PyExc_TypeError, "expecting a %s object, got %T", expect_type, op);
+        return i32(-1);
+    }
+    return i32(0);
+}
+
+impl unicode_error_adjust_start(start_in: i64, objlen: i64) -> i64 {
+    start = max(start_in, 0);
+    if start >= objlen {
+        start = 0 if objlen == 0 else objlen - 1;
+    }
+    return start;
+}
+
+impl unicode_error_adjust_end(end_in: i64, objlen: i64) -> i64 {
+    return min(max(end_in, 1), objlen);
+}
+
+impl unicode_error_params(
+    op: ptr[PyObject], as_bytes: bool
+) -> tuple[i32, ptr[PyObject], i64, i64, i64, i64] {
+    r = as_unicode_error_attribute(uerr_object(op), "object", as_bytes);
+    if not r {
+        return (i32(-1), NULL, 0, 0, 0, 0);
+    }
+    n = object_size(r) if as_bytes else PyUnicode_GetLength(r);
+    start = unicode_error_adjust_start(uerr_of(op).view(1)[0].start, n);
+    end = unicode_error_adjust_end(uerr_of(op).view(1)[0].end, n);
+    return (i32(0), r, n, start, end, max(end - start, 0));
+}
+
+impl store_i64(target: ptr[i64], value: i64) {
+    if target {
+        target.view(1)[0] = value;
+    }
+}
+
+impl unicode_error_get_start(
+    op: ptr[PyObject], start: ptr[i64], as_bytes: bool
+) -> i32 {
+    (status, r, n, s, e, slen) = unicode_error_params(op, as_bytes);
+    if status < 0 {
+        return i32(-1);
+    }
+    object_decref(r);
+    store_i64(start, s);
+    return i32(0);
+}
+
+impl unicode_error_get_end(op: ptr[PyObject], end: ptr[i64], as_bytes: bool) -> i32 {
+    (status, r, n, s, e, slen) = unicode_error_params(op, as_bytes);
+    if status < 0 {
+        return i32(-1);
+    }
+    object_decref(r);
+    store_i64(end, e);
+    return i32(0);
+}
+
+impl unicode_error_set_reason(op: ptr[PyObject], reason: ptr[u8]) -> i32 {
+    value = PyUnicode_FromString(reason);
+    if not value {
+        return i32(-1);
+    }
+    uerr_store(op, 2, value);
+    return i32(0);
+}
+
+impl UnicodeError_clear(op: ptr[PyObject]) -> i32 {
+    uerr_store(op, 0, NULL);
+    uerr_store(op, 1, NULL);
+    uerr_store(op, 2, NULL);
+    return BaseException_clear(op);
+}
+
+impl UnicodeError_dealloc(op: ptr[PyObject]) {
+    exc_dealloc(op, UnicodeError_clear);
+}
+
+impl UnicodeError_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    for value in [uerr_encoding(op), uerr_object(op), uerr_reason(op)] {
+        status = visit_reference(value, visitor, arg);
+        if status != 0 {
+            return status;
+        }
+    }
+    return BaseException_traverse(op, visitor, arg);
+}
+
+impl UnicodeEncodeError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+
+    encoding: ptr[PyObject] = NULL;
+    ob: ptr[PyObject] = NULL;
+    reason: ptr[PyObject] = NULL;
+    start: i64 = -1;
+    end: i64 = -1;
+    if PyArg_ParseTuple(
+        args, "UUnnU", &mut encoding, &mut ob, &mut start, &mut end, &mut reason
+    )
+        == 0 {
+        return i32(-1);
+    }
+    uerr_store(op, 0, object_new_ref(encoding));
+    uerr_store(op, 1, object_new_ref(ob));
+    uerr_of(op).view(1)[0].start = start;
+    uerr_of(op).view(1)[0].end = end;
+    uerr_store(op, 2, object_new_ref(reason));
+    return i32(0);
+}
+
+impl badchar_format(badchar: u32, prefix: str, suffix: str) -> str {
+    if badchar <= u32(0xff) {
+        return prefix + "'\\x%02x'" + suffix;
+    }
+    if badchar <= u32(0xffff) {
+        return prefix + "'\\u%04x'" + suffix;
+    }
+    return prefix + "'\\U%08x'" + suffix;
+}
+
+impl UnicodeEncodeError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    if not uerr_object(op) {
+        return PyUnicode_FromString(ptr[u8](""));
+    }
+
+    reason_str = PyObject_Str(uerr_reason(op));
+    if not reason_str {
+        return NULL;
+    }
+    encoding_str = PyObject_Str(uerr_encoding(op));
+    result: ptr[PyObject] = NULL;
+
+    if encoding_str
+        and check_unicode_error_attribute(uerr_object(op), "object", False) == 0 {
+        length = PyUnicode_GetLength(uerr_object(op));
+        start = uerr_of(op).view(1)[0].start;
+        end = uerr_of(op).view(1)[0].end;
+        if start >= 0
+            and start < length
+            and end >= 0
+            and end <= length
+            and end == start + 1 {
+            badchar = PyUnicode_ReadChar(uerr_object(op), start);
+            result = PyUnicode_FromFormat(
+                badchar_format(
+                    badchar,
+                    "'%U' codec can't encode character ",
+                    " in position %zd: %U"
+                ),
+                encoding_str,
+                i32(badchar),
+                start,
+                reason_str
+            );
+        } else {
+            result = PyUnicode_FromFormat(
+                "'%U' codec can't encode characters in position %zd-%zd: %U",
+                encoding_str,
+                start,
+                end - 1,
+                reason_str
+            );
+        }
+    }
+    object_decref(reason_str);
+    object_xdecref(encoding_str);
+    return result;
+}
+
+impl UnicodeDecodeError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+    encoding: ptr[PyObject] = NULL;
+    ob: ptr[PyObject] = NULL;
+    reason: ptr[PyObject] = NULL;
+    start: i64 = -1;
+    end: i64 = -1;
+    if PyArg_ParseTuple(
+        args, "UOnnU", &mut encoding, &mut ob, &mut start, &mut end, &mut reason
+    )
+        == 0 {
+        return i32(-1);
+    }
+    if type_has_feature(object_type(ob), Py_TPFLAGS_BYTES_SUBCLASS) {
+        object_incref(ob);
+    } else {
+        view = ptr[Py_buffer](PyMem_Calloc(1, 80));
+        if not view {
+            PyErr_NoMemory();
+            return i32(-1);
+        }
+        if PyObject_GetBuffer(ob, view, PyBUF_SIMPLE) != 0 {
+            PyMem_Free(ptr(view));
+            return i32(-1);
+        }
+        ob = PyBytes_FromStringAndSize(
+            ptr[u8](view.view(1)[0].buf), view.view(1)[0].length
+        );
+        PyBuffer_Release(view);
+        PyMem_Free(ptr(view));
+        if not ob {
+            return i32(-1);
+        }
+    }
+    uerr_store(op, 0, object_new_ref(encoding));
+
+    uerr_store(op, 1, ob);
+    uerr_of(op).view(1)[0].start = start;
+    uerr_of(op).view(1)[0].end = end;
+    uerr_store(op, 2, object_new_ref(reason));
+    return i32(0);
+}
+
+impl UnicodeDecodeError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    if not uerr_object(op) {
+        return PyUnicode_FromString(ptr[u8](""));
+    }
+    reason_str = PyObject_Str(uerr_reason(op));
+    if not reason_str {
+        return NULL;
+    }
+    encoding_str = PyObject_Str(uerr_encoding(op));
+    result: ptr[PyObject] = NULL;
+    if encoding_str
+        and check_unicode_error_attribute(uerr_object(op), "object", True) == 0 {
+        ob = uerr_object(op);
+        length = object_size(ob);
+        start = uerr_of(op).view(1)[0].start;
+        end = uerr_of(op).view(1)[0].end;
+        if start >= 0
+            and start < length
+            and end >= 0
+            and end <= length
+            and end == start + 1 {
+            badbyte = i32((ptr[u8](PyBytes_AsString(ob)) + start).view(1)[0]);
+            result = PyUnicode_FromFormat(
+                "'%U' codec can't decode byte 0x%02x in position %zd: %U",
+                encoding_str,
+                badbyte,
+                start,
+                reason_str
+            );
+        } else {
+            result = PyUnicode_FromFormat(
+                "'%U' codec can't decode bytes in position %zd-%zd: %U",
+                encoding_str,
+                start,
+                end - 1,
+                reason_str
+            );
+        }
+    }
+    object_decref(reason_str);
+    object_xdecref(encoding_str);
+    return result;
+}
+
+impl UnicodeTranslateError_init(
+    op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> i32 {
+    if BaseException_init(op, args, kwds) == -1 {
+        return i32(-1);
+    }
+    ob: ptr[PyObject] = NULL;
+    reason: ptr[PyObject] = NULL;
+    start: i64 = -1;
+    end: i64 = -1;
+    if PyArg_ParseTuple(args, "UnnU", &mut ob, &mut start, &mut end, &mut reason)
+        == 0 {
+        return i32(-1);
+    }
+    uerr_store(op, 1, object_new_ref(ob));
+    uerr_of(op).view(1)[0].start = start;
+    uerr_of(op).view(1)[0].end = end;
+    uerr_store(op, 2, object_new_ref(reason));
+    return i32(0);
+}
+
+impl UnicodeTranslateError_str(op: ptr[PyObject]) -> ptr[PyObject] {
+    if not uerr_object(op) {
+        return PyUnicode_FromString(ptr[u8](""));
+    }
+    reason_str = PyObject_Str(uerr_reason(op));
+    if not reason_str {
+        return NULL;
+    }
+    result: ptr[PyObject] = NULL;
+    if check_unicode_error_attribute(uerr_object(op), "object", False) == 0 {
+        length = PyUnicode_GetLength(uerr_object(op));
+        start = uerr_of(op).view(1)[0].start;
+        end = uerr_of(op).view(1)[0].end;
+        if start >= 0
+            and start < length
+            and end >= 0
+            and end <= length
+            and end == start + 1 {
+            badchar = PyUnicode_ReadChar(uerr_object(op), start);
+            result = PyUnicode_FromFormat(
+                badchar_format(
+                    badchar, "can't translate character ", " in position %zd: %U"
+                ),
+                i32(badchar),
+                start,
+                reason_str
+            );
+        } else {
+            result = PyUnicode_FromFormat(
+                "can't translate characters in position %zd-%zd: %U",
+                start,
+                end - 1,
+                reason_str
+            );
+        }
+    }
+    object_decref(reason_str);
+    return result;
+}
+
+
+impl memerrors_freelist_slot -> ptr[ptr[PyObject]] {
+    return ptr[ptr[PyObject]](
+        current_interp() + PyInterpreterState_EXC_MEMERRORS_FREELIST
+    );
+}
+
+impl memerrors_numfree_slot -> ptr[i32] {
+    return ptr[i32](current_interp() + PyInterpreterState_EXC_MEMERRORS_NUMFREE);
+}
+
+impl get_memory_error(
+    allow_allocation: bool, args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    freelist = memerrors_freelist_slot();
+    self = freelist.view(1)[0];
+    if self {
+        freelist.view(1)[0] = base_field(self, 0);
+        numfree = memerrors_numfree_slot();
+        numfree.view(1)[0] = numfree.view(1)[0] - i32(1);
+        base_of(self).view(1)[0].dict = NULL;
+
+        base_of(self).view(1)[0].args = PyTuple_New(0);
+        _Py_NewReference(self);
+        object_gc_track(self);
+        return self;
+    }
+    if not allow_allocation {
+        return object_new_ref(
+            ptr[PyObject](
+                current_interp() + PyInterpreterState_LAST_RESORT_MEMORY_ERROR
+            )
+        );
+    }
+    return BaseException_new(PyExc_MemoryError, args, kwds);
+}
+
+impl MemoryError_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject] {
+    if type != PyExc_MemoryError {
+        return BaseException_new(type, args, kwds);
+    }
+    return get_memory_error(True, args, kwds);
+}
+
+impl MemoryError_dealloc(op: ptr[PyObject]) {
+    object_gc_untrack(op);
+    BaseException_clear(op);
+    if not object_is_type(op, addressof(_PyExc_MemoryError)) {
+        type_free(op);
+        return;
+    }
+    numfree = memerrors_numfree_slot();
+    if i64(numfree.view(1)[0]) < MEMERRORS_SAVE {
+        freelist = memerrors_freelist_slot();
+        base_of(op).view(1)[0].dict = freelist.view(1)[0];
+        freelist.view(1)[0] = op;
+        numfree.view(1)[0] = numfree.view(1)[0] + i32(1);
+        return;
+    }
+    type_free(op);
+}
+
+impl preallocate_memerrors -> i32 {
+    errors: list[ptr[PyObject]] = [];
+    for i in range(MEMERRORS_SAVE) {
+        error = MemoryError_new(PyExc_MemoryError, NULL, NULL);
+        if not error {
+            for made in errors {
+                object_decref(made);
+            }
+            return i32(-1);
+        }
+        errors.append(error);
+    }
+    for error in errors {
+        object_decref(error);
+    }
+    return i32(0);
+}
+
+impl free_preallocated_memerrors {
+    freelist = memerrors_freelist_slot();
+    while freelist.view(1)[0] {
+        self = freelist.view(1)[0];
+        freelist.view(1)[0] = base_field(self, 0);
+        type_free(self);
+    }
+}
+
+impl static_exceptions -> list[tuple[ptr[PyTypeObject], str]] {
+    return [
+        (addressof(_PyExc_BaseException), "BaseException"),
+        (addressof(_PyExc_BaseExceptionGroup), "BaseExceptionGroup"),
+        (addressof(_PyExc_Exception), "Exception"),
+        (addressof(_PyExc_GeneratorExit), "GeneratorExit"),
+        (addressof(_PyExc_KeyboardInterrupt), "KeyboardInterrupt"),
+        (addressof(_PyExc_SystemExit), "SystemExit"),
+        (addressof(_PyExc_ArithmeticError), "ArithmeticError"),
+        (addressof(_PyExc_AssertionError), "AssertionError"),
+        (addressof(_PyExc_AttributeError), "AttributeError"),
+        (addressof(_PyExc_BufferError), "BufferError"),
+        (addressof(_PyExc_EOFError), "EOFError"),
+        (addressof(_PyExc_ImportError), "ImportError"),
+        (addressof(_PyExc_LookupError), "LookupError"),
+        (addressof(_PyExc_MemoryError), "MemoryError"),
+        (addressof(_PyExc_NameError), "NameError"),
+        (addressof(_PyExc_OSError), "OSError"),
+        (addressof(_PyExc_ReferenceError), "ReferenceError"),
+        (addressof(_PyExc_RuntimeError), "RuntimeError"),
+        (addressof(_PyExc_StopAsyncIteration), "StopAsyncIteration"),
+        (addressof(_PyExc_StopIteration), "StopIteration"),
+        (addressof(_PyExc_SyntaxError), "SyntaxError"),
+        (addressof(_PyExc_SystemError), "SystemError"),
+        (addressof(_PyExc_TypeError), "TypeError"),
+        (addressof(_PyExc_ValueError), "ValueError"),
+        (addressof(_PyExc_Warning), "Warning"),
+        (addressof(_PyExc_FloatingPointError), "FloatingPointError"),
+        (addressof(_PyExc_OverflowError), "OverflowError"),
+        (addressof(_PyExc_ZeroDivisionError), "ZeroDivisionError"),
+        (addressof(_PyExc_BytesWarning), "BytesWarning"),
+        (addressof(_PyExc_DeprecationWarning), "DeprecationWarning"),
+        (addressof(_PyExc_EncodingWarning), "EncodingWarning"),
+        (addressof(_PyExc_FutureWarning), "FutureWarning"),
+        (addressof(_PyExc_ImportWarning), "ImportWarning"),
+        (addressof(_PyExc_PendingDeprecationWarning), "PendingDeprecationWarning"),
+        (addressof(_PyExc_ResourceWarning), "ResourceWarning"),
+        (addressof(_PyExc_RuntimeWarning), "RuntimeWarning"),
+        (addressof(_PyExc_SyntaxWarning), "SyntaxWarning"),
+        (addressof(_PyExc_UnicodeWarning), "UnicodeWarning"),
+        (addressof(_PyExc_UserWarning), "UserWarning"),
+        (addressof(_PyExc_BlockingIOError), "BlockingIOError"),
+        (addressof(_PyExc_ChildProcessError), "ChildProcessError"),
+        (addressof(_PyExc_ConnectionError), "ConnectionError"),
+        (addressof(_PyExc_FileExistsError), "FileExistsError"),
+        (addressof(_PyExc_FileNotFoundError), "FileNotFoundError"),
+        (addressof(_PyExc_InterruptedError), "InterruptedError"),
+        (addressof(_PyExc_IsADirectoryError), "IsADirectoryError"),
+        (addressof(_PyExc_NotADirectoryError), "NotADirectoryError"),
+        (addressof(_PyExc_PermissionError), "PermissionError"),
+        (addressof(_PyExc_ProcessLookupError), "ProcessLookupError"),
+        (addressof(_PyExc_TimeoutError), "TimeoutError"),
+        (addressof(_PyExc_IndentationError), "IndentationError"),
+        (addressof(_PyExc_IncompleteInputError), "_IncompleteInputError"),
+        (addressof(_PyExc_IndexError), "IndexError"),
+        (addressof(_PyExc_KeyError), "KeyError"),
+        (addressof(_PyExc_ModuleNotFoundError), "ModuleNotFoundError"),
+        (addressof(_PyExc_NotImplementedError), "NotImplementedError"),
+        (addressof(_PyExc_PythonFinalizationError), "PythonFinalizationError"),
+        (addressof(_PyExc_RecursionError), "RecursionError"),
+        (addressof(_PyExc_UnboundLocalError), "UnboundLocalError"),
+        (addressof(_PyExc_UnicodeError), "UnicodeError"),
+        (addressof(_PyExc_BrokenPipeError), "BrokenPipeError"),
+        (addressof(_PyExc_ConnectionAbortedError), "ConnectionAbortedError"),
+        (addressof(_PyExc_ConnectionRefusedError), "ConnectionRefusedError"),
+        (addressof(_PyExc_ConnectionResetError), "ConnectionResetError"),
+        (addressof(_PyExc_TabError), "TabError"),
+        (addressof(_PyExc_UnicodeDecodeError), "UnicodeDecodeError"),
+        (addressof(_PyExc_UnicodeEncodeError), "UnicodeEncodeError"),
+        (addressof(_PyExc_UnicodeTranslateError), "UnicodeTranslateError")
+    ];
+}
+
+impl status_ok -> PyStatus {
+    return PyStatus(
+        _type=_PyStatus_TYPE_OK, func=ptr[u8](), err_msg=ptr[u8](), exitcode=0
+    );
+}
+
+impl status_err(func: ptr[u8], msg: ptr[u8]) -> PyStatus {
+    return PyStatus(_type=_PyStatus_TYPE_ERROR, func=func, err_msg=msg, exitcode=0);
+}
+
+impl add_errno(mapping: ptr[PyObject], type: ptr[PyObject], code: i64) -> bool {
+    code_obj = PyLong_FromLong(code);
+    if not code_obj or PyDict_SetItem(mapping, code_obj, type) != 0 {
+        object_xdecref(code_obj);
+        return False;
+    }
+    object_decref(code_obj);
+    return True;
 }

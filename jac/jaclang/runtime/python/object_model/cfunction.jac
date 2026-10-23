@@ -1,15 +1,3 @@
-"""Built-in functions and methods: Objects/methodobject.c in native Jac.
-
-`PyCFunction_Type` (`builtin_function_or_method`) and `PyCMethod_Type`
-(`builtin_method`) are C data Jac defines under their C names, and
-`PyCFunction_New`, `PyCFunction_NewEx`, `PyCMethod_New` and the
-`PyCFunction_Get*` accessors are C functions under theirs. A built-in function
-calls its `PyMethodDef.ml_meth` through the vectorcall entry its flags pick,
-as methodobject.c does; METH_VARARGS functions go through `tp_call`. The two
-object kinds recycle through the interpreter's `pycfunctionobject` and
-`pycmethodobject` freelists. See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject; def PyUnicode_FromStringAndSize(
         u: ptr[u8], size: i64
@@ -21,11 +9,7 @@ import from c {
         tstate: ptr, callable: ptr[PyObject], result: ptr[PyObject], where: ptr[u8]
     ) -> ptr[PyObject];  def _PyObject_FunctionStr(
         op: ptr[PyObject]
-    ) -> ptr[PyObject];  def Py_EnterRecursiveCall(where: str) -> i32;
-    # The C function of a call in progress, one field per calling convention:
-    # the pointer is stored and then read for the call, so a call it makes
-    # cannot change the callee of the one in progress.
-    obj MethodCall {
+    ) -> ptr[PyObject];  def Py_EnterRecursiveCall(where: str) -> i32;  obj MethodCall {
         has one: Callable[[ptr[PyObject], ptr[PyObject]], ptr[PyObject]] = 0,
             fast: Callable[[ptr[PyObject], ptr[ptr[PyObject]], i64], ptr[PyObject]] = 0,
             fast_keywords:
@@ -117,57 +101,23 @@ import from c {
          );
 }
 
-def cfunction_of(op: ptr[PyObject]) -> ptr[PyCFunctionObject] {
-    return ptr[PyCFunctionObject](op);
-}
+def cfunction_of(op: ptr[PyObject]) -> ptr[PyCFunctionObject];
 
-def method_def(op: ptr[PyObject]) -> ptr[PyMethodDef] {
-    return cfunction_of(op).view(1)[0].m_ml;
-}
+def method_def(op: ptr[PyObject]) -> ptr[PyMethodDef];
 
-"""PyCFunction_GET_SELF: NULL for a function bound to no object or for a
-METH_STATIC method."""
-def cfunction_self(op: ptr[PyObject]) -> ptr[PyObject] {
-    if (method_def(op).view(1)[0].ml_flags & METH_STATIC) != i32(0) {
-        return NULL;
-    }
-    return cfunction_of(op).view(1)[0].m_self;
-}
+def cfunction_self(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""The m_self field as stored, which repr, reduce, hash and compare read."""
-def cfunction_m_self(op: ptr[PyObject]) -> ptr[PyObject] {
-    return cfunction_of(op).view(1)[0].m_self;
-}
+def cfunction_m_self(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""PyCFunction_GET_FLAGS."""
-def cfunction_flags(op: ptr[PyObject]) -> i32 {
-    return method_def(op).view(1)[0].ml_flags;
-}
+def cfunction_flags(op: ptr[PyObject]) -> i32;
 
-"""PyCFunction_GET_CLASS: the defining class of a METH_METHOD method, else
-NULL."""
-def cfunction_class(op: ptr[PyObject]) -> ptr[PyTypeObject] {
-    if (cfunction_flags(op) & METH_METHOD) != i32(0) {
-        return ptr[PyCMethodObject](op).view(1)[0].mm_class;
-    }
-    return ptr[PyTypeObject]();
-}
+def cfunction_class(op: ptr[PyObject]) -> ptr[PyTypeObject];
 
-"""PyCFunction_Check."""
-def cfunction_check(op: ptr[PyObject]) -> bool {
-    return object_type_check(op, addressof(PyCFunction_Type));
-}
+def cfunction_check(op: ptr[PyObject]) -> bool;
 
-def module_check(op: ptr[PyObject]) -> bool {
-    return object_type_check(op, ptr[PyTypeObject](addressof(PyModule_Type)));
-}
+def module_check(op: ptr[PyObject]) -> bool;
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
 glob:priv VECTORCALL_NONE: i64 = 0,
      VECTORCALL_FASTCALL: i64 = 1,
@@ -177,38 +127,7 @@ glob:priv VECTORCALL_NONE: i64 = 0,
      VECTORCALL_METHOD: i64 = 5,
      VECTORCALL_BAD: i64 = -1;
 
-"""The vectorcall entry for a method definition's calling convention."""
-def vectorcall_kind(flags: i32) -> i64 {
-    convention = flags
-        & (
-            METH_VARARGS
-            | METH_FASTCALL
-            | METH_NOARGS
-            | METH_O
-            | METH_KEYWORDS
-            | METH_METHOD
-        );
-    if convention == METH_VARARGS or convention == (METH_VARARGS | METH_KEYWORDS) {
-        # tp_call is quicker than vectorcall for METH_VARARGS.
-        return VECTORCALL_NONE;
-    }
-    if convention == METH_FASTCALL {
-        return VECTORCALL_FASTCALL;
-    }
-    if convention == (METH_FASTCALL | METH_KEYWORDS) {
-        return VECTORCALL_FASTCALL_KEYWORDS;
-    }
-    if convention == METH_NOARGS {
-        return VECTORCALL_NOARGS;
-    }
-    if convention == METH_O {
-        return VECTORCALL_O;
-    }
-    if convention == (METH_METHOD | METH_FASTCALL | METH_KEYWORDS) {
-        return VECTORCALL_METHOD;
-    }
-    return VECTORCALL_BAD;
-}
+def vectorcall_kind(flags: i32) -> i64;
 
 import from c {
     def PyCFunction_New(ml: ptr[PyMethodDef], self: ptr[PyObject]) -> ptr[PyObject] {
@@ -301,9 +220,139 @@ import from c {
     }
 }
 
-"""The vectorcall function stored in a new function object (0 for
-METH_VARARGS, which calls through tp_call)."""
-def vectorcall_entry(kind: i64) -> ptr {
+def vectorcall_entry(kind: i64) -> ptr;
+
+def meth_dealloc(op: ptr[PyObject]);
+
+def meth_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def meth_get__text_signature__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def meth_get__doc__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def meth_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def meth_get__qualname__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def meth_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def meth_get__self__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def meth_repr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def meth_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject];
+
+def meth_hash(op: ptr[PyObject]) -> i64;
+
+def unicode_from_cstring(text: ptr[u8]) -> ptr[PyObject];
+
+def no_keywords(func: ptr[PyObject], kwnames: ptr[PyObject]) -> bool;
+
+def enter_call(func: ptr[PyObject]) -> ptr;
+
+def cfunction_vectorcall_FASTCALL(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cfunction_vectorcall_FASTCALL_KEYWORDS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cfunction_vectorcall_NOARGS(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cfunction_vectorcall_O(
+    func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cfunction_call(
+    func: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject];
+
+def dict_used(dict: ptr[PyObject]) -> i64;
+
+impl cfunction_of(op: ptr[PyObject]) -> ptr[PyCFunctionObject] {
+    return ptr[PyCFunctionObject](op);
+}
+
+impl method_def(op: ptr[PyObject]) -> ptr[PyMethodDef] {
+    return cfunction_of(op).view(1)[0].m_ml;
+}
+
+impl cfunction_self(op: ptr[PyObject]) -> ptr[PyObject] {
+    if (method_def(op).view(1)[0].ml_flags & METH_STATIC) != i32(0) {
+        return NULL;
+    }
+    return cfunction_of(op).view(1)[0].m_self;
+}
+
+impl cfunction_m_self(op: ptr[PyObject]) -> ptr[PyObject] {
+    return cfunction_of(op).view(1)[0].m_self;
+}
+
+impl cfunction_flags(op: ptr[PyObject]) -> i32 {
+    return method_def(op).view(1)[0].ml_flags;
+}
+
+impl cfunction_class(op: ptr[PyObject]) -> ptr[PyTypeObject] {
+    if (cfunction_flags(op) & METH_METHOD) != i32(0) {
+        return ptr[PyCMethodObject](op).view(1)[0].mm_class;
+    }
+    return ptr[PyTypeObject]();
+}
+
+impl cfunction_check(op: ptr[PyObject]) -> bool {
+    return object_type_check(op, addressof(PyCFunction_Type));
+}
+
+impl module_check(op: ptr[PyObject]) -> bool {
+    return object_type_check(op, ptr[PyTypeObject](addressof(PyModule_Type)));
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl vectorcall_kind(flags: i32) -> i64 {
+    convention = flags
+        & (
+            METH_VARARGS
+            | METH_FASTCALL
+            | METH_NOARGS
+            | METH_O
+            | METH_KEYWORDS
+            | METH_METHOD
+        );
+    if convention == METH_VARARGS or convention == (METH_VARARGS | METH_KEYWORDS) {
+        return VECTORCALL_NONE;
+    }
+    if convention == METH_FASTCALL {
+        return VECTORCALL_FASTCALL;
+    }
+    if convention == (METH_FASTCALL | METH_KEYWORDS) {
+        return VECTORCALL_FASTCALL_KEYWORDS;
+    }
+    if convention == METH_NOARGS {
+        return VECTORCALL_NOARGS;
+    }
+    if convention == METH_O {
+        return VECTORCALL_O;
+    }
+    if convention == (METH_METHOD | METH_FASTCALL | METH_KEYWORDS) {
+        return VECTORCALL_METHOD;
+    }
+    return VECTORCALL_BAD;
+}
+
+impl vectorcall_entry(kind: i64) -> ptr {
     if kind == VECTORCALL_FASTCALL {
         return ptr(cfunction_vectorcall_FASTCALL);
     }
@@ -322,14 +371,13 @@ def vectorcall_entry(kind: i64) -> ptr {
     return ptr();
 }
 
-def meth_dealloc(op: ptr[PyObject]) {
+impl meth_dealloc(op: ptr[PyObject]) {
     f = cfunction_of(op);
     object_gc_untrack(op);
     if f.view(1)[0].m_weakreflist {
         PyObject_ClearWeakRefs(op);
     }
-    # Read the flags now: m_ml may live as long as m_self. The class goes
-    # before m_self for the same reason.
+
     flags = cfunction_flags(op);
     object_xdecref(ptr[PyObject](cfunction_class(op)));
     object_xdecref(f.view(1)[0].m_self);
@@ -345,7 +393,7 @@ def meth_dealloc(op: ptr[PyObject]) {
     }
 }
 
-def meth_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl meth_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     self = cfunction_m_self(op);
     name = method_def(op).view(1)[0].ml_name;
     if not self or module_check(self) {
@@ -354,26 +402,23 @@ def meth_reduce(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return Py_BuildValue("N(Os)", eval_builtin("getattr"), self, name);
 }
 
-def meth_get__text_signature__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl meth_get__text_signature__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     ml = method_def(op);
     return _PyType_GetTextSignatureFromInternalDoc(
         ml.view(1)[0].ml_name, ml.view(1)[0].ml_doc, ml.view(1)[0].ml_flags
     );
 }
 
-def meth_get__doc__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl meth_get__doc__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     ml = method_def(op);
     return _PyType_GetDocFromInternalDoc(ml.view(1)[0].ml_name, ml.view(1)[0].ml_doc);
 }
 
-def meth_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl meth_get__name__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return unicode_from_cstring(method_def(op).view(1)[0].ml_name);
 }
 
-"""m.__name__ for a function of a module or of nothing (len.__qualname__ is
-'len'); else the qualified name of the type (or of the object's type)
-before it ('dict.fromkeys', 'list.append')."""
-def meth_get__qualname__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl meth_get__qualname__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     self = cfunction_m_self(op);
     name = method_def(op).view(1)[0].ml_name;
     if not self or module_check(self) {
@@ -398,7 +443,7 @@ def meth_get__qualname__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return res;
 }
 
-def meth_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl meth_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(ptr[PyObject](cfunction_class(op)), visitor, arg);
     if status != 0 {
         return status;
@@ -410,12 +455,12 @@ def meth_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(cfunction_of(op).view(1)[0].m_module, visitor, arg);
 }
 
-def meth_get__self__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl meth_get__self__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     self = cfunction_self(op);
-    return object_new_ref(self if self else Py_None);
+    return object_new_ref(self or Py_None);
 }
 
-def meth_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+impl meth_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     self = cfunction_m_self(op);
     name = method_def(op).view(1)[0].ml_name;
     if not self or module_check(self) {
@@ -429,7 +474,7 @@ def meth_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     );
 }
 
-def meth_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
+impl meth_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
     if (op != Py_EQ and op != Py_NE)
         or not cfunction_check(a)
         or not cfunction_check(b) {
@@ -444,7 +489,7 @@ def meth_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObjec
     return object_new_ref(py_false() if eq else py_true());
 }
 
-def meth_hash(op: ptr[PyObject]) -> i64 {
+impl meth_hash(op: ptr[PyObject]) -> i64 {
     x = PyObject_GenericHash(cfunction_m_self(op));
     y = Py_HashPointer(method_def(op).view(1)[0].ml_meth);
     x = x ^ y;
@@ -454,16 +499,11 @@ def meth_hash(op: ptr[PyObject]) -> i64 {
     return x;
 }
 
-"""PyUnicode_FromString on a C string."""
-def unicode_from_cstring(text: ptr[u8]) -> ptr[PyObject] {
+impl unicode_from_cstring(text: ptr[u8]) -> ptr[PyObject] {
     return PyUnicode_FromStringAndSize(text, i64(strlen(text)));
 }
 
-# ---------------------------------------------------- calling conventions
-
-"""cfunction_check_kwargs: TypeError for keyword arguments to a function
-that takes none."""
-def no_keywords(func: ptr[PyObject], kwnames: ptr[PyObject]) -> bool {
+impl no_keywords(func: ptr[PyObject], kwnames: ptr[PyObject]) -> bool {
     if kwnames and object_size(kwnames) != 0 {
         funcstr = _PyObject_FunctionStr(func);
         if funcstr {
@@ -475,15 +515,14 @@ def no_keywords(func: ptr[PyObject], kwnames: ptr[PyObject]) -> bool {
     return True;
 }
 
-"""cfunction_enter_call: the C function, or NULL past the recursion limit."""
-def enter_call(func: ptr[PyObject]) -> ptr {
+impl enter_call(func: ptr[PyObject]) -> ptr {
     if Py_EnterRecursiveCall(" while calling a Python object") != 0 {
         return ptr();
     }
     return method_def(func).view(1)[0].ml_meth;
 }
 
-def cfunction_vectorcall_FASTCALL(
+impl cfunction_vectorcall_FASTCALL(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not no_keywords(func, kwnames) {
@@ -499,7 +538,7 @@ def cfunction_vectorcall_FASTCALL(
     return slot.view(1)[0].fast(cfunction_self(func), args, nargs);
 }
 
-def cfunction_vectorcall_FASTCALL_KEYWORDS(
+impl cfunction_vectorcall_FASTCALL_KEYWORDS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     nargs = PyVectorcall_NARGS(nargsf);
@@ -512,7 +551,7 @@ def cfunction_vectorcall_FASTCALL_KEYWORDS(
     return slot.view(1)[0].fast_keywords(cfunction_self(func), args, nargs, kwnames);
 }
 
-def cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
+impl cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     cls = cfunction_class(func);
@@ -526,7 +565,7 @@ def cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
     return slot.view(1)[0].method(cfunction_self(func), cls, args, nargs, kwnames);
 }
 
-def cfunction_vectorcall_NOARGS(
+impl cfunction_vectorcall_NOARGS(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not no_keywords(func, kwnames) {
@@ -552,7 +591,7 @@ def cfunction_vectorcall_NOARGS(
     return slot.view(1)[0].one(cfunction_self(func), NULL);
 }
 
-def cfunction_vectorcall_O(
+impl cfunction_vectorcall_O(
     func: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not no_keywords(func, kwnames) {
@@ -581,9 +620,7 @@ def cfunction_vectorcall_O(
     return slot.view(1)[0].one(cfunction_self(func), args.view(1)[0]);
 }
 
-"""tp_call: a METH_VARARGS function is called with the tuple (and dict);
-any other convention goes through its vectorcall."""
-def cfunction_call(
+impl cfunction_call(
     func: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {
     flags = cfunction_flags(func);
@@ -614,7 +651,6 @@ def cfunction_call(
     );
 }
 
-"""PyDict_GET_SIZE."""
-def dict_used(dict: ptr[PyObject]) -> i64 {
+impl dict_used(dict: ptr[PyObject]) -> i64 {
     return ptr[i64](ptr[u8](dict) + PyDictObject_USED).view(1)[0];
 }

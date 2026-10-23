@@ -1,17 +1,3 @@
-"""Function, classmethod and staticmethod objects: Objects/funcobject.c in
-native Jac.
-
-`PyFunction_Type`, `PyClassMethod_Type` and `PyStaticMethod_Type` are C data
-Jac defines under their C names, with the function C API
-(`PyFunction_NewWithQualName`, `_PyFunction_FromConstructor`, the
-`PyFunction_Get*`/`Set*` accessors, function watchers and the version cache
-the specializer reads). A function's fields are read at their offsets
-(layouts.jac `PyFunctionObject_*`) because its header shares them with
-`PyFrameConstructor` through a macro. In the default build the dict, builtins
-and code references are plain counted references and stopping the world is a
-no-op. See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject,
          PyCode_Type: PyTypeObject,
@@ -34,14 +20,10 @@ import from c {
         builtinsns: ptr[PyObject]
     ) -> i32;  def _PyArg_BadArgument(
         fname: str, displayname: str, expected: ptr[u8], arg: ptr[PyObject]
-    );
-    # A function watcher callback (PyFunction_WatchCallback), read into
-    # this record for the call.
-    obj FuncCall {
+    );  obj FuncCall {
         has watcher: Callable[[i32, ptr[PyObject], ptr[PyObject]], i32] = 0,
             free: Callable[[ptr], None] = 0;
     }  glob:priv call_slot: FuncCall = FuncCall(),
-         # &_Py_ID(...) names, interned on first use.
          name_key: ptr[PyObject] = ptr[PyObject](),
          module_key: ptr[PyObject] = ptr[PyObject](),
          qualname_key: ptr[PyObject] = ptr[PyObject](),
@@ -363,195 +345,49 @@ glob:priv EVENT_CREATE: i32 = 0,
          parser=PARSE_KEYWORDS
      );
 
-# ------------------------------------------------------------ the fields
+def field(op: ptr[PyObject], offset: i64) -> ptr[PyObject];
 
-def field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
-    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
-}
+def set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-def set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
-}
+def replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]);
 
-"""Py_XSETREF on a field: store `value` (a new reference) and release the
-old one afterwards."""
-def replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
-    old = field(op, offset);
-    set_field(op, offset, value);
-    object_xdecref(old);
-}
+def func_version(op: ptr[PyObject]) -> u32;
 
-def func_version(op: ptr[PyObject]) -> u32 {
-    return ptr[u32](ptr[u8](op) + PyFunctionObject_VERSION).view(1)[0];
-}
+def set_func_version(op: ptr[PyObject], version: u32);
 
-def set_func_version(op: ptr[PyObject], version: u32) {
-    ptr[u32](ptr[u8](op) + PyFunctionObject_VERSION).view(1)[0] = version;
-}
+def set_vectorcall(op: ptr[PyObject], vectorcall: ptr);
 
-def set_vectorcall(op: ptr[PyObject], vectorcall: ptr) {
-    ptr[ptr](ptr[u8](op) + PyFunctionObject_VECTORCALL).view(1)[0] = vectorcall;
-}
+def code_i32(code: ptr[PyObject], offset: i64) -> i32;
 
-def code_i32(code: ptr[PyObject], offset: i64) -> i32 {
-    return ptr[i32](ptr[u8](code) + offset).view(1)[0];
-}
+def function_check(op: ptr[PyObject]) -> bool;
 
-def function_check(op: ptr[PyObject]) -> bool {
-    return object_is_type(op, addressof(PyFunction_Type));
-}
+def tuple_check(op: ptr[PyObject]) -> bool;
 
-def tuple_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_TUPLE_SUBCLASS);
-}
+def dict_check(op: ptr[PyObject]) -> bool;
 
-def dict_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_DICT_SUBCLASS);
-}
+def unicode_check(op: ptr[PyObject]) -> bool;
 
-def unicode_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def interned(which: int) -> ptr[PyObject];
 
-def interned(which: int) -> ptr[PyObject] {
-    if which == 0 {
-        if not name_key {
-            name_key = PyUnicode_InternFromString("__name__");
-        }
-        return name_key;
-    }
-    if which == 1 {
-        if not module_key {
-            module_key = PyUnicode_InternFromString("__module__");
-        }
-        return module_key;
-    }
-    if which == 2 {
-        if not qualname_key {
-            qualname_key = PyUnicode_InternFromString("__qualname__");
-        }
-        return qualname_key;
-    }
-    if which == 3 {
-        if not doc_key {
-            doc_key = PyUnicode_InternFromString("__doc__");
-        }
-        return doc_key;
-    }
-    if which == 4 {
-        if not annotations_key {
-            annotations_key = PyUnicode_InternFromString("__annotations__");
-        }
-        return annotations_key;
-    }
-    if not annotate_key {
-        annotate_key = PyUnicode_InternFromString("__annotate__");
-    }
-    return annotate_key;
-}
+def func_event_name(event: i32) -> str;
 
-# ---------------------------------------------------------------- watchers
+def active_watchers(interp: ptr[u8]) -> ptr[u8];
 
-def func_event_name(event: i32) -> str {
-    if event == EVENT_CREATE {
-        return "PyFunction_EVENT_CREATE";
-    }
-    if event == EVENT_DESTROY {
-        return "PyFunction_EVENT_DESTROY";
-    }
-    if event == EVENT_MODIFY_CODE {
-        return "PyFunction_EVENT_MODIFY_CODE";
-    }
-    if event == EVENT_MODIFY_DEFAULTS {
-        return "PyFunction_EVENT_MODIFY_DEFAULTS";
-    }
-    return "PyFunction_EVENT_MODIFY_KWDEFAULTS";
-}
-
-def active_watchers(interp: ptr[u8]) -> ptr[u8] {
-    return interp + PyInterpreterState_ACTIVE_FUNC_WATCHERS;
-}
-
-def watcher_slot(interp: ptr[u8], i: i64) -> ptr[int] {
-    return ptr[int](interp + PyInterpreterState_FUNC_WATCHERS) + i;
-}
+def watcher_slot(interp: ptr[u8], i: i64) -> ptr[int];
 
 def notify_func_watchers(
     interp: ptr[u8], event: i32, func: ptr[PyObject], new_value: ptr[PyObject]
-) {
-    bits = active_watchers(interp).view(1)[0];
-    i: i64 = 0;
-    calls = addressof(call_slot);
-    while bits != u8(0) {
-        if (bits & u8(1)) != u8(0) {
-            calls.view(1)[0].watcher = watcher_slot(interp, i).view(1)[0];
-            if calls.view(1)[0].watcher(event, func, new_value) < 0 {
-                PyErr_FormatUnraisable(
-                    "Exception ignored in %s watcher callback for function %U at %p",
-                    func_event_name(event),
-                    field(func, PyFunctionObject_QUALNAME),
-                    ptr(func)
-                );
-            }
-        }
-        i += 1;
-        bits = bits >> u8(1);
-    }
-}
+);
 
-def handle_func_event(event: i32, func: ptr[PyObject], new_value: ptr[PyObject]) {
-    interp = current_interp();
-    if active_watchers(interp).view(1)[0] != u8(0) {
-        notify_func_watchers(interp, event, func, new_value);
-    }
-    if event == EVENT_MODIFY_CODE
-        or event == EVENT_MODIFY_DEFAULTS
-        or event == EVENT_MODIFY_KWDEFAULTS {
-        # RARE_EVENT_INTERP_INC(interp, func_modification), saturating.
-        counter = interp + PyInterpreterState_RARE_FUNC_MODIFICATION;
-        if counter.view(1)[0] < u8(255) {
-            counter.view(1)[0] = counter.view(1)[0] + u8(1);
-        }
-    }
-}
+def handle_func_event(event: i32, func: ptr[PyObject], new_value: ptr[PyObject]);
 
-# ------------------------------------------------------- the version cache
+def cache_item(interp: ptr[u8], version: u32) -> ptr[ptr[PyObject]];
 
-"""The cache slot of `version`: a function then a code object."""
-def cache_item(interp: ptr[u8], version: u32) -> ptr[ptr[PyObject]] {
-    index = i64(version) % FUNC_VERSION_CACHE_SIZE;
-    return ptr[ptr[PyObject]](
-        interp + PyInterpreterState_FUNC_VERSION_CACHE + index * 16
-    );
-}
+def func_clear_version(interp: ptr[u8], func: ptr[PyObject]);
 
-def func_clear_version(interp: ptr[u8], func: ptr[PyObject]) {
-    if func_version(func) < FUNC_VERSION_FIRST_VALID {
-        # Never set, or cleared already.
-        return;
-    }
-    slot = cache_item(interp, func_version(func));
-    if slot.view(1)[0] == func {
-        # The code entry may still be of use.
-        slot.view(1)[0] = NULL;
-    }
-    set_func_version(func, FUNC_VERSION_CLEARED);
-}
-
-"""_PyFunction_ClearVersion: a critical attribute changed. Stopping the
-world is a no-op with the GIL."""
-def clear_version(func: ptr[PyObject]) {
-    func_clear_version(current_interp(), func);
-}
-
-# ------------------------------------------------------------- the C API
+def clear_version(func: ptr[PyObject]);
 
 def new_function(
     globals: ptr[PyObject],
@@ -561,32 +397,7 @@ def new_function(
     code: ptr[PyObject],
     doc: ptr[PyObject],
     module: ptr[PyObject]
-) -> ptr[PyObject] {
-    op = _PyObject_GC_New(ptr[PyObject](addressof(PyFunction_Type)));
-    if not op {
-        return NULL;
-    }
-    # Every reference is the caller's; nothing can fail from here on, since
-    # func_dealloc expects a complete object.
-    set_field(op, PyFunctionObject_GLOBALS, globals);
-    set_field(op, PyFunctionObject_BUILTINS, builtins);
-    set_field(op, PyFunctionObject_NAME, name);
-    set_field(op, PyFunctionObject_QUALNAME, qualname);
-    set_field(op, PyFunctionObject_CODE, code);
-    set_field(op, PyFunctionObject_DEFAULTS, NULL);
-    set_field(op, PyFunctionObject_KWDEFAULTS, NULL);
-    set_field(op, PyFunctionObject_CLOSURE, NULL);
-    set_field(op, PyFunctionObject_DOC, doc);
-    set_field(op, PyFunctionObject_DICT, NULL);
-    set_field(op, PyFunctionObject_WEAKREFLIST, NULL);
-    set_field(op, PyFunctionObject_MODULE, module);
-    set_field(op, PyFunctionObject_ANNOTATIONS, NULL);
-    set_field(op, PyFunctionObject_ANNOTATE, NULL);
-    set_field(op, PyFunctionObject_TYPEPARAMS, NULL);
-    set_vectorcall(op, ptr(_PyFunction_Vectorcall));
-    set_func_version(op, FUNC_VERSION_UNSET);
-    return op;
-}
+) -> ptr[PyObject];
 
 import from c {
     def PyFunction_AddWatcher(callback: ptr) -> i32 {
@@ -669,7 +480,7 @@ import from c {
         object_incref(globals);
         object_incref(code);
         name = object_new_ref(field(code, PyCodeObject_NAME));
-        qualname = qualname_in if qualname_in else field(code, PyCodeObject_QUALNAME);
+        qualname = qualname_in or field(code, PyCodeObject_QUALNAME);
         object_incref(qualname);
         consts = field(code, PyCodeObject_CONSTS);
         doc = Py_None;
@@ -680,7 +491,7 @@ import from c {
             }
         }
         object_incref(doc);
-        # __module__ is globals['__name__'] when it exists.
+
         module: ptr[PyObject] = NULL;
         builtins: ptr[PyObject] = NULL;
         op: ptr[PyObject] = NULL;
@@ -704,7 +515,6 @@ import from c {
         handle_func_event(EVENT_CREATE, op, NULL);
         return op;
     }  def _PyFunction_SetVersion(func: ptr[PyObject], version: u32) {
-        # Only MAKE_FUNCTION calls it; nothing is specialized on it yet.
         set_func_version(func, version);
         slot = cache_item(current_interp(), version);
         slot.view(1)[0] = func;
@@ -881,7 +691,7 @@ import from c {
             PyErr_Format(PyExc_TypeError, "unsupported builtins %R", builtinsns);
             return i32(-1);
         }
-        # No __defaults__, __kwdefaults__ or __closure__.
+
         defaults = field(func, PyFunctionObject_DEFAULTS);
         if defaults and object_size(defaults) > 0 {
             PyErr_SetString(PyExc_ValueError, "defaults not supported");
@@ -923,12 +733,381 @@ import from c {
     }
 }
 
-def func_get_annotation_dict(op: ptr[PyObject]) -> ptr[PyObject] {
+def func_get_annotation_dict(op: ptr[PyObject]) -> ptr[PyObject];
+
+def func_get_code(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_code(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def func_get_name(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_name(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def func_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_qualname(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def func_get_defaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def set_defaults_attr(
+    self: ptr[PyObject], value_in: ptr[PyObject], keyword: bool
+) -> i32;
+
+def func_set_defaults(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def func_get_kwdefaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_kwdefaults(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def func_get_annotate(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_annotate(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def func_get_annotations(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_annotations(
+    self: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def func_get_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def func_set_type_params(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def func_new_values(
+    type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
+) -> ptr[PyObject];
+
+def func_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject];
+
+def func_clear(self: ptr[PyObject]) -> i32;
+
+def func_dealloc(self: ptr[PyObject]);
+
+def func_repr(self: ptr[PyObject]) -> ptr[PyObject];
+
+def func_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def func_descr_get(
+    func: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject];
+
+def copy_attr(
+    wrapper: ptr[PyObject], wrapped: ptr[PyObject], name: ptr[PyObject]
+) -> i32;
+
+def functools_wraps(wrapper: ptr[PyObject], wrapped: ptr[PyObject]) -> i32;
+
+def descriptor_get_wrapped_attribute(
+    wrapped: ptr[PyObject], ob: ptr[PyObject], name: ptr[PyObject]
+) -> ptr[PyObject];
+
+def descriptor_set_wrapped_attribute(
+    ob: ptr[PyObject], name: ptr[PyObject], value: ptr[PyObject], type_name: str
+) -> i32;
+
+def wrapper_dealloc(self: ptr[PyObject], callable_offset: i64, dict_offset: i64);
+
+def wrapper_isabstract(callable: ptr[PyObject]) -> ptr[PyObject];
+
+def wrapper_init(
+    self: ptr[PyObject],
+    args: ptr[PyObject],
+    kwds: ptr[PyObject],
+    name: str,
+    callable_offset: i64
+) -> i32;
+
+def wrapper_new(
+    type: ptr[PyObject], callable_offset: i64, dict_offset: i64
+) -> ptr[PyObject];
+
+def cm_dealloc(self: ptr[PyObject]);
+
+def cm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def cm_clear(self: ptr[PyObject]) -> i32;
+
+def cm_descr_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cm_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject];
+
+def cm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
+
+def cm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def cm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def cm_set___annotations__(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def cm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def cm_set___annotate__(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def cm_repr(self: ptr[PyObject]) -> ptr[PyObject];
+
+def sm_dealloc(self: ptr[PyObject]);
+
+def sm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def sm_clear(self: ptr[PyObject]) -> i32;
+
+def sm_descr_get(
+    self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
+) -> ptr[PyObject];
+
+def sm_new(
+    type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
+) -> ptr[PyObject];
+
+def sm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32;
+
+def sm_call(
+    callable: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject];
+
+def sm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def sm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def sm_set___annotations__(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def sm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def sm_set___annotate__(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+def sm_repr(self: ptr[PyObject]) -> ptr[PyObject];
+
+impl field(op: ptr[PyObject], offset: i64) -> ptr[PyObject] {
+    return ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0];
+}
+
+impl set_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    ptr[ptr[PyObject]](ptr[u8](op) + offset).view(1)[0] = value;
+}
+
+impl replace_field(op: ptr[PyObject], offset: i64, value: ptr[PyObject]) {
+    old = field(op, offset);
+    set_field(op, offset, value);
+    object_xdecref(old);
+}
+
+impl func_version(op: ptr[PyObject]) -> u32 {
+    return ptr[u32](ptr[u8](op) + PyFunctionObject_VERSION).view(1)[0];
+}
+
+impl set_func_version(op: ptr[PyObject], version: u32) {
+    ptr[u32](ptr[u8](op) + PyFunctionObject_VERSION).view(1)[0] = version;
+}
+
+impl set_vectorcall(op: ptr[PyObject], vectorcall: ptr) {
+    ptr[ptr](ptr[u8](op) + PyFunctionObject_VECTORCALL).view(1)[0] = vectorcall;
+}
+
+impl code_i32(code: ptr[PyObject], offset: i64) -> i32 {
+    return ptr[i32](ptr[u8](code) + offset).view(1)[0];
+}
+
+impl function_check(op: ptr[PyObject]) -> bool {
+    return object_is_type(op, addressof(PyFunction_Type));
+}
+
+impl tuple_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_TUPLE_SUBCLASS);
+}
+
+impl dict_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_DICT_SUBCLASS);
+}
+
+impl unicode_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl interned(which: int) -> ptr[PyObject] {
+    if which == 0 {
+        if not name_key {
+            name_key = PyUnicode_InternFromString(ptr[u8]("__name__"));
+        }
+        return name_key;
+    }
+    if which == 1 {
+        if not module_key {
+            module_key = PyUnicode_InternFromString(ptr[u8]("__module__"));
+        }
+        return module_key;
+    }
+    if which == 2 {
+        if not qualname_key {
+            qualname_key = PyUnicode_InternFromString(ptr[u8]("__qualname__"));
+        }
+        return qualname_key;
+    }
+    if which == 3 {
+        if not doc_key {
+            doc_key = PyUnicode_InternFromString(ptr[u8]("__doc__"));
+        }
+        return doc_key;
+    }
+    if which == 4 {
+        if not annotations_key {
+            annotations_key = PyUnicode_InternFromString(ptr[u8]("__annotations__"));
+        }
+        return annotations_key;
+    }
+    if not annotate_key {
+        annotate_key = PyUnicode_InternFromString(ptr[u8]("__annotate__"));
+    }
+    return annotate_key;
+}
+
+impl func_event_name(event: i32) -> str {
+    if event == EVENT_CREATE {
+        return "PyFunction_EVENT_CREATE";
+    }
+    if event == EVENT_DESTROY {
+        return "PyFunction_EVENT_DESTROY";
+    }
+    if event == EVENT_MODIFY_CODE {
+        return "PyFunction_EVENT_MODIFY_CODE";
+    }
+    if event == EVENT_MODIFY_DEFAULTS {
+        return "PyFunction_EVENT_MODIFY_DEFAULTS";
+    }
+    return "PyFunction_EVENT_MODIFY_KWDEFAULTS";
+}
+
+impl active_watchers(interp: ptr[u8]) -> ptr[u8] {
+    return interp + PyInterpreterState_ACTIVE_FUNC_WATCHERS;
+}
+
+impl watcher_slot(interp: ptr[u8], i: i64) -> ptr[int] {
+    return ptr[int](interp + PyInterpreterState_FUNC_WATCHERS) + i;
+}
+
+impl notify_func_watchers(
+    interp: ptr[u8], event: i32, func: ptr[PyObject], new_value: ptr[PyObject]
+) {
+    bits = active_watchers(interp).view(1)[0];
+    i: i64 = 0;
+    calls = addressof(call_slot);
+    while bits != u8(0) {
+        if (bits & u8(1)) != u8(0) {
+            calls.view(1)[0].watcher = watcher_slot(interp, i).view(1)[0];
+            if calls.view(1)[0].watcher(event, func, new_value) < 0 {
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event),
+                    field(func, PyFunctionObject_QUALNAME),
+                    ptr(func)
+                );
+            }
+        }
+        i += 1;
+        bits = bits >> u8(1);
+    }
+}
+
+impl handle_func_event(event: i32, func: ptr[PyObject], new_value: ptr[PyObject]) {
+    interp = current_interp();
+    if active_watchers(interp).view(1)[0] != u8(0) {
+        notify_func_watchers(interp, event, func, new_value);
+    }
+    if event == EVENT_MODIFY_CODE
+        or event == EVENT_MODIFY_DEFAULTS
+        or event == EVENT_MODIFY_KWDEFAULTS {
+        counter = interp + PyInterpreterState_RARE_FUNC_MODIFICATION;
+        if counter.view(1)[0] < u8(255) {
+            counter.view(1)[0] = counter.view(1)[0] + u8(1);
+        }
+    }
+}
+
+impl cache_item(interp: ptr[u8], version: u32) -> ptr[ptr[PyObject]] {
+    index = i64(version) % FUNC_VERSION_CACHE_SIZE;
+    return ptr[ptr[PyObject]](
+        interp + PyInterpreterState_FUNC_VERSION_CACHE + index * 16
+    );
+}
+
+impl func_clear_version(interp: ptr[u8], func: ptr[PyObject]) {
+    if func_version(func) < FUNC_VERSION_FIRST_VALID {
+        return;
+    }
+    slot = cache_item(interp, func_version(func));
+    if slot.view(1)[0] == func {
+        slot.view(1)[0] = NULL;
+    }
+    set_func_version(func, FUNC_VERSION_CLEARED);
+}
+
+impl clear_version(func: ptr[PyObject]) {
+    func_clear_version(current_interp(), func);
+}
+
+impl new_function(
+    globals: ptr[PyObject],
+    builtins: ptr[PyObject],
+    name: ptr[PyObject],
+    qualname: ptr[PyObject],
+    code: ptr[PyObject],
+    doc: ptr[PyObject],
+    module: ptr[PyObject]
+) -> ptr[PyObject] {
+    op = _PyObject_GC_New(ptr[PyObject](addressof(PyFunction_Type)));
+    if not op {
+        return NULL;
+    }
+
+    set_field(op, PyFunctionObject_GLOBALS, globals);
+    set_field(op, PyFunctionObject_BUILTINS, builtins);
+    set_field(op, PyFunctionObject_NAME, name);
+    set_field(op, PyFunctionObject_QUALNAME, qualname);
+    set_field(op, PyFunctionObject_CODE, code);
+    set_field(op, PyFunctionObject_DEFAULTS, NULL);
+    set_field(op, PyFunctionObject_KWDEFAULTS, NULL);
+    set_field(op, PyFunctionObject_CLOSURE, NULL);
+    set_field(op, PyFunctionObject_DOC, doc);
+    set_field(op, PyFunctionObject_DICT, NULL);
+    set_field(op, PyFunctionObject_WEAKREFLIST, NULL);
+    set_field(op, PyFunctionObject_MODULE, module);
+    set_field(op, PyFunctionObject_ANNOTATIONS, NULL);
+    set_field(op, PyFunctionObject_ANNOTATE, NULL);
+    set_field(op, PyFunctionObject_TYPEPARAMS, NULL);
+    set_vectorcall(op, ptr(_PyFunction_Vectorcall));
+    set_func_version(op, FUNC_VERSION_UNSET);
+    return op;
+}
+
+impl func_get_annotation_dict(op: ptr[PyObject]) -> ptr[PyObject] {
     annotations = field(op, PyFunctionObject_ANNOTATIONS);
     if not annotations {
         annotate = field(op, PyFunctionObject_ANNOTATE);
         if not annotate or PyCallable_Check(annotate) == 0 {
-            # A borrowed None, as C returns it.
             return Py_None;
         }
         ann_dict = PyObject_CallOneArg(annotate, PyLong_FromLong(1));
@@ -970,17 +1149,14 @@ def func_get_annotation_dict(op: ptr[PyObject]) -> ptr[PyObject] {
     return field(op, PyFunctionObject_ANNOTATIONS);
 }
 
-# -------------------------------------------------------------- getsets
-
-def func_get_code(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_code(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     if PySys_Audit("object.__getattr__", "Os", self, "__code__") < 0 {
         return NULL;
     }
     return object_new_ref(field(self, PyFunctionObject_CODE));
 }
 
-def func_set_code(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
-    # Never deleted, and only ever a code object.
+impl func_set_code(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
     if not value
         or not object_type_check(value, ptr[PyTypeObject](addressof(PyCode_Type))) {
         PyErr_SetString(PyExc_TypeError, "__code__ must be set to a code object");
@@ -1024,11 +1200,11 @@ def func_set_code(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i
     return i32(0);
 }
 
-def func_get_name(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_name(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return object_new_ref(field(self, PyFunctionObject_NAME));
 }
 
-def func_set_name(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
+impl func_set_name(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
     if not value or not unicode_check(value) {
         PyErr_SetString(PyExc_TypeError, "__name__ must be set to a string object");
         return i32(-1);
@@ -1037,11 +1213,13 @@ def func_set_name(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i
     return i32(0);
 }
 
-def func_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_qualname(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return object_new_ref(field(self, PyFunctionObject_QUALNAME));
 }
 
-def func_set_qualname(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
+impl func_set_qualname(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
     if not value or not unicode_check(value) {
         PyErr_SetString(PyExc_TypeError, "__qualname__ must be set to a string object");
         return i32(-1);
@@ -1050,16 +1228,15 @@ def func_set_qualname(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) 
     return i32(0);
 }
 
-def func_get_defaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_defaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     if PySys_Audit("object.__getattr__", "Os", self, "__defaults__") < 0 {
         return NULL;
     }
     defaults = field(self, PyFunctionObject_DEFAULTS);
-    return object_new_ref(defaults if defaults else Py_None);
+    return object_new_ref(defaults or Py_None);
 }
 
-"""Set or delete __defaults__ (`dict_kind` False) or __kwdefaults__."""
-def set_defaults_attr(
+impl set_defaults_attr(
     self: ptr[PyObject], value_in: ptr[PyObject], keyword: bool
 ) -> i32 {
     value = NULL if value_in == Py_None else value_in;
@@ -1092,36 +1269,39 @@ def set_defaults_attr(
     return i32(0);
 }
 
-def func_set_defaults(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
+impl func_set_defaults(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
     return set_defaults_attr(self, value, False);
 }
 
-def func_get_kwdefaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_kwdefaults(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     if PySys_Audit("object.__getattr__", "Os", self, "__kwdefaults__") < 0 {
         return NULL;
     }
     defaults = field(self, PyFunctionObject_KWDEFAULTS);
-    return object_new_ref(defaults if defaults else Py_None);
+    return object_new_ref(defaults or Py_None);
 }
 
-def func_set_kwdefaults(
+impl func_set_kwdefaults(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     return set_defaults_attr(self, value, True);
 }
 
-def func_get_annotate(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_annotate(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     annotate = field(self, PyFunctionObject_ANNOTATE);
-    return object_new_ref(annotate if annotate else Py_None);
+    return object_new_ref(annotate or Py_None);
 }
 
-def func_set_annotate(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
+impl func_set_annotate(
+    self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
     if not value {
         PyErr_SetString(PyExc_TypeError, "__annotate__ cannot be deleted");
         return i32(-1);
     }
     if value == Py_None {
-        # C stores None here without a new reference; None is immortal.
         replace_field(self, PyFunctionObject_ANNOTATE, value);
         return i32(0);
     }
@@ -1134,7 +1314,7 @@ def func_set_annotate(self: ptr[PyObject], value: ptr[PyObject], _closure: ptr) 
     return i32(-1);
 }
 
-def func_get_annotations(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_annotations(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     annotate = field(self, PyFunctionObject_ANNOTATE);
     if not field(self, PyFunctionObject_ANNOTATIONS)
         and (not annotate or PyCallable_Check(annotate) == 0) {
@@ -1147,11 +1327,11 @@ def func_get_annotations(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return object_xnew_ref(func_get_annotation_dict(self));
 }
 
-def func_set_annotations(
+impl func_set_annotations(
     self: ptr[PyObject], value_in: ptr[PyObject], _closure: ptr
 ) -> i32 {
     value = NULL if value_in == Py_None else value_in;
-    # Only NULL (through the C API) or a dict.
+
     if value and not dict_check(value) {
         PyErr_SetString(
             PyExc_TypeError, "__annotations__ must be set to a dict object"
@@ -1163,7 +1343,7 @@ def func_set_annotations(
     return i32(0);
 }
 
-def func_get_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl func_get_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     params = field(self, PyFunctionObject_TYPEPARAMS);
     if not params {
         return PyTuple_New(0);
@@ -1171,7 +1351,7 @@ def func_get_type_params(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return object_new_ref(params);
 }
 
-def func_set_type_params(
+impl func_set_type_params(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     if not value or not tuple_check(value) {
@@ -1182,11 +1362,7 @@ def func_set_type_params(
     return i32(0);
 }
 
-# ------------------------------------------------------------ the type
-
-"""function.__new__: the closure must match the code's free variables,
-one cell each."""
-def func_new_values(
+impl func_new_values(
     type: ptr[PyObject], values: ptr[ptr[PyObject]], count: i64
 ) -> ptr[PyObject] {
     code = values.view(1)[0];
@@ -1276,13 +1452,13 @@ def func_new_values(
     return newfunc;
 }
 
-def func_new(
+impl func_new(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {
     return invoke_tuple(func_new_signature, args, kwargs, func_new_values, type);
 }
 
-def func_clear(self: ptr[PyObject]) -> i32 {
+impl func_clear(self: ptr[PyObject]) -> i32 {
     func_clear_version(current_interp(), self);
     for offset in [
         PyFunctionObject_GLOBALS,
@@ -1299,16 +1475,14 @@ def func_clear(self: ptr[PyObject]) -> i32 {
     ] {
         replace_field(self, offset, NULL);
     }
-    # The code stays (never NULL). The name and qualname may be str
-    # subclasses in a cycle, so they become the immutable empty string.
-    replace_field(self, PyFunctionObject_NAME, PyUnicode_FromString(""));
-    replace_field(self, PyFunctionObject_QUALNAME, PyUnicode_FromString(""));
+
+    replace_field(self, PyFunctionObject_NAME, PyUnicode_FromString(ptr[u8]("")));
+    replace_field(self, PyFunctionObject_QUALNAME, PyUnicode_FromString(ptr[u8]("")));
     return i32(0);
 }
 
-def func_dealloc(self: ptr[PyObject]) {
+impl func_dealloc(self: ptr[PyObject]) {
     if active_watchers(current_interp()).view(1)[0] != u8(0) {
-        # A watcher may resurrect the function.
         header = ptr[_object](self);
         full = header.view(1)[0].ob_refcnt_full;
         header.view(1)[0].ob_refcnt_full = (full & ~i64(4294967295)) | 1;
@@ -1326,20 +1500,20 @@ def func_dealloc(self: ptr[PyObject]) {
         PyObject_ClearWeakRefs(self);
     }
     func_clear(self);
-    # Not cleared by func_clear().
+
     object_decref(field(self, PyFunctionObject_CODE));
     object_decref(field(self, PyFunctionObject_NAME));
     object_decref(field(self, PyFunctionObject_QUALNAME));
     PyObject_GC_Del(ptr(self));
 }
 
-def func_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+impl func_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat(
         "<function %U at %p>", field(self, PyFunctionObject_QUALNAME), ptr(self)
     );
 }
 
-def func_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl func_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     for offset in [
         PyFunctionObject_CODE,
         PyFunctionObject_GLOBALS,
@@ -1364,8 +1538,7 @@ def func_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return i32(0);
 }
 
-"""Bind a function to an object."""
-def func_descr_get(
+impl func_descr_get(
     func: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
 ) -> ptr[PyObject] {
     if ob == Py_None or not ob {
@@ -1374,10 +1547,7 @@ def func_descr_get(
     return PyMethod_New(func, ob);
 }
 
-# ----------------------------------------------- classmethod / staticmethod
-
-"""functools_copy_attr: copy one attribute when the wrapped object has it."""
-def copy_attr(
+impl copy_attr(
     wrapper: ptr[PyObject], wrapped: ptr[PyObject], name: ptr[PyObject]
 ) -> i32 {
     value: ptr[PyObject] = NULL;
@@ -1389,8 +1559,7 @@ def copy_attr(
     return res;
 }
 
-"""Like functools.wraps(wrapper, wrapped)."""
-def functools_wraps(wrapper: ptr[PyObject], wrapped: ptr[PyObject]) -> i32 {
+impl functools_wraps(wrapper: ptr[PyObject], wrapped: ptr[PyObject]) -> i32 {
     for which in [1, 0, 2, 3] {
         if copy_attr(wrapper, wrapped, interned(which)) < 0 {
             return i32(-1);
@@ -1399,9 +1568,7 @@ def functools_wraps(wrapper: ptr[PyObject], wrapped: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-"""__annotations__ / __annotate__ of a classmethod or staticmethod: the
-instance dict's, else the wrapped object's, cached in the dict."""
-def descriptor_get_wrapped_attribute(
+impl descriptor_get_wrapped_attribute(
     wrapped: ptr[PyObject], ob: ptr[PyObject], name: ptr[PyObject]
 ) -> ptr[PyObject] {
     dict = PyObject_GenericGetDict(ob, ptr());
@@ -1431,7 +1598,7 @@ def descriptor_get_wrapped_attribute(
     return res;
 }
 
-def descriptor_set_wrapped_attribute(
+impl descriptor_set_wrapped_attribute(
     ob: ptr[PyObject], name: ptr[PyObject], value: ptr[PyObject], type_name: str
 ) -> i32 {
     dict = PyObject_GenericGetDict(ob, ptr());
@@ -1455,14 +1622,12 @@ def descriptor_set_wrapped_attribute(
         object_decref(dict);
         return i32(0);
     }
-    # The instance dict keeps it alive, as C relies on.
+
     object_decref(dict);
     return PyDict_SetItem(dict, name, value);
 }
 
-"""classmethod and staticmethod share a layout: the callable, then the
-instance dict."""
-def wrapper_dealloc(self: ptr[PyObject], callable_offset: i64, dict_offset: i64) {
+impl wrapper_dealloc(self: ptr[PyObject], callable_offset: i64, dict_offset: i64) {
     object_gc_untrack(self);
     object_xdecref(field(self, callable_offset));
     object_xdecref(field(self, dict_offset));
@@ -1471,7 +1636,7 @@ def wrapper_dealloc(self: ptr[PyObject], callable_offset: i64, dict_offset: i64)
     calls.view(1)[0].free(ptr(self));
 }
 
-def wrapper_isabstract(callable: ptr[PyObject]) -> ptr[PyObject] {
+impl wrapper_isabstract(callable: ptr[PyObject]) -> ptr[PyObject] {
     res = _PyObject_IsAbstract(callable);
     if res == -1 {
         return NULL;
@@ -1479,7 +1644,7 @@ def wrapper_isabstract(callable: ptr[PyObject]) -> ptr[PyObject] {
     return PyBool_FromLong(1 if res != 0 else 0);
 }
 
-def wrapper_init(
+impl wrapper_init(
     self: ptr[PyObject],
     args: ptr[PyObject],
     kwds: ptr[PyObject],
@@ -1499,7 +1664,7 @@ def wrapper_init(
     return i32(0);
 }
 
-def wrapper_new(
+impl wrapper_new(
     type: ptr[PyObject], callable_offset: i64, dict_offset: i64
 ) -> ptr[PyObject] {
     ob = PyType_GenericAlloc(type, 0);
@@ -1511,11 +1676,11 @@ def wrapper_new(
     return ob;
 }
 
-def cm_dealloc(self: ptr[PyObject]) {
+impl cm_dealloc(self: ptr[PyObject]) {
     wrapper_dealloc(self, classmethod_CALLABLE, classmethod_DICT);
 }
 
-def cm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl cm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(field(self, classmethod_CALLABLE), visitor, arg);
     if status != 0 {
         return status;
@@ -1523,13 +1688,13 @@ def cm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(field(self, classmethod_DICT), visitor, arg);
 }
 
-def cm_clear(self: ptr[PyObject]) -> i32 {
+impl cm_clear(self: ptr[PyObject]) -> i32 {
     replace_field(self, classmethod_CALLABLE, NULL);
     replace_field(self, classmethod_DICT, NULL);
     return i32(0);
 }
 
-def cm_descr_get(
+impl cm_descr_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
 ) -> ptr[PyObject] {
     callable = field(self, classmethod_CALLABLE);
@@ -1537,56 +1702,56 @@ def cm_descr_get(
         PyErr_SetString(PyExc_RuntimeError, "uninitialized classmethod object");
         return NULL;
     }
-    return PyMethod_New(callable, type if type else ptr[PyObject](object_type(ob)));
+    return PyMethod_New(callable, type or ptr[PyObject](object_type(ob)));
 }
 
-def cm_new(
+impl cm_new(
     type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
 ) -> ptr[PyObject] {
     return wrapper_new(type, classmethod_CALLABLE, classmethod_DICT);
 }
 
-def cm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
+impl cm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
     return wrapper_init(self, args, kwds, "classmethod", classmethod_CALLABLE);
 }
 
-def cm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl cm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return wrapper_isabstract(field(self, classmethod_CALLABLE));
 }
 
-def cm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl cm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return descriptor_get_wrapped_attribute(
         field(self, classmethod_CALLABLE), self, interned(4)
     );
 }
 
-def cm_set___annotations__(
+impl cm_set___annotations__(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     return descriptor_set_wrapped_attribute(self, interned(4), value, "classmethod");
 }
 
-def cm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl cm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return descriptor_get_wrapped_attribute(
         field(self, classmethod_CALLABLE), self, interned(5)
     );
 }
 
-def cm_set___annotate__(
+impl cm_set___annotate__(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     return descriptor_set_wrapped_attribute(self, interned(5), value, "classmethod");
 }
 
-def cm_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+impl cm_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat("<classmethod(%R)>", field(self, classmethod_CALLABLE));
 }
 
-def sm_dealloc(self: ptr[PyObject]) {
+impl sm_dealloc(self: ptr[PyObject]) {
     wrapper_dealloc(self, staticmethod_CALLABLE, staticmethod_DICT);
 }
 
-def sm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl sm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     status = visit_reference(field(self, staticmethod_CALLABLE), visitor, arg);
     if status != 0 {
         return status;
@@ -1594,13 +1759,13 @@ def sm_traverse(self: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(field(self, staticmethod_DICT), visitor, arg);
 }
 
-def sm_clear(self: ptr[PyObject]) -> i32 {
+impl sm_clear(self: ptr[PyObject]) -> i32 {
     replace_field(self, staticmethod_CALLABLE, NULL);
     replace_field(self, staticmethod_DICT, NULL);
     return i32(0);
 }
 
-def sm_descr_get(
+impl sm_descr_get(
     self: ptr[PyObject], ob: ptr[PyObject], type: ptr[PyObject]
 ) -> ptr[PyObject] {
     callable = field(self, staticmethod_CALLABLE);
@@ -1611,51 +1776,51 @@ def sm_descr_get(
     return object_new_ref(callable);
 }
 
-def sm_new(
+impl sm_new(
     type: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]
 ) -> ptr[PyObject] {
     return wrapper_new(type, staticmethod_CALLABLE, staticmethod_DICT);
 }
 
-def sm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
+impl sm_init(self: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) -> i32 {
     return wrapper_init(self, args, kwds, "staticmethod", staticmethod_CALLABLE);
 }
 
-def sm_call(
+impl sm_call(
     callable: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {
     return PyObject_Call(field(callable, staticmethod_CALLABLE), args, kwargs);
 }
 
-def sm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl sm_get___isabstractmethod__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return wrapper_isabstract(field(self, staticmethod_CALLABLE));
 }
 
-def sm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl sm_get___annotations__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return descriptor_get_wrapped_attribute(
         field(self, staticmethod_CALLABLE), self, interned(4)
     );
 }
 
-def sm_set___annotations__(
+impl sm_set___annotations__(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     return descriptor_set_wrapped_attribute(self, interned(4), value, "staticmethod");
 }
 
-def sm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl sm_get___annotate__(self: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return descriptor_get_wrapped_attribute(
         field(self, staticmethod_CALLABLE), self, interned(5)
     );
 }
 
-def sm_set___annotate__(
+impl sm_set___annotate__(
     self: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     return descriptor_set_wrapped_attribute(self, interned(5), value, "staticmethod");
 }
 
-def sm_repr(self: ptr[PyObject]) -> ptr[PyObject] {
+impl sm_repr(self: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat(
         "<staticmethod(%R)>", field(self, staticmethod_CALLABLE)
     );

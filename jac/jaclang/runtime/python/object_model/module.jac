@@ -1,15 +1,3 @@
-"""Module objects: Objects/moduleobject.c in native Jac.
-
-`PyModule_Type` and `PyModuleDef_Type` are C data Jac defines under their C
-names, and the module C API (`PyModule_New`, `PyModule_Create2`,
-`PyModule_FromDefAndSpec2`, `PyModule_ExecDef`, `PyModule_GetDict`, ...) is
-defined here under its C names, so the import system and every extension
-use them unchanged. Attribute lookup falls back to a module's `__getattr__`
-and explains a missing attribute the way moduleobject.c does, including the
-hints for a module that shadows the standard library or is still being
-imported. See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject; def PySys_FormatStderr(format: str, *args: any);  def PySys_WriteStderr(
         format: str, *args: any
@@ -30,15 +18,12 @@ import from c {
     ) -> i32;  def _PyObject_GenericGetAttrWithDict(
         ob: ptr[PyObject], name: ptr[PyObject], dict: ptr[PyObject], suppress: i32
     ) -> ptr[PyObject];  def _PyUnicode_EqualToASCIIString(
-        unicode: ptr[PyObject], text: str
+        unicode: ptr[PyObject], text: ptr[u8]
     ) -> i32;  def _Py_wgetcwd(buffer: ptr[i32], size: u64) -> ptr[i32];  def wcsrchr(
         text: ptr[i32], c: i32
     ) -> ptr[i32];  def wcscmp(left: ptr[i32], right: ptr[i32]) -> i32;  def strcpy(
         target: ptr[u8], source: ptr[u8]
-    ) -> ptr[u8];  def PyErr_FormatUnraisable(format: str, *args: any);
-    # One field per C function a module definition supplies: the pointer is
-    # stored and then read for the call.
-    obj ModuleCall {
+    ) -> ptr[u8];  def PyErr_FormatUnraisable(format: str, *args: any);  obj ModuleCall {
         has create: Callable[[ptr[PyObject], ptr[PyModuleDef]], ptr[PyObject]] = 0,
             exec: Callable[[ptr[PyObject]], i32] = 0,
             traverse: Callable[[ptr[PyObject], ptr, ptr], i32] = 0,
@@ -122,185 +107,54 @@ import from c {
 glob:priv PYTHON_API_VERSION: i32 = 1013,
      PYTHON_ABI_VERSION: i32 = 3,
      MAXPATHLEN: i64 = 4096,
-     # '/' and '_' as wide characters.
      SEP: i32 = 47,
      UNDERSCORE: i64 = 95,
-     # PyModuleDef_Slot ids.
      SLOT_CREATE: i32 = 1,
      SLOT_EXEC: i32 = 2,
      SLOT_MULTIPLE_INTERPRETERS: i32 = 3,
      SLOT_GIL: i32 = 4,
      LAST_SLOT: i32 = 4,
-     # Py_mod_multiple_interpreters values.
      MULTIPLE_INTERPRETERS_NOT_SUPPORTED: i64 = 0,
      MULTIPLE_INTERPRETERS_SUPPORTED: i64 = 1,
      PER_INTERPRETER_GIL_SUPPORTED: i64 = 2;
 
-def module_of(op: ptr[PyObject]) -> ptr[PyModuleObject] {
-    return ptr[PyModuleObject](op);
-}
+def module_of(op: ptr[PyObject]) -> ptr[PyModuleObject];
 
-"""PyModule_Check."""
-def module_check(op: ptr[PyObject]) -> bool {
-    return object_type_check(op, addressof(PyModule_Type));
-}
+def module_check(op: ptr[PyObject]) -> bool;
 
-def unicode_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
-}
+def unicode_check(op: ptr[PyObject]) -> bool;
 
-def dict_check(op: ptr[PyObject]) -> bool {
-    return type_has_feature(object_type(op), Py_TPFLAGS_DICT_SUBCLASS);
-}
+def dict_check(op: ptr[PyObject]) -> bool;
 
-"""A config field as `_Py_GetConfig()->field` reads it."""
-def config_int(offset: i64) -> i32 {
-    return ptr[i32](_Py_GetConfig() + offset).view(1)[0];
-}
+def config_int(offset: i64) -> i32;
 
-"""PyDict_GetItemRef with an attribute name: (status, value), status -1 on
-error, 0 when absent (value NULL), 1 when found (a new reference)."""
-def dict_get(dict: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
-    value: ptr[PyObject] = NULL;
-    key = PyUnicode_InternFromString(name);
-    if not key {
-        return (i32(-1), value);
-    }
-    status = PyDict_GetItemRef(dict, key, &mut value);
-    object_decref(key);
-    return (status, value);
-}
+def dict_get(dict: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]];
 
-"""PyObject_GetOptionalAttr with an attribute name."""
-def optional_attr(op: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
-    value: ptr[PyObject] = NULL;
-    status = PyObject_GetOptionalAttrString(op, name, &mut value);
-    return (status, value);
-}
+def optional_attr(op: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]];
 
 def module_init_dict(
     m: ptr[PyObject], md_dict: ptr[PyObject], name: ptr[PyObject], doc_in: ptr[PyObject]
-) -> i32 {
-    doc = doc_in if doc_in else Py_None;
-    if PyDict_SetItemString(md_dict, ptr[u8]("__name__"), name) != 0
-        or PyDict_SetItemString(md_dict, ptr[u8]("__doc__"), doc) != 0
-        or PyDict_SetItemString(md_dict, ptr[u8]("__package__"), Py_None) != 0
-        or PyDict_SetItemString(md_dict, ptr[u8]("__loader__"), Py_None) != 0
-        or PyDict_SetItemString(md_dict, ptr[u8]("__spec__"), Py_None) != 0 {
-        return i32(-1);
-    }
-    if object_is_type(name, ptr[PyTypeObject](addressof(PyUnicode_Type))) {
-        old = module_of(m).view(1)[0].md_name;
-        module_of(m).view(1)[0].md_name = object_new_ref(name);
-        object_xdecref(old);
-    }
-    return i32(0);
-}
+) -> i32;
 
-def new_module_notrack(mt: ptr[PyTypeObject]) -> ptr[PyObject] {
-    m = _PyType_AllocNoTrack(mt, 0);
-    if not m {
-        return NULL;
-    }
-    md = module_of(m);
-    md.view(1)[0].md_def = ptr[ModuleDef]();
-    md.view(1)[0].md_state = ptr();
-    md.view(1)[0].md_weaklist = NULL;
-    md.view(1)[0].md_name = NULL;
-    md.view(1)[0].md_dict = PyDict_New();
-    if not md.view(1)[0].md_dict {
-        object_decref(m);
-        return NULL;
-    }
-    return m;
-}
+def new_module_notrack(mt: ptr[PyTypeObject]) -> ptr[PyObject];
 
 def new_module(
     mt: ptr[PyTypeObject], args: ptr[PyObject], kws: ptr[PyObject]
-) -> ptr[PyObject] {
-    m = new_module_notrack(mt);
-    if m {
-        object_gc_track(m);
-    }
-    return m;
-}
+) -> ptr[PyObject];
 
-"""check_api_version: warn when an extension was built for another C API
-version; False when the warning became an error."""
-def check_api_version(name: ptr[u8], module_api_version: i32) -> bool {
-    if module_api_version != PYTHON_API_VERSION
-        and module_api_version != PYTHON_ABI_VERSION {
-        if PyErr_WarnFormat(
-            PyExc_RuntimeWarning,
-            1,
-            "Python C API version mismatch for module %.100s: This Python has API version %d, module %.100s has version %d.",
-            name,
-            PYTHON_API_VERSION,
-            name,
-            module_api_version
-        )
-            != 0 {
-            return False;
-        }
-    }
-    return True;
-}
+def check_api_version(name: ptr[u8], module_api_version: i32) -> bool;
 
 def add_methods_to_object(
     module: ptr[PyObject], name: ptr[PyObject], functions: ptr[PyMethodDef]
-) -> i32 {
-    fdef = functions;
-    while fdef.view(1)[0].ml_name {
-        flags = fdef.view(1)[0].ml_flags;
-        if (flags & METH_CLASS) != i32(0) or (flags & METH_STATIC) != i32(0) {
-            PyErr_SetString(
-                PyExc_ValueError,
-                "module functions cannot set METH_CLASS or METH_STATIC"
-            );
-            return i32(-1);
-        }
-        func = PyCFunction_NewEx(fdef, module, name);
-        if not func {
-            return i32(-1);
-        }
-        if PyObject_SetAttrString(module, fdef.view(1)[0].ml_name, func) != 0 {
-            object_decref(func);
-            return i32(-1);
-        }
-        object_decref(func);
-        fdef = fdef + 1;
-    }
-    return i32(0);
-}
+) -> i32;
 
-"""A PyModuleDef's fields (layouts.jac `ModuleDef`; cpython_api.jac keeps
-PyModuleDef opaque)."""
-def def_fields(mdef: ptr[PyModuleDef]) -> ptr[ModuleDef] {
-    return ptr[ModuleDef](mdef);
-}
+def def_fields(mdef: ptr[PyModuleDef]) -> ptr[ModuleDef];
 
-def def_of(op: ptr[PyObject]) -> ptr[PyModuleDef] {
-    return ptr[PyModuleDef](module_of(op).view(1)[0].md_def);
-}
+def def_of(op: ptr[PyObject]) -> ptr[PyModuleDef];
 
-"""Whether the module's per-module hooks may run: not when m_size > 0 and
-the state was never allocated (bpo-39824)."""
-def hooks_ready(op: ptr[PyObject]) -> bool {
-    mdef = def_of(op);
-    return def_fields(mdef).view(1)[0].m_size <= 0
-        or bool(module_of(op).view(1)[0].md_state);
-}
+def hooks_ready(op: ptr[PyObject]) -> bool;
 
-def allocate_state(op: ptr[PyObject], size: i64) -> bool {
-    state = PyMem_Malloc(u64(size));
-    if not state {
-        PyErr_NoMemory();
-        return False;
-    }
-    jacpy_memory_zero(state, size);
-    module_of(op).view(1)[0].md_state = state;
-    return True;
-}
+def allocate_state(op: ptr[PyObject], size: i64) -> bool;
 
 import from c {
     def _PyModule_IsExtension(ob: ptr[PyObject]) -> i32 {
@@ -405,8 +259,7 @@ import from c {
         if not name {
             return i32(-1);
         }
-        # Always allocate a state: it marks the module initialized, so
-        # importlib.reload() does not run the slots again.
+
         if def_fields(mdef).view(1)[0].m_size >= 0
             and not module_of(module).view(1)[0].md_state {
             if not allocate_state(module, def_fields(mdef).view(1)[0].m_size) {
@@ -496,25 +349,20 @@ import from c {
             PyErr_SetString(PyExc_SystemError, "nameless module");
         }
         return NULL;
-    }
-    # The module dict still holds the name, so the UTF-8 stays valid.
-    def PyModule_GetName(m: ptr[PyObject]) -> ptr[u8] {
+    }  def PyModule_GetName(m: ptr[PyObject]) -> ptr[u8] {
         name = PyModule_GetNameObject(m);
         if not name {
             return ptr[u8]();
         }
         object_decref(name);
         return ptr[u8](PyUnicode_AsUTF8(name));
-    }
-    # None for a missing or bogus __file__.
-    def _PyModule_GetFilenameObject(mod: ptr[PyObject]) -> ptr[PyObject] {
+    }  def _PyModule_GetFilenameObject(mod: ptr[PyObject]) -> ptr[PyObject] {
         if not module_check(mod) {
             PyErr_BadArgument();
             return NULL;
         }
         dict = module_of(mod).view(1)[0].md_dict;
         if not dict {
-            # The module has been tampered with.
             return object_new_ref(Py_None);
         }
         (res, fileobj) = dict_get(dict, "__file__");
@@ -522,8 +370,6 @@ import from c {
             return NULL;
         }
         if res == 0 {
-            # Not set: __main__, a namespace package, a loader that is not
-            # disk-based, or a module made by hand.
             return object_new_ref(Py_None);
         }
         if not unicode_check(fileobj) {
@@ -550,10 +396,7 @@ import from c {
         utf8 = ptr[u8](PyUnicode_AsUTF8(fileobj));
         object_decref(fileobj);
         return utf8;
-    }
-    # An empty string for an invalid module or a missing, empty or invalid
-    # filename.
-    def _PyModule_GetFilenameUTF8(
+    }  def _PyModule_GetFilenameUTF8(
         mod: ptr[PyObject], buffer: ptr[u8], maxlen: i64
     ) -> i64 {
         size: i64 = -1;
@@ -592,11 +435,7 @@ import from c {
         if d {
             _PyModule_ClearDict(d);
         }
-    }
-    # For a more predictable order of destructors, first replace the names
-    # with a single leading underscore by None, then every name but
-    # __builtins__ (left for the destructors of non-global objects).
-    def _PyModule_ClearDict(d: ptr[PyObject]) {
+    }  def _PyModule_ClearDict(d: ptr[PyObject]) {
         verbose = config_int(PyConfig_VERBOSE);
         clear_names(d, verbose, True);
         clear_names(d, verbose, False);
@@ -622,9 +461,7 @@ import from c {
             object_decref(value);
         }
         return rc;
-    }
-    # The spec's origin when it is a location (a str), else 0.
-    def _PyModuleSpec_GetFileOrigin(
+    }  def _PyModuleSpec_GetFileOrigin(
         spec: ptr[PyObject], p_origin: ptr[ptr[PyObject]]
     ) -> i32 {
         (rc, has_location) = optional_attr(spec, "has_location");
@@ -646,11 +483,7 @@ import from c {
         }
         p_origin.view(1)[0] = origin;
         return i32(1);
-    }
-    # 1 when the module at `origin` could shadow a module of the same name
-    # later on the search path: not sys.flags.safe_path and its root_path is
-    # sys.path[0] (or the working directory for an empty one).
-    def _PyModule_IsPossiblyShadowing(origin: ptr[PyObject]) -> i32 {
+    }  def _PyModule_IsPossiblyShadowing(origin: ptr[PyObject]) -> i32 {
         if not origin {
             return i32(0);
         }
@@ -679,7 +512,6 @@ import from c {
         }
         if suppress == i32(1) {
             if PyErr_Occurred() {
-                # A non-AttributeError exception passes up.
                 return NULL;
             }
         } else {
@@ -703,7 +535,7 @@ import from c {
             object_decref(getattr);
             return result;
         }
-        # Not found: a useful message unless AttributeError is suppressed.
+
         if suppress == i32(1) {
             return NULL;
         }
@@ -717,6 +549,224 @@ import from c {
 }
 
 def from_def_and_spec(
+    mdef: ptr[PyModuleDef],
+    spec: ptr[PyObject],
+    module_api_version: i32,
+    nameobj: ptr[PyObject],
+    interp: ptr
+) -> ptr[PyObject];
+
+def clear_names(d: ptr[PyObject], verbose: i32, underscored: bool);
+
+def shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) -> i32;
+
+def wide_equals_ascii(p: ptr[i32], text: str) -> bool;
+
+def spec_file_origin(spec: ptr[PyObject]) -> tuple[i32, ptr[PyObject]];
+
+def missing_attribute_error(md_dict: ptr[PyObject], name: ptr[PyObject]);
+
+def explain_missing(
+    mod_name: ptr[PyObject],
+    name: ptr[PyObject],
+    spec: ptr[PyObject],
+    origin: ptr[PyObject]
+);
+
+def module___init__(
+    op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> i32;
+
+glob:priv module_init_signature = CallSignature(
+         "module", ["name", "doc"], 1, 2, 0, parser=PARSE_KEYWORDS
+     );
+
+def module_init_bound(args: BoundArguments) -> ptr[PyObject];
+
+def module_init_checked(
+    op: ptr[PyObject], name: ptr[PyObject], doc: ptr[PyObject]
+) -> i32;
+
+def module_dealloc(op: ptr[PyObject]);
+
+def module_repr(op: ptr[PyObject]) -> ptr[PyObject];
+
+def module_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
+
+def module_clear(op: ptr[PyObject]) -> i32;
+
+def module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def module_get_dict(op: ptr[PyObject]) -> ptr[PyObject];
+
+def module_get_annotate(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def module_set_annotate(op: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32;
+
+def dict_pop(dict: ptr[PyObject], name: str) -> i32;
+
+def module_get_annotations(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject];
+
+def module_set_annotations(
+    op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32;
+
+impl module_of(op: ptr[PyObject]) -> ptr[PyModuleObject] {
+    return ptr[PyModuleObject](op);
+}
+
+impl module_check(op: ptr[PyObject]) -> bool {
+    return object_type_check(op, addressof(PyModule_Type));
+}
+
+impl unicode_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_UNICODE_SUBCLASS);
+}
+
+impl dict_check(op: ptr[PyObject]) -> bool {
+    return type_has_feature(object_type(op), Py_TPFLAGS_DICT_SUBCLASS);
+}
+
+impl config_int(offset: i64) -> i32 {
+    return ptr[i32](_Py_GetConfig() + offset).view(1)[0];
+}
+
+impl dict_get(dict: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
+    value: ptr[PyObject] = NULL;
+    key = jacpy_unicode_intern_text(name);
+    if not key {
+        return (i32(-1), value);
+    }
+    status = PyDict_GetItemRef(dict, key, &mut value);
+    object_decref(key);
+    return (status, value);
+}
+
+impl optional_attr(op: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
+    value: ptr[PyObject] = NULL;
+    status = PyObject_GetOptionalAttrString(op, name, &mut value);
+    return (status, value);
+}
+
+impl module_init_dict(
+    m: ptr[PyObject], md_dict: ptr[PyObject], name: ptr[PyObject], doc_in: ptr[PyObject]
+) -> i32 {
+    doc = doc_in or Py_None;
+    if PyDict_SetItemString(md_dict, ptr[u8]("__name__"), name) != 0
+        or PyDict_SetItemString(md_dict, ptr[u8]("__doc__"), doc) != 0
+        or PyDict_SetItemString(md_dict, ptr[u8]("__package__"), Py_None) != 0
+        or PyDict_SetItemString(md_dict, ptr[u8]("__loader__"), Py_None) != 0
+        or PyDict_SetItemString(md_dict, ptr[u8]("__spec__"), Py_None) != 0 {
+        return i32(-1);
+    }
+    if object_is_type(name, ptr[PyTypeObject](addressof(PyUnicode_Type))) {
+        old = module_of(m).view(1)[0].md_name;
+        module_of(m).view(1)[0].md_name = object_new_ref(name);
+        object_xdecref(old);
+    }
+    return i32(0);
+}
+
+impl new_module_notrack(mt: ptr[PyTypeObject]) -> ptr[PyObject] {
+    m = _PyType_AllocNoTrack(mt, 0);
+    if not m {
+        return NULL;
+    }
+    md = module_of(m);
+    md.view(1)[0].md_def = ptr[ModuleDef]();
+    md.view(1)[0].md_state = ptr();
+    md.view(1)[0].md_weaklist = NULL;
+    md.view(1)[0].md_name = NULL;
+    md.view(1)[0].md_dict = PyDict_New();
+    if not md.view(1)[0].md_dict {
+        object_decref(m);
+        return NULL;
+    }
+    return m;
+}
+
+impl new_module(
+    mt: ptr[PyTypeObject], args: ptr[PyObject], kws: ptr[PyObject]
+) -> ptr[PyObject] {
+    m = new_module_notrack(mt);
+    if m {
+        object_gc_track(m);
+    }
+    return m;
+}
+
+impl check_api_version(name: ptr[u8], module_api_version: i32) -> bool {
+    if module_api_version != PYTHON_API_VERSION
+        and module_api_version != PYTHON_ABI_VERSION {
+        if PyErr_WarnFormat(
+            PyExc_RuntimeWarning,
+            1,
+            "Python C API version mismatch for module %.100s: This Python has API version %d, module %.100s has version %d.",
+            name,
+            PYTHON_API_VERSION,
+            name,
+            module_api_version
+        )
+            != 0 {
+            return False;
+        }
+    }
+    return True;
+}
+
+impl add_methods_to_object(
+    module: ptr[PyObject], name: ptr[PyObject], functions: ptr[PyMethodDef]
+) -> i32 {
+    fdef = functions;
+    while fdef.view(1)[0].ml_name {
+        flags = fdef.view(1)[0].ml_flags;
+        if (flags & METH_CLASS) != i32(0) or (flags & METH_STATIC) != i32(0) {
+            PyErr_SetString(
+                PyExc_ValueError,
+                "module functions cannot set METH_CLASS or METH_STATIC"
+            );
+            return i32(-1);
+        }
+        func = PyCFunction_NewEx(fdef, module, name);
+        if not func {
+            return i32(-1);
+        }
+        if PyObject_SetAttrString(module, fdef.view(1)[0].ml_name, func) != 0 {
+            object_decref(func);
+            return i32(-1);
+        }
+        object_decref(func);
+        fdef = fdef + 1;
+    }
+    return i32(0);
+}
+
+impl def_fields(mdef: ptr[PyModuleDef]) -> ptr[ModuleDef] {
+    return ptr[ModuleDef](mdef);
+}
+
+impl def_of(op: ptr[PyObject]) -> ptr[PyModuleDef] {
+    return ptr[PyModuleDef](module_of(op).view(1)[0].md_def);
+}
+
+impl hooks_ready(op: ptr[PyObject]) -> bool {
+    mdef = def_of(op);
+    return def_fields(mdef).view(1)[0].m_size <= 0
+        or bool(module_of(op).view(1)[0].md_state);
+}
+
+impl allocate_state(op: ptr[PyObject], size: i64) -> bool {
+    state = PyMem_Malloc(u64(size));
+    if not state {
+        PyErr_NoMemory();
+        return False;
+    }
+    jacpy_memory_zero(state, size);
+    module_of(op).view(1)[0].md_state = state;
+    return True;
+}
+
+impl from_def_and_spec(
     mdef: ptr[PyModuleDef],
     spec: ptr[PyObject],
     module_api_version: i32,
@@ -780,12 +830,11 @@ def from_def_and_spec(
         }
         cur_slot = cur_slot + 1;
     }
-    # Multi-phase init modules are expected to work under multiple
-    # interpreters by default.
+
     if not has_multiple_interpreters_slot {
         multiple_interpreters = MULTIPLE_INTERPRETERS_SUPPORTED;
     }
-    # _Py_IsMainInterpreter.
+
     is_main = ptr(interp) == ptr(PyInterpreterState_Main());
     if multiple_interpreters == MULTIPLE_INTERPRETERS_NOT_SUPPORTED {
         if not is_main
@@ -869,9 +918,7 @@ def from_def_and_spec(
     return m;
 }
 
-"""One pass of _PyModule_ClearDict: names with a single leading underscore
-(first pass), or every name but __builtins__."""
-def clear_names(d: ptr[PyObject], verbose: i32, underscored: bool) {
+impl clear_names(d: ptr[PyObject], verbose: i32, underscored: bool) {
     pos: i64 = 0;
     key: ptr[PyObject] = NULL;
     value: ptr[PyObject] = NULL;
@@ -886,7 +933,7 @@ def clear_names(d: ptr[PyObject], verbose: i32, underscored: bool) {
                 and i64(PyUnicode_ReadChar(key, 1)) != UNDERSCORE;
         } else {
             clear = i64(first) != UNDERSCORE
-                or _PyUnicode_EqualToASCIIString(key, "__builtins__") == 0;
+                or _PyUnicode_EqualToASCIIString(key, ptr[u8]("__builtins__")) == 0;
         }
         if not clear {
             continue;
@@ -907,10 +954,7 @@ def clear_names(d: ptr[PyObject], verbose: i32, underscored: bool) {
     }
 }
 
-"""The shadowing test of _PyModule_IsPossiblyShadowing, with its wide
-character buffers: root_path (MAXPATHLEN + 1) and cwd (MAXPATHLEN)."""
-def shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) -> i32 {
-    # root_path = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
+impl shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) -> i32 {
     size = PyUnicode_AsWideChar(origin, ptr(root_path), MAXPATHLEN);
     if size < 0 {
         return i32(-1);
@@ -920,7 +964,7 @@ def shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) ->
     if not sep {
         return i32(0);
     }
-    # A package: look one directory further up.
+
     if wide_equals_ascii(sep + 1, "__init__.py") {
         sep.view(1)[0] = i32(0);
         sep = wcsrchr(root_path, SEP);
@@ -929,14 +973,12 @@ def shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) ->
         }
     }
     sep.view(1)[0] = i32(0);
-    # sys.path[0] or os.getcwd()
+
     sys_path_0 = ptr[ptr[i32]](_Py_GetConfig() + PyConfig_SYS_PATH_0).view(1)[0];
     if not sys_path_0 {
         return i32(0);
     }
     if sys_path_0.view(1)[0] == i32(0) {
-        # sys.path[0] == "" is the current directory; a failed getcwd lets
-        # the caller proceed as not shadowing.
         if not _Py_wgetcwd(cwd, u64(MAXPATHLEN)) {
             return i32(0);
         }
@@ -945,9 +987,8 @@ def shadowing_root(origin: ptr[PyObject], root_path: ptr[i32], cwd: ptr[i32]) ->
     return i32(1) if wcscmp(sys_path_0, root_path) == 0 else i32(0);
 }
 
-"""Whether the NUL-terminated wide string at p is the ASCII `text`."""
-def wide_equals_ascii(p: ptr[i32], text: str) -> bool {
-    expected = PyUnicode_FromString(text);
+impl wide_equals_ascii(p: ptr[i32], text: str) -> bool {
+    expected = jacpy_unicode_from_text(text);
     if not expected {
         PyErr_Clear();
         return False;
@@ -964,9 +1005,7 @@ def wide_equals_ascii(p: ptr[i32], text: str) -> bool {
     return same;
 }
 
-"""_PyModuleSpec_GetFileOrigin for Jac callers: (status, origin), origin a
-new reference only when status is 1."""
-def spec_file_origin(spec: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
+impl spec_file_origin(spec: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
     slot = ptr[ptr[PyObject]](PyMem_Calloc(1, 8));
     if not slot {
         PyErr_NoMemory();
@@ -978,9 +1017,7 @@ def spec_file_origin(spec: ptr[PyObject]) -> tuple[i32, ptr[PyObject]] {
     return (status, origin);
 }
 
-"""Raise the AttributeError for a missing module attribute, naming the
-module and, when the spec says so, a likely shadowing or circular import."""
-def missing_attribute_error(md_dict: ptr[PyObject], name: ptr[PyObject]) {
+impl missing_attribute_error(md_dict: ptr[PyObject], name: ptr[PyObject]) {
     (status, mod_name) = dict_get(md_dict, "__name__");
     if status < 0 {
         return;
@@ -1011,7 +1048,7 @@ def missing_attribute_error(md_dict: ptr[PyObject], name: ptr[PyObject]) {
     object_decref(mod_name);
 }
 
-def explain_missing(
+impl explain_missing(
     mod_name: ptr[PyObject],
     name: ptr[PyObject],
     spec: ptr[PyObject],
@@ -1056,7 +1093,6 @@ def explain_missing(
     }
     if rc > 0 {
         if is_possibly_shadowing != 0 {
-            # Only mention shadowing a non-stdlib module while it initializes.
             PyErr_Format(
                 PyExc_AttributeError,
                 "module '%U' has no attribute '%U' (consider renaming '%U' if it has the same name as a library you intended to import)",
@@ -1097,7 +1133,7 @@ def explain_missing(
     }
 }
 
-def module___init__(
+impl module___init__(
     op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> i32 {
     if not kwargs and object_size(args) >= 1 and object_size(args) <= 2 {
@@ -1113,11 +1149,7 @@ def module___init__(
     return i32(0);
 }
 
-glob:priv module_init_signature = CallSignature(
-         "module", ["name", "doc"], 1, 2, 0, parser=PARSE_KEYWORDS
-     );
-
-def module_init_bound(args: BoundArguments) -> ptr[PyObject] {
+impl module_init_bound(args: BoundArguments) -> ptr[PyObject] {
     doc = args.values[1] if args.values[1] else Py_None;
     if module_init_checked(args.context, args.values[0], doc) != 0 {
         return NULL;
@@ -1125,7 +1157,7 @@ def module_init_bound(args: BoundArguments) -> ptr[PyObject] {
     return object_new_ref(Py_None);
 }
 
-def module_init_checked(
+impl module_init_checked(
     op: ptr[PyObject], name: ptr[PyObject], doc: ptr[PyObject]
 ) -> i32 {
     if not unicode_check(name) {
@@ -1135,7 +1167,7 @@ def module_init_checked(
     return module_init_dict(op, module_of(op).view(1)[0].md_dict, name, doc);
 }
 
-def module_dealloc(op: ptr[PyObject]) {
+impl module_dealloc(op: ptr[PyObject]) {
     md = module_of(op);
     object_gc_untrack(op);
     if config_int(PyConfig_VERBOSE) != i32(0) and md.view(1)[0].md_name {
@@ -1145,7 +1177,7 @@ def module_dealloc(op: ptr[PyObject]) {
         PyObject_ClearWeakRefs(op);
     }
     mdef = ptr[PyModuleDef](md.view(1)[0].md_def);
-    # bpo-39824: no m_free when m_size > 0 and the state was never made.
+
     if mdef and int(def_fields(mdef).view(1)[0].m_free) != 0 and hooks_ready(op) {
         calls = addressof(call_slot);
         calls.view(1)[0].free = int(def_fields(mdef).view(1)[0].m_free);
@@ -1159,13 +1191,13 @@ def module_dealloc(op: ptr[PyObject]) {
     object_type(op).view(1)[0].tp_free(ptr(op));
 }
 
-def module_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+impl module_repr(op: ptr[PyObject]) -> ptr[PyObject] {
     return _PyImport_ImportlibModuleRepr(ptr(current_interp()), op);
 }
 
-def module_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+impl module_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     mdef = def_of(op);
-    # bpo-39824: no m_traverse when m_size > 0 and the state was never made.
+
     if mdef and int(def_fields(mdef).view(1)[0].m_traverse) != 0 and hooks_ready(op) {
         calls = addressof(call_slot);
         calls.view(1)[0].traverse = int(def_fields(mdef).view(1)[0].m_traverse);
@@ -1177,7 +1209,7 @@ def module_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
     return visit_reference(module_of(op).view(1)[0].md_dict, visitor, arg);
 }
 
-def module_clear(op: ptr[PyObject]) -> i32 {
+impl module_clear(op: ptr[PyObject]) -> i32 {
     md = module_of(op);
     mdef = ptr[PyModuleDef](md.view(1)[0].md_def);
     if mdef and int(def_fields(mdef).view(1)[0].m_clear) != 0 and hooks_ready(op) {
@@ -1204,12 +1236,12 @@ def module_clear(op: ptr[PyObject]) -> i32 {
     return i32(0);
 }
 
-def module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     result = NULL;
     dict = PyObject_GetAttrString(op, "__dict__");
     if dict {
         if dict_check(dict) {
-            key = PyUnicode_InternFromString("__dir__");
+            key = PyUnicode_InternFromString(ptr[u8]("__dir__"));
             dirfunc = PyDict_GetItemWithError(dict, key) if key else NULL;
             object_xdecref(key);
             if dirfunc {
@@ -1225,7 +1257,7 @@ def module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return result;
 }
 
-def module_get_dict(op: ptr[PyObject]) -> ptr[PyObject] {
+impl module_get_dict(op: ptr[PyObject]) -> ptr[PyObject] {
     dict = PyObject_GetAttrString(op, "__dict__");
     if not dict {
         return NULL;
@@ -1238,7 +1270,7 @@ def module_get_dict(op: ptr[PyObject]) -> ptr[PyObject] {
     return dict;
 }
 
-def module_get_annotate(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl module_get_annotate(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     dict = module_get_dict(op);
     if not dict {
         return NULL;
@@ -1255,7 +1287,9 @@ def module_get_annotate(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return annotate;
 }
 
-def module_set_annotate(op: ptr[PyObject], value: ptr[PyObject], _closure: ptr) -> i32 {
+impl module_set_annotate(
+    op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
+) -> i32 {
     if not value {
         PyErr_SetString(PyExc_TypeError, "cannot delete __annotate__ attribute");
         return i32(-1);
@@ -1281,10 +1315,8 @@ def module_set_annotate(op: ptr[PyObject], value: ptr[PyObject], _closure: ptr) 
     return i32(0);
 }
 
-"""PyDict_Pop of an attribute name, discarding the value: 1 removed, 0
-absent, -1 error."""
-def dict_pop(dict: ptr[PyObject], name: str) -> i32 {
-    key = PyUnicode_InternFromString(name);
+impl dict_pop(dict: ptr[PyObject], name: str) -> i32 {
+    key = jacpy_unicode_intern_text(name);
     if not key {
         return i32(-1);
     }
@@ -1293,7 +1325,7 @@ def dict_pop(dict: ptr[PyObject], name: str) -> i32 {
     return result;
 }
 
-def module_get_annotations(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
+impl module_get_annotations(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     dict = module_get_dict(op);
     if not dict {
         return NULL;
@@ -1344,7 +1376,7 @@ def module_get_annotations(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
             annotations = PyDict_New();
         }
         object_xdecref(annotate);
-        # No caching while the module is still initializing.
+
         if annotations and not is_initializing {
             if PyDict_SetItemString(dict, ptr[u8]("__annotations__"), annotations)
                 != 0 {
@@ -1357,7 +1389,7 @@ def module_get_annotations(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     return annotations;
 }
 
-def module_set_annotations(
+impl module_set_annotations(
     op: ptr[PyObject], value: ptr[PyObject], _closure: ptr
 ) -> i32 {
     dict = module_get_dict(op);

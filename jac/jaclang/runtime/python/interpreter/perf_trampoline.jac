@@ -1,11 +1,3 @@
-"""Python/perf_trampoline.c for a build without perf trampolines.
-
-JacPython does not support `-X perf` or `sys.activate_stack_trampoline()`:
-configure leaves PY_HAVE_PERF_TRAMPOLINE undefined, so the interpreter only
-reaches these entry points, each the C file's branch for that configuration.
-See ../LICENSE.cpython.
-"""
-
 import from c {
     def PyUnstable_PerfTrampoline_CompileCode(co: ptr[PyObject]) -> i32 {
         return i32(0);

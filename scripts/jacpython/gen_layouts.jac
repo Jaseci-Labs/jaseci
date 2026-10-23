@@ -126,6 +126,15 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          # _ssl ports define and read them; the header has no C user left.
          "Modules/socketmodule.h"
      ],
+     # Configuration macros a constant reads, folded to 0 or 1 for the probe
+     # and layouts_check.c (a constant expression cannot use `defined`).
+     PROBE_DEFINES: list[str] = [
+         "#ifdef _Py_FORCE_UTF8_FS_ENCODING",
+         "#define JAC_FORCE_UTF8_FS_ENCODING 1",
+         "#else",
+         "#define JAC_FORCE_UTF8_FS_ENCODING 0",
+         "#endif"
+     ],
      # Headers the constant probe and layouts_check.c include after Python.h
      # (datetime.h is not part of it).
      INCLUDES: list[str] = [
@@ -146,7 +155,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "internal/pycore_function.h",
          "internal/pycore_code.h",
          "internal/pycore_interpframe_structs.h",
-         "internal/pycore_object.h"
+         "internal/pycore_object.h",
+         "internal/pycore_interp.h"
      ],
      # Jac name and C type of each layout the object ports use. Structs a
      # layout embeds by value are emitted too; pointers to anything else are
@@ -952,6 +962,35 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyByteArrayObject_SIZE", "sizeof(PyByteArrayObject)", "i64"),
          ("bytesiterobject_SIZE", "sizeof(bytesiterobject)", "i64"),
          ("_Py_TYPE_VERSION_BYTEARRAY", "_Py_TYPE_VERSION_BYTEARRAY", "u32"),
+         ("PyASCIIObject_SIZE", "sizeof(PyASCIIObject)", "i64"),
+         ("PyASCIIObject_STATE", "offsetof(PyASCIIObject, state)", "i64"),
+         ("PyCompactUnicodeObject_SIZE", "sizeof(PyCompactUnicodeObject)", "i64"),
+         (
+             "PyCompactUnicodeObject_UTF8_LENGTH",
+             "offsetof(PyCompactUnicodeObject, utf8_length)",
+             "i64"
+         ),
+         (
+             "PyCompactUnicodeObject_UTF8",
+             "offsetof(PyCompactUnicodeObject, utf8)",
+             "i64"
+         ),
+         ("PyUnicodeObject_SIZE", "sizeof(PyUnicodeObject)", "i64"),
+         ("PyUnicodeObject_DATA", "offsetof(PyUnicodeObject, data)", "i64"),
+         ("_PyUnicodeWriter_SIZE", "sizeof(_PyUnicodeWriter)", "i64"),
+         ("_Py_TYPE_VERSION_STR", "_Py_TYPE_VERSION_STR", "u32"),
+         (
+             "_Py_freelists_UNICODE_WRITERS",
+             "offsetof(struct _Py_freelists, unicode_writers)",
+             "i64"
+         ),
+         ("Py_unicode_writers_MAXFREELIST", "Py_unicode_writers_MAXFREELIST", "i64"),
+         ("Py_buffer_SIZE", "sizeof(Py_buffer)", "i64"),
+         ("_Py_Identifier_INDEX", "offsetof(_Py_Identifier, index)", "i64"),
+         ("_Py_Identifier_MUTEX", "offsetof(_Py_Identifier, mutex)", "i64"),
+         ("Py_RTFLAGS_USE_MAIN_OBMALLOC", "Py_RTFLAGS_USE_MAIN_OBMALLOC", "u64"),
+         ("Py_mod_multiple_interpreters", "Py_mod_multiple_interpreters", "i32"),
+         ("Py_mod_gil", "Py_mod_gil", "i32"),
          ("_Py_MANAGED_BUFFER_RELEASED", "_Py_MANAGED_BUFFER_RELEASED", "i32"),
          ("_Py_MANAGED_BUFFER_FREE_FORMAT", "_Py_MANAGED_BUFFER_FREE_FORMAT", "i32"),
          ("_Py_MEMORYVIEW_RELEASED", "_Py_MEMORYVIEW_RELEASED", "i32"),
@@ -1127,6 +1166,15 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
      # form of CONSTANTS.
      PLATFORM_CONSTANTS: list[tuple[str, str, str]] = [
          ("PyConfig_VERBOSE", "offsetof(PyConfig, verbose)", "i64"),
+         ("PyConfig_DEV_MODE", "offsetof(PyConfig, dev_mode)", "i64"),
+         (
+             "PyConfig_FILESYSTEM_ENCODING",
+             "offsetof(PyConfig, filesystem_encoding)",
+             "i64"
+         ),
+         ("PyConfig_FILESYSTEM_ERRORS", "offsetof(PyConfig, filesystem_errors)", "i64"),
+         ("PyConfig_STDIO_ENCODING", "offsetof(PyConfig, stdio_encoding)", "i64"),
+         ("PyConfig_STDIO_ERRORS", "offsetof(PyConfig, stdio_errors)", "i64"),
          ("PyConfig_BYTES_WARNING", "offsetof(PyConfig, bytes_warning)", "i64"),
          ("PyConfig_SAFE_PATH", "offsetof(PyConfig, safe_path)", "i64"),
          ("PyConfig_SYS_PATH_0", "offsetof(PyConfig, sys_path_0)", "i64"),
@@ -1266,6 +1314,97 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0])",
              "i64"
          ),
+         (
+             "_PyRuntimeState_STR_EMPTY",
+             "offsetof(_PyRuntimeState, static_objects.singletons.strings.literals._py_empty)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_STRINGS_ASCII",
+             "offsetof(_PyRuntimeState, static_objects.singletons.strings.ascii)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_STRINGS_LATIN1",
+             "offsetof(_PyRuntimeState, static_objects.singletons.strings.latin1)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_STRINGS_ASCII_SIZE",
+             "sizeof(_PyRuntime.static_objects.singletons.strings.ascii[0])",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_STRINGS_LATIN1_SIZE",
+             "sizeof(_PyRuntime.static_objects.singletons.strings.latin1[0])",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_INTERNED_STRINGS",
+             "offsetof(_PyRuntimeState, cached_objects.interned_strings)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_UNICODE_IDS_MUTEX",
+             "offsetof(_PyRuntimeState, unicode_state.ids.mutex)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_UNICODE_IDS_NEXT_INDEX",
+             "offsetof(_PyRuntimeState, unicode_state.ids.next_index)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_INTERNED_STRINGS",
+             "offsetof(PyInterpreterState, cached_objects.interned_strings)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_FS_CODEC_ENCODING",
+             "offsetof(PyInterpreterState, unicode.fs_codec.encoding)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_FS_CODEC_UTF8",
+             "offsetof(PyInterpreterState, unicode.fs_codec.utf8)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_FS_CODEC_ERRORS",
+             "offsetof(PyInterpreterState, unicode.fs_codec.errors)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_FS_CODEC_ERROR_HANDLER",
+             "offsetof(PyInterpreterState, unicode.fs_codec.error_handler)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_UCNHASH_CAPI",
+             "offsetof(PyInterpreterState, unicode.ucnhash_capi)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_IDS_SIZE",
+             "offsetof(PyInterpreterState, unicode.ids.size)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_UNICODE_IDS_ARRAY",
+             "offsetof(PyInterpreterState, unicode.ids.array)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_FEATURE_FLAGS",
+             "offsetof(PyInterpreterState, feature_flags)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_FINALIZING",
+             "offsetof(PyInterpreterState, _finalizing)",
+             "i64"
+         ),
+         ("_Py_FORCE_UTF8_FS_ENCODING", "JAC_FORCE_UTF8_FS_ENCODING", "i64"),
          (
              "_PyRuntimeState_REF_TRACER_FUNC",
              "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",
@@ -2065,7 +2204,9 @@ def render_check(
         "#include \"Python.h\""
     ]
         + [f"#include \"{header}\"" for header in INCLUDES]
-        + ["#include <stddef.h>", ""];
+        + ["#include <stddef.h>"]
+        + PROBE_DEFINES
+        + [""];
     private = private_definitions();
     if private {
         lines += [
@@ -2165,6 +2306,7 @@ def extract(
     lines = ["#define Py_BUILD_CORE 1", "#include \"Python.h\""]
         + [f"#include \"{header}\"" for header in INCLUDES]
         + ["#include <stddef.h>"]
+        + PROBE_DEFINES
         + private_definitions();
     for (name, expression, _) in constants {
         lines.append(

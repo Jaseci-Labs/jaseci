@@ -726,9 +726,22 @@ from the front O(1)) and counts buffer exports in `ob_exports`, so a resize
 during an export raises as in C. Its search, split and padding methods run
 on the shared byte stringlib.
 
-Order after these: text (`unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
-(`obmalloc.c` and the mimalloc copy under `Objects/mimalloc/`) follows the
-object model.
+`unicodeobject.c` (`object_model/unicode.jac`) builds objects
+byte-identical to C's compact and legacy layouts, reading and writing the
+`state` bit-field through masks, because the evaluator's header inlines and
+C extensions read str objects directly. The empty string, the one-character
+strings and the interned dict live in `_PyRuntime` and the interpreter and
+are used in place. Search on 1-byte strings runs on the byte stringlib;
+2- and 4-byte strings have width-specific copies of fastsearch.
+`unicodectype.c` is `object_model/unicodectype.jac` over
+`unicodetype_db.jac`, which `scripts/jacpython/gen_unicodetype.jac` writes
+from the pinned sources. `PyUnicode_FromFormatV` and its helpers, which
+consume a `va_list`, and the wrapper for the generated static-strings
+initializer stay C in object_api.c. Jac `str` values reach the C-string
+API through `jacpy_unicode_from_text`/`_intern_text`/`_equal_text`.
+
+Order after these: `typeobject.c` (12,312 lines) last. The allocator (`obmalloc.c` and the mimalloc copy under
+`Objects/mimalloc/`) follows the object model.
 
 ## Evaluator (`Python/`, 132k lines)
 

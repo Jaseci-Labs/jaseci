@@ -1,17 +1,3 @@
-"""Weak references and proxies: Objects/weakrefobject.c in native Jac.
-
-`_PyWeakref_RefType`, `_PyWeakref_ProxyType` and
-`_PyWeakref_CallableProxyType` are C data Jac defines under their C names,
-and the weakref C API (`PyWeakref_NewRef`, `PyWeakref_GetRef`,
-`PyObject_ClearWeakRefs`, `_PyWeakref_ClearRef`, ...) is defined here under
-its C names, so the collector and every C caller use them unchanged. An
-object's weak references form a doubly linked list headed in the object
-(at `tp_weaklistoffset`), or in the interpreter's static-type state for a
-static builtin type; the basic reference and the basic proxy (no callback)
-are shared and kept first, as weakrefobject.c keeps them.
-See ../LICENSE.cpython.
-"""
-
 import from c {
     glob PyType_Type: PyTypeObject,
          PyExc_ReferenceError: ptr[PyObject]; def PyNumber_Power(
@@ -131,7 +117,6 @@ import from c {
              tp_new=weakref___new__,
              tp_free=PyObject_GC_Del
          ),
-         # Proxies have no tp_hash: they are "mutable" when the referent dies.
          _PyWeakref_ProxyType: PyTypeObject = PyTypeObject(
              ob_base=PyVarObject(
                  ob_base=_object(
@@ -186,149 +171,43 @@ import from c {
          );
 }
 
-def ref_of(op: ptr[PyObject]) -> ptr[PyWeakReference] {
-    return ptr[PyWeakReference](op);
-}
+def ref_of(op: ptr[PyObject]) -> ptr[PyWeakReference];
 
-def no_ref -> ptr[PyWeakReference] {
-    return ptr[PyWeakReference]();
-}
+def no_ref -> ptr[PyWeakReference];
 
-def ref_type -> ptr[PyTypeObject] {
-    return addressof(_PyWeakref_RefType);
-}
+def ref_type -> ptr[PyTypeObject];
 
-def proxy_type -> ptr[PyTypeObject] {
-    return addressof(_PyWeakref_ProxyType);
-}
+def proxy_type -> ptr[PyTypeObject];
 
-def callable_proxy_type -> ptr[PyTypeObject] {
-    return addressof(_PyWeakref_CallableProxyType);
-}
+def callable_proxy_type -> ptr[PyTypeObject];
 
-def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    if op {
-        object_incref(op);
-    }
-    return op;
-}
+def object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""PyWeakref_Check: a reference or a proxy of either kind."""
-def weakref_check(op: ptr[PyObject]) -> bool {
-    return object_type_check(op, ref_type()) or weakref_check_proxy(op);
-}
+def weakref_check(op: ptr[PyObject]) -> bool;
 
-"""PyWeakref_CheckRefExact."""
-def weakref_check_ref_exact(op: ptr[PyObject]) -> bool {
-    return object_is_type(op, ref_type());
-}
+def weakref_check_ref_exact(op: ptr[PyObject]) -> bool;
 
-"""PyWeakref_CheckProxy."""
-def weakref_check_proxy(op: ptr[PyObject]) -> bool {
-    return object_is_type(op, proxy_type())
-        or object_is_type(op, callable_proxy_type());
-}
+def weakref_check_proxy(op: ptr[PyObject]) -> bool;
 
-"""_PyType_SUPPORTS_WEAKREFS."""
-def supports_weakrefs(type: ptr[PyTypeObject]) -> bool {
-    return type.view(1)[0].tp_weaklistoffset != 0;
-}
+def supports_weakrefs(type: ptr[PyTypeObject]) -> bool;
 
-"""_PyObject_GET_WEAKREFS_LISTPTR: where the head of `op`'s weak reference
-list lives: in the interpreter's state for a static builtin type, else at
-the type's tp_weaklistoffset."""
-def weakrefs_listptr(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]] {
-    if type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS)
-        and type_has_feature(ptr[PyTypeObject](op), _Py_TPFLAGS_STATIC_BUILTIN) {
-        state = _PyStaticType_GetState(current_interp(), ptr[PyTypeObject](op));
-        return ptr[ptr[PyWeakReference]](state + managed_static_type_state_TP_WEAKLIST);
-    }
-    return listptr_from_offset(op);
-}
+def weakrefs_listptr(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]];
 
-"""_PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET."""
-def listptr_from_offset(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]] {
-    return ptr[ptr[PyWeakReference]](
-        ptr[u8](op) + object_type(op).view(1)[0].tp_weaklistoffset
-    );
-}
+def listptr_from_offset(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]];
 
-"""_Py_TryIncref: a new reference unless the object is being destroyed."""
-def try_incref(op: ptr[PyObject]) -> bool {
-    if object_refcount(op) > 0 {
-        object_incref(op);
-        return True;
-    }
-    return False;
-}
+def try_incref(op: ptr[PyObject]) -> bool;
 
-"""_PyWeakref_GET_REF: the referent as a new reference, or NULL when the
-reference is dead."""
-def weakref_get_ref(op: ptr[PyObject]) -> ptr[PyObject] {
-    ob = ref_of(op).view(1)[0].wr_object;
-    if ob == Py_None {
-        # clear_weakref() was called
-        return NULL;
-    }
-    if try_incref(ob) {
-        return ob;
-    }
-    return NULL;
-}
+def weakref_get_ref(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""_PyWeakref_IS_DEAD: cleared, or its referent's count reached zero (which
-a trashcan-delayed deallocation can leave visible, gh-60806)."""
-def weakref_is_dead(op: ptr[PyObject]) -> bool {
-    ob = ref_of(op).view(1)[0].wr_object;
-    return ob == Py_None or object_refcount(ob) == 0;
-}
+def weakref_is_dead(op: ptr[PyObject]) -> bool;
 
-def init_weakref(r: ptr[PyWeakReference], ob: ptr[PyObject], callback: ptr[PyObject]) {
-    r.view(1)[0].hash = -1;
-    r.view(1)[0].wr_object = ob;
-    r.view(1)[0].wr_prev = no_ref();
-    r.view(1)[0].wr_next = no_ref();
-    r.view(1)[0].wr_callback = object_xnew_ref(callback);
-    r.view(1)[0].vectorcall = weakref_vectorcall;
-}
+def init_weakref(r: ptr[PyWeakReference], ob: ptr[PyObject], callback: ptr[PyObject]);
 
-"""Unlink the reference from its referent's list and mark it dead; its
-callback is returned (moved out) when `take_callback`, else left."""
 def clear_weakref_lock_held(
     r: ptr[PyWeakReference], take_callback: bool
-) -> ptr[PyObject] {
-    ob = r.view(1)[0].wr_object;
-    if ob != Py_None {
-        list = weakrefs_listptr(ob);
-        if list.view(1)[0] == r {
-            # If 'self' is the end of the list (and thus self->wr_next is
-            # NULL) the list itself ends up empty.
-            list.view(1)[0] = r.view(1)[0].wr_next;
-        }
-        r.view(1)[0].wr_object = Py_None;
-        prev = r.view(1)[0].wr_prev;
-        next = r.view(1)[0].wr_next;
-        if prev {
-            prev.view(1)[0].wr_next = next;
-        }
-        if next {
-            next.view(1)[0].wr_prev = prev;
-        }
-        r.view(1)[0].wr_prev = no_ref();
-        r.view(1)[0].wr_next = no_ref();
-    }
-    callback = NULL;
-    if take_callback {
-        callback = r.view(1)[0].wr_callback;
-        r.view(1)[0].wr_callback = NULL;
-    }
-    return callback;
-}
+) -> ptr[PyObject];
 
-"""Clear the reference and release its callback."""
-def clear_weakref(op: ptr[PyObject]) {
-    object_xdecref(clear_weakref_lock_held(ref_of(op), True));
-}
+def clear_weakref(op: ptr[PyObject]);
 
 import from c {
     def _PyWeakref_GetWeakrefCount(ob: ptr[PyObject]) -> i64 {
@@ -342,10 +221,7 @@ import from c {
             head = head.view(1)[0].wr_next;
         }
         return count;
-    }
-    # Clear the reference without touching its callback, which the
-    # collector handles itself.
-    def _PyWeakref_ClearRef(r: ptr[PyWeakReference]) {
+    }  def _PyWeakref_ClearRef(r: ptr[PyWeakReference]) {
         clear_weakref_lock_held(r, False);
     }  def PyWeakref_NewRef(
         ob: ptr[PyObject], callback: ptr[PyObject]
@@ -383,9 +259,7 @@ import from c {
         ob = weakref_get_ref(r);
         pobj.view(1)[0] = ob;
         return i32(1) if ob else i32(0);
-    }
-    # A borrowed reference, None for a dead reference (deprecated API).
-    def PyWeakref_GetObject(r: ptr[PyObject]) -> ptr[PyObject] {
+    }  def PyWeakref_GetObject(r: ptr[PyObject]) -> ptr[PyObject] {
         if not r or not weakref_check(r) {
             PyErr_BadInternalCall();
             return NULL;
@@ -396,10 +270,7 @@ import from c {
         }
         object_decref(ob);
         return ob;
-    }
-    # Clear `object`'s weak references as it dies, then call their
-    # callbacks with the error state saved around them.
-    def PyObject_ClearWeakRefs(object: ptr[PyObject]) {
+    }  def PyObject_ClearWeakRefs(object: ptr[PyObject]) {
         if not object
             or not supports_weakrefs(object_type(object))
             or object_refcount(object) != 0 {
@@ -408,10 +279,9 @@ import from c {
         }
         list = weakrefs_listptr(object);
         if not list.view(1)[0] {
-            # The common case: no weak references.
             return;
         }
-        # The basic reference and proxy, at the head, have no callbacks.
+
         while list.view(1)[0] and is_basic_ref_or_proxy(list.view(1)[0]) {
             clear_weakref_lock_held(list.view(1)[0], True);
         }
@@ -427,7 +297,7 @@ import from c {
             PyErr_SetRaisedException(exc);
             return;
         }
-        # Clear each reference and keep it, with its callback, for the calls.
+
         num_items: i64 = 0;
         while list.view(1)[0] {
             cur = list.view(1)[0];
@@ -454,17 +324,13 @@ import from c {
         if supports_weakrefs(object_type(ob)) {
             _PyWeakref_ClearWeakRefsNoCallbacks(ob);
         }
-    }
-    # A static type's weak references, at finalization.
-    def _PyStaticType_ClearWeakRefs(interp: ptr, type: ptr[PyTypeObject]) {
+    }  def _PyStaticType_ClearWeakRefs(interp: ptr, type: ptr[PyTypeObject]) {
         state = _PyStaticType_GetState(interp, type);
         list = ptr[ptr[PyWeakReference]](state + managed_static_type_state_TP_WEAKLIST);
         while list.view(1)[0] {
             _PyWeakref_ClearRef(list.view(1)[0]);
         }
-    }
-    # Never for a static type, so the offset finds the list.
-    def _PyWeakref_ClearWeakRefsNoCallbacks(ob: ptr[PyObject]) {
+    }  def _PyWeakref_ClearWeakRefsNoCallbacks(ob: ptr[PyObject]) {
         list = listptr_from_offset(ob);
         while list.view(1)[0] {
             _PyWeakref_ClearRef(list.view(1)[0]);
@@ -474,374 +340,75 @@ import from c {
     }
 }
 
-def handle_callback(r: ptr[PyObject], callback: ptr[PyObject]) {
-    cbresult = PyObject_CallOneArg(callback, r);
-    if not cbresult {
-        PyErr_FormatUnraisable(
-            "Exception ignored while calling weakref callback %R", callback
-        );
-    } else {
-        object_decref(cbresult);
-    }
-}
+def handle_callback(r: ptr[PyObject], callback: ptr[PyObject]);
 
-def weakref_dealloc(op: ptr[PyObject]) {
-    object_gc_untrack(op);
-    clear_weakref(op);
-    object_type(op).view(1)[0].tp_free(ptr(op));
-}
+def weakref_dealloc(op: ptr[PyObject]);
 
-def gc_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
-    return visit_reference(ref_of(op).view(1)[0].wr_callback, visitor, arg);
-}
+def gc_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32;
 
-def gc_clear(op: ptr[PyObject]) -> i32 {
-    object_xdecref(clear_weakref_lock_held(ref_of(op), True));
-    return i32(0);
-}
+def gc_clear(op: ptr[PyObject]) -> i32;
 
 def weakref_vectorcall(
     op: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
-) -> ptr[PyObject] {
-    if kwnames and _PyArg_NoKwnames("weakref", kwnames) == 0 {
-        return NULL;
-    }
-    nargs = PyVectorcall_NARGS(nargsf);
-    if nargs != 0 and _PyArg_CheckPositional("weakref", nargs, 0, 0) == 0 {
-        return NULL;
-    }
-    ob = weakref_get_ref(op);
-    if not ob {
-        return object_new_ref(Py_None);
-    }
-    return ob;
-}
+) -> ptr[PyObject];
 
-def weakref_hash(op: ptr[PyObject]) -> i64 {
-    r = ref_of(op);
-    if r.view(1)[0].hash != -1 {
-        return r.view(1)[0].hash;
-    }
-    ob = weakref_get_ref(op);
-    if not ob {
-        PyErr_SetString(PyExc_TypeError, "weak object has gone away");
-        return -1;
-    }
-    r.view(1)[0].hash = PyObject_Hash(ob);
-    object_decref(ob);
-    return r.view(1)[0].hash;
-}
+def weakref_hash(op: ptr[PyObject]) -> i64;
 
-def weakref_repr(op: ptr[PyObject]) -> ptr[PyObject] {
-    ob = weakref_get_ref(op);
-    if not ob {
-        return PyUnicode_FromFormat("<weakref at %p; dead>", op);
-    }
-    key = PyUnicode_InternFromString("__name__");
-    name = NULL;
-    if key {
-        name = _PyObject_LookupSpecial(ob, key);
-        object_decref(key);
-    } else {
-        PyErr_Clear();
-    }
-    repr = NULL;
-    if not name
-        or not type_has_feature(object_type(name), Py_TPFLAGS_UNICODE_SUBCLASS) {
-        repr = PyUnicode_FromFormat("<weakref at %p; to '%T' at %p>", op, ob, ob);
-    } else {
-        repr = PyUnicode_FromFormat(
-            "<weakref at %p; to '%T' at %p (%U)>", op, ob, ob, name
-        );
-    }
-    object_decref(ob);
-    object_xdecref(name);
-    return repr;
-}
+def weakref_repr(op: ptr[PyObject]) -> ptr[PyObject];
 
-"""Weak references are equal when their referents are, or, once one has
-died, when they are the same reference."""
-def weakref_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
-    if (op != Py_EQ and op != Py_NE) or not weakref_check(a) or not weakref_check(b) {
-        return object_new_ref(Py_NotImplemented);
-    }
-    ob = weakref_get_ref(a);
-    other_obj = weakref_get_ref(b);
-    if not ob or not other_obj {
-        object_xdecref(ob);
-        object_xdecref(other_obj);
-        equal = a == b;
-        if op == Py_NE {
-            equal = not equal;
-        }
-        return object_new_ref(py_true() if equal else py_false());
-    }
-    result = PyObject_RichCompare(ob, other_obj, op);
-    object_decref(ob);
-    object_decref(other_obj);
-    return result;
-}
+def weakref_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject];
 
-"""get_basic_refs: the shared reference and proxy (no callback, exact
-basic types) at the head of a list: the reference first, then the proxy."""
-def basic_ref(head: ptr[PyWeakReference]) -> ptr[PyWeakReference] {
-    if head
-        and not head.view(1)[0].wr_callback
-        and weakref_check_ref_exact(ptr[PyObject](head)) {
-        return head;
-    }
-    return no_ref();
-}
+def basic_ref(head: ptr[PyWeakReference]) -> ptr[PyWeakReference];
 
-def basic_proxy(head_in: ptr[PyWeakReference]) -> ptr[PyWeakReference] {
-    head = head_in;
-    if head and not head.view(1)[0].wr_callback {
-        if weakref_check_ref_exact(ptr[PyObject](head)) {
-            head = head.view(1)[0].wr_next;
-        }
-        if head
-            and not head.view(1)[0].wr_callback
-            and weakref_check_proxy(ptr[PyObject](head)) {
-            return head;
-        }
-    }
-    return no_ref();
-}
+def basic_proxy(head_in: ptr[PyWeakReference]) -> ptr[PyWeakReference];
 
-def insert_after(newref: ptr[PyWeakReference], prev: ptr[PyWeakReference]) {
-    next = prev.view(1)[0].wr_next;
-    newref.view(1)[0].wr_prev = prev;
-    newref.view(1)[0].wr_next = next;
-    if next {
-        next.view(1)[0].wr_prev = newref;
-    }
-    prev.view(1)[0].wr_next = newref;
-}
+def insert_after(newref: ptr[PyWeakReference], prev: ptr[PyWeakReference]);
 
-def insert_head(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]) {
-    next = list.view(1)[0];
-    newref.view(1)[0].wr_prev = no_ref();
-    newref.view(1)[0].wr_next = next;
-    if next {
-        next.view(1)[0].wr_prev = newref;
-    }
-    list.view(1)[0] = newref;
-}
+def insert_head(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]);
 
-"""The shared basic reference or proxy for a request without a callback,
-as a new reference, when one exists and is not being destroyed."""
 def try_reuse_basic_ref(
     list: ptr[PyWeakReference], type: ptr[PyTypeObject], callback: ptr[PyObject]
-) -> ptr[PyWeakReference] {
-    if callback {
-        return no_ref();
-    }
-    cand = no_ref();
-    if type == ref_type() {
-        cand = basic_ref(list);
-    }
-    if type == proxy_type() or type == callable_proxy_type() {
-        cand = basic_proxy(list);
-    }
-    if cand and try_incref(ptr[PyObject](cand)) {
-        return cand;
-    }
-    return no_ref();
-}
+) -> ptr[PyWeakReference];
 
-def is_basic_ref(r: ptr[PyWeakReference]) -> bool {
-    return not r.view(1)[0].wr_callback and weakref_check_ref_exact(ptr[PyObject](r));
-}
+def is_basic_ref(r: ptr[PyWeakReference]) -> bool;
 
-def is_basic_proxy(r: ptr[PyWeakReference]) -> bool {
-    return not r.view(1)[0].wr_callback and weakref_check_proxy(ptr[PyObject](r));
-}
+def is_basic_proxy(r: ptr[PyWeakReference]) -> bool;
 
-def is_basic_ref_or_proxy(r: ptr[PyWeakReference]) -> bool {
-    return is_basic_ref(r) or is_basic_proxy(r);
-}
+def is_basic_ref_or_proxy(r: ptr[PyWeakReference]) -> bool;
 
-"""Link a new reference in: a basic reference first, a basic proxy after
-it, anything else after both."""
-def insert_weakref(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]) {
-    head = list.view(1)[0];
-    r = basic_ref(head);
-    proxy = basic_proxy(head);
-    prev = no_ref();
-    if is_basic_ref(newref) {
-        prev = no_ref();
-    } elif is_basic_proxy(newref) {
-        prev = r;
-    } else {
-        prev = r if not proxy else proxy;
-    }
-    if not prev {
-        insert_head(newref, list);
-    } else {
-        insert_after(newref, prev);
-    }
-}
+def insert_weakref(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]);
 
 def allocate_weakref(
     type: ptr[PyTypeObject], ob: ptr[PyObject], callback: ptr[PyObject]
-) -> ptr[PyWeakReference] {
-    newref = ptr[PyWeakReference](type.view(1)[0].tp_alloc(type, 0));
-    if not newref {
-        return no_ref();
-    }
-    init_weakref(newref, ob, callback);
-    return newref;
-}
+) -> ptr[PyWeakReference];
 
 def get_or_create_weakref(
     type: ptr[PyTypeObject], ob: ptr[PyObject], callback_in: ptr[PyObject]
-) -> ptr[PyWeakReference] {
-    if not supports_weakrefs(object_type(ob)) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "cannot create weak reference to '%s' object",
-            object_type(ob).view(1)[0].tp_name
-        );
-        return no_ref();
-    }
-    callback = NULL if callback_in == Py_None else callback_in;
-    list = weakrefs_listptr(ob);
-    if type == ref_type() or type == proxy_type() or type == callable_proxy_type() {
-        reused = try_reuse_basic_ref(list.view(1)[0], type, callback);
-        if reused {
-            return reused;
-        }
-    }
-    newref = allocate_weakref(type, ob, callback);
-    if not newref {
-        return no_ref();
-    }
-    insert_weakref(newref, list);
-    return newref;
-}
+) -> ptr[PyWeakReference];
 
-"""PyArg_UnpackTuple(args, funcname, 1, 2, ...): the referent and the
-optional callback, or False with a TypeError."""
-def unpack_weakref_args(args: ptr[PyObject], funcname: str) -> bool {
-    nargs = object_size(args);
-    if nargs < 1 {
-        PyErr_Format(
-            PyExc_TypeError, "%s expected at least 1 argument, got %zd", funcname, nargs
-        );
-        return False;
-    }
-    if nargs > 2 {
-        PyErr_Format(
-            PyExc_TypeError, "%s expected at most 2 arguments, got %zd", funcname, nargs
-        );
-        return False;
-    }
-    return True;
-}
+def unpack_weakref_args(args: ptr[PyObject], funcname: str) -> bool;
 
 def weakref___new__(
     type: ptr[PyTypeObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> ptr[PyObject] {
-    if not unpack_weakref_args(args, "__new__") {
-        return NULL;
-    }
-    callback = tuple_get_item(args, 1) if object_size(args) == 2 else NULL;
-    return ptr[PyObject](
-        get_or_create_weakref(type, tuple_get_item(args, 0), callback)
-    );
-}
+) -> ptr[PyObject];
 
 def weakref___init__(
     op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
-) -> i32 {
-    if kwargs and _PyArg_NoKeywords("ref", kwargs) == 0 {
-        return i32(-1);
-    }
-    return i32(0) if unpack_weakref_args(args, "__init__") else i32(-1);
-}
+) -> i32;
 
-# ----------------------------------------------------------------- proxies
+def proxy_check_ref(ob: ptr[PyObject]) -> bool;
 
-"""The referent, or NULL with ReferenceError for a dead proxy."""
-def proxy_check_ref(ob: ptr[PyObject]) -> bool {
-    if not ob {
-        PyErr_SetString(
-            PyExc_ReferenceError, "weakly-referenced object no longer exists"
-        );
-        return False;
-    }
-    return True;
-}
+def unwrap(o: ptr[PyObject]) -> ptr[PyObject];
 
-"""UNWRAP: a proxy's referent as a new reference (NULL with ReferenceError
-when it died), or any other object with a new reference."""
-def unwrap(o: ptr[PyObject]) -> ptr[PyObject] {
-    if weakref_check_proxy(o) {
-        ob = weakref_get_ref(o);
-        if not proxy_check_ref(ob) {
-            return NULL;
-        }
-        return ob;
-    }
-    return object_new_ref(o);
-}
-
-"""A binary operation on the unwrapped operands, by `generic`."""
 def wrap_binary(
     x_in: ptr[PyObject], y_in: ptr[PyObject], generic: i64
-) -> ptr[PyObject] {
-    x = unwrap(x_in);
-    if not x {
-        return NULL;
-    }
-    y = unwrap(y_in);
-    if not y {
-        object_decref(x);
-        return NULL;
-    }
-    res = binary_operation(generic, x, y);
-    object_decref(x);
-    object_decref(y);
-    return res;
-}
+) -> ptr[PyObject];
 
 def wrap_ternary(
     proxy: ptr[PyObject], v_in: ptr[PyObject], w_in: ptr[PyObject], inplace: bool
-) -> ptr[PyObject] {
-    x = unwrap(proxy);
-    if not x {
-        return NULL;
-    }
-    v = unwrap(v_in);
-    if not v {
-        object_decref(x);
-        return NULL;
-    }
-    w = NULL;
-    if w_in {
-        w = unwrap(w_in);
-        if not w {
-            object_decref(x);
-            object_decref(v);
-            return NULL;
-        }
-    }
-    res = PyNumber_InPlacePower(x, v, w) if inplace else PyNumber_Power(x, v, w);
-    object_decref(x);
-    object_decref(v);
-    object_xdecref(w);
-    return res;
-}
+) -> ptr[PyObject];
 
-def wrap_unary(proxy: ptr[PyObject], generic: i64) -> ptr[PyObject] {
-    x = unwrap(proxy);
-    if not x {
-        return NULL;
-    }
-    res = unary_operation(generic, x);
-    object_decref(x);
-    return res;
-}
+def wrap_unary(proxy: ptr[PyObject], generic: i64) -> ptr[PyObject];
 
 glob:priv OP_GETATTR: i64 = 0,
      OP_ADD: i64 = 1,
@@ -879,7 +446,599 @@ glob:priv OP_GETATTR: i64 = 0,
      UOP_FLOAT: i64 = 6,
      UOP_INDEX: i64 = 7;
 
-def binary_operation(op: i64, x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+def binary_operation(op: i64, x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def unary_operation(op: i64, x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_getattr(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_str(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_call(
+    proxy: ptr[PyObject], v_in: ptr[PyObject], w_in: ptr[PyObject]
+) -> ptr[PyObject];
+
+def proxy_repr(proxy: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_setattr(
+    proxy: ptr[PyObject], name: ptr[PyObject], value: ptr[PyObject]
+) -> i32;
+
+def proxy_richcompare(
+    proxy: ptr[PyObject], v_in: ptr[PyObject], op: i32
+) -> ptr[PyObject];
+
+def proxy_add(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_sub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_mul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_floor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_true_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_mod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_divmod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_pow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_neg(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_pos(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_abs(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_invert(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_lshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_rshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_and(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_xor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_or(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_int(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_float(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_iadd(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_isub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_imul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_ifloor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_itrue_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_imod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_ipow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_ilshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_irshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_iand(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_ixor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_ior(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_index(x: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_matmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_imatmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_bool(proxy: ptr[PyObject]) -> i32;
+
+def proxy_dealloc(op: ptr[PyObject]);
+
+def proxy_contains(proxy: ptr[PyObject], value: ptr[PyObject]) -> i32;
+
+def proxy_length(proxy: ptr[PyObject]) -> i64;
+
+def proxy_getitem(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_setitem(
+    proxy: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]
+) -> i32;
+
+def proxy_iter(proxy: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_iternext(proxy: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_call_method(proxy: ptr[PyObject], name: str) -> ptr[PyObject];
+
+def proxy_bytes(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+def proxy_reversed(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject];
+
+impl ref_of(op: ptr[PyObject]) -> ptr[PyWeakReference] {
+    return ptr[PyWeakReference](op);
+}
+
+impl no_ref -> ptr[PyWeakReference] {
+    return ptr[PyWeakReference]();
+}
+
+impl ref_type -> ptr[PyTypeObject] {
+    return addressof(_PyWeakref_RefType);
+}
+
+impl proxy_type -> ptr[PyTypeObject] {
+    return addressof(_PyWeakref_ProxyType);
+}
+
+impl callable_proxy_type -> ptr[PyTypeObject] {
+    return addressof(_PyWeakref_CallableProxyType);
+}
+
+impl object_xnew_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    if op {
+        object_incref(op);
+    }
+    return op;
+}
+
+impl weakref_check(op: ptr[PyObject]) -> bool {
+    return object_type_check(op, ref_type()) or weakref_check_proxy(op);
+}
+
+impl weakref_check_ref_exact(op: ptr[PyObject]) -> bool {
+    return object_is_type(op, ref_type());
+}
+
+impl weakref_check_proxy(op: ptr[PyObject]) -> bool {
+    return object_is_type(op, proxy_type())
+        or object_is_type(op, callable_proxy_type());
+}
+
+impl supports_weakrefs(type: ptr[PyTypeObject]) -> bool {
+    return type.view(1)[0].tp_weaklistoffset != 0;
+}
+
+impl weakrefs_listptr(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]] {
+    if type_has_feature(object_type(op), Py_TPFLAGS_TYPE_SUBCLASS)
+        and type_has_feature(ptr[PyTypeObject](op), _Py_TPFLAGS_STATIC_BUILTIN) {
+        state = _PyStaticType_GetState(current_interp(), ptr[PyTypeObject](op));
+        return ptr[ptr[PyWeakReference]](state + managed_static_type_state_TP_WEAKLIST);
+    }
+    return listptr_from_offset(op);
+}
+
+impl listptr_from_offset(op: ptr[PyObject]) -> ptr[ptr[PyWeakReference]] {
+    return ptr[ptr[PyWeakReference]](
+        ptr[u8](op) + object_type(op).view(1)[0].tp_weaklistoffset
+    );
+}
+
+impl try_incref(op: ptr[PyObject]) -> bool {
+    if object_refcount(op) > 0 {
+        object_incref(op);
+        return True;
+    }
+    return False;
+}
+
+impl weakref_get_ref(op: ptr[PyObject]) -> ptr[PyObject] {
+    ob = ref_of(op).view(1)[0].wr_object;
+    if ob == Py_None {
+        return NULL;
+    }
+    if try_incref(ob) {
+        return ob;
+    }
+    return NULL;
+}
+
+impl weakref_is_dead(op: ptr[PyObject]) -> bool {
+    ob = ref_of(op).view(1)[0].wr_object;
+    return ob == Py_None or object_refcount(ob) == 0;
+}
+
+impl init_weakref(r: ptr[PyWeakReference], ob: ptr[PyObject], callback: ptr[PyObject]) {
+    r.view(1)[0].hash = -1;
+    r.view(1)[0].wr_object = ob;
+    r.view(1)[0].wr_prev = no_ref();
+    r.view(1)[0].wr_next = no_ref();
+    r.view(1)[0].wr_callback = object_xnew_ref(callback);
+    r.view(1)[0].vectorcall = weakref_vectorcall;
+}
+
+impl clear_weakref_lock_held(
+    r: ptr[PyWeakReference], take_callback: bool
+) -> ptr[PyObject] {
+    ob = r.view(1)[0].wr_object;
+    if ob != Py_None {
+        list = weakrefs_listptr(ob);
+        if list.view(1)[0] == r {
+            list.view(1)[0] = r.view(1)[0].wr_next;
+        }
+        r.view(1)[0].wr_object = Py_None;
+        prev = r.view(1)[0].wr_prev;
+        next = r.view(1)[0].wr_next;
+        if prev {
+            prev.view(1)[0].wr_next = next;
+        }
+        if next {
+            next.view(1)[0].wr_prev = prev;
+        }
+        r.view(1)[0].wr_prev = no_ref();
+        r.view(1)[0].wr_next = no_ref();
+    }
+    callback = NULL;
+    if take_callback {
+        callback = r.view(1)[0].wr_callback;
+        r.view(1)[0].wr_callback = NULL;
+    }
+    return callback;
+}
+
+impl clear_weakref(op: ptr[PyObject]) {
+    object_xdecref(clear_weakref_lock_held(ref_of(op), True));
+}
+
+impl handle_callback(r: ptr[PyObject], callback: ptr[PyObject]) {
+    cbresult = PyObject_CallOneArg(callback, r);
+    if not cbresult {
+        PyErr_FormatUnraisable(
+            "Exception ignored while calling weakref callback %R", callback
+        );
+    } else {
+        object_decref(cbresult);
+    }
+}
+
+impl weakref_dealloc(op: ptr[PyObject]) {
+    object_gc_untrack(op);
+    clear_weakref(op);
+    object_type(op).view(1)[0].tp_free(ptr(op));
+}
+
+impl gc_traverse(op: ptr[PyObject], visitor: ptr, arg: ptr) -> i32 {
+    return visit_reference(ref_of(op).view(1)[0].wr_callback, visitor, arg);
+}
+
+impl gc_clear(op: ptr[PyObject]) -> i32 {
+    object_xdecref(clear_weakref_lock_held(ref_of(op), True));
+    return i32(0);
+}
+
+impl weakref_vectorcall(
+    op: ptr[PyObject], args: ptr[ptr[PyObject]], nargsf: u64, kwnames: ptr[PyObject]
+) -> ptr[PyObject] {
+    if kwnames and _PyArg_NoKwnames("weakref", kwnames) == 0 {
+        return NULL;
+    }
+    nargs = PyVectorcall_NARGS(nargsf);
+    if nargs != 0 and _PyArg_CheckPositional("weakref", nargs, 0, 0) == 0 {
+        return NULL;
+    }
+    ob = weakref_get_ref(op);
+    if not ob {
+        return object_new_ref(Py_None);
+    }
+    return ob;
+}
+
+impl weakref_hash(op: ptr[PyObject]) -> i64 {
+    r = ref_of(op);
+    if r.view(1)[0].hash != -1 {
+        return r.view(1)[0].hash;
+    }
+    ob = weakref_get_ref(op);
+    if not ob {
+        PyErr_SetString(PyExc_TypeError, "weak object has gone away");
+        return -1;
+    }
+    r.view(1)[0].hash = PyObject_Hash(ob);
+    object_decref(ob);
+    return r.view(1)[0].hash;
+}
+
+impl weakref_repr(op: ptr[PyObject]) -> ptr[PyObject] {
+    ob = weakref_get_ref(op);
+    if not ob {
+        return PyUnicode_FromFormat("<weakref at %p; dead>", op);
+    }
+    key = PyUnicode_InternFromString(ptr[u8]("__name__"));
+    name = NULL;
+    if key {
+        name = _PyObject_LookupSpecial(ob, key);
+        object_decref(key);
+    } else {
+        PyErr_Clear();
+    }
+    repr = NULL;
+    if not name
+        or not type_has_feature(object_type(name), Py_TPFLAGS_UNICODE_SUBCLASS) {
+        repr = PyUnicode_FromFormat("<weakref at %p; to '%T' at %p>", op, ob, ob);
+    } else {
+        repr = PyUnicode_FromFormat(
+            "<weakref at %p; to '%T' at %p (%U)>", op, ob, ob, name
+        );
+    }
+    object_decref(ob);
+    object_xdecref(name);
+    return repr;
+}
+
+impl weakref_richcompare(a: ptr[PyObject], b: ptr[PyObject], op: i32) -> ptr[PyObject] {
+    if (op != Py_EQ and op != Py_NE) or not weakref_check(a) or not weakref_check(b) {
+        return object_new_ref(Py_NotImplemented);
+    }
+    ob = weakref_get_ref(a);
+    other_obj = weakref_get_ref(b);
+    if not ob or not other_obj {
+        object_xdecref(ob);
+        object_xdecref(other_obj);
+        equal = a == b;
+        if op == Py_NE {
+            equal = not equal;
+        }
+        return object_new_ref(py_true() if equal else py_false());
+    }
+    result = PyObject_RichCompare(ob, other_obj, op);
+    object_decref(ob);
+    object_decref(other_obj);
+    return result;
+}
+
+impl basic_ref(head: ptr[PyWeakReference]) -> ptr[PyWeakReference] {
+    if head
+        and not head.view(1)[0].wr_callback
+        and weakref_check_ref_exact(ptr[PyObject](head)) {
+        return head;
+    }
+    return no_ref();
+}
+
+impl basic_proxy(head_in: ptr[PyWeakReference]) -> ptr[PyWeakReference] {
+    head = head_in;
+    if head and not head.view(1)[0].wr_callback {
+        if weakref_check_ref_exact(ptr[PyObject](head)) {
+            head = head.view(1)[0].wr_next;
+        }
+        if head
+            and not head.view(1)[0].wr_callback
+            and weakref_check_proxy(ptr[PyObject](head)) {
+            return head;
+        }
+    }
+    return no_ref();
+}
+
+impl insert_after(newref: ptr[PyWeakReference], prev: ptr[PyWeakReference]) {
+    next = prev.view(1)[0].wr_next;
+    newref.view(1)[0].wr_prev = prev;
+    newref.view(1)[0].wr_next = next;
+    if next {
+        next.view(1)[0].wr_prev = newref;
+    }
+    prev.view(1)[0].wr_next = newref;
+}
+
+impl insert_head(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]) {
+    next = list.view(1)[0];
+    newref.view(1)[0].wr_prev = no_ref();
+    newref.view(1)[0].wr_next = next;
+    if next {
+        next.view(1)[0].wr_prev = newref;
+    }
+    list.view(1)[0] = newref;
+}
+
+impl try_reuse_basic_ref(
+    list: ptr[PyWeakReference], type: ptr[PyTypeObject], callback: ptr[PyObject]
+) -> ptr[PyWeakReference] {
+    if callback {
+        return no_ref();
+    }
+    cand = no_ref();
+    if type == ref_type() {
+        cand = basic_ref(list);
+    }
+    if type == proxy_type() or type == callable_proxy_type() {
+        cand = basic_proxy(list);
+    }
+    if cand and try_incref(ptr[PyObject](cand)) {
+        return cand;
+    }
+    return no_ref();
+}
+
+impl is_basic_ref(r: ptr[PyWeakReference]) -> bool {
+    return not r.view(1)[0].wr_callback and weakref_check_ref_exact(ptr[PyObject](r));
+}
+
+impl is_basic_proxy(r: ptr[PyWeakReference]) -> bool {
+    return not r.view(1)[0].wr_callback and weakref_check_proxy(ptr[PyObject](r));
+}
+
+impl is_basic_ref_or_proxy(r: ptr[PyWeakReference]) -> bool {
+    return is_basic_ref(r) or is_basic_proxy(r);
+}
+
+impl insert_weakref(newref: ptr[PyWeakReference], list: ptr[ptr[PyWeakReference]]) {
+    head = list.view(1)[0];
+    r = basic_ref(head);
+    proxy = basic_proxy(head);
+    prev = no_ref();
+    if is_basic_ref(newref) {
+        prev = no_ref();
+    } elif is_basic_proxy(newref) {
+        prev = r;
+    } else {
+        prev = r if not proxy else proxy;
+    }
+    if not prev {
+        insert_head(newref, list);
+    } else {
+        insert_after(newref, prev);
+    }
+}
+
+impl allocate_weakref(
+    type: ptr[PyTypeObject], ob: ptr[PyObject], callback: ptr[PyObject]
+) -> ptr[PyWeakReference] {
+    newref = ptr[PyWeakReference](type.view(1)[0].tp_alloc(type, 0));
+    if not newref {
+        return no_ref();
+    }
+    init_weakref(newref, ob, callback);
+    return newref;
+}
+
+impl get_or_create_weakref(
+    type: ptr[PyTypeObject], ob: ptr[PyObject], callback_in: ptr[PyObject]
+) -> ptr[PyWeakReference] {
+    if not supports_weakrefs(object_type(ob)) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "cannot create weak reference to '%s' object",
+            object_type(ob).view(1)[0].tp_name
+        );
+        return no_ref();
+    }
+    callback = NULL if callback_in == Py_None else callback_in;
+    list = weakrefs_listptr(ob);
+    if type == ref_type() or type == proxy_type() or type == callable_proxy_type() {
+        reused = try_reuse_basic_ref(list.view(1)[0], type, callback);
+        if reused {
+            return reused;
+        }
+    }
+    newref = allocate_weakref(type, ob, callback);
+    if not newref {
+        return no_ref();
+    }
+    insert_weakref(newref, list);
+    return newref;
+}
+
+impl unpack_weakref_args(args: ptr[PyObject], funcname: str) -> bool {
+    nargs = object_size(args);
+    if nargs < 1 {
+        PyErr_Format(
+            PyExc_TypeError, "%s expected at least 1 argument, got %zd", funcname, nargs
+        );
+        return False;
+    }
+    if nargs > 2 {
+        PyErr_Format(
+            PyExc_TypeError, "%s expected at most 2 arguments, got %zd", funcname, nargs
+        );
+        return False;
+    }
+    return True;
+}
+
+impl weakref___new__(
+    type: ptr[PyTypeObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> ptr[PyObject] {
+    if not unpack_weakref_args(args, "__new__") {
+        return NULL;
+    }
+    callback = tuple_get_item(args, 1) if object_size(args) == 2 else NULL;
+    return ptr[PyObject](
+        get_or_create_weakref(type, tuple_get_item(args, 0), callback)
+    );
+}
+
+impl weakref___init__(
+    op: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
+) -> i32 {
+    if kwargs and _PyArg_NoKeywords("ref", kwargs) == 0 {
+        return i32(-1);
+    }
+    return i32(0) if unpack_weakref_args(args, "__init__") else i32(-1);
+}
+
+impl proxy_check_ref(ob: ptr[PyObject]) -> bool {
+    if not ob {
+        PyErr_SetString(
+            PyExc_ReferenceError, "weakly-referenced object no longer exists"
+        );
+        return False;
+    }
+    return True;
+}
+
+impl unwrap(o: ptr[PyObject]) -> ptr[PyObject] {
+    if weakref_check_proxy(o) {
+        ob = weakref_get_ref(o);
+        if not proxy_check_ref(ob) {
+            return NULL;
+        }
+        return ob;
+    }
+    return object_new_ref(o);
+}
+
+impl wrap_binary(
+    x_in: ptr[PyObject], y_in: ptr[PyObject], generic: i64
+) -> ptr[PyObject] {
+    x = unwrap(x_in);
+    if not x {
+        return NULL;
+    }
+    y = unwrap(y_in);
+    if not y {
+        object_decref(x);
+        return NULL;
+    }
+    res = binary_operation(generic, x, y);
+    object_decref(x);
+    object_decref(y);
+    return res;
+}
+
+impl wrap_ternary(
+    proxy: ptr[PyObject], v_in: ptr[PyObject], w_in: ptr[PyObject], inplace: bool
+) -> ptr[PyObject] {
+    x = unwrap(proxy);
+    if not x {
+        return NULL;
+    }
+    v = unwrap(v_in);
+    if not v {
+        object_decref(x);
+        return NULL;
+    }
+    w = NULL;
+    if w_in {
+        w = unwrap(w_in);
+        if not w {
+            object_decref(x);
+            object_decref(v);
+            return NULL;
+        }
+    }
+    res = PyNumber_InPlacePower(x, v, w) if inplace else PyNumber_Power(x, v, w);
+    object_decref(x);
+    object_decref(v);
+    object_xdecref(w);
+    return res;
+}
+
+impl wrap_unary(proxy: ptr[PyObject], generic: i64) -> ptr[PyObject] {
+    x = unwrap(proxy);
+    if not x {
+        return NULL;
+    }
+    res = unary_operation(generic, x);
+    object_decref(x);
+    return res;
+}
+
+impl binary_operation(op: i64, x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     if op == OP_GETATTR {
         return PyObject_GetAttr(x, y);
     }
@@ -961,7 +1120,7 @@ def binary_operation(op: i64, x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObjec
     return PyObject_GetItem(x, y);
 }
 
-def unary_operation(op: i64, x: ptr[PyObject]) -> ptr[PyObject] {
+impl unary_operation(op: i64, x: ptr[PyObject]) -> ptr[PyObject] {
     if op == UOP_STR {
         return PyObject_Str(x);
     }
@@ -986,15 +1145,15 @@ def unary_operation(op: i64, x: ptr[PyObject]) -> ptr[PyObject] {
     return PyNumber_Index(x);
 }
 
-def proxy_getattr(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_getattr(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_GETATTR);
 }
 
-def proxy_str(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_str(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_STR);
 }
 
-def proxy_call(
+impl proxy_call(
     proxy: ptr[PyObject], v_in: ptr[PyObject], w_in: ptr[PyObject]
 ) -> ptr[PyObject] {
     x = unwrap(proxy);
@@ -1022,7 +1181,7 @@ def proxy_call(
     return res;
 }
 
-def proxy_repr(proxy: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_repr(proxy: ptr[PyObject]) -> ptr[PyObject] {
     ob = weakref_get_ref(proxy);
     if ob {
         repr = PyUnicode_FromFormat("<weakproxy at %p; to '%T' at %p>", proxy, ob, ob);
@@ -1032,7 +1191,7 @@ def proxy_repr(proxy: ptr[PyObject]) -> ptr[PyObject] {
     return PyUnicode_FromFormat("<weakproxy at %p; dead>", proxy);
 }
 
-def proxy_setattr(
+impl proxy_setattr(
     proxy: ptr[PyObject], name: ptr[PyObject], value: ptr[PyObject]
 ) -> i32 {
     ob = weakref_get_ref(proxy);
@@ -1044,7 +1203,7 @@ def proxy_setattr(
     return res;
 }
 
-def proxy_richcompare(
+impl proxy_richcompare(
     proxy: ptr[PyObject], v_in: ptr[PyObject], op: i32
 ) -> ptr[PyObject] {
     x = unwrap(proxy);
@@ -1062,143 +1221,143 @@ def proxy_richcompare(
     return res;
 }
 
-def proxy_add(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_add(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_ADD);
 }
 
-def proxy_sub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_sub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_SUB);
 }
 
-def proxy_mul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_mul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_MUL);
 }
 
-def proxy_floor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_floor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_FLOOR_DIV);
 }
 
-def proxy_true_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_true_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_TRUE_DIV);
 }
 
-def proxy_mod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_mod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_MOD);
 }
 
-def proxy_divmod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_divmod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_DIVMOD);
 }
 
-def proxy_pow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_pow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_ternary(x, y, z, False);
 }
 
-def proxy_neg(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_neg(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_NEG);
 }
 
-def proxy_pos(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_pos(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_POS);
 }
 
-def proxy_abs(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_abs(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_ABS);
 }
 
-def proxy_invert(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_invert(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_INVERT);
 }
 
-def proxy_lshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_lshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_LSHIFT);
 }
 
-def proxy_rshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_rshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_RSHIFT);
 }
 
-def proxy_and(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_and(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_AND);
 }
 
-def proxy_xor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_xor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_XOR);
 }
 
-def proxy_or(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_or(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_OR);
 }
 
-def proxy_int(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_int(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_INT);
 }
 
-def proxy_float(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_float(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_FLOAT);
 }
 
-def proxy_iadd(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_iadd(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IADD);
 }
 
-def proxy_isub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_isub(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_ISUB);
 }
 
-def proxy_imul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_imul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IMUL);
 }
 
-def proxy_ifloor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_ifloor_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IFLOOR_DIV);
 }
 
-def proxy_itrue_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_itrue_div(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_ITRUE_DIV);
 }
 
-def proxy_imod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_imod(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IMOD);
 }
 
-def proxy_ipow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_ipow(x: ptr[PyObject], y: ptr[PyObject], z: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_ternary(x, y, z, True);
 }
 
-def proxy_ilshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_ilshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_ILSHIFT);
 }
 
-def proxy_irshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_irshift(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IRSHIFT);
 }
 
-def proxy_iand(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_iand(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IAND);
 }
 
-def proxy_ixor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_ixor(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IXOR);
 }
 
-def proxy_ior(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_ior(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IOR);
 }
 
-def proxy_index(x: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_index(x: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_unary(x, UOP_INDEX);
 }
 
-def proxy_matmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_matmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_MATMUL);
 }
 
-def proxy_imatmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_imatmul(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_IMATMUL);
 }
 
-def proxy_bool(proxy: ptr[PyObject]) -> i32 {
+impl proxy_bool(proxy: ptr[PyObject]) -> i32 {
     o = weakref_get_ref(proxy);
     if not proxy_check_ref(o) {
         return i32(-1);
@@ -1208,13 +1367,13 @@ def proxy_bool(proxy: ptr[PyObject]) -> i32 {
     return res;
 }
 
-def proxy_dealloc(op: ptr[PyObject]) {
+impl proxy_dealloc(op: ptr[PyObject]) {
     object_gc_untrack(op);
     clear_weakref(op);
     PyObject_GC_Del(ptr(op));
 }
 
-def proxy_contains(proxy: ptr[PyObject], value: ptr[PyObject]) -> i32 {
+impl proxy_contains(proxy: ptr[PyObject], value: ptr[PyObject]) -> i32 {
     ob = weakref_get_ref(proxy);
     if not proxy_check_ref(ob) {
         return i32(-1);
@@ -1224,7 +1383,7 @@ def proxy_contains(proxy: ptr[PyObject], value: ptr[PyObject]) -> i32 {
     return res;
 }
 
-def proxy_length(proxy: ptr[PyObject]) -> i64 {
+impl proxy_length(proxy: ptr[PyObject]) -> i64 {
     ob = weakref_get_ref(proxy);
     if not proxy_check_ref(ob) {
         return -1;
@@ -1234,11 +1393,11 @@ def proxy_length(proxy: ptr[PyObject]) -> i64 {
     return res;
 }
 
-def proxy_getitem(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_getitem(x: ptr[PyObject], y: ptr[PyObject]) -> ptr[PyObject] {
     return wrap_binary(x, y, OP_GETITEM);
 }
 
-def proxy_setitem(
+impl proxy_setitem(
     proxy: ptr[PyObject], key: ptr[PyObject], value: ptr[PyObject]
 ) -> i32 {
     ob = weakref_get_ref(proxy);
@@ -1250,7 +1409,7 @@ def proxy_setitem(
     return res;
 }
 
-def proxy_iter(proxy: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_iter(proxy: ptr[PyObject]) -> ptr[PyObject] {
     ob = weakref_get_ref(proxy);
     if not proxy_check_ref(ob) {
         return NULL;
@@ -1260,7 +1419,7 @@ def proxy_iter(proxy: ptr[PyObject]) -> ptr[PyObject] {
     return res;
 }
 
-def proxy_iternext(proxy: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_iternext(proxy: ptr[PyObject]) -> ptr[PyObject] {
     ob = weakref_get_ref(proxy);
     if not proxy_check_ref(ob) {
         return NULL;
@@ -1279,12 +1438,12 @@ def proxy_iternext(proxy: ptr[PyObject]) -> ptr[PyObject] {
     return res;
 }
 
-def proxy_call_method(proxy: ptr[PyObject], name: str) -> ptr[PyObject] {
+impl proxy_call_method(proxy: ptr[PyObject], name: str) -> ptr[PyObject] {
     ob = unwrap(proxy);
     if not ob {
         return NULL;
     }
-    # PyObject_CallMethodNoArgs: the method looked up on the referent.
+
     method = PyObject_GetAttrString(ob, name);
     object_decref(ob);
     if not method {
@@ -1295,10 +1454,10 @@ def proxy_call_method(proxy: ptr[PyObject], name: str) -> ptr[PyObject] {
     return res;
 }
 
-def proxy_bytes(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_bytes(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return proxy_call_method(proxy, "__bytes__");
 }
 
-def proxy_reversed(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
+impl proxy_reversed(proxy: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     return proxy_call_method(proxy, "__reversed__");
 }

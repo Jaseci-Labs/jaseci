@@ -24,7 +24,13 @@
 #include "internal/pycore_code.h"
 #include "internal/pycore_interpframe_structs.h"
 #include "internal/pycore_object.h"
+#include "internal/pycore_interp.h"
 #include <stddef.h>
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+#define JAC_FORCE_UTF8_FS_ENCODING 1
+#else
+#define JAC_FORCE_UTF8_FS_ENCODING 0
+#endif
 
 /* The private object structs of the ported Objects/ files, as the
  * pinned sources define them. */
@@ -1986,6 +1992,23 @@ CONSTANT(sizeof(_PyBytesWriter), 552LL);
 CONSTANT(sizeof(PyByteArrayObject), 56LL);
 CONSTANT(sizeof(bytesiterobject), 32LL);
 CONSTANT(_Py_TYPE_VERSION_BYTEARRAY, 9LL);
+CONSTANT(sizeof(PyASCIIObject), 40LL);
+CONSTANT(offsetof(PyASCIIObject, state), 32LL);
+CONSTANT(sizeof(PyCompactUnicodeObject), 56LL);
+CONSTANT(offsetof(PyCompactUnicodeObject, utf8_length), 40LL);
+CONSTANT(offsetof(PyCompactUnicodeObject, utf8), 48LL);
+CONSTANT(sizeof(PyUnicodeObject), 64LL);
+CONSTANT(offsetof(PyUnicodeObject, data), 56LL);
+CONSTANT(sizeof(_PyUnicodeWriter), 56LL);
+CONSTANT(_Py_TYPE_VERSION_STR, 5LL);
+CONSTANT(offsetof(struct _Py_freelists, unicode_writers), 560LL);
+CONSTANT(Py_unicode_writers_MAXFREELIST, 1LL);
+CONSTANT(sizeof(Py_buffer), 80LL);
+CONSTANT(offsetof(_Py_Identifier, index), 8LL);
+CONSTANT(offsetof(_Py_Identifier, mutex), 16LL);
+CONSTANT(Py_RTFLAGS_USE_MAIN_OBMALLOC, 32LL);
+CONSTANT(Py_mod_multiple_interpreters, 3LL);
+CONSTANT(Py_mod_gil, 4LL);
 CONSTANT(_Py_MANAGED_BUFFER_RELEASED, 1LL);
 CONSTANT(_Py_MANAGED_BUFFER_FREE_FORMAT, 2LL);
 CONSTANT(_Py_MEMORYVIEW_RELEASED, 1LL);
@@ -2120,6 +2143,11 @@ CONSTANT(Py_CLEANUP_SUPPORTED, 131072LL);
 /* The platform constants of layouts_platform.<os>.<arch>.jac. */
 #if defined(__linux__) && defined(__x86_64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, dev_mode), 12LL);
+CONSTANT(offsetof(PyConfig, filesystem_encoding), 80LL);
+CONSTANT(offsetof(PyConfig, filesystem_errors), 88LL);
+CONSTANT(offsetof(PyConfig, stdio_encoding), 232LL);
+CONSTANT(offsetof(PyConfig, stdio_errors), 240LL);
 CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
@@ -2151,11 +2179,35 @@ CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11808LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 22352LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 22392LL);
 CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.literals._py_empty), 35432LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.ascii), 76192LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.latin1), 82336LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.ascii[0]), 48LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.latin1[0]), 64LL);
+CONSTANT(offsetof(_PyRuntimeState, cached_objects.interned_strings), 13960LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.mutex), 10568LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.next_index), 10576LL);
+CONSTANT(offsetof(PyInterpreterState, cached_objects.interned_strings), 224624LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.encoding), 11752LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.utf8), 11760LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.errors), 11768LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.error_handler), 11776LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ucnhash_capi), 11784LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.size), 11792LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.array), 11800LL);
+CONSTANT(offsetof(PyInterpreterState, feature_flags), 8488LL);
+CONSTANT(offsetof(PyInterpreterState, _finalizing), 7392LL);
+CONSTANT(JAC_FORCE_UTF8_FS_ENCODING, 0LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__linux__) && defined(__aarch64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, dev_mode), 12LL);
+CONSTANT(offsetof(PyConfig, filesystem_encoding), 80LL);
+CONSTANT(offsetof(PyConfig, filesystem_errors), 88LL);
+CONSTANT(offsetof(PyConfig, stdio_encoding), 232LL);
+CONSTANT(offsetof(PyConfig, stdio_errors), 240LL);
 CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
@@ -2187,11 +2239,35 @@ CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11824LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 22352LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 22392LL);
 CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.literals._py_empty), 35432LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.ascii), 76192LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.latin1), 82336LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.ascii[0]), 48LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.latin1[0]), 64LL);
+CONSTANT(offsetof(_PyRuntimeState, cached_objects.interned_strings), 13960LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.mutex), 10568LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.next_index), 10576LL);
+CONSTANT(offsetof(PyInterpreterState, cached_objects.interned_strings), 224640LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.encoding), 11768LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.utf8), 11776LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.errors), 11784LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.error_handler), 11792LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ucnhash_capi), 11800LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.size), 11808LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.array), 11816LL);
+CONSTANT(offsetof(PyInterpreterState, feature_flags), 8504LL);
+CONSTANT(offsetof(PyInterpreterState, _finalizing), 7392LL);
+CONSTANT(JAC_FORCE_UTF8_FS_ENCODING, 0LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__APPLE__) && defined(__x86_64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, dev_mode), 12LL);
+CONSTANT(offsetof(PyConfig, filesystem_encoding), 80LL);
+CONSTANT(offsetof(PyConfig, filesystem_errors), 88LL);
+CONSTANT(offsetof(PyConfig, stdio_encoding), 232LL);
+CONSTANT(offsetof(PyConfig, stdio_errors), 240LL);
 CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
@@ -2223,11 +2299,35 @@ CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11856LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 21856LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 21896LL);
 CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.literals._py_empty), 34936LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.ascii), 75696LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.latin1), 81840LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.ascii[0]), 48LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.latin1[0]), 64LL);
+CONSTANT(offsetof(_PyRuntimeState, cached_objects.interned_strings), 13464LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.mutex), 10064LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.next_index), 10072LL);
+CONSTANT(offsetof(PyInterpreterState, cached_objects.interned_strings), 224672LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.encoding), 11800LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.utf8), 11808LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.errors), 11816LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.error_handler), 11824LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ucnhash_capi), 11832LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.size), 11840LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.array), 11848LL);
+CONSTANT(offsetof(PyInterpreterState, feature_flags), 8536LL);
+CONSTANT(offsetof(PyInterpreterState, _finalizing), 7392LL);
+CONSTANT(JAC_FORCE_UTF8_FS_ENCODING, 1LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
 #elif defined(__APPLE__) && defined(__aarch64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, dev_mode), 12LL);
+CONSTANT(offsetof(PyConfig, filesystem_encoding), 80LL);
+CONSTANT(offsetof(PyConfig, filesystem_errors), 88LL);
+CONSTANT(offsetof(PyConfig, stdio_encoding), 232LL);
+CONSTANT(offsetof(PyConfig, stdio_errors), 240LL);
 CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
@@ -2259,6 +2359,25 @@ CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11856LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 21856LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 21896LL);
 CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.literals._py_empty), 34936LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.ascii), 75696LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.strings.latin1), 81840LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.ascii[0]), 48LL);
+CONSTANT(sizeof(_PyRuntime.static_objects.singletons.strings.latin1[0]), 64LL);
+CONSTANT(offsetof(_PyRuntimeState, cached_objects.interned_strings), 13464LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.mutex), 10064LL);
+CONSTANT(offsetof(_PyRuntimeState, unicode_state.ids.next_index), 10072LL);
+CONSTANT(offsetof(PyInterpreterState, cached_objects.interned_strings), 224672LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.encoding), 11800LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.utf8), 11808LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.errors), 11816LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.fs_codec.error_handler), 11824LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ucnhash_capi), 11832LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.size), 11840LL);
+CONSTANT(offsetof(PyInterpreterState, unicode.ids.array), 11848LL);
+CONSTANT(offsetof(PyInterpreterState, feature_flags), 8536LL);
+CONSTANT(offsetof(PyInterpreterState, _finalizing), 7392LL);
+CONSTANT(JAC_FORCE_UTF8_FS_ENCODING, 1LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
