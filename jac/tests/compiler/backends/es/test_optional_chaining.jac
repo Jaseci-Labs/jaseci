@@ -166,3 +166,117 @@ console.log(JSON.stringify(out));
     assert json.loads(result.stdout.strip())
         == [True, 6, 2, True, ["a", "b"], 4, 6, 5, 6] , result.stdout + "\n" + js;
 }
+
+glob STORED_PROMISE_SRC = """
+glob seen: list[int] = [];
+def recv(x: any) -> any { seen.append(1); return x; }
+async def key() -> int { return 1; }
+async def num() -> int { return 3; }
+def pick(a: any, b: int = 0, c: int = 0) -> any { return a; }
+async def stored(x: any) -> list[any] {
+    value = recv(x)?[await key()];
+    return [value];
+}
+async def stored_kwargs(p: any, kw: dict[str, int]) -> list[any] {
+    value = pick(p, await num(), **kw, **kw);
+    return [value];
+}
+""";
+
+test "an awaited null-safe guard keeps a stored promise a promise" {
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    js = compile_client(STORED_PROMISE_SRC);
+    probe = """
+const thenable = (v) => v !== null && typeof v === "object" && typeof v.then === "function";
+// An async function adopts a promise it returns, so each one hands back
+// the value it read in a list.
+const [r] = await stored([0, Promise.resolve(7)]);
+const [k] = await stored_kwargs(Promise.resolve(8), {c: 1});
+console.log(JSON.stringify([
+    thenable(r), await r, seen.length,
+    (await stored(null))[0] === undefined, seen.length,
+    (await stored([0, 5]))[0],
+    thenable(k), await k
+]));
+""";
+    result = run_js_module(js + "\n" + probe, timeout=10.0);
+    assert result.returncode == 0 , result.stderr + "\n" + js;
+    assert json.loads(result.stdout.strip()) == [True, 7, 1, True, 2, 5, True, 8] , result.stdout
+        + "\n"
+        + js;
+}
+
+glob CHAIN_SRC = """
+glob hits: list[int] = [];
+def bump(x: any) -> any { hits.append(1); return x; }
+def idx_call(x: any, k: int, n: int) -> any { return x?[k](n); }
+def once_call(x: any, k: int, n: int) -> any { return bump(x)?[k](n); }
+def idx_attr(x: any, k: int) -> any { return x?[k].b; }
+def idx_idx(x: any, k: int, j: int) -> any { return x?[k][j]; }
+def idx_method(x: any, k: int) -> any { return x?[k].m(1); }
+def idx_curry(x: any, k: int) -> any { return x?[k](1)(2); }
+def nested_call(x: any, k: int, j: int, n: int) -> any { return x?[k]?[j](n); }
+def strip_upper(s: str | None) -> any { return s?.strip().upper(); }
+def split_first(s: str | None) -> any { return s?.split(",")[0]; }
+def paren_call(x: any, k: int) -> any { return (x?[k])(1); }
+def store_through(x: any, k: int) { x?[k].a = 1; }
+""";
+
+test "a trailer after a null-safe subscript or method short-circuits with it" {
+    js = compile_client(CHAIN_SRC);
+    assert "? undefined : _jac.poly.getitem(x, k)(n))" in js , js;
+    # A store does not short-circuit, like `x?.a = 1` storing to `x.a`.
+    assert "_jac.poly.getitem(x, k).a = 1;" in js , js;
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    probe = """
+const u = (v) => v === undefined;
+let threw = false;
+try { paren_call(null, 0); } catch (e) { threw = e instanceof TypeError; }
+const box = [{a: 0}];
+store_through(box, 0);
+console.log(JSON.stringify([
+    u(idx_call(null, 0, 2)), idx_call([(n) => n * 3], 0, 2),
+    u(once_call(null, 0, 2)), once_call([(n) => n + 1], 0, 2), hits.length,
+    u(idx_attr(null, 0)), idx_attr([{b: 4}], 0),
+    u(idx_idx(null, 0, 1)), idx_idx([[1, 2]], 0, 1),
+    u(idx_method(null, 0)), idx_method([{m: (v) => v + 10}], 0),
+    u(idx_curry(null, 0)), idx_curry([(a) => (b) => a + b], 0),
+    u(nested_call(null, 0, 0, 1)), u(nested_call([null], 0, 0, 1)),
+    nested_call([[(n) => n * 5]], 0, 0, 2),
+    u(strip_upper(null)), strip_upper(" ab "),
+    u(split_first(null)), split_first("a,b"),
+    threw, box[0].a
+]));
+""";
+    result = run_js_module(js + "\n" + probe, timeout=10.0);
+    assert result.returncode == 0 , result.stderr + "\n" + js;
+    assert json.loads(result.stdout.strip())
+        == [
+            True,
+            6,
+            True,
+            3,
+            2,
+            True,
+            4,
+            True,
+            2,
+            True,
+            11,
+            True,
+            3,
+            True,
+            True,
+            10,
+            True,
+            "AB",
+            True,
+            "a",
+            True,
+            1
+        ] , result.stdout + "\n" + js;
+}

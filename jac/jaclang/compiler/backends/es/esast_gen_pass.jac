@@ -15,6 +15,7 @@ glob _T = TypeVar('_T', bound=es.Node),
          Tok.STAR_MUL: '*',
          Tok.DIV: '/',
          Tok.MOD: '%',
+         Tok.STAR_POW: '**',
          Tok.BW_AND: '&',
          Tok.BW_OR: '|',
          Tok.BW_XOR: '^',
@@ -167,6 +168,13 @@ obj CallArgSlot {
         value: (es.Expression | es.SpreadElement | None);
 }
 
+obj NullSafeLink {
+    has guard: es.Expression,
+        recv: es.Expression,
+        ref: es.Expression,
+        lowered: es.Expression;
+}
+
 walker EsastGenPass(TreePass) {
     static has contract: PassContract = PassContract();
     has _ct_only_names: (set[str] | None) = None,
@@ -213,7 +221,8 @@ walker EsastGenPass(TreePass) {
         _builtin_emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter(),
         _poly_methods: (set[str] | None) = None,
         loop_links: LoopLinks = LoopLinks(),
-        _native_links: dict[int, bool] = {};
+        _native_links: dict[int, bool] = {},
+        _null_safe_links: dict[int, NullSafeLink] = {};
 
     has resolved_backend: FrameworkBackend {
         getter {
@@ -243,6 +252,10 @@ walker EsastGenPass(TreePass) {
     ) -> es.Expression;
 
     def _fw_to_number(expr: es.Expression, jac_node: uni.UniNode) -> es.Expression;
+    def _floor_div(
+        left: es.Expression, right: es.Expression, jac_node: uni.UniNode
+    ) -> es.Expression;
+
     def _fw_binary(
         nd: uni.Expr, op: str, left: es.Expression, right: es.Expression
     ) -> (es.Expression | None);
@@ -604,6 +617,10 @@ walker EsastGenPass(TreePass) {
         new_expr: es.NewExpression, jac_node: uni.UniNode
     ) -> es.Expression;
 
+    def _null_safe_link_of(expr: (es.Node | None)) -> (NullSafeLink | None);
+    def _open_null_safe_chain(target: uni.Expr) -> list[NullSafeLink];
+    def _close_null_safe_chain(links: list[NullSafeLink], nd: uni.Expr) -> None;
+    def _null_safe_unguarded(expr: es.Node) -> es.Node;
     def _bind_once(
         param: es.Identifier,
         body: es.Expression,
@@ -721,11 +738,13 @@ walker EsastGenPass(TreePass) {
 
     def _bind_client_value_refs(nd: uni.Module) -> list[es.Statement];
     can exit_func_call with uni.FuncCall exit;
+    def _lower_func_call(here: uni.FuncCall) -> None;
     def _place_accessors(place: es.Expression) -> es.Expression | None;
     def _lower_place_builtin(nd: uni.FuncCall) -> es.Expression | None;
     can exit_index_slice with uni.IndexSlice exit;
     can exit_special_var_ref with uni.SpecialVarRef exit;
     can exit_atom_trailer with uni.AtomTrailer exit;
+    def _lower_atom_trailer(here: uni.AtomTrailer) -> None;
     can enter_lambda_expr with uni.LambdaExpr entry;
     can exit_lambda_expr with uni.LambdaExpr exit;
     can exit_atom_unit with uni.AtomUnit exit;

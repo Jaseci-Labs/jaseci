@@ -123,6 +123,9 @@ impl EsastGenPass.exit_assignment with uni.Assignment exit {
             }
         }
         operator = ES_AUG_ASSIGN_OPS.get(aug_tok);
+        if operator is None and _aug_base == Tok.FLOOR_DIV {
+            right = self._floor_div(cast(es.Expression, left), right, here);
+        }
         operator = operator or '=';
         assign_expr = self.sync_loc(
             es.AssignmentExpression(operator=operator, left=left, right=right),
@@ -379,9 +382,12 @@ impl EsastGenPass._convert_assignment_target(
             return (_member, _member, None);
         }
     }
+    target_es = target.gen.es_ast;
     left = cast(
         (es.Pattern | es.Expression),
-        target.gen.es_ast or self.sync_loc(es.Identifier(name='temp'), jac_node=target)
+        self._null_safe_unguarded(target_es)
+            if isinstance(target_es, es.Node)
+            else self.sync_loc(es.Identifier(name='temp'), jac_node=target)
     );
     self._strip_optional_chain(left);
     return (left, cast(es.Expression, left), None);

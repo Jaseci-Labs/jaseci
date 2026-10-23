@@ -351,10 +351,15 @@ impl JSCodeGenerator.gen_logical_expression(nd: es.LogicalExpression) -> str {
 impl JSCodeGenerator.gen_binary_expression(nd: es.BinaryExpression) -> str {
     left = self.generate(nd.left);
     right = self.generate(nd.right);
-    if isinstance(nd.left, es.AssignmentExpression) {
+    loose = (es.AssignmentExpression, es.ArrowFunctionExpression, es.YieldExpression);
+    if isinstance(nd.left, loose)
+        or (
+            nd.operator == '**'
+            and isinstance(nd.left, (es.UnaryExpression, es.AwaitExpression))
+        ) {
         left = f"({left})";
     }
-    if isinstance(nd.right, es.AssignmentExpression) {
+    if isinstance(nd.right, loose) {
         right = f"({right})";
     }
     return f"({left} {nd.operator} {right})";

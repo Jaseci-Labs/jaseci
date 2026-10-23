@@ -764,6 +764,12 @@ impl EsastGenPass.exit_lambda_expr with uni.LambdaExpr exit {
 }
 
 impl EsastGenPass.exit_atom_trailer with uni.AtomTrailer exit {
+    links = self._open_null_safe_chain(here.target);
+    self._lower_atom_trailer(here);
+    self._close_null_safe_chain(links, here);
+}
+
+impl EsastGenPass._lower_atom_trailer(here: uni.AtomTrailer) -> None {
     if here.is_attr and self._trailer_reaches_ct_class(here) {
         folded = self._ct_es_expr(here.ct_value, here);
         if folded is not None {
@@ -888,7 +894,7 @@ impl EsastGenPass._null_safe_guard(
     lowered: es.Expression,
     jac_node: uni.UniNode
 ) -> es.Expression {
-    guard = self.sync_loc(
+    guard: es.Expression = self.sync_loc(
         es.ConditionalExpression(
             `test=self.sync_loc(
                 es.BinaryExpression(
@@ -905,10 +911,59 @@ impl EsastGenPass._null_safe_guard(
         ),
         jac_node=jac_node
     );
-    if ref is recv or not isinstance(ref, es.Identifier) {
-        return guard;
+    if ref is not recv and isinstance(ref, es.Identifier) {
+        guard = self._bind_once(ref, guard, recv, jac_node);
     }
-    return self._bind_once(ref, guard, recv, jac_node);
+    self._null_safe_links[id(guard)] = NullSafeLink(
+        guard=guard, recv=recv, ref=ref, lowered=lowered
+    );
+    return guard;
+}
+
+impl EsastGenPass._null_safe_link_of(expr: (es.Node | None)) -> (NullSafeLink | None) {
+    link = self._null_safe_links.get(id(expr)) if expr is not None else None;
+    if link is None or link.guard is not expr {
+        return None;
+    }
+    return link;
+}
+
+impl EsastGenPass._open_null_safe_chain(target: uni.Expr) -> list[NullSafeLink] {
+    links: list[NullSafeLink] = [];
+    if not isinstance(target, (uni.AtomTrailer, uni.FuncCall)) {
+        return links;
+    }
+    cur = target.gen.es_ast;
+    link = self._null_safe_link_of(cur) if isinstance(cur, es.Node) else None;
+    while link is not None {
+        links.append(link);
+        target.gen.es_ast = link.lowered;
+        link = self._null_safe_link_of(link.lowered);
+    }
+    return links;
+}
+
+impl EsastGenPass._null_safe_unguarded(expr: es.Node) -> es.Node {
+    link = self._null_safe_link_of(expr);
+    while link is not None {
+        expr = link.lowered;
+        link = self._null_safe_link_of(expr);
+    }
+    return expr;
+}
+
+impl EsastGenPass._close_null_safe_chain(
+    links: list[NullSafeLink], nd: uni.Expr
+) -> None {
+    cur = nd.gen.es_ast;
+    if not links or not isinstance(cur, es.Expression) {
+        return;
+    }
+    lowered: es.Expression = cur;
+    for link in reversed(links) {
+        lowered = self._null_safe_guard(link.recv, link.ref, lowered, nd);
+    }
+    nd.gen.es_ast = lowered;
 }
 
 impl EsastGenPass._bind_once(
@@ -918,11 +973,16 @@ impl EsastGenPass._bind_once(
     jac_node: uni.UniNode
 ) -> es.Expression {
     awaits = self._awaits_in_place(jac_node);
+    arrow_body: es.Expression = self.sync_loc(
+        es.ArrayExpression(elements=[body]), jac_node=jac_node
+    )
+        if awaits
+        else body;
     call = self.sync_loc(
         es.CallExpression(
             callee=self.sync_loc(
                 es.ArrowFunctionExpression(
-                    params=[param], body=body, expression=True, async_=awaits
+                    params=[param], body=arrow_body, expression=True, async_=awaits
                 ),
                 jac_node=jac_node
             ),
@@ -933,7 +993,14 @@ impl EsastGenPass._bind_once(
     if not awaits {
         return call;
     }
-    return self.sync_loc(es.AwaitExpression(argument=call), jac_node=jac_node);
+    return self.sync_loc(
+        es.MemberExpression(
+            object=self.sync_loc(es.AwaitExpression(argument=call), jac_node=jac_node),
+            property=self.sync_loc(es.Literal(value=0), jac_node=jac_node),
+            computed=True
+        ),
+        jac_node=jac_node
+    );
 }
 
 impl EsastGenPass._awaits_in_place(jac_node: uni.UniNode) -> bool {
