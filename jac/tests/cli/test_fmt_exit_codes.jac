@@ -384,19 +384,24 @@ test "lintfix keeps a module's bodies when its impl annex cannot be formatted" {
             mod_src = MOD_SRC + "\n" + CLEAN;
             mod.write_text(mod_src);
             annex.write_text(broken);
+            other = Path(repo) / "other.jac";
+            other_src = "glob LIMIT: int = 3;\n";
+            other.write_text(other_src);
+            inputs = [str(mod), str(other)];
             reset_state();
             stats: dict[str, int] = {};
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()) {
                 if mode == "lint" {
-                    ret = lint_cmd([str(mod)], fix=True);
+                    ret = lint_cmd(inputs, fix=True);
                 } else {
                     ret = fmt_cmd(
-                        [str(mod)], lintfix=True, jobs=mode[-1], cache_stats=stats
+                        inputs, lintfix=True, jobs=mode[-1], cache_stats=stats
                     );
                 }
             }
             mod_text = mod.read_text();
             annex_text = annex.read_text();
+            other_text = other.read_text();
         } finally {
             os.chdir(old);
             shutil.rmtree(repo, ignore_errors=True);
@@ -408,5 +413,7 @@ test "lintfix keeps a module's bodies when its impl annex cannot be formatted" {
         f"got:\n{annex_text!r}";
         assert stats.get("changed", 0) == 0 , f"[{mode}] a module left unchanged is "
         f"not counted as changed, got {stats!r}";
+        assert other_text == other_src , f"[{mode}] the clean module beside it is "
+        f"untouched, got:\n{other_text!r}";
     }
 }
