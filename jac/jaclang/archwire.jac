@@ -609,9 +609,7 @@ graph import {
     }
     compiler.backends.native.llvm.binding as llvm ++> cli.commands.native_build._application_ir;
     compiler.backends.native.llvm.binding as llvm --> [
-        cli.commands.execution._jab_native_bin
-            | cli.commands.native_build.native_build_sealed_pair
-            | dist.seal.bake_native_payloads,
+        cli.commands.execution._jab_native_bin | dist.seal.bake_native_payloads,
         cli.commands.execution._jab_run_entry_lib,
     ]
     type compiler.backends.native.llvm.binding.executionengine ++> cli.commands.execution {
@@ -1038,6 +1036,10 @@ graph import {
         },
         cli.commands.execution.serve { set_effective_default_codespace },
         cli.commands.native_build._application_ir { is_toolchain_unit },
+        cli.commands.native_build.native_build_sealed_pair {
+            InteropBinding,
+            InteropContext
+        },
         client.compiler.ViteCompiler._compile_wasm_module
             | dist.source.client.write_client { native_wasm_stem },
         client.js_runtime._pkg_dir
@@ -1263,11 +1265,8 @@ graph import {
         lsp.server.utils { Symbol, UniScopeNode },
         packages.api { HasVar, Module, Symbol },
     ]
-    compiler.frontend.unitree --> [
-        cli.commands.analysis._check_file_job
-            | lsp.server.engine.JacLangServer.type_check_file { Source as _Src },
-        cli.commands.native_build._callback_source_path { Module },
-    ]
+    compiler.frontend.unitree --> cli.commands.analysis._check_file_job
+        | lsp.server.engine.JacLangServer.type_check_file { Source as _Src }
     compiler.frontend.unitree as uni ++> [
         cli.commands.fix._access_plan
             | cli.commands.transform.py2jac
@@ -2569,10 +2568,17 @@ graph import {
         walk_edges,
         walk_nodes
     }
-    runtime.interop_bridge --> compiler.backends.native.na_compile_pass.NativeCompilePass._run_impl
-        | compiler.driver.compiler.JacCompiler._load_native_from_cache {
-        register_py_callbacks
-    }
+    runtime.interop_bridge --> [
+        cli.commands.execution._run_native_lib {
+            NativeCallback,
+            NativeLibrary,
+            resolve_sv_callbacks
+        },
+        compiler.backends.native.na_compile_pass.NativeCompilePass._run_impl
+            | compiler.driver.compiler.JacCompiler._load_native_from_cache {
+            register_py_callbacks
+        },
+    ]
     runtime.memory ++> server.session { Memory }
     runtime.native_library --> [
         compiler.driver.compiler.JacCompiler._load_native_from_cache {
@@ -5888,11 +5894,18 @@ graph import compiler {
             layout_digest as layout_digest_of,
             merge_class_layouts
         },
-        backends.native.na_ir_gen_pass { NativeExport, NativeIface },
+        backends.native.na_ir_gen_pass {
+            NativeExport,
+            NativeIface,
+            NativeServerCallback
+        },
         backends.native.na_ir_gen_pass.NaIRGenPass._export_native_iface {
             NativeClassLayout,
             NativeFieldSlot,
             NativeIface
+        },
+        backends.native.na_ir_gen_pass.NaIRGenPass._server_callback_contract {
+            NativeServerCallback
         },
         frontend.kernel_host | tests.test_native_kernel_cache { NativeIface },
     ]
@@ -15288,11 +15301,6 @@ graph import runtime {
         walk_nodes
     }
     interop_bridge --> [
-        cli.commands.execution._run_native_lib {
-            NativeCallback,
-            NativeLibrary,
-            resolve_sv_callbacks
-        },
         prepared.execute_module { NativeLibrary },
         source_app._load_application { NativeCallback, NativeLibrary },
     ]

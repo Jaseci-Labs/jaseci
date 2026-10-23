@@ -18,7 +18,7 @@ def _link_kind_artifact(
     plan: LinkPlan, output: str, kind: ArtifactKind, label: str
 ) -> int;
 
-def _callback_source_path(binding: any, proj_dir: str) -> str;
+def _callback_source_path(stored: str, unit_path: str, image_root: str) -> str;
 
 
 impl _target_triple(target: str) -> str {
@@ -431,34 +431,32 @@ impl _link_kind_artifact(
 }
 
 
-impl _callback_source_path(binding: any, proj_dir: str) -> str {
-    """The provider module of a callback, relative to the project root: the
-    path the sealed image carries and the load lane imports from.""";
-    nd = binding.ast_node;
-    if nd is not None {
-        import from jaclang.compiler.frontend.unitree { Module }
-        mod = nd.find_parent_of_type(Module);
-        if mod is not None and mod.loc.mod_path {
-            try {
-                provider_path = os.path.realpath(mod.loc.mod_path);
-                image_root = os.path.realpath(proj_dir);
-                relative = os.path.relpath(provider_path, image_root);
-            } except ValueError {
-                raise ValueError(
-                    f"callback provider {mod.loc.mod_path!r} is outside "
-                    "the sealed image"
-                );
-            }
-            if relative == ".." or relative.startswith(".." + os.sep) {
-                raise ValueError(
-                    f"callback provider {mod.loc.mod_path!r} is outside "
-                    "the sealed image"
-                );
-            }
-            return relative.replace(os.sep, "/");
+impl _callback_source_path(stored: str, unit_path: str, image_root: str) -> str {
+    """The provider module of a callback, relative to the image root: the
+    path the sealed image carries and the load lane imports from. The unit
+    iface recorded it relative to the calling unit's directory; a dotted
+    module name (the pre-iface fallback) resolves beside the unit too.""";
+    if not stored or os.path.isabs(stored) {
+        return stored;
+    }
+    unit_dir = os.path.dirname(unit_path);
+    if stored.endswith(".jac") or ("/" in stored) {
+        candidate = os.path.join(unit_dir, stored);
+    } else {
+        candidate = os.path.join(unit_dir, stored.replace(".", os.sep) + ".jac");
+        if not os.path.isfile(candidate) {
+            candidate = os.path.join(unit_dir, stored.replace(".", os.sep));
         }
     }
-    return binding.source_module or "";
+    try {
+        return os.path.relpath(
+            os.path.realpath(candidate), os.path.realpath(image_root)
+        ).replace(
+            os.sep, "/"
+        );
+    } except ValueError {
+        return stored;
+    }
 }
 
 
@@ -481,48 +479,37 @@ impl native_build_sealed_pair(
     if plan is None {
         return 1;
     }
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
+    img_root = image_root or os.path.dirname(os.path.abspath(filename));
     bindings = [];
-    registry = plan.prog.native_units();
     for unit in plan.units {
-        module = plan.prog.find_module(unit.path);
-        manifest = module.gen.interop_manifest if module is not None else None;
-        bitcode = registry.bitcode_for(unit.path, plan.options);
-        if manifest is not None and bitcode is not None {
-            unit_ir = llvm.parse_bitcode(bitcode);
-            for (local_name, binding) in manifest.bindings.items() {
-                native_caller = any(
-                    caller.value == "native" for caller in binding.callers
+        for cb in unit.iface.server_callbacks {
+            """The iface carries the exact extern symbol each call site
+            declared, so the collection cannot mismatch an aliased or
+            same-named import -- and it survives registry cache hits, where
+            the plan program's hub was never populated.""";
+            source = _callback_source_path(cb.source, unit.path, img_root);
+            if (
+                not source
+                or os.path.isabs(source)
+                or source == ".."
+                or source.startswith("../")
+            ) {
+                console.error(
+                    f"callback provider for {cb.name!r} is not inside "
+                    "the sealed image"
                 );
-                if (
-                    binding.kind != "function"
-                    or binding.source_context.value != "server"
-                    or not native_caller
-                ) {
-                    continue;
-                }
-
-                local_suffix = "." + local_name;
-                matches = [
-                    str(function.name)
-                    for function in unit_ir.functions
-                    if function.is_declaration
-                        and str(function.name).endswith(local_suffix)
-                ];
-                if not matches and binding.name != local_name {
-                    provider_suffix = "." + binding.name;
-                    matches = [
-                        str(function.name)
-                        for function in unit_ir.functions
-                        if function.is_declaration
-                            and str(function.name).endswith(provider_suffix)
-                    ];
-                }
-                if len(matches) == 1 {
-                    binding.native_symbol = matches[0];
-                    bindings.append(binding);
-                }
+                return 1;
             }
+            bindings.append(
+                InteropBinding(
+                    name=cb.name,
+                    source_context=InteropContext.SERVER,
+                    ret_type=cb.ret_type,
+                    param_types=list(cb.param_types),
+                    source_module=source,
+                    native_symbol=cb.native_symbol
+                )
+            );
         }
     }
     plan.callback_bindings = bindings;
@@ -532,36 +519,15 @@ impl native_build_sealed_pair(
     record = interop_record_path(lib_output);
 
     if has_native_imports {
-        callback_records = [];
-        try {
-            for b in resolved {
-                source = _callback_source_path(
-                    b, image_root or os.path.dirname(os.path.abspath(filename))
-                );
-                if (
-                    not source
-                    or os.path.isabs(source)
-                    or source == ".."
-                    or source.startswith("../")
-                ) {
-                    raise ValueError(
-                        f"callback provider for {b.name!r} is not inside the sealed image"
-                    );
-                }
-                callback_records.append(
-                    {
-                        "symbol": b.native_symbol or b.name,
-                        "name": b.name,
-                        "ret_type": b.ret_type,
-                        "param_types": list(b.param_types),
-                        "source": source
-                    }
-                );
-            }
-        } except Exception as e {
-            console.error(f"Cannot seal native callback metadata: {e}");
-            return 1;
-        }
+        callback_records = [
+            {
+                "symbol": b.native_symbol or b.name,
+                "name": b.name,
+                "ret_type": b.ret_type,
+                "param_types": list(b.param_types),
+                "source": b.source_module or ""
+            } for b in resolved
+        ];
         console.print(
             "  App calls from native code into Python (native_imports): "
             "sealing the host-driven entry library only (a standalone "
