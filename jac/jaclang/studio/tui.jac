@@ -2198,6 +2198,21 @@ impl approval_key(app: Studio, key: str) {
             app.sheet_scroll = at;
             return;
         }
+        if key in ["a", "y", "enter"]
+            and rv is not None
+            and rv.arch_changes
+            and not req.get("arch_ok") {
+            app.say(
+                "This edit changes the architecture (the ⚖ lines). Press A to approve that change and accept the edit.",
+                "warn",
+                8.0
+            );
+            return;
+        }
+        if key == "A" and rv is not None and rv.arch_changes {
+            req["arch_ok"] = True;
+            key = "a";
+        }
         if key in ["a", "y", "enter"] {
             keep_now = req.get("keep");
             if rv is not None
@@ -3728,6 +3743,20 @@ impl review_lines(
             )
         );
     }
+    if review.arch_changes {
+        out.append(
+            fit(
+                [
+                    sp(
+                        "  ⚖ architecture change: approve it separately with A",
+                        StyleAttrs(fg=255, bg=94, bold=True)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
     for ac in review.arch_changes[:8] {
         out.append(
             fit(
@@ -3831,14 +3860,7 @@ impl approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]] {
             fit(
                 [
                     sp(" ", THEME.overlay),
-                    sp(
-                        (
-                            " a accept selected "
-                                if req.get("keep") is not None
-                                else " a accept "
-                        ),
-                        StyleAttrs(fg=255, bg=28, bold=True)
-                    ),
+                    sp(accept_label(req), StyleAttrs(fg=255, bg=28, bold=True)),
                     sp(" ", THEME.overlay),
                     sp(" r reject ", StyleAttrs(fg=255, bg=124, bold=True)),
                     sp(" ", THEME.overlay),
@@ -4475,4 +4497,14 @@ impl finish_partial(app: Studio, req: dict[str, any], keep: set[str]) -> None {
         )
     );
     app.say(f"applied part of the edit to {rel}", "ok");
+}
+
+def accept_label(req: dict[str, any]) -> str;
+
+impl accept_label(req: dict[str, any]) -> str {
+    rv = req.get("review");
+    if rv is not None and rv.arch_changes {
+        return " A approve the architecture change and accept ";
+    }
+    return " a accept selected " if req.get("keep") is not None else " a accept ";
 }
