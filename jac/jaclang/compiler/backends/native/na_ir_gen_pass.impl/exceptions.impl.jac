@@ -67,7 +67,7 @@ impl NaIRGenPass._exc_jmp_symbols -> tuple[str, str] {
             return ("__jac_setjmp", "__jac_longjmp");
         }
     }
-    if self.prog.options.native_sjlj and triple.startswith("x86_64") {
+    if self._native_sjlj_on() and triple.startswith("x86_64") {
         return ("llvm.eh.sjlj.setjmp", "llvm.eh.sjlj.longjmp");
     }
     return ("_setjmp", "_longjmp");
@@ -1392,7 +1392,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     fast_ret = func.append_basic_block("fast.ret");
     miss_bb = func.append_basic_block("miss");
     b = ir.IRBuilder(entry_bb);
-    if self.prog.options.native_tls {
+    if self._native_tls_on() {
         held = b.call(get_fn, [], name="exc.tl");
         b.cbranch(
             b.icmp_unsigned("!=", held, ir.Constant(i64, 0), name="exc.tl.set"),
@@ -1414,7 +1414,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     } else {
         b.branch(miss_bb);
     }
-    if not self.prog.options.native_tls {
+    if not self._native_tls_on() {
         b = ir.IRBuilder(fast_bb);
         main_ctx = b.load(main_gv, name="exc.main");
         b.cbranch(
@@ -1450,7 +1450,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     found.add_incoming(value, slow_entry);
     found.add_incoming(created, create);
     context = b.inttoptr(found, context_ptr);
-    if self.rc_threaded_gv is None or self.prog.options.native_tls {
+    if self.rc_threaded_gv is None or self._native_tls_on() {
         b.ret(context);
         return func;
     }

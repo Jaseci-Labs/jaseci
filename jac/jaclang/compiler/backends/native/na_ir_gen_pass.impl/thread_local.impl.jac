@@ -40,7 +40,7 @@ impl NaIRGenPass._emit_tls_slot(
         return (get_fn, set_fn);
     }
 
-    native_tls = bool(self.prog.options.native_tls);
+    native_tls = self._native_tls_on();
     cache: ir.GlobalVariable | None = None;
     if native_tls {
         cache = ir.GlobalVariable(self.llvm_module, i8p, name=f"{slot_name}_tl");
