@@ -118,7 +118,8 @@ obj ProjectModel {
         lock: any postinit,
         build_secs: float = 0.0,
         index_secs: float = 0.0,
-        uses_done: set[str] = set();
+        uses_done: set[str] = set(),
+        arch_mtimes: dict[str, float] = {};
 
     def postinit;
     def build(on_progress: any = None, index: bool = True);
@@ -155,6 +156,8 @@ obj ProjectModel {
     def walkers_of(key: str) -> list[StNode];
     def rules_for(key: str) -> list[StRule];
     def link_uses(key: str) -> None;
+    def rewire -> None;
+    def _note_arch_mtimes -> None;
     def neighbourhood(key: str) -> (Neighbourhood | None);
     def users_of(key: str) -> list[StNode];
     def _link_for(nd: StNode) -> None;
@@ -364,6 +367,7 @@ impl ProjectModel._discover {
     for (arch, spec) in specs {
         self._add_wiring(arch, spec);
     }
+    self._note_arch_mtimes();
 }
 
 impl ProjectModel._spec_key(spec: WiringSpec, local: str) -> str {
@@ -699,6 +703,10 @@ impl ProjectModel._link_walkers {
 
 impl ProjectModel.refresh(path: str) -> list[str] {
     real = os.path.realpath(path);
+    if os.path.basename(real) == ARCH_FILE_NAME {
+        self.rewire();
+        return [real];
+    }
     key = self.by_file.get(real);
     if key is None {
         base = active_host().base_file(real);
@@ -729,6 +737,15 @@ impl ProjectModel.refresh(path: str) -> list[str] {
 
 impl ProjectModel.stale_files -> list[str] {
     out: list[str] = [];
+    for (arch, seen) in list(self.arch_mtimes.items()) {
+        try {
+            if os.path.getmtime(arch) > seen + 0.0001 {
+                out.append(arch);
+            }
+        } except OSError {
+            out.append(arch);
+        }
+    }
     for mod in list(self.modules.values()) {
         if mod.kind != "module" {
             continue;
@@ -1245,4 +1262,58 @@ impl UsesOf.gather with StNode entry {
     self.users = [here<-:Uses:<-];
     self.uses = [here->:Uses:->];
     disengage;
+}
+
+impl ProjectModel._note_arch_mtimes -> None {
+    for arch in self.archwires {
+        try {
+            self.arch_mtimes[os.path.realpath(arch)] = os.path.getmtime(arch);
+        } except OSError {}
+    }
+}
+
+impl ProjectModel.rewire -> None {
+    with self.lock {
+        for mod in list(self.modules.values()) {
+            for other in [mod->:Wire:->] {
+                del [edge mod->:Wire:->other];
+            }
+        }
+        for rule in self.rules {
+            del rule;
+        }
+        self.wires = [];
+        self.rules = [];
+        self.archwires = [];
+        specs: list[tuple[str, WiringSpec]] = [];
+        for arch in self._arch_files() {
+            spec = wiring_for_path(arch);
+            if spec is None {
+                continue;
+            }
+            self.archwires.append(arch);
+            specs.append((arch, spec));
+        }
+        for (arch, spec) in specs {
+            nested = self._is_nested_project(arch);
+            for local in spec.project_modules() {
+                path = spec.module_file(local);
+                if not path or os.path.basename(path) == ARCH_FILE_NAME {
+                    continue;
+                }
+                if os.path.realpath(path) in self.by_file {
+                    continue;
+                }
+                key = self._rel_dotted(os.path.realpath(path))
+                    if nested
+                    else spec.import_name(local);
+                self._add_module(key, path, arch, local);
+            }
+        }
+        for (arch, spec) in specs {
+            self._add_wiring(arch, spec);
+        }
+        self.uses_done = set();
+        self._note_arch_mtimes();
+    }
 }

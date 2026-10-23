@@ -191,7 +191,8 @@ obj Studio {
         line_marks: dict[str, dict[int, str]] = {},
         nav_w: int = 34,
         side_w: int = 0,
-        show_inlays: bool = True;
+        show_inlays: bool = True,
+        pending_new: list[str] = [];
 
     def postinit;
     def install_layout;
@@ -692,6 +693,9 @@ impl pump_background(app: Studio) {
             stale = app.model.stale_files();
         } except Exception {
             stale = [];
+        }
+        while app.pending_new {
+            stale.append(app.pending_new.pop(0));
         }
         for f in stale[:5] {
             app.model.refresh(f);
@@ -3943,6 +3947,10 @@ impl finish_write(app: Studio, req: dict[str, any], accept: bool, message: str) 
     }
     if accept and review is not None {
         mark_changed(app, path, review);
+    }
+    if accept and path.endswith(".jac") and app.model.module_for_file(path) is None {
+        app.last_stale_check = 0.0;
+        app.pending_new.append(path);
     }
     if app.intel is not None and path {
         try {
