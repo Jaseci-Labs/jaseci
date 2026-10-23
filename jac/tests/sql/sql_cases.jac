@@ -382,6 +382,41 @@ class SQLTests(unittest.TestCase) {
         }
     }
 
+    def test_projection_expression_type_swap_rejected(self: SQLTests) -> object {
+        q = s.select_([s.named('n', s.int64(1))]);
+        q.ast.projections[0].expr = s.text('abc').ast;
+        with self.assertRaisesRegex(s.SqlError, 'projection n') {
+            s.compile_sql(q);
+        }
+    }
+
+    def test_projection_derived_arithmetic_rejected(self: SQLTests) -> object {
+        output = s.named('n', s.int64(1));
+        q = s.select_([output]);
+        derived = q.as_source('sub');
+        outer = s.select_(
+            [s.named('n', s.add(derived.col(output.key()), s.int64(1)))], source=derived
+        );
+        q.ast.projections[0].expr = s.text('abc').ast;
+        with self.assertRaisesRegex(s.SqlError, 'projection n') {
+            s.compile_sql(outer);
+        }
+    }
+
+    def test_projection_nullability_swap_rejected(self: SQLTests) -> object {
+        q = s.select_([s.named('n', s.int64(1))]);
+        q.ast.projections[0].expr = s.param(s.nullable(s.int64_type()), None).ast;
+        with self.assertRaisesRegex(s.SqlError, 'projection n') {
+            s.compile_sql(q);
+        }
+    }
+
+    def test_projection_same_type_swap_allowed(self: SQLTests) -> object {
+        q = s.select_([s.named('n', s.int64(1))]);
+        q.ast.projections[0].expr = s.int64(2).ast;
+        self.assertEqual(self.execute(q), [(2, )]);
+    }
+
     def test_source_field_schema_validation(self: SQLTests) -> object {
         with self.assertRaises(s.SqlError) {
             self.people.col(s.field('age', s.text_type()));

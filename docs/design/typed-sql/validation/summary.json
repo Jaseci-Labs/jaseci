@@ -6,9 +6,9 @@
   "python_host": "CPython 3.14.6 (existing local standalone installation)",
   "jac_version": "0.38.1, source checkout at base commit plus SQL module",
   "postgresql_version": "18.6",
-  "unit_and_execution_tests": 46,
-  "sqlite_cases": 22,
-  "postgresql_cases": 22,
+  "unit_and_execution_tests": 54,
+  "sqlite_cases": 26,
+  "postgresql_cases": 26,
   "static_test_methods": 2,
   "expected_rejected_calls": 11,
   "positive_checked_files": [
@@ -21,7 +21,7 @@
   "files": [
     {
       "path": "jac/jaclang/sql.jac",
-      "sha256": "739aa913b95d34bae7d4b5cb1e68d65f3caa03caab2818ec570975b3047ba003"
+      "sha256": "4170d6096a712f92a3642c79d21585248c1c90296316e9a45515f71d83939265"
     },
     {
       "path": "jac/examples/sql/typed_sql.jac",
@@ -29,15 +29,15 @@
     },
     {
       "path": "jac/tests/sql/sql_cases.jac",
-      "sha256": "0357906794f8fb4666439b15ba545425f9e294c0f8999786aa9ed8082932e76c"
+      "sha256": "3bdc9bb98cffe37c7fdc82dee264ccbc32dad015a3d6fa94363876c54119af65"
     },
     {
       "path": "jac/tests/sql/test_postgres.jac",
-      "sha256": "6ff68743c26f83dd17b7086a66999dc57a3017f25ddb501f6504539698dc64b4"
+      "sha256": "6532b85fadbb562185a01fd5260f96f524be829a18c916bbd3bffb5cc412df7d"
     },
     {
       "path": "jac/tests/sql/test_sql.jac",
-      "sha256": "cd0d9b2eaa03eefab150a92fb5734febc2c8b189977c51ed73dcba9712f9073d"
+      "sha256": "6bad9e2db595c1bec2f50337ef41cfe8246f9a13ea8ee5fbc8c094222e749884"
     },
     {
       "path": "jac/tests/sql/test_types.jac",
@@ -49,5 +49,16 @@
     }
   ],
   "test_runner": "jac test (native Jac test blocks)",
-  "test_source_language": "Jac"
+  "test_source_language": "Jac",
+  "projection_regression": {
+    "baseline_commit": "e6095a9c2",
+    "before": "1 passed, 3 failed (expected reproduction)",
+    "after": "4 passed",
+    "checks": [
+      "field/expression SQL type equality",
+      "derived-source arithmetic uses revalidated projections",
+      "nullability equality",
+      "same-type expression replacement remains valid"
+    ]
+  }
 }

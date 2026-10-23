@@ -21,6 +21,10 @@ PASSED   SQLite: alias and join scopes  [/home/baichuan/jaseci/jac-sql/jac/tests
 PASSED   SQLite: aggregate validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: mutated ast is revalidated  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: source field schema validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: projection expression type swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: projection derived arithmetic rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: projection nullability swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: projection same type swap allowed  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   PostgreSQL: module is portable as one file  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: select parameters and order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: join and shared parameter  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
@@ -43,7 +47,11 @@ PASSED   PostgreSQL: alias and join scopes  [/home/baichuan/jaseci/jac-sql/jac/t
 PASSED   PostgreSQL: aggregate validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: mutated ast is revalidated  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: source field schema validation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: projection expression type swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: projection derived arithmetic rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: projection nullability swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: projection same type swap allowed  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   Static types: positive example and module  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 PASSED   Static types: all bad calls are rejected at their lines  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 
-46 passed in 22.71s
+54 passed in 16.10s

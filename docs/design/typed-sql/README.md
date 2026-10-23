@@ -86,7 +86,11 @@ schema information and callers from Python or gradual typing.
 
 ## Whole-query validation
 
-The renderer validates bound column sources and field types, sequential JOIN
+The renderer checks each projection field against its expression type, including
+nullability, in addition to comparing the declared row schema with those fields.
+This rejects stale schema metadata after expression replacement, including inside
+derived relations, before SQL is returned. It also validates bound column
+sources and field types, sequential JOIN
 visibility, alias collisions/shadowing, CTE visibility/order, compatible UNION/CTE
 schemas, aggregate placement, nested aggregates, GROUP BY coverage and cardinality
 proofs. Raw AST nodes are revalidated on every compile, so post-construction
@@ -155,7 +159,7 @@ JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
 
-There are 46 native Jac test entries: 22 SQLite, the same 22 PostgreSQL cases,
+There are 54 native Jac test entries: 26 SQLite, the same 26 PostgreSQL cases,
 and two static-check tests. Shared fixtures live in `sql_cases.jac` and use
 standard-library assertion helpers.
 

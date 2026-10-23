@@ -1,0 +1,8 @@
+[dev] jac dev mode - using compiler source at /home/baichuan/jaseci/jac-sql/jac
+PASSED   SQLite: projection expression type swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [100%]
+PASSED   SQLite: projection derived arithmetic rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [100%]
+PASSED   SQLite: projection nullability swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [100%]
+PASSED   SQLite: projection same type swap allowed  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [100%]
+
+4 passed in 6.38s
+Jac setup complete (1 modules compiled and cached)

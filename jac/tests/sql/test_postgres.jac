@@ -159,3 +159,19 @@ test "PostgreSQL: mutated ast is revalidated" {
 test "PostgreSQL: source field schema validation" {
     run_case(PostgresTests("test_source_field_schema_validation"));
 }
+
+test "PostgreSQL: projection expression type swap rejected" {
+    run_case(PostgresTests("test_projection_expression_type_swap_rejected"));
+}
+
+test "PostgreSQL: projection derived arithmetic rejected" {
+    run_case(PostgresTests("test_projection_derived_arithmetic_rejected"));
+}
+
+test "PostgreSQL: projection nullability swap rejected" {
+    run_case(PostgresTests("test_projection_nullability_swap_rejected"));
+}
+
+test "PostgreSQL: projection same type swap allowed" {
+    run_case(PostgresTests("test_projection_same_type_swap_allowed"));
+}

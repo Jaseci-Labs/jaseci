@@ -964,6 +964,13 @@ obj PostgresRenderer {
         if not _schema_equal(ast.schema, Schema(fields)) {
             raise SqlError('SELECT schema differs from projections');
         }
+        for projection in ast.projections {
+            if not same_type(projection.field.dtype, projection.expr.dtype) {
+                raise SqlError(
+                    f'SELECT projection {projection.field.name}: expression type differs from field'
+                );
+            }
+        }
         if ast.limit is not None and (type(ast.limit) is not int or ast.limit < 0) {
             raise SqlError('Invalid LIMIT');
         }

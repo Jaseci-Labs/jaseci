@@ -87,3 +87,19 @@ test "SQLite: mutated ast is revalidated" {
 test "SQLite: source field schema validation" {
     run_case(SQLTests("test_source_field_schema_validation"));
 }
+
+test "SQLite: projection expression type swap rejected" {
+    run_case(SQLTests("test_projection_expression_type_swap_rejected"));
+}
+
+test "SQLite: projection derived arithmetic rejected" {
+    run_case(SQLTests("test_projection_derived_arithmetic_rejected"));
+}
+
+test "SQLite: projection nullability swap rejected" {
+    run_case(SQLTests("test_projection_nullability_swap_rejected"));
+}
+
+test "SQLite: projection same type swap allowed" {
+    run_case(SQLTests("test_projection_same_type_swap_allowed"));
+}
