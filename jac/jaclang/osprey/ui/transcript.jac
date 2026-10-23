@@ -148,7 +148,7 @@ impl _message_lines(message: TranscriptMessage, width: int) -> list[str] {
         }
         return out;
     }
-    lines = wrap_text(message.content, width);
+    lines = wrap_words(message.content, width);
     if not lines {
         return [""];
     }

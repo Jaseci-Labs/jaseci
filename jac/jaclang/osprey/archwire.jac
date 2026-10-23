@@ -629,6 +629,6 @@ graph import ui {
         layout { wrap_text_joined },
         layout_measure { display_width, wrap_text_joined },
         markdown_proj { display_width, wrap_text },
-        transcript { wrap_text },
+        transcript { wrap_words },
     ]
 }

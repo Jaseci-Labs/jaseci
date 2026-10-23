@@ -80,6 +80,9 @@ def wrap_text(text: str, width: int) -> list[str];
 
 def wrap_text_joined(text: str, width: int) -> str;
 
+
+def wrap_words(text: str, width: int) -> list[str];
+
 impl _is_mark(cat: str) -> bool {
     return cat == "Mn" or cat == "Mc" or cat == "Me";
 }
@@ -481,4 +484,43 @@ impl _simple_char_width(ch: str) -> int {
         return -1;
     }
     return grapheme_width(ch);
+}
+
+
+impl wrap_words(text: str, width: int) -> list[str] {
+    if width <= 0 {
+        return [""];
+    }
+    out: list[str] = [];
+    for para in text.split("\n") {
+        body = para.lstrip(" ");
+        indent = para[:len(para) - len(body)];
+        room = max(1, width - display_width(indent));
+        line = "";
+        used = 0;
+        for word in body.split(" ") {
+            ww = display_width(word);
+            sep = 1 if line else 0;
+            if line and used + sep + ww > room {
+                out.append(indent + line);
+                line = "";
+                used = 0;
+                sep = 0;
+            }
+            if ww > room {
+                for piece in wrap_text(word, room) {
+                    if line {
+                        out.append(indent + line);
+                    }
+                    line = piece;
+                    used = display_width(piece);
+                }
+                continue;
+            }
+            line = line + (" " if sep else "") + word;
+            used += sep + ww;
+        }
+        out.append(indent + line);
+    }
+    return out;
 }
