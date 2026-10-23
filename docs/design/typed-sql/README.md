@@ -151,6 +151,9 @@ raise SqlError. Recursive termination follows the query predicate.
 The anchor renders as `SELECT * FROM (anchor) AS "_recursive_anchor"` before
 UNION ALL. This subquery keeps anchor-local ORDER BY and LIMIT inside the anchor.
 Tests execute LIMIT, ORDER BY and their combination on PostgreSQL and SQLite.
+Ordinary and recursive UNION paths share schema/cardinality validation. Both
+arms are rechecked against UNION metadata on every compilation, including after
+AST replacement; the UNION output must also match the CTE schema.
 CTE definitions are independently scoped and cannot capture outer query columns.
 
 ## Extension path
@@ -183,7 +186,7 @@ JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
 
-There are 79 native Jac test entries: 38 SQLite, the same 38 PostgreSQL cases,
+There are 81 native Jac test entries: 39 SQLite, the same 39 PostgreSQL cases,
 and three static-check tests. Shared fixtures live in `sql_cases.jac` and use
 standard-library assertion helpers.
 

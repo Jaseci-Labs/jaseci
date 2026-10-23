@@ -151,3 +151,7 @@ test "SQLite: generated names are deterministic" {
 test "SQLite: auto source aliases for self join" {
     run_case(SQLTests("test_auto_source_aliases_for_self_join"));
 }
+
+test "SQLite: recursive union schema mutation" {
+    run_case(SQLTests("test_recursive_union_schema_mutation"));
+}

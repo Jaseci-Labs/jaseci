@@ -208,6 +208,59 @@ class SQLTests(unittest.TestCase) {
         self.assertEqual(self.execute(body), [(1, ), (2, ), (3, ), (4, )]);
     }
 
+    def test_recursive_union_schema_mutation(self: SQLTests) -> object {
+        for mode in [
+            'right_type',
+            'left_type',
+            'right_count',
+            'left_name',
+            'cardinality',
+            'valid'
+        ] {
+            key = s.field('n', s.int64_type());
+            ref = s.cte_ref([key]);
+            anchor = s.select([s.named('n', s.int64(1))]);
+            step = s.select(
+                [s.named('n', s.add(ref.col(key), s.int64(1)))],
+                source=ref,
+                where=s.gt(s.int64(3), ref.col(key))
+            );
+            combined = s.union_all(anchor, step);
+            s.define_cte(ref, combined, recursive=True);
+            body = s.select(
+                [s.named('n', ref.col(key))], source=ref, order_by=[s.asc(ref.col(key))]
+            );
+            if mode == 'right_type' {
+                combined.ast.right = s.select(
+                    [s.named('n', s.text('abc'))], source=ref
+                ).ast;
+            } elif mode == 'left_type' {
+                combined.ast.left = s.select([s.named('n', s.text('abc'))]).ast;
+            } elif mode == 'right_count' {
+                combined.ast.right = s.select(
+                    [s.named('n', s.int64(2)), s.named('extra', s.int64(3))], source=ref
+                ).ast;
+            } elif mode == 'left_name' {
+                combined.ast.left = s.select([s.named('renamed', s.int64(1))]).ast;
+            } elif mode == 'cardinality' {
+                combined.ast.cardinality = 'exactly_one';
+            } else {
+                combined.ast.left = s.select([s.named('n', s.int64(2))]).ast;
+            }
+            with self.subTest(mode=mode) {
+                if mode == 'valid' {
+                    self.assertEqual(self.execute(body), [(2, ), (3, )]);
+                } else {
+                    with self.assertRaisesRegex(
+                        s.SqlError, 'UNION schema/cardinality mismatch'
+                    ) {
+                        s.compile_sql(body);
+                    }
+                }
+            }
+        }
+    }
+
     def _assert_recursive_anchor(self: SQLTests, first: any, expected: any) -> object {
         key = s.field('n', s.int64_type());
         ref = s.cte_ref([key]);

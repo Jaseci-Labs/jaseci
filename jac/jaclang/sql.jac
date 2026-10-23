@@ -631,6 +631,14 @@ def _schema_equal(a: Schema, b: Schema, names: bool = True) -> bool {
     );
 }
 
+def validate_union(ast: UnionNode) -> None {
+    if not _schema_equal(ast.schema, ast.left.schema)
+        or not _schema_equal(ast.schema, ast.right.schema, False)
+        or ast.cardinality != 'many' {
+        raise SqlError('UNION schema/cardinality mismatch');
+    }
+}
+
 obj QueryGraph {
     has follow_definitions: bool = True,
         ctes: list[Cte] = [],
@@ -870,6 +878,7 @@ obj PostgresRenderer {
                         'Recursive CTE requires a SELECT anchor and SELECT step'
                     );
                 }
+                validate_union(definition);
                 validate_recursive_step(reference, definition.right);
                 anchor = self.query(definition.left, [], available);
                 step = self.query(definition.right, [], available + [reference]);
@@ -1141,11 +1150,7 @@ obj PostgresRenderer {
             return self.select_sql(ast, outer, ctes);
         }
         if isinstance(ast, UnionNode) {
-            if not _schema_equal(ast.schema, ast.left.schema)
-                or not _schema_equal(ast.left.schema, ast.right.schema, False)
-                or ast.cardinality != 'many' {
-                raise SqlError('UNION schema/cardinality mismatch');
-            }
+            validate_union(ast);
             a = self.query(ast.left, outer, ctes);
             b = self.query(ast.right, outer, ctes);
             op = ' UNION ALL ' if ast.keep_duplicates else ' UNION ';

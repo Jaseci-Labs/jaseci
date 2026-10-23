@@ -6,9 +6,9 @@
   "python_host": "CPython 3.14.6 (existing local standalone installation)",
   "jac_version": "0.38.1, source checkout at base commit plus SQL module",
   "postgresql_version": "18.6",
-  "unit_and_execution_tests": 79,
-  "sqlite_cases": 38,
-  "postgresql_cases": 38,
+  "unit_and_execution_tests": 81,
+  "sqlite_cases": 39,
+  "postgresql_cases": 39,
   "static_test_methods": 3,
   "expected_rejected_calls": 14,
   "positive_checked_files": [
@@ -21,7 +21,7 @@
   "files": [
     {
       "path": "jac/jaclang/sql.jac",
-      "sha256": "f6cce52182712918923064c97cb35930ebbad807ffa221fe794365cf55609a11"
+      "sha256": "9bb65602771baae934efe1f5267e2b3b00f07bd5ab704da330ff795583fd1a9d"
     },
     {
       "path": "jac/examples/sql/typed_sql.jac",
@@ -29,15 +29,15 @@
     },
     {
       "path": "jac/tests/sql/sql_cases.jac",
-      "sha256": "1bf289b3a2259339af8c2a9e82f15383ba4988f2482e20a8933f89801a5019b7"
+      "sha256": "c1f2f4ebb1d4932a13f6f9d0d16274a91b77054c9bb40b25615f52d24ea4f037"
     },
     {
       "path": "jac/tests/sql/test_postgres.jac",
-      "sha256": "4b1da21661c47cd0251dd221a5d714aac284a728a79eefd46f5fca5c6b474439"
+      "sha256": "07dfc67ef3ff193198c514e82706865dd69a475de20e1be63b3c97e8f6bf9e4a"
     },
     {
       "path": "jac/tests/sql/test_sql.jac",
-      "sha256": "1b6575787a2de9efbd1678f0514f4e06551fb874aa8521841eeea732e09fef45"
+      "sha256": "b7e87efd1ebf9b535478fa9b0c9a24aded911b138646af1f683665d07d482284"
     },
     {
       "path": "jac/tests/sql/test_types.jac",
@@ -90,5 +90,17 @@
       "undefined and cyclic reference rejection",
       "deterministic compilation without AST alias mutation"
     ]
+  },
+  "recursive_union_schema_regression": {
+    "result": "PASS on PostgreSQL and SQLite",
+    "rejected_mutations": [
+      "Text recursive arm",
+      "Text anchor",
+      "extra recursive column",
+      "renamed anchor output",
+      "invalid UNION cardinality"
+    ],
+    "accepted_mutation": "same-type anchor replacement executes correctly",
+    "validation": "Shared UNION validator rechecks both arms against union metadata; CTE schema is checked against union metadata before rendering."
   }
 }

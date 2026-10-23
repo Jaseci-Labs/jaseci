@@ -37,6 +37,7 @@ PASSED   SQLite: cte missing definition cycles and redefinition  [/home/baichuan
 PASSED   SQLite: cte cannot capture outer columns  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: generated names are deterministic  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: auto source aliases for self join  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive union schema mutation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   PostgreSQL: module is portable as one file  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: select parameters and order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: join and shared parameter  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
@@ -75,8 +76,9 @@ PASSED   PostgreSQL: cte missing definition cycles and redefinition  [/home/baic
 PASSED   PostgreSQL: cte cannot capture outer columns  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: generated names are deterministic  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: auto source aliases for self join  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive union schema mutation  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   Static types: positive example and module  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 PASSED   Static types: all bad calls are rejected at their lines  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 PASSED   Static types: temporary names are not API arguments  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 
-79 passed in 24.42s
+81 passed in 21.55s

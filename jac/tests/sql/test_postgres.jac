@@ -223,3 +223,7 @@ test "PostgreSQL: generated names are deterministic" {
 test "PostgreSQL: auto source aliases for self join" {
     run_case(PostgresTests("test_auto_source_aliases_for_self_join"));
 }
+
+test "PostgreSQL: recursive union schema mutation" {
+    run_case(PostgresTests("test_recursive_union_schema_mutation"));
+}
