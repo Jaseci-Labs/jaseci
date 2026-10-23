@@ -56,6 +56,10 @@ comptime SPEC_STUDIO: CommandSpec = CommandSpec(
              ),
              ("jac studio agents", "List the agents the studio can drive"),
              ("jac studio sessions", "List saved sessions"),
+             (
+                 "jac studio sessions fork <id>",
+                 "Copy a session to try a different direction"
+             ),
 
          ],
          group="tools",

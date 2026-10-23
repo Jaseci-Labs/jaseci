@@ -40,7 +40,7 @@ def wait_tickets(
 
 def cmd_agents(root_dir: str, as_json: bool) -> int;
 
-def cmd_sessions(root_dir: str, as_json: bool) -> int;
+def cmd_sessions(root_dir: str, as_json: bool, args: list[str] = []) -> int;
 
 def cmd_ask(
     root_dir: str,
@@ -149,7 +149,7 @@ impl run_studio(
         return cmd_agents(root_dir, as_json);
     }
     if action == "sessions" {
-        return cmd_sessions(root_dir, as_json);
+        return cmd_sessions(root_dir, as_json, args);
     }
     if action == "ask" {
         return cmd_ask(root_dir, args, agent, session, assume_yes, as_json);
@@ -577,7 +577,24 @@ impl cmd_agents(root_dir: str, as_json: bool) -> int {
     return 0;
 }
 
-impl cmd_sessions(root_dir: str, as_json: bool) -> int {
+impl cmd_sessions(root_dir: str, as_json: bool, args: list[str] = []) -> int {
+    if args and args[0] == "fork" {
+        if len(args) < 2 {
+            err("usage: jac studio sessions fork <session-id>");
+            return 1;
+        }
+        child = fork_session(root_dir, args[1]);
+        if child is None {
+            err(f"jac studio sessions: no saved session matches '{args[1]}'");
+            return 1;
+        }
+        out(
+            json.dumps(child.summary())
+                if as_json
+                else f"forked {child.parent} as {child.id}; resume it with: jac studio -s {child.id}"
+        );
+        return 0;
+    }
     rows = list_sessions(root_dir);
     if as_json {
         out(json.dumps(rows, indent=2));
