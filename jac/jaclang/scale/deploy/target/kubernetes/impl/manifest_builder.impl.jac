@@ -1479,6 +1479,7 @@ impl ManifestBuilder._resolve_scaling(
             "service_name": service_name,
             "autoscaler": {},
             "http_activation": http,
+            "engine": self.k8s_config.autoscaler_engine,
             "replica_floor": int(http.get("min_replicas", 0))
         };
     }
@@ -1500,6 +1501,7 @@ impl ManifestBuilder._resolve_scaling(
         keda = self.k8s_config.autoscaler_engine == "keda";
         return {
             "mode": ScalingMode.METRIC,
+            "engine": "keda" if keda else "hpa",
             "scale_target_name": scale_target,
             "service_name": service_name,
             "autoscaler": metric,
@@ -1512,6 +1514,7 @@ impl ManifestBuilder._resolve_scaling(
     }
     return {
         "mode": ScalingMode.NONE,
+        "engine": self.k8s_config.autoscaler_engine,
         "scale_target_name": scale_target,
         "service_name": service_name,
         "autoscaler": {},

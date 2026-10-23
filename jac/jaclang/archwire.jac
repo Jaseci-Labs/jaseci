@@ -30605,6 +30605,7 @@ graph import scale {
         scheduler_min_interval
     }
     deploy.autoscale.autoscaler ++> [
+        runtime.cli.diagnostics { triggers_can_reach_zero },
         sdk { AutoscalerRuntimeStatus, AutoscalerTransition },
         sdk.client { AutoscalerRuntimeStatus },
         tests.deploy.test_deployment_overlay { Autoscaler, AutoscalerSpec },
@@ -31741,6 +31742,7 @@ graph import scale.deploy.autoscale {
             AutoscalerSpec,
             DEFAULT_CPU_UTILIZATION_TARGET,
             DEFAULT_MEMORY_UTILIZATION_TARGET,
+            RESOURCE_ONLY_TRIGGER_TYPES,
             condition,
             normalize_conditions,
             tristate
@@ -32105,7 +32107,7 @@ graph import scale.runtime {
 
 graph import scale.runtime.cli {
     _narrow ++> [
-        diagnostics { bget, dget, effective_resources, iget, lget, pod_spec },
+        diagnostics { bget, dget, effective_resources, iget, lget, pod_spec, sget },
         plan { dget, fget, iget, lget, pod_spec, sget },
     ]
     diagnostics ++> plan { Diagnostic, PlanValidator }
