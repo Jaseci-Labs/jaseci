@@ -13,9 +13,17 @@ import requests;
 import from pymongo { MongoClient }
 import from testcontainers.community.mongodb { MongoDbContainer }
 import from testcontainers.community.redis { RedisContainer }
+import from unittest.mock { patch }
+import from uuid { UUID }
 import from jaclang.jac0core.archetype { Root }
+import from jaclang.jac0core.runtime { JacRuntime }
+import from jaclang.runtimelib.context { ExecutionContext }
 import from jaclang.scale.memory.context { JScaleExecutionContext }
-import from jaclang.scale.memory.memory_hierarchy { _process_cache, MongoBackend }
+import from jaclang.scale.memory.memory_hierarchy {
+    _process_cache,
+    MongoBackend,
+    ScaleTieredMemory
+}
 import from jaclang.scale.persistence.db { close_all_db_connections }
 
 def get_free_port -> int {
@@ -1439,8 +1447,75 @@ test "system root cache: N consecutive inits cost one MongoDB fetch total" {
 }
 
 
-test "L2 Redis is invalidated (not re-poisoned) after edge-delta atomic write (issue 6295)" {
+node _CacheWitness {
+    has pointer: str = "",
+        stamp: str = "seed";
+}
+
+def _cache_pod -> ExecutionContext {
+    ctx = ExecutionContext();
+    ctx.mem = ScaleTieredMemory();
+    JacRuntime.set_context(ctx);
+    return ctx;
+}
+
+def _seed_witness -> UUID {
+    ctx = _cache_pod();
+    owner = Root();
+    owner.__jac__.persistent = True;
+    ctx.mem.__mem__[owner.__jac__.id] = owner.__jac__;
+    witness = _CacheWitness();
+    owner ++> witness;
+    ctx.mem.commit();
+    return witness.__jac__.id;
+}
+
+def _field_update_race(witness_id: UUID) -> None {
+    first = _cache_pod();
+    second = _cache_pod();
+    first_witness = first.mem.get(witness_id).archetype;
+    second.mem.get(witness_id).archetype.stamp = "second-request";
+    first_witness.pointer = "sandbox-one";
+    JacRuntime.set_context(first);
+    first.mem.commit();
+    JacRuntime.set_context(second);
+    second.mem.commit();
+}
+
+def _stale_save_race(witness_id: UUID) -> None {
+    stale = _cache_pod();
+    stale_witness = stale.mem.get(witness_id).archetype;
+    writer = _cache_pod();
+    writer.mem.get(witness_id).archetype.pointer = "sandbox-three";
+    writer.mem.commit();
+    JacRuntime.set_context(stale);
+    JacRuntime.save(stale_witness);
+    stale.mem.commit();
+}
+
+def _delayed_refill_race(witness_id: UUID, read: str) -> None {
+    writer = _cache_pod();
+    writer_witness = writer.mem.get(witness_id).archetype;
+    reader = _cache_pod();
+    reader.mem.l2.invalidate(witness_id);
+    original = getattr(MongoBackend, read);
+    def commit_during_read(backend: MongoBackend, requested: any) -> any {
+        loaded = original(backend, requested);
+        if backend is reader.mem.l3 {
+            JacRuntime.set_context(writer);
+            writer_witness.pointer = "sandbox-two";
+            writer.mem.commit();
+        }
+        return loaded;
+    }
+    with patch.object(MongoBackend, read, commit_during_read) {
+        getattr(reader.mem, read)([witness_id] if read == "batch_get" else witness_id);
+    }
+}
+
+test "L2 Redis never serves an anchor older than Mongo (issues 6295, 9840)" {
     import json;
+    import asyncio;
     import from uuid { uuid4, UUID }
     import from jaclang.jac0core.archetype { EdgeAnchor, NodeAnchor }
     import from jaclang.runtimelib.utils { to_uuid }
@@ -1460,6 +1535,7 @@ test "L2 Redis is invalidated (not re-poisoned) after edge-delta atomic write (i
 
     os.environ["MONGODB_URI"] = mongo_uri;
     os.environ["REDIS_URL"] = redis_url;
+    prior = JacRuntime.get_context();
 
     try {
         mem = ScaleTieredMemory();
@@ -1546,7 +1622,60 @@ test "L2 Redis is invalidated (not re-poisoned) after edge-delta atomic write (i
         );
 
         mem.l3.close();
+
+        for (row, read, expected) in [
+            ("field update", None, ("sandbox-one", "second-request")),
+            ("delayed get refill", "get", ("sandbox-two", "seed")),
+            ("delayed batch_get refill", "batch_get", ("sandbox-two", "seed")),
+            ("unchanged save after a newer commit", "save", ("sandbox-three", "seed"))
+        ] {
+            witness_id = _seed_witness();
+            if read == "save" {
+                _stale_save_race(witness_id);
+            } elif read {
+                _delayed_refill_race(witness_id, read);
+            } else {
+                _field_update_race(witness_id);
+            }
+            fresh = _cache_pod().mem.get(witness_id).archetype;
+            assert (fresh.pointer, fresh.stamp) == expected , (
+                f"{row}: a fresh pod read {(fresh.pointer, fresh.stamp)}, Mongo holds {expected}"
+            );
+        }
+
+        witness_id = _seed_witness();
+        cache = _cache_pod().mem.l2;
+        cache.invalidate(witness_id);
+        first = cache.lease([witness_id]);
+        assert cache.lease([witness_id]) == {} , "a concurrent miss must not take over the refill";
+        cache.fill(_cache_pod().mem.l3.get(witness_id), first.get(witness_id));
+        assert cache.get(witness_id) is not None , "the first reader's refill must land";
+
+        missing = uuid4();
+        assert _cache_pod().mem.get(missing) is None;
+        assert cache.lease([missing]) , "a Mongo miss must release its refill lease";
+
+        assert cache.redis_url , "aput must take the async Redis path";
+        for write in ["put", "aput"] {
+            witness_id = _seed_witness();
+            cache.invalidate(witness_id);
+            token = cache.lease([witness_id]).get(witness_id);
+            stale = _cache_pod().mem.l3.get(witness_id);
+            newer = _cache_pod().mem.l3.get(witness_id);
+            newer.archetype.pointer = "sandbox-four";
+            if write == "put" {
+                cache.put(newer);
+            } else {
+                asyncio.run(cache.aput(newer));
+            }
+            cache.fill(stale, token);
+            cached = cache.get(witness_id).archetype.pointer;
+            assert cached == "sandbox-four" , (
+                f"{write}: a refill leased before {write} overwrote it with {cached!r}"
+            );
+        }
     } finally {
+        JacRuntime.set_context(prior);
         os.environ.pop("MONGODB_URI", None);
         os.environ.pop("REDIS_URL", None);
         _reset_process_cache();
