@@ -1,6 +1,6 @@
-import from ..constraints.algebra { StrengthTier, }
+import from jaclang.osprey.constraints.algebra { StrengthTier, }
 
-import from .model {
+import from jaclang.osprey.ui.model {
     ApprovalOverlay,
     Child,
     Header,

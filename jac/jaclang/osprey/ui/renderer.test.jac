@@ -1,11 +1,23 @@
-import from .model { MainScreen, Prompt, ApprovalOverlay, UiRegion, Layer }
+import from jaclang.osprey.ui.model {
+    MainScreen,
+    Prompt,
+    ApprovalOverlay,
+    UiRegion,
+    Layer
+}
 
-import from .mutation { append_child, detach, }
+import from jaclang.osprey.ui.mutation { append_child, detach, }
 
-import from .layout_types_core { AxisSize }
-import from .layout_types { fill_axis, fixed_axis, grow_axis, intrinsic_axis, rect_of }
+import from jaclang.osprey.ui.layout_types_core { AxisSize }
+import from jaclang.osprey.ui.layout_types {
+    fill_axis,
+    fixed_axis,
+    grow_axis,
+    intrinsic_axis,
+    rect_of
+}
 
-import from .virtual_terminal { VirtualTerminal, }
+import from jaclang.osprey.ui.virtual_terminal { VirtualTerminal, }
 
 
 node TextRegion(UiRegion) {

@@ -1,13 +1,13 @@
-import from .model { MainScreen }
+import from jaclang.osprey.ui.model { MainScreen }
 
-import from .runtime_core {
+import from jaclang.osprey.ui.runtime_core {
     create_session,
     dispose_session,
     append_child_session,
     set_current_screen
 }
 
-import from .events { dispatch_event }
+import from jaclang.osprey.ui.events { dispatch_event }
 
 
 test "editor_insert advances caret" {

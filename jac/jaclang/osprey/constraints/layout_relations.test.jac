@@ -1,4 +1,4 @@
-import from .algebra { constraint_key }
+import from jaclang.osprey.constraints.algebra { constraint_key }
 
 
 def _coefficients(c: Constraint) -> dict[int, float];

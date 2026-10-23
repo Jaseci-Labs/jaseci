@@ -1,12 +1,23 @@
-import from .layout_types_core {
+import from jaclang.osprey.ui.layout_types_core {
     Axis,
     AxisSize,
     LayoutRelation,
     LayoutRelationKind,
     LayoutSpec
 }
-import from .layout_types { add_relation, create_layout_state, set_spec }
-import from .model { Child, Header, MainScreen, Prompt, Status, TranscriptView }
+import from jaclang.osprey.ui.layout_types {
+    add_relation,
+    create_layout_state,
+    set_spec
+}
+import from jaclang.osprey.ui.model {
+    Child,
+    Header,
+    MainScreen,
+    Prompt,
+    Status,
+    TranscriptView
+}
 
 
 def _solver_of(r: CompileResult) -> Solver;

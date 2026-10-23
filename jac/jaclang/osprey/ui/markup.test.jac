@@ -1,8 +1,8 @@
-import from .model { ordered_child_keys }
+import from jaclang.osprey.ui.model { ordered_child_keys }
 
-import from .runtime_core { create_session }
+import from jaclang.osprey.ui.runtime_core { create_session }
 
-import from .screen { build_main_shell, }
+import from jaclang.osprey.ui.screen { build_main_shell, }
 
 
 test "default_shell_registry has Osprey shell tags" {

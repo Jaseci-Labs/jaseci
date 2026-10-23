@@ -1,4 +1,4 @@
-import from .terminal { synchronized_write }
+import from jaclang.osprey.ui.terminal { synchronized_write }
 
 
 test "start enables paste and alternate screen; stop restores" {

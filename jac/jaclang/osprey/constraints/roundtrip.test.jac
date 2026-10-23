@@ -1,7 +1,13 @@
-import from .algebra { Constraint, Expression, StrengthTier, Term, Variable, }
-import from .results { SolveError, }
-import from .solver { Solver, }
-import from .layout_relations {
+import from jaclang.osprey.constraints.algebra {
+    Constraint,
+    Expression,
+    StrengthTier,
+    Term,
+    Variable,
+}
+import from jaclang.osprey.constraints.results { SolveError, }
+import from jaclang.osprey.constraints.solver { Solver, }
+import from jaclang.osprey.constraints.layout_relations {
     affine_constraint,
     align_bottom,
     height_nonnegative,

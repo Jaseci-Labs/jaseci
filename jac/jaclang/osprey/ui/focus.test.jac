@@ -1,4 +1,4 @@
-import from .model {
+import from jaclang.osprey.ui.model {
     MainScreen,
     Prompt,
     ApprovalOverlay,
@@ -8,7 +8,7 @@ import from .model {
     node_id
 }
 
-import from .runtime_core {
+import from jaclang.osprey.ui.runtime_core {
     append_child_session,
     create_session,
     set_current_screen,

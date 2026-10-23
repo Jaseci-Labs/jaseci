@@ -1,6 +1,6 @@
-import from .model { MainScreen, Prompt, TranscriptView }
+import from jaclang.osprey.ui.model { MainScreen, Prompt, TranscriptView }
 
-import from .runtime_core {
+import from jaclang.osprey.ui.runtime_core {
     append_child_session,
     create_session,
     set_current_screen,
@@ -8,9 +8,9 @@ import from .runtime_core {
     record_invalidation
 }
 
-import from .bindings { subscribe, }
+import from jaclang.osprey.ui.bindings { subscribe, }
 
-import from .events { InsertText, }
+import from jaclang.osprey.ui.events { InsertText, }
 
 
 test "dump_graph is deterministic for the same topology" {

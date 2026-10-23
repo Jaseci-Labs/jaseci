@@ -1,8 +1,12 @@
-import from .model { MainScreen, Prompt, node_id, }
+import from jaclang.osprey.ui.model { MainScreen, Prompt, node_id, }
 
-import from .runtime_core { create_session, append_child_session, dispose_session }
+import from jaclang.osprey.ui.runtime_core {
+    create_session,
+    append_child_session,
+    dispose_session
+}
 
-import from .bindings { subscribe }
+import from jaclang.osprey.ui.bindings { subscribe }
 
 
 test "create_session tracked jids are not reachable from persistent root" {

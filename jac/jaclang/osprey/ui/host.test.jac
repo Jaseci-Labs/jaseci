@@ -1,6 +1,6 @@
-import from .virtual_terminal { VirtualTerminal, }
+import from jaclang.osprey.ui.virtual_terminal { VirtualTerminal, }
 
-import from .input_events { TextEvent }
+import from jaclang.osprey.ui.input_events { TextEvent }
 
 
 test "host tick drains inject and maps interrupt" {

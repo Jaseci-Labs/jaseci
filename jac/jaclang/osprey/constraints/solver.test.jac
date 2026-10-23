@@ -1,4 +1,4 @@
-import from .algebra { add_expressions, eq }
+import from jaclang.osprey.constraints.algebra { add_expressions, eq }
 
 import from time { perf_counter, }
 

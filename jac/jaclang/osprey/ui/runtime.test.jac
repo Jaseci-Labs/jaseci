@@ -1,6 +1,6 @@
-import from .model { MainScreen, Prompt, TranscriptView }
+import from jaclang.osprey.ui.model { MainScreen, Prompt, TranscriptView }
 
-import from .bindings { subscribe }
+import from jaclang.osprey.ui.bindings { subscribe }
 
 test "create_session builds detached ui_root not connected to persistent root" {
     handle = create_session();

@@ -1,5 +1,9 @@
-import from .layout_types { create_layout_state }
-import from .runtime_core { create_session, dispose_session, get_focus_node }
+import from jaclang.osprey.ui.layout_types { create_layout_state }
+import from jaclang.osprey.ui.runtime_core {
+    create_session,
+    dispose_session,
+    get_focus_node
+}
 
 
 test "build_main_shell mounts header transcript status prompt once" {
