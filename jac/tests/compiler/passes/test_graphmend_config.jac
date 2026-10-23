@@ -4,7 +4,10 @@ import from tests.support {
     GRAPHMEND_FIXTURES as FIXTURES,
     graphmend_compile_opts as _compile_opts
 }
-import from jaclang.compiler.driver.compile_options { CompileOptions }
+import from jaclang.compiler.driver.compile_options {
+    CompileOptions,
+    override_graphmend_disable
+}
 
 """Compile a checked-in fixture under graphmend with a disable list and
 return its generated Python source."""
@@ -119,8 +122,51 @@ test "the cli disable flag reaches the compile options carrier" {
         assert CompileOptions().graphmend_disable == ["trap", "defer"];
         assert gm_on is True;
     } finally {
+        override_graphmend_disable([]);
         config_mod._config = old_config;
     }
+}
+
+test "the cli disable flag reaches every run path and survives config rediscovery" {
+    import tempfile;
+    import jaclang.cli.commands.execution as execution;
+    import jaclang.project.config as config_mod;
+    import from unittest.mock { patch }
+    seen: list[(list[str] | None)] = [];
+    def _capture(*a: any, **k: any) -> int {
+        config_mod.get_config(force_discover=True);
+        seen.append(CompileOptions().graphmend_disable);
+        return 0;
+    }
+    saved = (
+        config_mod._config,
+        config_mod._config_explicit,
+        config_mod._config_by_root
+    );
+    try {
+        with tempfile.TemporaryDirectory() as tmp {
+            path = os.path.join(tmp, "model.jac");
+            with open(path, "w") as fh {
+                fh.write("def start {}\n");
+            }
+            with patch.object(execution, "_invoke_entrypoint", _capture), patch.object(
+                execution, "debug", _capture
+            ) {
+                assert execution.run(
+                    target=path, graphmend_disable="where", entry_name="start"
+                )
+                    == 0;
+                assert execution.run(
+                    target=path, graphmend_disable="where", debug_mode=True
+                )
+                    == 0;
+            }
+        }
+    } finally {
+        override_graphmend_disable([]);
+        (config_mod._config, config_mod._config_explicit, config_mod._config_by_root) = saved;
+    }
+    assert seen == [["where"], ["where"]];
 }
 
 test "explicit compile options decide the transforms the compile runs" {

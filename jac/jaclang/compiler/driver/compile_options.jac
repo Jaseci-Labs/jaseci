@@ -1,7 +1,10 @@
 glob _serving_probe: list[bool] = [False],
+     _graphmend_disable_override: list[str] = [],
      GM_DEFER_BUFFERS_THREAD_SCOPED: bool = False;
 
 def mark_process_serving;
+
+def override_graphmend_disable(names: list[str]);
 
 def process_is_serving -> bool;
 

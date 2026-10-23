@@ -6,6 +6,11 @@ impl process_is_serving -> bool {
     return _serving_probe[0];
 }
 
+impl override_graphmend_disable(names: list[str]) {
+    _graphmend_disable_override.clear();
+    _graphmend_disable_override.extend(names);
+}
+
 impl defer_declines_here -> bool {
     return (not GM_DEFER_BUFFERS_THREAD_SCOPED) and process_is_serving();
 }
@@ -16,6 +21,9 @@ impl resolved_graphmend_setting -> bool {
 }
 
 impl resolved_graphmend_disable_setting -> list[str] {
+    if _graphmend_disable_override {
+        return list(_graphmend_disable_override);
+    }
     project = active_host().project_defaults();
     raw = project.graphmend_disable if project else "";
     out: list[str] = [];

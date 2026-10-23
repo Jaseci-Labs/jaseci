@@ -315,6 +315,7 @@ impl run(
         return _show_run(plan, app, target, file, want_serve);
     }
 
+    _apply_graphmend(graphmend_disable);
     if want_serve {
         return _serve_with(
             file or (plan.entry_path if plan is not None else ""),
@@ -343,15 +344,7 @@ impl run(
     if entry_name {
         return _invoke_entrypoint(exec_target, entry_name, args, main, root_id, nd);
     }
-    return _exec_file(
-        exec_target,
-        main,
-        cache,
-        diagnostics,
-        args,
-        backend,
-        graphmend_disable=graphmend_disable
-    );
+    return _exec_file(exec_target, main, cache, diagnostics, args, backend);
 }
 
 def _exec_file(
@@ -360,8 +353,7 @@ def _exec_file(
     cache: bool,
     diagnostics: str,
     args: list[str],
-    backend: str = "",
-    graphmend_disable: str = ""
+    backend: str = ""
 ) -> int;
 
 def _serve_app(cfg: any, app: str, filename: str) -> any;
@@ -985,10 +977,7 @@ impl _apply_graphmend(graphmend_disable: str = "") -> bool {
         }
         gm_disable.append(stripped);
     }
-    cfg = get_config();
-    if gm_disable and cfg is not None {
-        cfg.run.graphmend_disable = ",".join(gm_disable);
-    }
+    override_graphmend_disable(gm_disable);
     gm_on = _configured_graphmend();
     if gm_on and 'torch' in sys.modules {
         import from jaclang.meta_importer { install_graphmend_loader_hook_for_torch }
@@ -1608,8 +1597,7 @@ impl _exec_file(
     cache: bool,
     diagnostics: str,
     args: list[str],
-    backend: str = "",
-    graphmend_disable: str = ""
+    backend: str = ""
 ) -> int {
     _discover_config_from_file(filename);
 
@@ -1627,7 +1615,7 @@ impl _exec_file(
     sys.argv = [filename] + list(args);
     (base, mod, mach) = _proc_file(filename);
     lng = filename.split('.')[-1];
-    graphmend = _apply_graphmend(graphmend_disable);
+    graphmend = _configured_graphmend();
     previous_codespace = get_effective_default_codespace_override();
     try {
         if backend {

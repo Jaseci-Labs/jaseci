@@ -702,6 +702,7 @@ graph import {
         },
         cli.commands.analysis.grammar
             | dist.precompile_bytecode.prebuild_native_closure { CompileOptions },
+        cli.commands.execution._apply_graphmend { override_graphmend_disable },
         cli.commands.execution.serve { mark_process_serving },
         cli.commands.native_build._restore_target { pop_native_target },
         cli.commands.native_build.native_build {
@@ -1919,7 +1920,7 @@ graph import {
             | cli.commands.architecture
             | cli.commands.build.build
             | cli.commands.config.config
-            | cli.commands.execution._apply_graphmend
+            | cli.commands.execution._configured_graphmend
             | cli.commands.mcp.mcp_cmd
             | cli.commands.project.bundle
             | cli.shadcn.cli.retheme
@@ -1937,7 +1938,7 @@ graph import {
             | server.server.JacAPIServer._ensure_client_bundle
             | server.sv_client._read_cache_enabled { get_config },
         cli.commands.analysis._is_project_wide_run
-            | cli.commands.execution._configured_graphmend
+            | cli.commands.execution._ensure_watchdog_installed
             | cli.commands.project.clean
             | cli.shadcn.cli.run_shadcn_add
             | data.pg_dist._database_config
@@ -1945,17 +1946,17 @@ graph import {
             | server.endpoints.pages.register_diagnostics_endpoints.client_error
             | server.server.print_endpoint_docs { get_config },
         cli.commands.analysis.check
-            | cli.commands.execution._ensure_watchdog_installed
+            | cli.commands.execution._exec_file
             | cli.commands.project.deps
             | cli.shadcn.cli.run_shadcn_remove { get_config },
         cli.commands.analysis.format
-            | cli.commands.execution._exec_file
+            | cli.commands.execution._load_cwd_config
             | cli.commands.project.install { get_config },
         cli.commands.analysis.precommit
-            | cli.commands.execution._load_cwd_config
+            | cli.commands.execution._resolve_target
             | cli.commands.project.publish { get_config },
         cli.commands.analysis.test
-            | cli.commands.execution._resolve_target
+            | cli.commands.execution._run_node_tool
             | cli.commands.project.remove { get_config },
         cli.commands.code
             | cli.commands.project._create_app
@@ -2030,11 +2031,8 @@ graph import {
             get_config,
             pin_project_scope
         },
-        cli.commands.execution._run_node_tool | cli.commands.project.script {
-            get_config
-        },
-        cli.commands.execution._tool_tiers | cli.commands.project.update { get_config },
-        cli.commands.execution.serve { get_config },
+        cli.commands.execution._tool_tiers | cli.commands.project.script { get_config },
+        cli.commands.execution.serve | cli.commands.project.update { get_config },
         cli.commands.execution.x { get_config },
         cli.commands.fix._append_app_table { _toml_append_section },
         cli.commands.project._bootstrap_project_deps
