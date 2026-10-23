@@ -80,6 +80,16 @@ test "data-dependent branches defragment to one contiguous graph" {
     }
 }
 
+test "a flag-gated branch returns the eager result for both flag values" {
+    torch = _torch();
+    ns = _exec_gm("where_bool_cond.jac", True);
+    x = torch.tensor([1.0, 2.0, 3.0]);
+    torch._dynamo.reset();
+    gate = torch.compile(ns["flag_gate"], backend="eager");
+    assert torch.equal(gate(x, True), x * 2);
+    assert torch.equal(gate(x, False), x * 3);
+}
+
 test "nested guard in a branch defragments via trap + predication" {
     # A data-dependent branch containing a validation guard collapses to one
     # graph only if trap lowering (assert) composes with predication.

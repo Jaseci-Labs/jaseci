@@ -81,6 +81,7 @@ walker PredicateCtrlFlowPass(TreePass) {
     def _scalar_literal(e: uni.Expr) -> bool;
     def _non_tensor_container(e: uni.Expr) -> bool;
     def _same_lhs(a: uni.Assignment, b: uni.Assignment) -> (uni.Name | None);
+    def _python_bool_cond(cond: uni.Expr) -> bool;
     def _assign(target: uni.Name, value: uni.Expr) -> uni.Assignment;
     def _hoist(
         at: uni.UniNode, cond: uni.Expr, t: uni.Expr, f: uni.Expr

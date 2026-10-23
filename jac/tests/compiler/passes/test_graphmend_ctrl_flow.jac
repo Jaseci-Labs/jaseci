@@ -181,6 +181,26 @@ test "branch values with differing subscripts are declined" {
     assert "dyn_ctrl_fl" in _break_kinds("where_shape_branch.jac");
 }
 
+test "augmented branch updates are declined" {
+    src = _pysrc("where_aug_assign.jac", True);
+    assert "torch.where(" not in src;
+    assert "y += a" in src;
+    assert "y -= b" in src;
+    assert "dyn_ctrl_fl" in _break_kinds("where_aug_assign.jac");
+}
+
+test "a condition Python can evaluate to a bool is declined" {
+    src = _pysrc("where_bool_cond.jac", True);
+    assert "torch.where(" not in src;
+    for cond in [
+        "if flag and x.sum() > 0:",
+        "if not x.sum() > 0:",
+        "if 0 < x.sum() < 5:"
+    ] {
+        assert cond in src , cond;
+    }
+}
+
 test "a module that does not bind torch by name is not predicated" {
     for name in ["where_aliased_torch.jac", "where_from_torch_nn.jac"] {
         src = _pysrc(name, True);

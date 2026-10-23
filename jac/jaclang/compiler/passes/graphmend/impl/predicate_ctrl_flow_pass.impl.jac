@@ -34,6 +34,9 @@ impl PredicateCtrlFlowPass.exit_if_stmt with uni.IfStmt exit {
     if cond_materializes_scalar(nd.condition) {
         return;
     }
+    if self._python_bool_cond(nd.condition) {
+        return;
+    }
     if (len(tb) == 1) and (len(fb) == 1) {
         a0 = tb[0];
         b0 = fb[0];
@@ -278,6 +281,9 @@ impl PredicateCtrlFlowPass._same_lhs(
     if (len(a.target) != 1) or (len(b.target) != 1) {
         return None;
     }
+    if (a.aug_op is not None) or (b.aug_op is not None) {
+        return None;
+    }
     ta = a.target[0];
     tb = b.target[0];
     if (
@@ -286,6 +292,30 @@ impl PredicateCtrlFlowPass._same_lhs(
         return gen_name(ta, ta.value, True);
     }
     return None;
+}
+
+impl PredicateCtrlFlowPass._python_bool_cond(cond: uni.Expr) -> bool {
+    nodes: list[uni.Expr] = [cond];
+    nodes.extend(cond.get_all_sub_nodes(uni.BoolExpr));
+    nodes.extend(cond.get_all_sub_nodes(uni.UnaryExpr));
+    nodes.extend(cond.get_all_sub_nodes(uni.CompareExpr));
+    for e in nodes {
+        if isinstance(e, uni.BoolExpr) {
+            return True;
+        }
+        if isinstance(e, uni.UnaryExpr) and (e.op.name == Tok.NOT) {
+            return True;
+        }
+        if isinstance(e, uni.CompareExpr) {
+            if len(e.ops) != 1 {
+                return True;
+            }
+            if e.ops[0].name in [Tok.KW_IS, Tok.KW_ISN, Tok.KW_IN, Tok.KW_NIN] {
+                return True;
+            }
+        }
+    }
+    return False;
 }
 
 impl PredicateCtrlFlowPass._assign(
