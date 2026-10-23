@@ -55,6 +55,7 @@ obj CompileOptions {
 
     def postinit;
     def effective_triple -> str;
+    def native_options_identity -> str;
     def codegen_identity -> str;
     def codegen_fingerprint -> str;
     def analysis_identity -> str;

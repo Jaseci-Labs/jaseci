@@ -87,11 +87,15 @@ impl CompileOptions.effective_triple -> str {
     return active_host().default_target_triple();
 }
 
+impl CompileOptions.native_options_identity -> str {
+    return ("tls=1;" if self.native_tls else "")
+        + ("sjlj=1;" if self.native_sjlj else "");
+}
+
 impl CompileOptions.codegen_identity -> str {
-    return ";".join(
-        (["tls=1"] if self.native_tls else [])
-            + (["sjlj=1"] if self.native_sjlj else [])
-            + [
+    return self.native_options_identity()
+        + ";".join(
+            [
                 f"native_required={int(self.native_required)}",
                 "native_require=" + ",".join(sorted(self.native_require or [])),
                 f"gc={self.na_gc_mode}",
@@ -106,7 +110,7 @@ impl CompileOptions.codegen_identity -> str {
                 f"app={self.target_app}",
                 f"app_kind={self.app_kind}"
             ]
-    );
+        );
 }
 
 impl CompileOptions.codegen_fingerprint -> str {
@@ -140,10 +144,9 @@ impl CompileOptions.base_codegen_identity -> str {
     """The codegen identity every unit shares. The placement policy is
         left out: its patterns name modules, and a unit's own identity records
         only whether the policy names that unit.""";
-    return ";".join(
-        (["tls=1"] if self.native_tls else [])
-            + (["sjlj=1"] if self.native_sjlj else [])
-            + [
+    return self.native_options_identity()
+        + ";".join(
+            [
                 f"gc={self.na_gc_mode}",
                 f"nogc_all={int(bool(self.nogc_enforce_all))}",
                 "nogc_mods=" + ",".join(sorted(self.memory_enforce or [])),
@@ -154,7 +157,7 @@ impl CompileOptions.base_codegen_identity -> str {
                 f"opt={self.opt_level}",
                 f"threads={self.native_threads}"
             ]
-    );
+        );
 }
 
 impl CompileOptions.unit_codegen_identity(path: str) -> str {
