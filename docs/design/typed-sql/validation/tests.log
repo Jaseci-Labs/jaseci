@@ -1,0 +1,58 @@
+
+Setting up Jac for first use (compiling and caching compiler)...
+  Compiling jaclang/sql.jac...
+jac: llvm-shim runs on its floor (Python placement for native-default code, slower): not built. Run `jac native build llvm-shim`; `jac native status llvm-shim` shows what moved.
+jac: kernel runs on its floor (the bytecode compiler, slower): native pipeline unavailable: the LLVM shim is not built. Run `jac native build kernel`; `jac native status kernel` shows what moved.
+test_aggregate_empty_is_one_row (test_postgres.PostgresTests.test_aggregate_empty_is_one_row) ... ok
+test_aggregate_validation (test_postgres.PostgresTests.test_aggregate_validation) ... ok
+test_alias_and_join_scopes (test_postgres.PostgresTests.test_alias_and_join_scopes) ... ok
+test_correlated_exists (test_postgres.PostgresTests.test_correlated_exists) ... ok
+test_cte (test_postgres.PostgresTests.test_cte) ... ok
+test_cte_forward_reference_and_recursive_anchor_rejected (test_postgres.PostgresTests.test_cte_forward_reference_and_recursive_anchor_rejected) ... ok
+test_derived_schema_and_scope (test_postgres.PostgresTests.test_derived_schema_and_scope) ... ok
+test_group_by_count (test_postgres.PostgresTests.test_group_by_count) ... ok
+test_injection_is_bound_and_identifiers_are_quoted (test_postgres.PostgresTests.test_injection_is_bound_and_identifiers_are_quoted) ... ok
+test_join_and_shared_parameter (test_postgres.PostgresTests.test_join_and_shared_parameter) ... ok
+test_module_is_portable_as_one_file (test_postgres.PostgresTests.test_module_is_portable_as_one_file) ... jac: stubcat runs on its floor (parsing the typeshed stubs, slower): not built. Run `jac native build stubcat`; `jac native status stubcat` shows what moved.
+ok
+test_mutated_ast_is_revalidated (test_postgres.PostgresTests.test_mutated_ast_is_revalidated) ... ok
+test_nullable_three_valued_predicate (test_postgres.PostgresTests.test_nullable_three_valued_predicate) ... ok
+test_parameter_value_type_and_bounds (test_postgres.PostgresTests.test_parameter_value_type_and_bounds) ... ok
+test_recursive_cte (test_postgres.PostgresTests.test_recursive_cte) ... ok
+test_recursive_step_eligibility (test_postgres.PostgresTests.test_recursive_step_eligibility) ... ok
+test_scalar_optional_empty_yields_null (test_postgres.PostgresTests.test_scalar_optional_empty_yields_null) ... ok
+test_scalar_requires_proof_and_one_column (test_postgres.PostgresTests.test_scalar_requires_proof_and_one_column) ... ok
+test_select_parameters_and_order (test_postgres.PostgresTests.test_select_parameters_and_order) ... ok
+test_source_field_schema_validation (test_postgres.PostgresTests.test_source_field_schema_validation) ... ok
+test_union_schema_and_arm_limits (test_postgres.PostgresTests.test_union_schema_and_arm_limits) ... ok
+test_wrong_expression_categories_and_types (test_postgres.PostgresTests.test_wrong_expression_categories_and_types) ... ok
+test_aggregate_empty_is_one_row (test_sql.SQLTests.test_aggregate_empty_is_one_row) ... ok
+test_aggregate_validation (test_sql.SQLTests.test_aggregate_validation) ... ok
+test_alias_and_join_scopes (test_sql.SQLTests.test_alias_and_join_scopes) ... ok
+test_correlated_exists (test_sql.SQLTests.test_correlated_exists) ... ok
+test_cte (test_sql.SQLTests.test_cte) ... ok
+test_cte_forward_reference_and_recursive_anchor_rejected (test_sql.SQLTests.test_cte_forward_reference_and_recursive_anchor_rejected) ... ok
+test_derived_schema_and_scope (test_sql.SQLTests.test_derived_schema_and_scope) ... ok
+test_group_by_count (test_sql.SQLTests.test_group_by_count) ... ok
+test_injection_is_bound_and_identifiers_are_quoted (test_sql.SQLTests.test_injection_is_bound_and_identifiers_are_quoted) ... ok
+test_join_and_shared_parameter (test_sql.SQLTests.test_join_and_shared_parameter) ... ok
+test_module_is_portable_as_one_file (test_sql.SQLTests.test_module_is_portable_as_one_file) ... ok
+test_mutated_ast_is_revalidated (test_sql.SQLTests.test_mutated_ast_is_revalidated) ... ok
+test_nullable_three_valued_predicate (test_sql.SQLTests.test_nullable_three_valued_predicate) ... ok
+test_parameter_value_type_and_bounds (test_sql.SQLTests.test_parameter_value_type_and_bounds) ... ok
+test_recursive_cte (test_sql.SQLTests.test_recursive_cte) ... ok
+test_recursive_step_eligibility (test_sql.SQLTests.test_recursive_step_eligibility) ... ok
+test_scalar_optional_empty_yields_null (test_sql.SQLTests.test_scalar_optional_empty_yields_null) ... ok
+test_scalar_requires_proof_and_one_column (test_sql.SQLTests.test_scalar_requires_proof_and_one_column) ... ok
+test_select_parameters_and_order (test_sql.SQLTests.test_select_parameters_and_order) ... ok
+test_source_field_schema_validation (test_sql.SQLTests.test_source_field_schema_validation) ... ok
+test_union_schema_and_arm_limits (test_sql.SQLTests.test_union_schema_and_arm_limits) ... ok
+test_wrong_expression_categories_and_types (test_sql.SQLTests.test_wrong_expression_categories_and_types) ... ok
+test_all_bad_calls_are_rejected_at_their_lines (test_types.StaticTypes.test_all_bad_calls_are_rejected_at_their_lines) ... ok
+test_positive_example_and_module (test_types.StaticTypes.test_positive_example_and_module) ... ok
+
+----------------------------------------------------------------------
+Ran 46 tests in 12.972s
+
+OK
+Jac setup complete (1 modules compiled and cached)

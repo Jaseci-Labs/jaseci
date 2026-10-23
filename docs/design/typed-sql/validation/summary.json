@@ -1,0 +1,47 @@
+{
+  "status": "PASS",
+  "upstream": "Jaseci-Labs/jaseci",
+  "base_commit": "2a462fa254582478b14958f609ce218fc33a17e4",
+  "branch": "feat/typed-sql",
+  "python_host": "CPython 3.14.6 (existing local standalone installation)",
+  "jac_version": "0.38.1, source checkout at base commit plus SQL module",
+  "postgresql_version": "18.6",
+  "unit_and_execution_tests": 46,
+  "sqlite_cases": 22,
+  "postgresql_cases": 22,
+  "static_test_methods": 2,
+  "expected_rejected_calls": 11,
+  "positive_checked_files": [
+    "jac/jaclang/sql.jac",
+    "jac/examples/sql/typed_sql.jac"
+  ],
+  "portability": "module copied to a different name in a temporary directory and query executed on both databases",
+  "third_party_runtime_dependencies_added": [],
+  "static_lint_notes": "Phantom type parameters and repository style rules emit warnings; positive checking has zero errors.",
+  "files": [
+    {
+      "path": "jac/jaclang/sql.jac",
+      "sha256": "739aa913b95d34bae7d4b5cb1e68d65f3caa03caab2818ec570975b3047ba003"
+    },
+    {
+      "path": "jac/examples/sql/typed_sql.jac",
+      "sha256": "fa4695d14b8d342a09e0229b581f3afb2ee523a99ad3a82c925a0f283352a3d5"
+    },
+    {
+      "path": "jac/tests/sql/test_sql.py",
+      "sha256": "a49f40ebf64842d35ba9ac2c13d0f4b2fe302bd11be1332110744f9938daa45d"
+    },
+    {
+      "path": "jac/tests/sql/test_postgres.py",
+      "sha256": "4ee3c4a6dccacfe95306bd386a535ef0b133e2700709dacb48725e5a68cb45ca"
+    },
+    {
+      "path": "jac/tests/sql/test_types.py",
+      "sha256": "b2f2868e53977c9f7427529936772497fc3c9e70be341beb86b75ac5397b0c66"
+    },
+    {
+      "path": "jac/tests/sql/fixtures/invalid_calls.jac",
+      "sha256": "5a6ddb6b14415ea1b59ab13aa9c2ad4d614ee5033050f44ae19b9eddb3d8e645"
+    }
+  ]
+}

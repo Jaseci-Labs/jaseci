@@ -1,0 +1,16 @@
+# Run from the jac-sql repository root. Use a Jac-capable Python 3.14 host.
+# Test host used /home/baichuan/jaseci/reproduction/runtime/pbs314/python/install/bin/python3.14.
+# Source typeshed stdlib was materialized from the matching pinned local checkout:
+# PIN bbbf7530a987e59c8458127351cacad2e57f04bf; materialized files are gitignored.
+export PYTHONPATH="$PWD/jac"
+export XDG_CACHE_HOME=/tmp/jac-sql-314-cache
+export JAC_CACHE_HOME=/tmp/jac-sql-314-db
+# Disposable PostgreSQL cluster created under /tmp/jac-sql-pgtest, trust auth, user sql_test.
+# PostgreSQL binaries: /home/baichuan/.cache/jac/pg/dist/linux-amd64-18.6.0/bin
+# initdb -D /tmp/jac-sql-pgtest/data -A trust -U sql_test --no-locale --encoding=UTF8
+# pg_ctl -D /tmp/jac-sql-pgtest/data -l /tmp/jac-sql-pgtest/server.log -o "-k /tmp/jac-sql-pgtest -p 65439 -c listen_addresses=''" -w start
+export JAC_SQL_PG_SOCKET=/tmp/jac-sql-pgtest/.s.PGSQL.65439
+python -m unittest discover -s jac/tests/sql -p 'test_*.py' -v
+python -m jaclang run jac/examples/sql/typed_sql.jac
+# test_types.py runs positive checks and verifies failure of all 11 negative calls.
+# After collection: pg_ctl -D /tmp/jac-sql-pgtest/data -m fast -w stop
