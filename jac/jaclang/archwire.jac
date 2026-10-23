@@ -2389,7 +2389,8 @@ graph import {
         },
         compiler.native_compiler.NativeCompiler._register { NodeArchetype },
         data.query_planner { Anchor, anchor_key },
-        data.query_planner._acl_pushdown_root { Archetype, Root },
+        data.query_planner._rechecks { Archetype, Root },
+        data.query_planner._residual_classes { Archetype, NodeArchetype, Root },
         data.serializer {
             Access,
             AccessLevel,
@@ -14618,7 +14619,7 @@ graph import data {
         serializer.Serializer._serialize_attrs { merged_rules_for, repair_mode },
         serializer.Serializer.serialize_fields { merged_rules_for, repair_mode },
     ]
-    sqlcompile ++> query_planner { compile_query }
+    sqlcompile ++> query_planner { CompiledQuery, compile_query }
     storage.local_storage ++> storage { LocalStorage }
     storage.storage ++> storage { Storage }
     store ++> [
@@ -14627,6 +14628,8 @@ graph import data {
         sqlcompile { Store },
     ]
     type_identity ++> [
+        query_planner._acl_residual { storage_type },
+        query_planner.resolve_query_type_counts { storage_type },
         serializer {
             TypeResolutionError,
             UnavailableType,
