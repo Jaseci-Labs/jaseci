@@ -41,8 +41,8 @@ glob PLATFORM: str = {"x86_64": "linux-x86_64", "aarch64": "linux-aarch64"}.get(
      STDLIB_SOURCE: str = "import sysconfig; src = open(sysconfig.get_path('stdlib') + '/{name}').read()",
      # (name, statement, setup) for `pyperf timeit`.
      CASES: list[tuple[str, str, str]] = [
-         ("compile_typing_py", "compile(src, 'typing.py', 'exec')", "typing.py"),
-         ("compile_argparse_py", "compile(src, 'argparse.py', 'exec')", "argparse.py"),
+         ("compile_typing_py", "compile(src, 'typing.py', 'exec')", "|typing.py"),
+         ("compile_argparse_py", "compile(src, 'argparse.py', 'exec')", "|argparse.py"),
          ("ast_parse_typing_py", "ast.parse(src)", "import ast\n|typing.py"),
          (
              "compile_ast_to_code",
