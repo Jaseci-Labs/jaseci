@@ -1,33 +1,33 @@
 def _solver_remove_core(
-    s: any, tag: Tag, strength: StrengthTier, jnl: MutationJournal
+    s: Solver, tag: Tag, strength: StrengthTier, jnl: MutationJournal
 ) -> SolveResult;
 
 def _solver_remove_constraint_effects(
-    s: any, tag: Tag, strength: StrengthTier, jnl: MutationJournal,
+    s: Solver, tag: Tag, strength: StrengthTier, jnl: MutationJournal,
 ) -> None;
 
 def _solver_remove_marker_effects(
-    s: any, marker: int, weight: LexWeight, jnl: MutationJournal,
+    s: Solver, marker: int, weight: LexWeight, jnl: MutationJournal,
 );
 
-def _solver_get_marker_leaving_row(s: any, marker: int) -> int;
+def _solver_get_marker_leaving_row(s: Solver, marker: int) -> int;
 
-def _solver_dual_optimize(s: any, jnl: MutationJournal) -> SolveResult;
+def _solver_dual_optimize(s: Solver, jnl: MutationJournal) -> SolveResult;
 
-def _solver_get_dual_entering_symbol(s: any, row: Row) -> int;
+def _solver_get_dual_entering_symbol(s: Solver, row: Row) -> int;
 
-def _solver_objective_weight(s: any, symbol: int) -> LexWeight;
+def _solver_objective_weight(s: Solver, symbol: int) -> LexWeight;
 
 def _solver_dual_ratio_less(
-    s: any, w1: LexWeight, c1: float, w2: LexWeight, c2: float,
+    s: Solver, w1: LexWeight, c1: float, w2: LexWeight, c2: float,
 ) -> bool;
 
 def _solver_apply_suggestion(
-    s: any, info: EditInfo, delta: float, jnl: MutationJournal,
+    s: Solver, info: EditInfo, delta: float, jnl: MutationJournal,
 ) -> None;
 
 impl _solver_remove_core(
-    s: any, tag: Tag, strength: StrengthTier, jnl: MutationJournal
+    s: Solver, tag: Tag, strength: StrengthTier, jnl: MutationJournal
 ) -> SolveResult {
     _solver_remove_constraint_effects(s, tag, strength, jnl);
     marker = tag.marker;
@@ -49,7 +49,7 @@ impl _solver_remove_core(
 }
 
 impl _solver_remove_constraint_effects(
-    s: any, tag: Tag, strength: StrengthTier, jnl: MutationJournal,
+    s: Solver, tag: Tag, strength: StrengthTier, jnl: MutationJournal,
 ) -> None {
     weight = strength_weight(strength);
     if lex_is_zero(weight) {
@@ -64,7 +64,7 @@ impl _solver_remove_constraint_effects(
 }
 
 impl _solver_remove_marker_effects(
-    s: any, marker: int, weight: LexWeight, jnl: MutationJournal,
+    s: Solver, marker: int, weight: LexWeight, jnl: MutationJournal,
 ) {
     _journal_touch_objective(s, jnl);
     row = s.rows.get(marker);
@@ -75,7 +75,7 @@ impl _solver_remove_marker_effects(
     }
 }
 
-impl _solver_get_marker_leaving_row(s: any, marker: int) -> int {
+impl _solver_get_marker_leaving_row(s: Solver, marker: int) -> int {
     ratio1 = 1e308;
     ratio2 = 1e308;
     first = 0;
@@ -111,7 +111,7 @@ impl _solver_get_marker_leaving_row(s: any, marker: int) -> int {
     return third;
 }
 
-impl _solver_dual_optimize(s: any, jnl: MutationJournal) -> SolveResult {
+impl _solver_dual_optimize(s: Solver, jnl: MutationJournal) -> SolveResult {
     while len(s.infeasible_rows) > 0 {
         leaving = s.infeasible_rows.pop();
         row = s.rows.get(leaving);
@@ -131,7 +131,7 @@ impl _solver_dual_optimize(s: any, jnl: MutationJournal) -> SolveResult {
     return SolveResult(ok=True);
 }
 
-impl _solver_get_dual_entering_symbol(s: any, row: Row) -> int {
+impl _solver_get_dual_entering_symbol(s: Solver, row: Row) -> int {
     entering = 0;
     best_coeff = 0.0;
     for symbol in sorted(row.cells.keys()) {
@@ -154,18 +154,18 @@ impl _solver_get_dual_entering_symbol(s: any, row: Row) -> int {
     return entering;
 }
 
-impl _solver_objective_weight(s: any, symbol: int) -> LexWeight {
+impl _solver_objective_weight(s: Solver, symbol: int) -> LexWeight {
     return s.objective.cells.get(symbol, lex_zero());
 }
 
 impl _solver_dual_ratio_less(
-    s: any, w1: LexWeight, c1: float, w2: LexWeight, c2: float,
+    s: Solver, w1: LexWeight, c1: float, w2: LexWeight, c2: float,
 ) -> bool {
     return lex_compare(lex_scale(w1, c2), lex_scale(w2, c1)) < 0;
 }
 
 impl _solver_apply_suggestion(
-    s: any, info: EditInfo, delta: float, jnl: MutationJournal,
+    s: Solver, info: EditInfo, delta: float, jnl: MutationJournal,
 ) -> None {
     marker = s.cns[info.key].marker;
     other = s.cns[info.key].other;

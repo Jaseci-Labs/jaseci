@@ -2595,6 +2595,18 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         func = self._module_function((real_path(source), func_name))
             if source is not None
             else None;
+        if func is None and func_name not in self.generic_fns {
+            self.emit(
+                E5092,
+                node_override=nd,
+                kind="function",
+                name=f"{_mod_qual}.{func_name}",
+                help_text=f"'{_mod_qual}' has no native implementation of '{func_name}', "
+                "so the native pathway cannot call it; call it from a server (@sv) "
+                "context instead."
+            );
+            return None;
+        }
     }
     if func is None and not _var_callee {
         manifest = self.module.gen.interop_manifest;

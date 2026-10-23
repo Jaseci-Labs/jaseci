@@ -43,8 +43,9 @@ test "proj_lines_to_span_dicts preserves text" {
     lines = project_markdown("hello **world**", 40);
     dicts = proj_lines_to_span_dicts(lines);
     assert len(dicts) >= 1;
-    assert "hello" in dicts[0]["text"];
-    assert "world" in dicts[0]["text"];
+    text = str(dicts[0]["text"]);
+    assert "hello" in text;
+    assert "world" in text;
 }
 
 

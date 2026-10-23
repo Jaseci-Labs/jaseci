@@ -91,6 +91,7 @@ graph import constraints {
         solver_dual | solver_simplex { SolveError, SolveResult },
         solver_types { ConstraintHandle },
     ]
+    type solver ++> solver_dual | solver_journal | solver_simplex { Solver }
     solver_dual ++> solver {
         _solver_apply_suggestion,
         _solver_dual_optimize,

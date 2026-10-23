@@ -32,9 +32,6 @@ obj CellDiff {
 def blank_cell -> StyledCell;
 
 
-glob _BLANK: StyledCell = StyledCell(ch=" ", attrs=StyleAttrs());
-
-
 def attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool;
 
 
@@ -209,8 +206,9 @@ impl create_buffer(columns: int, rows: int) -> CellBuffer {
     cols = max(1, columns);
     rows_n = max(1, rows);
     grid: list[list[StyledCell]] = [];
+    blank = blank_cell();
     for _r in range(rows_n) {
-        grid.append([_BLANK] * cols);
+        grid.append([blank] * cols);
     }
     return CellBuffer(columns=cols, rows=rows_n, cells=grid);
 }
@@ -232,7 +230,9 @@ impl buffer_clear_rect(
     height: int,
     attrs: StyleAttrs | None = None,
 ) {
-    cell = StyledCell(ch=" ", attrs=copy_attrs(attrs)) if attrs is not None else _BLANK;
+    cell = StyledCell(ch=" ", attrs=copy_attrs(attrs))
+        if attrs is not None
+        else blank_cell();
     y0 = max(0, y);
     y1 = min(buf.rows, y + height);
     x0 = max(0, x);
@@ -241,7 +241,10 @@ impl buffer_clear_rect(
         return;
     }
     for r in range(y0, y1) {
-        buf.cells[r][x0:x1] = [cell] * (x1 - x0);
+        line = buf.cells[r];
+        for c in range(x0, x1) {
+            line[c] = cell;
+        }
     }
 }
 
@@ -399,6 +402,7 @@ impl diff_buffers_ansi(
     force: bool = False,
 ) -> CellDiff {
     parts: list[str] = [];
+    blank = blank_cell();
     written = 0;
     columns = desired.columns;
     rows_n = desired.rows;
@@ -417,7 +421,7 @@ impl diff_buffers_ansi(
             run_chars: list[str] = [];
             run_attrs = StyleAttrs();
             for x in range(x0, x1) {
-                want = _BLANK;
+                want = blank;
                 if y < len(desired.cells) and x < len(desired.cells[y]) {
                     want = desired.cells[y][x];
                 }
@@ -438,7 +442,7 @@ impl diff_buffers_ansi(
                     }
                     continue;
                 }
-                had = _BLANK;
+                had = blank;
                 if (
                     previous is not None and y < previous.rows and x < previous.columns
                 ) {

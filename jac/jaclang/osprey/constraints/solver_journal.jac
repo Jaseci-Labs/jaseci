@@ -1,34 +1,34 @@
-def _journal_expression_is_finite(s: any, e: Expression) -> bool;
+def _journal_expression_is_finite(s: Solver, e: Expression) -> bool;
 
-def _journal_kind_of(s: any, symbol: int) -> SymbolKind;
+def _journal_kind_of(s: Solver, symbol: int) -> SymbolKind;
 
-def _journal_begin(s: any) -> MutationJournal;
+def _journal_begin(s: Solver) -> MutationJournal;
 
-def _journal_witness_for_key(s: any, key: str) -> list[str];
+def _journal_witness_for_key(s: Solver, key: str) -> list[str];
 
-def _journal_witness_extra(s: any, extra: str) -> list[str];
+def _journal_witness_extra(s: Solver, extra: str) -> list[str];
 
-def _journal_new_symbol(s: any, kind: SymbolKind) -> int;
+def _journal_new_symbol(s: Solver, kind: SymbolKind) -> int;
 
 def _journal_new_symbol_journaled(
-    s: any, kind: SymbolKind, jnl: MutationJournal
+    s: Solver, kind: SymbolKind, jnl: MutationJournal
 ) -> int;
 
 def _journal_get_var_symbol(
-    s: any, v: Variable, jnl: MutationJournal | None = None
+    s: Solver, v: Variable, jnl: MutationJournal | None = None
 ) -> int;
 
-def _journal_insert_row(s: any, symbol: int, row: Row, jnl: MutationJournal);
+def _journal_insert_row(s: Solver, symbol: int, row: Row, jnl: MutationJournal);
 
-def _journal_touch_row(s: any, symbol: int, jnl: MutationJournal);
+def _journal_touch_row(s: Solver, symbol: int, jnl: MutationJournal);
 
-def _journal_touch_objective(s: any, jnl: MutationJournal);
+def _journal_touch_objective(s: Solver, jnl: MutationJournal);
 
-def _journal_pop_row(s: any, symbol: int, jnl: MutationJournal) -> Row;
+def _journal_pop_row(s: Solver, symbol: int, jnl: MutationJournal) -> Row;
 
-def _journal_rollback(s: any, jnl: MutationJournal);
+def _journal_rollback(s: Solver, jnl: MutationJournal);
 
-impl _journal_expression_is_finite(s: any, e: Expression) -> bool {
+impl _journal_expression_is_finite(s: Solver, e: Expression) -> bool {
     if not is_finite(e.constant) {
         return False;
     }
@@ -40,20 +40,20 @@ impl _journal_expression_is_finite(s: any, e: Expression) -> bool {
     return True;
 }
 
-impl _journal_kind_of(s: any, symbol: int) -> SymbolKind {
+impl _journal_kind_of(s: Solver, symbol: int) -> SymbolKind {
     if symbol <= 0 {
         return SymbolKind.INVALID;
     }
     return s.kinds.get(symbol, SymbolKind.INVALID);
 }
 
-impl _journal_begin(s: any) -> MutationJournal {
+impl _journal_begin(s: Solver) -> MutationJournal {
     return MutationJournal(
         id_tick_start=s.id_tick, infeasible_start=len(s.infeasible_rows),
     );
 }
 
-impl _journal_witness_for_key(s: any, key: str) -> list[str] {
+impl _journal_witness_for_key(s: Solver, key: str) -> list[str] {
     out: list[str] = [];
     for hid in sorted(s.handle_keys.keys()) {
         if s.handle_keys[hid] == key and s.provenance.get(hid, "") != "" {
@@ -63,14 +63,14 @@ impl _journal_witness_for_key(s: any, key: str) -> list[str] {
     return out;
 }
 
-impl _journal_witness_extra(s: any, extra: str) -> list[str] {
+impl _journal_witness_extra(s: Solver, extra: str) -> list[str] {
     if extra == "" {
         return [];
     }
     return [extra];
 }
 
-impl _journal_new_symbol(s: any, kind: SymbolKind) -> int {
+impl _journal_new_symbol(s: Solver, kind: SymbolKind) -> int {
     symbol = s.id_tick;
     s.id_tick += 1;
     s.kinds[symbol] = kind;
@@ -78,7 +78,7 @@ impl _journal_new_symbol(s: any, kind: SymbolKind) -> int {
 }
 
 impl _journal_new_symbol_journaled(
-    s: any, kind: SymbolKind, jnl: MutationJournal
+    s: Solver, kind: SymbolKind, jnl: MutationJournal
 ) -> int {
     symbol = _journal_new_symbol(s, kind);
     jnl.allocated_symbols.append(symbol);
@@ -86,7 +86,7 @@ impl _journal_new_symbol_journaled(
 }
 
 impl _journal_get_var_symbol(
-    s: any, v: Variable, jnl: MutationJournal | None = None
+    s: Solver, v: Variable, jnl: MutationJournal | None = None
 ) -> int {
     var_symbols: dict[int, int] = s.var_symbols;
     if v.id in var_symbols {
@@ -101,14 +101,14 @@ impl _journal_get_var_symbol(
     return symbol;
 }
 
-impl _journal_insert_row(s: any, symbol: int, row: Row, jnl: MutationJournal) {
+impl _journal_insert_row(s: Solver, symbol: int, row: Row, jnl: MutationJournal) {
     if (symbol not in jnl.inserted_rows and symbol not in jnl.row_snapshots) {
         jnl.inserted_rows.append(symbol);
     }
     s.rows[symbol] = row;
 }
 
-impl _journal_touch_row(s: any, symbol: int, jnl: MutationJournal) {
+impl _journal_touch_row(s: Solver, symbol: int, jnl: MutationJournal) {
     rows: dict[int, Row] = s.rows;
     if (
         symbol in rows
@@ -119,18 +119,18 @@ impl _journal_touch_row(s: any, symbol: int, jnl: MutationJournal) {
     }
 }
 
-impl _journal_touch_objective(s: any, jnl: MutationJournal) {
+impl _journal_touch_objective(s: Solver, jnl: MutationJournal) {
     if jnl.objective_snapshot is None {
         jnl.objective_snapshot = s.objective.clone();
     }
 }
 
-impl _journal_pop_row(s: any, symbol: int, jnl: MutationJournal) -> Row {
+impl _journal_pop_row(s: Solver, symbol: int, jnl: MutationJournal) -> Row {
     _journal_touch_row(s, symbol, jnl);
     return s.rows.pop(symbol);
 }
 
-impl _journal_rollback(s: any, jnl: MutationJournal) {
+impl _journal_rollback(s: Solver, jnl: MutationJournal) {
     rows: dict[int, Row] = s.rows;
 
     for symbol in reversed(jnl.inserted_rows) {

@@ -13,18 +13,11 @@ obj VirtualTerminal(Terminal) {
         cells: list[list[Cell]] = [],
         cursor_row: int = 0,
         cursor_col: int = 0,
-        on_input: any = None,
-        on_resize: any = None,
-        on_interrupt: any = None;
+        on_input: Callable[[str], None] | None = None,
+        on_resize: Callable[[int, int], None] | None = None,
+        on_interrupt: Callable[[], None] | None = None;
 
-    def init(
-        columns: int = 80,
-        rows: int = 24,
-        on_input: any = None,
-        on_resize: any = None,
-        on_interrupt: any = None,
-    );
-
+    def postinit;
     def _reset_cells;
     def write(data: str) -> None;
     def move_cursor(row: int, col: int);
@@ -33,7 +26,7 @@ obj VirtualTerminal(Terminal) {
     def inject(data: str);
     def inject_resize(columns: int, rows: int);
     def inject_sigint;
-    def run_with_exception_guard(body: any);
+    def run_with_exception_guard(body: Callable[[VirtualTerminal], None]);
     def pending_input -> list[str];
     def poll_input(timeout_s: float = 0.0) -> str;
     def take_input -> list[str];
@@ -44,32 +37,7 @@ obj VirtualTerminal(Terminal) {
     def _apply_output(data: str);
 }
 
-impl VirtualTerminal.init(
-    columns: int = 80,
-    rows: int = 24,
-    on_input: any = None,
-    on_resize: any = None,
-    on_interrupt: any = None,
-) {
-    super.init();
-    self.columns = columns;
-    self.rows = rows;
-    self.on_input = on_input;
-    self.on_resize = on_resize;
-    self.on_interrupt = on_interrupt;
-    self.writes = [];
-    self.input_queue = [];
-    self.resize_events = [];
-    self.interrupt_count = 0;
-    self.exception_exits = 0;
-    self.cursor_row = 0;
-    self.cursor_col = 0;
-    self.started = False;
-    self.restored = True;
-    self.alternate_screen = False;
-    self.bracketed_paste = False;
-    self.cursor_visible = True;
-    self.sync_active = False;
+impl VirtualTerminal.postinit {
     self._reset_cells();
 }
 
@@ -132,8 +100,9 @@ impl VirtualTerminal.stop -> None {
 
 impl VirtualTerminal.inject(data: str) {
     self.input_queue.append(data);
-    if self.on_input is not None {
-        self.on_input(data);
+    received = self.on_input;
+    if received is not None {
+        received(data);
     }
 }
 
@@ -142,20 +111,22 @@ impl VirtualTerminal.inject_resize(columns: int, rows: int) {
     self.rows = rows;
     self.resize_events.append((columns, rows));
     self._reset_cells();
-    if self.on_resize is not None {
-        self.on_resize(columns, rows);
+    resized = self.on_resize;
+    if resized is not None {
+        resized(columns, rows);
     }
 }
 
 impl VirtualTerminal.inject_sigint {
     self.interrupt_count += 1;
     self.restore();
-    if self.on_interrupt is not None {
-        self.on_interrupt();
+    interrupted = self.on_interrupt;
+    if interrupted is not None {
+        interrupted();
     }
 }
 
-impl VirtualTerminal.run_with_exception_guard(body: any) {
+impl VirtualTerminal.run_with_exception_guard(body: Callable[[VirtualTerminal], None]) {
     self.start();
     try {
         body(self);

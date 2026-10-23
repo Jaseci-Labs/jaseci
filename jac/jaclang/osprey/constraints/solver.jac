@@ -113,7 +113,7 @@ impl Solver.provenance_of(handle: ConstraintHandle) -> str {
 }
 
 impl Solver._replay_all(order: list[StoredConstraint]) -> Solver | None {
-    return _solver_replay_all(self, order, _new_solver) as Solver;
+    return _solver_replay_all(self, order, _new_solver);
 }
 
 impl Solver._adopt(bundle: Solver) {

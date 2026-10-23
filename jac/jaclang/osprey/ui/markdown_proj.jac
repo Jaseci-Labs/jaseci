@@ -42,6 +42,9 @@ def wrap_inline(text: str, width: int) -> list[list[ProjSpan]];
 def _split_long(word: list[ProjSpan], width: int) -> list[list[ProjSpan]];
 
 
+def _spans_width(spans: list[ProjSpan]) -> int;
+
+
 def project_markdown(source: str, width: int = 80) -> list[ProjLine];
 
 
@@ -91,12 +94,12 @@ impl project_inline_spans(text: str) -> list[ProjSpan] {
     out: list[ProjSpan] = [];
     i = 0;
     for m in _INLINE_RE.finditer(text) {
-        start = m.start();
-        end = m.end();
+        start = int(m.start());
+        end = int(m.end());
         if start > i {
             out.append(_span(text[i:start], "default"));
         }
-        raw = m.group(0);
+        raw = str(m.group(0));
         if raw.startswith("**") and raw.endswith("**") and len(raw) >= 4 {
             out.append(_span(raw[2:-2], "strong"));
         } elif raw.startswith("~~") and raw.endswith("~~") and len(raw) >= 4 {
@@ -163,7 +166,7 @@ impl wrap_inline(text: str, width: int) -> list[list[ProjSpan]] {
     row: list[ProjSpan] = [];
     used = 0;
     for (k, word) in enumerate(words) {
-        ww = sum([display_width(p.text) for p in word]);
+        ww = _spans_width(word);
         sep = 1 if (row and gaps[k]) else 0;
         if row and used + sep + ww > width {
             rows.append(row);
@@ -179,7 +182,7 @@ impl wrap_inline(text: str, width: int) -> list[list[ProjSpan]] {
                 used = 0;
             }
             row = row + chunks[-1];
-            used = sum([display_width(p.text) for p in row]);
+            used = _spans_width(row);
             continue;
         }
         if sep {
@@ -252,7 +255,8 @@ impl project_markdown(source: str, width: int = 80) -> list[ProjLine] {
         fence = _FENCE_RE.match(line);
         if fence {
             in_fence = True;
-            fence_marker = fence.group(1)[0] * len(fence.group(1));
+            opener = str(fence.group(1));
+            fence_marker = opener[0] * len(opener);
             i += 1;
             continue;
         }
@@ -264,7 +268,7 @@ impl project_markdown(source: str, width: int = 80) -> list[ProjLine] {
         }
         heading = _HEADING_RE.match(line);
         if heading {
-            body = heading.group(2);
+            body = str(heading.group(2));
             for row in wrap_inline(body, max(1, width)) {
                 lines_out.append(
                     ProjLine(spans=[_span("".join([p.text for p in row]), "heading")])
@@ -296,7 +300,7 @@ impl project_markdown(source: str, width: int = 80) -> list[ProjLine] {
         }
         ul = _UL_RE.match(line);
         if ul {
-            body = ul.group(3);
+            body = str(ul.group(3));
             marker = "• ";
             room = max(1, width - display_width(marker));
             first = True;
@@ -314,8 +318,8 @@ impl project_markdown(source: str, width: int = 80) -> list[ProjLine] {
         }
         ol = _OL_RE.match(line);
         if ol {
-            body = ol.group(3);
-            marker = ol.group(2) + ". ";
+            body = str(ol.group(3));
+            marker = str(ol.group(2)) + ". ";
             room = max(1, width - display_width(marker));
             first = True;
             for row in wrap_inline(body or " ", room) {
@@ -388,4 +392,13 @@ impl looks_like_markdown(text: str) -> bool {
         }
     }
     return False;
+}
+
+
+impl _spans_width(spans: list[ProjSpan]) -> int {
+    total = 0;
+    for p in spans {
+        total += display_width(p.text);
+    }
+    return total;
 }

@@ -1,15 +1,19 @@
 def _solver_add_core(
-    s: any, c: Constraint, tag: Tag, jnl: MutationJournal
+    s: Solver, c: Constraint, tag: Tag, jnl: MutationJournal
 ) -> SolveResult;
 
-def _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> any;
+def _solver_rebuild_admitting(
+    s: Solver, candidate: Constraint, factory: Callable[[], Solver]
+) -> Solver | None;
 
-def _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint;
+def _solver_terms_reversed(s: Solver, st: StoredConstraint) -> StoredConstraint;
 
-def _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> any;
+def _solver_replay_all(
+    s: Solver, order: list[StoredConstraint], factory: Callable[[], Solver]
+) -> Solver | None;
 
 def _solver_pivot(
-    s: any,
+    s: Solver,
     entering: int,
     leaving: int,
     jnl: MutationJournal,
@@ -17,42 +21,44 @@ def _solver_pivot(
     reinsert: bool = True,
 );
 
-def _solver_adopt(s: any, bundle: any);
+def _solver_adopt(s: Solver, bundle: Solver);
 
-def _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> Row;
+def _solver_create_row(
+    s: Solver, c: Constraint, tag: Tag, jnl: MutationJournal
+) -> Row;
 
-def _solver_choose_subject(s: any, row: Row, tag: Tag) -> int;
+def _solver_choose_subject(s: Solver, row: Row, tag: Tag) -> int;
 
-def _solver_all_dummies(s: any, row: Row) -> bool;
+def _solver_all_dummies(s: Solver, row: Row) -> bool;
 
-def _solver_any_pivotable_symbol(s: any, row: Row) -> int;
+def _solver_any_pivotable_symbol(s: Solver, row: Row) -> int;
 
 def _solver_add_with_artificial_variable(
-    s: any, row: Row, jnl: MutationJournal
+    s: Solver, row: Row, jnl: MutationJournal
 ) -> bool;
 
 def _solver_substitute(
-    s: any, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
+    s: Solver, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
 );
 
 def _solver_add_objective(
-    s: any, symbol: int, weight: LexWeight, jnl: MutationJournal,
+    s: Solver, symbol: int, weight: LexWeight, jnl: MutationJournal,
 ) -> None;
 
-def _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult;
+def _solver_optimize_cost(s: Solver, jnl: MutationJournal) -> SolveResult;
 
 def _solver_optimize_toward(
-    s: any, target: Row, jnl: MutationJournal, extra: Row | None = None,
+    s: Solver, target: Row, jnl: MutationJournal, extra: Row | None = None,
 ) -> SolveResult;
 
-def _solver_get_entering_symbol(s: any, objective: Row) -> int;
+def _solver_get_entering_symbol(s: Solver, objective: Row) -> int;
 
-def _solver_get_entering_cost_symbol(s: any) -> int;
+def _solver_get_entering_cost_symbol(s: Solver) -> int;
 
-def _solver_get_leaving_row(s: any, entering: int) -> int;
+def _solver_get_leaving_row(s: Solver, entering: int) -> int;
 
 impl _solver_add_core(
-    s: any, c: Constraint, tag: Tag, jnl: MutationJournal
+    s: Solver, c: Constraint, tag: Tag, jnl: MutationJournal
 ) -> SolveResult {
     row = _solver_create_row(s, c, tag, jnl);
     subject = _solver_choose_subject(s, row, tag);
@@ -88,7 +94,9 @@ impl _solver_add_core(
     return _solver_optimize_cost(s, jnl);
 }
 
-impl _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> any {
+impl _solver_rebuild_admitting(
+    s: Solver, candidate: Constraint, factory: Callable[[], Solver]
+) -> Solver | None {
     stored: list[StoredConstraint] = list(s.history);
     stored.append(
         StoredConstraint(
@@ -116,8 +124,8 @@ impl _solver_rebuild_admitting(s: any, candidate: Constraint, factory: any) -> a
     return None;
 }
 
-impl _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint {
-    terms_rev = [];
+impl _solver_terms_reversed(s: Solver, st: StoredConstraint) -> StoredConstraint {
+    terms_rev: list[Term] = [];
     for t in st.expression.terms {
         terms_rev.append(
             Term(variable=Variable(id=t.variable.id), coefficient=t.coefficient,)
@@ -132,7 +140,9 @@ impl _solver_terms_reversed(s: any, st: StoredConstraint) -> StoredConstraint {
     );
 }
 
-impl _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> any {
+impl _solver_replay_all(
+    s: Solver, order: list[StoredConstraint], factory: Callable[[], Solver]
+) -> Solver | None {
     scratch = factory();
     tags: dict[str, Tag] = {};
     for st in order {
@@ -155,7 +165,7 @@ impl _solver_replay_all(s: any, order: list[StoredConstraint], factory: any) -> 
 }
 
 impl _solver_pivot(
-    s: any,
+    s: Solver,
     entering: int,
     leaving: int,
     jnl: MutationJournal,
@@ -170,7 +180,7 @@ impl _solver_pivot(
     }
 }
 
-impl _solver_adopt(s: any, bundle: any) {
+impl _solver_adopt(s: Solver, bundle: Solver) {
     s.rows = bundle.rows;
     s.kinds = bundle.kinds;
     s.var_symbols = bundle.var_symbols;
@@ -181,7 +191,9 @@ impl _solver_adopt(s: any, bundle: any) {
     s.infeasible_rows = bundle.infeasible_rows;
 }
 
-impl _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -> Row {
+impl _solver_create_row(
+    s: Solver, c: Constraint, tag: Tag, jnl: MutationJournal
+) -> Row {
     row = Row(constant=c.expression.constant);
 
     for t in c.expression.terms {
@@ -231,7 +243,7 @@ impl _solver_create_row(s: any, c: Constraint, tag: Tag, jnl: MutationJournal) -
     return row;
 }
 
-impl _solver_choose_subject(s: any, row: Row, tag: Tag) -> int {
+impl _solver_choose_subject(s: Solver, row: Row, tag: Tag) -> int {
     for symbol in sorted(row.cells.keys()) {
         if _journal_kind_of(s, symbol) == SymbolKind.EXTERNAL {
             return symbol;
@@ -249,7 +261,7 @@ impl _solver_choose_subject(s: any, row: Row, tag: Tag) -> int {
     return 0;
 }
 
-impl _solver_all_dummies(s: any, row: Row) -> bool {
+impl _solver_all_dummies(s: Solver, row: Row) -> bool {
     for symbol in sorted(row.cells.keys()) {
         if _journal_kind_of(s, symbol) != SymbolKind.DUMMY {
             return False;
@@ -258,7 +270,7 @@ impl _solver_all_dummies(s: any, row: Row) -> bool {
     return True;
 }
 
-impl _solver_any_pivotable_symbol(s: any, row: Row) -> int {
+impl _solver_any_pivotable_symbol(s: Solver, row: Row) -> int {
     for symbol in sorted(row.cells.keys()) {
         kind = _journal_kind_of(s, symbol);
         if kind == SymbolKind.SLACK or kind == SymbolKind.ERROR {
@@ -269,7 +281,7 @@ impl _solver_any_pivotable_symbol(s: any, row: Row) -> int {
 }
 
 impl _solver_add_with_artificial_variable(
-    s: any, row: Row, jnl: MutationJournal
+    s: Solver, row: Row, jnl: MutationJournal
 ) -> bool {
     art = _journal_new_symbol_journaled(s, SymbolKind.SLACK, jnl);
     art_row = Row(constant=row.constant);
@@ -306,7 +318,7 @@ impl _solver_add_with_artificial_variable(
 }
 
 impl _solver_substitute(
-    s: any, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
+    s: Solver, symbol: int, row: Row, jnl: MutationJournal, extra: Row | None = None,
 ) {
     for row_symbol in sorted(s.rows.keys()) {
         _journal_touch_row(s, row_symbol, jnl);
@@ -332,7 +344,7 @@ impl _solver_substitute(
 }
 
 impl _solver_add_objective(
-    s: any, symbol: int, weight: LexWeight, jnl: MutationJournal,
+    s: Solver, symbol: int, weight: LexWeight, jnl: MutationJournal,
 ) -> None {
     if lex_is_zero(weight) {
         return;
@@ -344,7 +356,7 @@ impl _solver_add_objective(
     }
 }
 
-impl _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult {
+impl _solver_optimize_cost(s: Solver, jnl: MutationJournal) -> SolveResult {
     while True {
         entering = _solver_get_entering_cost_symbol(s);
         if entering == 0 {
@@ -363,7 +375,7 @@ impl _solver_optimize_cost(s: any, jnl: MutationJournal) -> SolveResult {
 }
 
 impl _solver_optimize_toward(
-    s: any, target: Row, jnl: MutationJournal, extra: Row | None = None,
+    s: Solver, target: Row, jnl: MutationJournal, extra: Row | None = None,
 ) -> SolveResult {
     while True {
         entering = _solver_get_entering_symbol(s, target);
@@ -382,7 +394,7 @@ impl _solver_optimize_toward(
     }
 }
 
-impl _solver_get_entering_symbol(s: any, objective: Row) -> int {
+impl _solver_get_entering_symbol(s: Solver, objective: Row) -> int {
     for symbol in sorted(objective.cells.keys()) {
         if (
             _journal_kind_of(s, symbol) != SymbolKind.DUMMY
@@ -394,7 +406,7 @@ impl _solver_get_entering_symbol(s: any, objective: Row) -> int {
     return 0;
 }
 
-impl _solver_get_entering_cost_symbol(s: any) -> int {
+impl _solver_get_entering_cost_symbol(s: Solver) -> int {
     for symbol in sorted(s.objective.cells.keys()) {
         if (
             _journal_kind_of(s, symbol) != SymbolKind.DUMMY
@@ -406,7 +418,7 @@ impl _solver_get_entering_cost_symbol(s: any) -> int {
     return 0;
 }
 
-impl _solver_get_leaving_row(s: any, entering: int) -> int {
+impl _solver_get_leaving_row(s: Solver, entering: int) -> int {
     ratio = 1e308;
     found = 0;
     for symbol in sorted(s.rows.keys()) {
