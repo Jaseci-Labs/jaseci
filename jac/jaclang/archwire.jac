@@ -31086,7 +31086,8 @@ graph import scale {
         deploy.target.kubernetes.kubernetes_target {
             ResourceStatus,
             ResourceStatusInfo,
-            assess_workload
+            assess_workload,
+            container_crashlooping
         },
         deploy.target.kubernetes.manifest_builder
             | tests.deploy.test_ops_deploy
@@ -31099,7 +31100,8 @@ graph import scale {
         },
         tests.deploy.test_superseded_deployment_reap {
             REPLICA_FLOOR_ANNOTATION,
-            assess_workload
+            assess_workload,
+            container_crashlooping
         },
     ]
     observability.factory ++> plugin
