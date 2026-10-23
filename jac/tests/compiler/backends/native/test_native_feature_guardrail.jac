@@ -1283,3 +1283,25 @@ test "C callbacks reject a boxed Callable parameter instead of bitcasting it" {
     );
     assert has_error_code(program, "E5092") , fmt_errors(program);
 }
+
+# A container whose elements are always None has no element storage type, and
+# the emitter used to crash building a pointer to void, an "internal error"
+# E5092 that failed the run instead of moving the module to the server
+# codespace. It is refused like any other unsupported construct.
+test "guardrail: a container of only None values is refused, not crashed" {
+    for (label, code) in [
+        ("none_dict_literal", "with entry { d = {\"a\": None}; print(d); }\n"),
+        (
+            "none_dict_compr",
+            "with entry { d = {k: None for k in [\"a\"]}; print(d); }\n"
+        ),
+        ("none_list_compr", "with entry { l = [None for k in [\"a\"]]; print(l); }\n")
+    ] {
+        prog = compile_na_inline(label, code);
+        errors = fmt_errors(prog);
+        assert has_error_code(prog, "E5092") , f"[{label}] expected E5092, got: {errors}";
+        assert "always None" in errors and "native emitter error" not in errors , (
+            f"[{label}] expected a refusal, not an emitter crash: {errors}"
+        );
+    }
+}

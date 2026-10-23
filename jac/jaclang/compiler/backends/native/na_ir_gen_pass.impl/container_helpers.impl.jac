@@ -427,6 +427,9 @@ impl NaIRGenPass._container_struct_fields(layout: dict[str, any]) -> list[ir.Typ
     i64 = ir.IntType(64);
     _fields: list[ir.Type] = [i64, i64];
     for (_, _dt) in _layout_data_fields(layout) {
+        if isinstance(_dt, ir.VoidType) {
+            raise NativeRefused("a container whose elements are always None");
+        }
         _fields.append(_dt.as_pointer());
     }
     if layout["kind"] == "hash" {
