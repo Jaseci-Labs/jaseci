@@ -60,6 +60,8 @@ def stage_program(
     dist_dir: (Path | None)
 ) -> dict[str, str];
 
+def stage_postgres(resources: Path, backend: str, vendor: bool = True) -> str;
+
 impl _jaclang_src_roots -> list[Path] {
     roots: list[Path] = [];
     jac_src = os.environ.get("JAC_DESKTOP_JAC_SRC");
@@ -186,6 +188,34 @@ impl _stage_fused_runtime(out_dir: Path) {
         }
     }
 }
+
+impl stage_postgres(resources: Path, backend: str, vendor: bool = True) -> str {
+    """Vendor the self-contained Postgres distribution for an embedded app.
+
+    Returns the app-relative path of the vendored tree, which the host config
+    carries so `host_boot` can point `JAC_PG_DIST` at it and start with no
+    network. A remote-backend app needs no local database and vendors nothing.
+    Only a relocatable distribution is accepted (`bundled_dist_dir` refuses a
+    bare system bin directory), so the bundled tree runs from any machine.
+
+    With `vendor` off (a dev session) nothing is copied: the returned path
+    points at the shared machine cache, which the compiler already populated,
+    so the host finds that distribution instead of a fresh per-app cache.
+    """;
+    if backend != "embedded" {
+        return "";
+    }
+    import from jaclang.data.pg_dist { bundled_dist_dir, cached_dist_dir }
+    if not vendor {
+        return cached_dist_dir();
+    }
+    src = Path(bundled_dist_dir());
+    dst = resources / "pgdist";
+    console.print("  Bundling the embedded postgres distribution…", style="muted");
+    shutil.copytree(src, dst, dirs_exist_ok=True);
+    return "pgdist";
+}
+
 
 impl _bundle_runtime(host_binary: Path) {
     jac_bin = os.path.realpath(os.sys.executable);
@@ -373,4 +403,28 @@ impl stage_program(
     );
     build_jab(config, image_dir / "app.jab", app=app, bake_client=False);
     return {"jab": "app.jab"};
+}
+
+def desktop_storage_identifier(
+    identifier: str, project_dir: Path, entry_file: Path, backend: str
+) -> str;
+
+impl desktop_storage_identifier(
+    identifier: str, project_dir: Path, entry_file: Path, backend: str
+) -> str {
+    """Suffix the storage identity with the app a workspace entry serves.
+
+    The `[desktop]` identifier is a project-wide default, but one workspace
+    can serve several apps, and a shared data dir would let them read and
+    overwrite each other's graph, session, and embedded cluster. When the
+    entry resolves to a named serving app, that name joins the identifier so
+    every served app keeps its own storage; a project without distinct apps
+    keeps the plain identifier, so existing installs see no change.""";
+    if not identifier {
+        return identifier;
+    }
+    import from jaclang.project.config { get_config_for_dir }
+    config = get_config_for_dir(str(project_dir));
+    serving = serving_app_for(config, entry_file, backend);
+    return f"{identifier}.{serving}" if serving else identifier;
 }

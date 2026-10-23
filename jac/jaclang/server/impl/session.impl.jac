@@ -355,6 +355,7 @@ impl Session.postinit -> None {
     self._flushing = None;
     self._read_scopes = 0;
     self._ro_units = 0;
+    self._ro_retry_raised = None;
     self._unit_stack = [];
     self._snapshot_reads = set();
     self._foreign_refs = set();
@@ -673,7 +674,15 @@ impl Session._raise_ro_retry -> None {
     import from uuid { UUID as _UUID }
     last = self._register_ro_writers();
     self._rollback_txn();
+    self._ro_retry_raised = last;
     raise ReadOnlyRetry(anchor_id=_UUID(int=0), unit_key=last);
+}
+
+
+impl Session.take_ro_retry -> str | None {
+    raised = self._ro_retry_raised;
+    self._ro_retry_raised = None;
+    return raised;
 }
 
 
@@ -763,6 +772,11 @@ impl Session.unit_exit -> None {
             if self._lost {
                 self.abort();
                 raise TransactionLost(anchor_id=UUID(int=0));
+            }
+            swallowed = self.take_ro_retry();
+            if swallowed is not None {
+                self.abort();
+                raise ReadOnlyRetry(anchor_id=UUID(int=0), unit_key=swallowed);
             }
             if self._store is None or not self._store.in_txn() {
                 return;
@@ -1200,6 +1214,9 @@ impl Session._begin_writable -> None {
     with self._lock {
         if self._store is None {
             return;
+        }
+        if self._ro_retry_raised is not None {
+            raise ReadOnlyRetry(anchor_id=UUID(int=0), unit_key=self._ro_retry_raised);
         }
         self._reclaim_dead_txn();
         if self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
