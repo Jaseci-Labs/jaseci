@@ -11,8 +11,9 @@ told every loser it had succeeded.
 wraps, and VACUUM FREEZE rewrites it to a constant, so two genuinely different
 row versions can report the same number on a long-lived table.
 
-These pin a real version column that advances on write, and a conflicting write
-that reports rather than vanishing.
+These pin a real version column that advances on write, a conflicting write
+that reports rather than vanishing, and a long-lived session that sees other
+sessions' commits once its own transaction ends (jac#10287).
 """
 
 import from pathlib { Path }
@@ -125,9 +126,86 @@ test "a write over a stale read reports instead of vanishing" {
                 "a write over a version that moved must report a conflict, "
                 "not silently overwrite the winner"
             );
+            # Reported once, then gone: the next read must not flush the lost
+            # write again, A sees the winner, and A can write on top of it.
+            ctxa.mem.read_barrier();
+            assert ctxa.mem.get(cid) is a and _as_any(a).archetype.n == 99;
+            _as_any(a).archetype.n = 100;
+            ctxa.mem.mark_dirty(a);
+            ctxa.mem.commit();
         } finally {
             JacRuntime.exec_ctx = old;
             ctxa.close();
+        }
+    }
+}
+
+
+"""Session A reads the counter in one transaction and ends it with `end`, B
+commits n=99, and A reads it again. Returns what A's held object shows."""
+def _read_after_other_commit(td: str, end: str) -> int {
+    old = JacRuntime.exec_ctx;
+    ctx1 = _ctx(td);
+    JacRuntime.exec_ctx = ctx1;
+    cid: UUID;
+    try {
+        c = WCounter(n=1);
+        root ++> c;
+        ctx1.mem.commit();
+        cid = c.__jac__.id;
+    } finally {
+        JacRuntime.exec_ctx = old;
+        ctx1.close();
+    }
+    ctxa = _ctx(td);
+    JacRuntime.exec_ctx = ctxa;
+    try {
+        a = ctxa.mem.get(cid);
+        assert a is not None;
+        fetched = ctxa.mem.get_fetch_count();
+        assert ctxa.mem.get(cid) is a and ctxa.mem.get_fetch_count() == fetched , (
+            "a second read in the same transaction must come from memory"
+        );
+        if end == "commit" {
+            ctxa.mem.commit();
+        } else {
+            _as_any(ctxa.mem)._rollback_txn();
+        }
+
+        JacRuntime.exec_ctx = old;
+        ctxb = _ctx(td);
+        JacRuntime.exec_ctx = ctxb;
+        try {
+            b = ctxb.mem.get(cid);
+            assert b is not None;
+            _as_any(b).archetype.n = 99;
+            ctxb.mem.mark_dirty(b);
+            ctxb.mem.commit();
+        } finally {
+            ctxb.close();
+        }
+
+        # A's next transaction reads B's write into the object it already holds,
+        # and a write through that object lands without a conflict.
+        JacRuntime.exec_ctx = ctxa;
+        assert ctxa.mem.get(cid) is a , "a held node was replaced by a second object";
+        seen = _as_any(a).archetype.n;
+        _as_any(a).archetype.n = 100;
+        ctxa.mem.mark_dirty(a);
+        ctxa.mem.commit();
+        return seen;
+    } finally {
+        JacRuntime.exec_ctx = old;
+        ctxa.close();
+    }
+}
+
+
+test "a session sees what others committed once its own transaction ends" {
+    for end in ["commit", "rollback"] {
+        with TemporaryDirectory() as td {
+            seen = _read_after_other_commit(td, end);
+            assert seen == 99 , f"after a {end}, the session still reads its own copy: n={seen}";
         }
     }
 }
