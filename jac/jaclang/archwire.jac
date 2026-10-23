@@ -14,7 +14,7 @@ graph import {
     edge Lsp: lsp.* --> cli.* | studio.*;
     edge MetaImporter: meta_importer --> client.*;
     edge Packages: packages.* --> cli.* | client.* | dist.* | project.*;
-    edge Project: project.* --> artifacts.* | byllm.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | lsp.* | packages.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
+    edge Project: project.* --> artifacts.* | byllm.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | lsp.* | packages.* | runtime.* | scale.* | server.* | studio.* | testing.* | toolchains.*;
     edge Runtime: runtime.* --> byllm.* | cli.* | client.* | compiler.* | comptime | data.* | dist.* | lib.* | project.* | scale.* | server.* | testing.*;
     edge Scale: scale.* --> cli.* | client.* | runtime.* | server.*;
     edge Server: server.* --> cli.* | client.* | compiler.* | data.* | dist.* | runtime.* | scale.* | testing.*;
@@ -702,6 +702,7 @@ graph import {
             | project.kernel_check
             | project.kernel_compile
             | project.kernel_snapshot
+            | studio.gate
             | testing.cl_test_runner.module_is_client { CompileOptions },
         cli.commands.analysis.explain
             | dist.precompile_bytecode.prebuild_native_closure { CompileOptions },
@@ -908,6 +909,7 @@ graph import {
             | project.kernel_compile
             | project.kernel_snapshot
             | server.hmr.HotReloader._classify_declarations
+            | studio.gate
             | studio.model
             | testing.cl_test_runner.compile_cl_module
             | testing.test_runner._fresh_jac_state { JacProgram },
@@ -1003,8 +1005,19 @@ graph import {
         project.compiler_host.ProjectHost.place_wired_imports { place_wired_imports },
         project.compiler_host.ProjectHost.session { wiring_scope },
         project.compiler_host.ProjectHost.wiring_file { arch_file_for, is_arch_file },
+        studio.gate {
+            WireRec,
+            WiringSpec,
+            arch_file_for,
+            is_arch_file,
+            parse_records,
+            rule_text,
+            wiring_facts,
+            wiring_for_path
+        },
         studio.model { ARCH_FILE_NAME, WiringSpec, wiring_for_path },
     ]
+    compiler.driver.wiring as wiring_mod ++> studio.gate;
     compiler.frontend.codeinfo ++> [
         cli.check_report.print_native_coverage { effective_default_codespace },
         cli.commands.execution._count_jac_files
@@ -1089,6 +1102,7 @@ graph import {
             kernel_host_mode
         },
         project.kernel_snapshot.session_inputs { package_root },
+        studio.gate { active_host, install_host, set_kernel_host_mode },
     ]
     compiler.frontend.host --> project.compiler_host.ProjectHost.native_analyze {
         active_host,
@@ -1144,7 +1158,7 @@ graph import {
         cli.commands.fix._parses_clean { parse as rd_parse },
     ]
     compiler.frontend.parser.frontend ++> [
-        cli.commands.architecture._parse_imports { parse_woven },
+        cli.commands.architecture._parse_imports | studio.gate { parse_woven },
         project.compiler_host.ProjectHost.native_parse { finish_parse },
         project.compiler_host.ProjectHost.woven_module { annex_sources, parse_woven },
     ]
@@ -1256,6 +1270,7 @@ graph import {
             | lsp.server.utils
             | project.compiler_host.ProjectHost.parse_python
             | project.kernel_snapshot
+            | studio.gate
             | studio.model,
         cli.commands.fix._imported_names,
         cli.commands.fix._module_has_jsx,
@@ -1268,6 +1283,7 @@ graph import {
     compiler.frontend.unparse ++> dist.publish.dts
         | dist.publish.jsdoc
         | lsp.server.engine
+        | studio.gate
         | studio.model { unparse_node }
     compiler.native_compiler ++> project.kernel_check.analysis_kernel
         | project.kernel_compile.kernel_route
@@ -1918,6 +1934,7 @@ graph import {
         client.targets.desktop.desktop_build.stage_program { client_assets_dir },
         compiler.driver.application._prepare_revision { client_input_dirs },
     ]
+    project.compiler_host ++> studio.gate { ProjectHost }
     project.config ++> [
         artifacts.router._provision
             | data.pg_dist.bundled_dist_dir
@@ -32820,6 +32837,7 @@ graph import studio {
         },
         tui { context_blocks },
     ]
+    gate ++> app { EditGate, EditReview, format_review }
     intel ++> [
         app { CodeIntel, Span },
         tui { CodeIntel },
