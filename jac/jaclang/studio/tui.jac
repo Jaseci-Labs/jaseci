@@ -173,7 +173,15 @@ obj Studio {
         agent_commands: list[str] = [],
         loc_items: list[PickItem] = [],
         agent_items: list[PickItem] = [],
-        turn_started: float = 0.0;
+        turn_started: float = 0.0,
+        gate: any = None,
+        bridge: any = None,
+        bridge_path: str = "",
+        gate_mode: str = "ask",
+        changed: dict[str, str] = {},
+        plan_entries: list[dict[str, any]] = [],
+        plan_links: list[dict[str, any]] = [],
+        auto_allowed: int = 0;
 
     def postinit;
     def install_layout;
@@ -511,6 +519,7 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
             app.intel = None;
             app.say(f"code intelligence is off: {e}", "warn", 6.0);
         }
+        start_gate_and_bridge(app, session_id);
         if session_id {
             restore_session(app, session_id);
         }
@@ -541,6 +550,11 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
         try {
             if app.intel is not None {
                 app.intel.stop();
+            }
+        } except Exception {}
+        try {
+            if app.bridge is not None {
+                app.bridge.stop();
             }
         } except Exception {}
         sys.stderr = saved_err;
@@ -639,6 +653,8 @@ impl main_loop(app: Studio) {
 impl pump_background(app: Studio) {
     now = time.time();
     pump_agent(app);
+    pump_bridge(app);
+    pump_reviews(app);
     ta = time.time();
     pump_intel(app, now);
     tb = time.time();
@@ -2109,22 +2125,36 @@ impl paint(app: Studio) {
         app.r.layout.viewport.columns = cols;
         app.r.layout.viewport.rows = rows;
     }
+    marks: list[tuple[str, float]] = [("start", time.perf_counter())];
     relayout(app.r, app.screen);
+    marks.append(("layout", time.perf_counter()));
     paint_header(app);
     paint_nav(app);
+    marks.append(("nav", time.perf_counter()));
     if app.center_mode == "code" {
         paint_code(app);
     } else {
         paint_wiring(app);
     }
+    marks.append(("center", time.perf_counter()));
     paint_chat(app);
+    marks.append(("chat", time.perf_counter()));
     paint_tray(app);
     paint_prompt(app);
     paint_status(app);
     if app.sheet is not None {
         paint_sheet(app);
     }
+    marks.append(("rest", time.perf_counter()));
     render_frame(app.r, app.screen, app.term);
+    marks.append(("render", time.perf_counter()));
+    if TRACE and marks[-1][1] - marks[0][1] > 0.15 {
+        parts = [
+            f"{marks[i][0]} {marks[i][1] - marks[i - 1][1]:.2f}"
+            for i in range(1, len(marks))
+        ];
+        sys.stderr.write("  paint: " + " ".join(parts) + "\n");
+    }
 }
 
 impl pane_rect(app: Studio, n: any) -> tuple[int, int] {
@@ -2214,6 +2244,16 @@ impl paint_nav(app: Studio) -> None {
         ];
         if row.detail {
             spans.append(sp(" " + row.detail, THEME.warn));
+        }
+        if row.key in app.changed {
+            spans.append(
+                sp(
+                    " ●",
+                    StyleAttrs(
+                        fg={"added": 114, "removed": 203}.get(app.changed[row.key], 179)
+                    )
+                )
+            );
         }
         line = fit(spans, w, None);
         if sel {
@@ -2408,7 +2448,7 @@ impl paint_wiring(app: Studio) -> None {
             "← feeds it │ module │ it feeds →"
         )
     ];
-    side = max(int((w - 2) * 0.37), 12);
+    side = max(int((w - 2) * 0.3), 12);
     widths = [side, w - 2 - 2 * side, side];
     heads = [
         f"feeds this ({len(cols[0])})",
@@ -3002,7 +3042,18 @@ impl ensure_registry(app: Studio) -> any {
 }
 
 impl mcp_servers(app: Studio) -> list[dict[str, any]] {
-    return [jac_mcp_server()];
+    servers = [jac_mcp_server()];
+    if app.bridge_path {
+        servers.append(
+            {
+                "name": "studio",
+                "command": servers[0]["command"],
+                "args": ["studio", "mcp", "--socket", app.bridge_path],
+                "env": []
+            }
+        );
+    }
+    return servers;
 }
 
 impl start_agent(app: Studio) -> None {
@@ -3039,7 +3090,10 @@ impl start_agent(app: Studio) -> None {
     }
     try {
         sess = reg.create_session(
-            name=name, project_model=app.model, load_session_id=load_id
+            name=name,
+            project_model=app.model,
+            load_session_id=load_id,
+            read_hook=(app.gate.read if app.gate is not None else None)
         );
     } except Exception as e {
         app.chat.append(
@@ -3219,13 +3273,8 @@ impl handle_agent_event(app: Studio, ev: any) -> None {
         }
     } elif kind == "plan" {
         close_message(app);
-        marks = {"completed": "☑", "in_progress": "◐", "pending": "☐"};
-        text = "\n".join(
-            [
-                f"{marks.get(str(en.get('status', '')), '☐')} {en.get('content', '')}"
-                for en in (d.get("entries") or [])
-            ]
-        );
+        app.plan_entries = list(d.get("entries") or []);
+        text = plan_text(app);
         if 0 <= app.plan_idx < len(app.chat)
             and app.chat[app.plan_idx].role == "plan" {
             app.chat[app.plan_idx].text = text;
@@ -3235,13 +3284,18 @@ impl handle_agent_event(app: Studio, ev: any) -> None {
         }
     } elif kind == "permission" {
         close_message(app);
+        if auto_permission(app, d) {
+            return;
+        }
         app.pending.append({"type": "permission", "data": d});
         if app.sheet is None {
             open_approval(app);
         }
     } elif kind == "write" {
         close_message(app);
-        app.pending.append({"type": "write", "data": d});
+        req: dict[str, any] = {"type": "write", "data": d, "review": None};
+        start_review(app, req);
+        app.pending.append(req);
         if app.sheet is None {
             open_approval(app);
         }
@@ -3387,9 +3441,8 @@ impl open_approval(app: Studio) -> None {
                 THEME.overlay_title
             )
         );
-        review = req.get("review");
-        if review is not None {
-            for ln in review_lines(review, w) {
+        if app.gate is not None {
+            for ln in review_lines(req.get("review"), w) {
                 lines.append(ln);
             }
         }
@@ -3406,7 +3459,138 @@ impl open_approval(app: Studio) -> None {
 }
 
 impl review_lines(review: any, w: int) -> list[list[TextSpan]] {
-    return [];
+    out: list[list[TextSpan]] = [];
+    bg = 237;
+    if review is None {
+        out.append(
+            fit(
+                [
+                    sp(
+                        "  ⠿ checking the edit with the compiler…",
+                        StyleAttrs(fg=179, bg=bg)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+        out.append(blank(w, THEME.overlay));
+        return out;
+    }
+    took = f"checked {len(review.checked_files)} file(s) in {review.elapsed:.1f}s";
+    if not review.checked {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"  ⚠ could not check the edit: {review.check_error}",
+                        StyleAttrs(fg=221, bg=bg)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    } elif review.clean() {
+        out.append(
+            fit(
+                [
+                    sp("  ✔ compiles clean  ", StyleAttrs(fg=114, bg=bg, bold=True)),
+                    sp(took, StyleAttrs(fg=244, bg=bg))
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    } else {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"  ✖ {len(review.new_errors())} new error(s)  ",
+                        StyleAttrs(fg=203, bg=bg, bold=True)
+                    ),
+                    sp(took, StyleAttrs(fg=244, bg=bg))
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    for sc in review.symbol_changes[:10] {
+        mark = {"added": "+", "removed": "-"}.get(sc.change, "~");
+        col = {"added": 114, "removed": 203}.get(sc.change, 179);
+        pubtag = "  (public)" if sc.public else "";
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"    {mark} {sc.kind} {sc.key} {sc.change}{pubtag}",
+                        StyleAttrs(fg=col, bg=bg)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    if len(review.symbol_changes) > 10 {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"    … {len(review.symbol_changes)
+                            - 10} more symbol change(s)",
+                        StyleAttrs(fg=244, bg=bg)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    for ac in review.arch_changes[:8] {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"    ⚖ architecture {ac.kind}: {ac.detail}",
+                        StyleAttrs(fg=221, bg=bg, bold=True)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    for dg in review.new_diagnostics[:8] {
+        col = 203 if dg.severity == "error" else 221;
+        out.append(
+            fit(
+                [sp(f"    {dg.short(review.root_dir)}", StyleAttrs(fg=col, bg=bg))],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    if review.resolved_diagnostics {
+        out.append(
+            fit(
+                [
+                    sp(
+                        f"    ✓ fixes {len(
+                            review.resolved_diagnostics
+                        )} existing diagnostic(s)",
+                        StyleAttrs(fg=114, bg=bg)
+                    )
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+    }
+    out.append(blank(w, THEME.overlay));
+    return out;
 }
 
 impl approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]] {
@@ -3538,9 +3722,29 @@ impl finish_write(app: Studio, req: dict[str, any], accept: bool, message: str) 
         app.say(f"could not answer the agent: {e}", "error");
     }
     path = str(d.get("path", ""));
+    review = req.get("review");
+    if app.gate is not None and path {
+        try {
+            app.gate.unstage(path);
+        } except Exception {}
+    }
+    if accept and review is not None {
+        mark_changed(app, path, review);
+    }
+    if app.intel is not None and path {
+        try {
+            app.intel.invalidate(path);
+        } except Exception {}
+    }
     if app.rec is not None {
         try {
-            app.rec.decide("write", accept, path=path, message=message);
+            app.rec.decide(
+                "write",
+                accept,
+                path=path,
+                message=message,
+                detail=(review.summary() if review is not None else "")
+            );
         } except Exception {}
     }
     rel = os.path.relpath(path, app.root_dir) if path else "?";
@@ -3606,3 +3810,242 @@ impl restore_session(app: Studio, session_id: str) -> None {
         )
     );
 }
+
+glob AUTO_KINDS: list[str] = ["read", "search", "think", "fetch"];
+
+def start_gate_and_bridge(app: Studio, session_id: str);
+
+def auto_permission(app: Studio, d: dict[str, any]) -> bool;
+
+def start_review(app: Studio, req: dict[str, any]) -> None;
+
+def pump_reviews(app: Studio) -> None;
+
+def mark_changed(app: Studio, path: str, review: any);
+
+def pump_bridge(app: Studio) -> None;
+
+def bridge_handle(app: Studio, method: str, params: dict[str, any]) -> any;
+
+def plan_text(app: Studio) -> str;
+
+impl start_gate_and_bridge(app: Studio, session_id: str) {
+    gmode = str(app.config.get("gate", "ask"));
+    app.gate_mode = gmode if gmode in ["ask", "auto", "strict", "off"] else "ask";
+    if app.gate_mode != "off" {
+        try {
+            app.gate = EditGate(root_dir=app.root_dir);
+        } except Exception as e {
+            app.gate = None;
+            app.say(f"compiler-checked edits are off: {e}", "warn", 6.0);
+        }
+    }
+    try {
+        br = BridgeServer(root_dir=app.root_dir, session=(session_id or "studio"));
+        br.queries = StudioQueries(
+            model=app.model, read_text=(app.gate.read if app.gate is not None else None)
+        );
+        app.bridge_path = br.start();
+        app.bridge = br;
+    } except Exception as e {
+        app.bridge = None;
+        app.bridge_path = "";
+        app.say(f"the studio tools for agents are off: {e}", "warn", 6.0);
+    }
+}
+
+impl auto_permission(app: Studio, d: dict[str, any]) -> bool {
+    tc = d.get("tool_call") or {};
+    title = str(tc.get("title", ""));
+    kind = str(tc.get("kind", "") or "");
+    idx = app.tool_index.get(str(tc.get("toolCallId", "")), -1);
+    if not kind and 0 <= idx < len(app.chat) {
+        kind = app.chat[idx].kind;
+    }
+    raw = str(tc.get("rawInput", ""))[:400];
+    tools = "mcp__studio__" in title
+        or "mcp__jac__" in title
+        or "mcp__studio__" in raw
+        or "mcp__jac__" in raw;
+    allow = kind in AUTO_KINDS or tools or (kind == "edit" and app.gate is not None);
+    extra = app.config.get("auto_allow", []);
+    if isinstance(extra, list)
+        and (kind in extra or any([str(x) in title for x in extra])) {
+        allow = True;
+    }
+    if not allow {
+        return False;
+    }
+    opt = first_option(d.get("options") or [], ["allow_once", "allow_always"]);
+    if opt is None {
+        return False;
+    }
+    try {
+        app.agent.respond_permission(d.get("request_id"), opt);
+    } except Exception {
+        return False;
+    }
+    app.auto_allowed += 1;
+    return True;
+}
+
+impl start_review(app: Studio, req: dict[str, any]) -> None {
+    gate = app.gate;
+    if gate is None {
+        req["done"] = True;
+        return;
+    }
+    d = req["data"];
+    path = str(d.get("path", ""));
+    content = str(d.get("content", ""));
+    def work {
+        try {
+            req["review"] = gate.review(path, content);
+        } except Exception as e {
+            req["error"] = str(e);
+        }
+        req["done"] = True;
+    }
+    threading.Thread(target=work, daemon=True).start();
+}
+
+impl pump_reviews(app: Studio) -> None {
+    if not app.pending {
+        return;
+    }
+    req = app.pending[0];
+    if req.get("type") != "write" or not req.get("done") or req.get("seen") {
+        return;
+    }
+    req["seen"] = True;
+    app.dirty = True;
+    rv = req.get("review");
+    if rv is not None {
+        rel = os.path.relpath(rv.path, app.root_dir);
+        if not rv.arch_changes and rv.checked {
+            if app.gate_mode == "auto" and rv.clean() {
+                app.chat.append(
+                    ChatEntry(
+                        role="system",
+                        text=f"accepted a clean edit to {rel}: {rv.summary()}"
+                    )
+                );
+                finish_write(app, req, True, "");
+                return;
+            }
+            if app.gate_mode in ["auto", "strict"] and not rv.clean() {
+                app.chat.append(
+                    ChatEntry(
+                        role="system",
+                        text=f"sent an edit to {rel} back: {rv.summary()}"
+                    )
+                );
+                finish_write(app, req, False, rv.feedback());
+                return;
+            }
+        }
+    }
+    if app.sheet is not None and app.sheet_kind == "approval" {
+        keep = app.sheet_scroll;
+        open_approval(app);
+        app.sheet_scroll = keep;
+    }
+}
+
+impl mark_changed(app: Studio, path: str, review: any) {
+    md = app.model.module_for_file(path);
+    prefix = md.key if md is not None else "";
+    for sc in review.symbol_changes {
+        key = f"{prefix}.{sc.key}" if prefix else sc.key;
+        app.changed[key] = sc.change;
+        if "." in sc.key {
+            owner = f"{prefix}.{sc.key.rsplit('.', 1)[0]}"
+                if prefix
+                else sc.key.rsplit(".", 1)[0];
+            app.changed.setdefault(owner, "changed");
+        }
+    }
+    if prefix and review.symbol_changes {
+        app.changed.setdefault(prefix, "changed");
+    }
+}
+
+impl pump_bridge(app: Studio) -> None {
+    br = app.bridge;
+    if br is None {
+        return;
+    }
+    def handler(method: str, params: dict[str, any]) -> any {
+        return bridge_handle(app, method, params);
+    }
+    try {
+        if br.drain(handler) {
+            app.dirty = True;
+        }
+    } except Exception {}
+}
+
+impl bridge_handle(app: Studio, method: str, params: dict[str, any]) -> any {
+    q = app.bridge.queries;
+    if method == "selection" {
+        sym = symbol_at_cursor(app) if app.code_path else None;
+        return q.selection(
+            app.tray,
+            code_path=app.code_path,
+            cursor=(app.cur_line + 1, app.cur_col),
+            cursor_symbol=(sym.key if sym is not None else ""),
+            wiring_module=app.wire_mod,
+            extra={"focused_pane": app.focus, "center_view": app.center_mode}
+        );
+    }
+    if method == "focus" {
+        loc = q.locate(str(params.get("key", "")), int(params.get("line", 0) or 0));
+        load_code(app, str(loc["file"]));
+        goto_line(app, max(int(loc.get("line", 1) or 1) - 1, 0));
+        app.center_mode = "code";
+        if loc.get("module") {
+            app.wire_mod = str(loc["module"]);
+        }
+        if loc.get("key") and loc.get("kind") != "file" {
+            reveal_in_nav(app, str(loc["key"]));
+        }
+        note = str(params.get("note", "") or "");
+        who = app.agent_name or "the agent";
+        app.say(
+            f"{who}: {note}" if note else f"{who} is showing {loc.get('key', '')}",
+            "info",
+            8.0
+        );
+        return {"ok": True, "shown": loc};
+    }
+    if method == "link_plan" {
+        steps = q.link_plan(params.get("entries") or []);
+        app.plan_links = steps;
+        if 0 <= app.plan_idx < len(app.chat) {
+            app.chat[app.plan_idx].text = plan_text(app);
+        }
+        return {"ok": True, "steps": steps};
+    }
+    return q.handle(method, params);
+}
+
+impl plan_text(app: Studio) -> str {
+    marks = {"completed": "☑", "in_progress": "◐", "pending": "☐"};
+    links: dict[str, list[str]] = {};
+    for stp in app.plan_links {
+        links[str(stp.get("step", ""))] = [str(k) for k in (stp.get("keys") or [])];
+    }
+    lines: list[str] = [];
+    for (i, en) in enumerate(app.plan_entries) {
+        content = str(en.get("content", ""));
+        line = f"{marks.get(str(en.get('status', '')), '☐')} {content}";
+        keys = links.get(str(i), links.get(content, []));
+        if keys {
+            line += "  → " + ", ".join(keys[:4]);
+        }
+        lines.append(line);
+    }
+    return "\n".join(lines);
+}
+
+glob TRACE: bool = os.environ.get("JAC_STUDIO_TRACE", "") == "1";

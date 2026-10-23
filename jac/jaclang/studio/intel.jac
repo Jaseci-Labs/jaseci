@@ -790,7 +790,9 @@ impl CodeIntel._do_check(head: str) -> None {
                 token.set();
             }
         }
-        out = check_head(self._ls, head, self.max_apps, token);
+        with COMPILE_LOCK {
+            out = check_head(self._ls, head, self.max_apps, token);
+        }
     } except Exception as e {
         out = {"ok": False, "error": f"{type(e).__name__}: {e}", "files": {}};
     } finally {

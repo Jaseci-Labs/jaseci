@@ -2,6 +2,9 @@ import os;
 import sys;
 import shutil;
 import difflib;
+import threading;
+
+glob COMPILE_LOCK: any = threading.RLock();
 
 def jac_executable -> str;
 

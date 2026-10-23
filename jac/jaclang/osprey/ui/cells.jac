@@ -32,6 +32,9 @@ obj CellDiff {
 def blank_cell -> StyledCell;
 
 
+glob _BLANK: StyledCell = StyledCell(ch=" ", attrs=StyleAttrs());
+
+
 def attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool;
 
 
@@ -109,6 +112,9 @@ impl blank_cell -> StyledCell {
 
 
 impl attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool {
+    if a is b {
+        return True;
+    }
     return (
         a.fg == b.fg
         and a.bg == b.bg
@@ -122,6 +128,9 @@ impl attrs_eq(a: StyleAttrs, b: StyleAttrs) -> bool {
 
 
 impl cell_eq(a: StyledCell, b: StyledCell) -> bool {
+    if a is b {
+        return True;
+    }
     if a.wide_cont != b.wide_cont {
         return False;
     }
@@ -201,11 +210,7 @@ impl create_buffer(columns: int, rows: int) -> CellBuffer {
     rows_n = max(1, rows);
     grid: list[list[StyledCell]] = [];
     for _r in range(rows_n) {
-        row: list[StyledCell] = [];
-        for _c in range(cols) {
-            row.append(blank_cell());
-        }
-        grid.append(row);
+        grid.append([_BLANK] * cols);
     }
     return CellBuffer(columns=cols, rows=rows_n, cells=grid);
 }
@@ -227,15 +232,16 @@ impl buffer_clear_rect(
     height: int,
     attrs: StyleAttrs | None = None,
 ) {
-    style = attrs if attrs is not None else StyleAttrs();
+    cell = StyledCell(ch=" ", attrs=copy_attrs(attrs)) if attrs is not None else _BLANK;
     y0 = max(0, y);
     y1 = min(buf.rows, y + height);
     x0 = max(0, x);
     x1 = min(buf.columns, x + width);
+    if x1 <= x0 {
+        return;
+    }
     for r in range(y0, y1) {
-        for c in range(x0, x1) {
-            buf.cells[r][c] = StyledCell(ch=" ", attrs=copy_attrs(style));
-        }
+        buf.cells[r][x0:x1] = [cell] * (x1 - x0);
     }
 }
 
@@ -261,6 +267,22 @@ impl buffer_blit_text(
         end = buf.columns;
     }
     x = col;
+    shared = copy_attrs(style);
+    made: dict[str, StyledCell] = {};
+    line = buf.cells[row];
+    if text.isascii() and text.isprintable() {
+        for ch in text[:end - x] {
+            cell = made.get(ch);
+            if cell is None {
+                cell = StyledCell(ch=ch, attrs=shared, wide_cont=False);
+                made[ch] = cell;
+            }
+            line[x] = cell;
+            x += 1;
+        }
+        return;
+    }
+    cont: StyledCell | None = None;
     for g in segment_graphemes(text) {
         seg = g.text;
         if not seg {
@@ -276,13 +298,20 @@ impl buffer_blit_text(
         if x + w > end {
             break;
         }
-        buf.cells[row][x] = StyledCell(
-            ch=seg, attrs=copy_attrs(style), wide_cont=False
-        );
-        for i in range(1, w) {
-            buf.cells[row][x + i] = StyledCell(
-                ch=" ", attrs=copy_attrs(style), wide_cont=True
-            );
+        cell = made.get(seg);
+        if cell is None {
+            cell = StyledCell(ch=seg, attrs=shared, wide_cont=False);
+            made[seg] = cell;
+        }
+        line[x] = cell;
+        if w > 1 {
+            tail = cont
+                if cont is not None
+                else StyledCell(ch=" ", attrs=shared, wide_cont=True);
+            cont = tail;
+            for i in range(1, w) {
+                line[x + i] = tail;
+            }
         }
         x += w;
     }
@@ -388,7 +417,7 @@ impl diff_buffers_ansi(
             run_chars: list[str] = [];
             run_attrs = StyleAttrs();
             for x in range(x0, x1) {
-                want = blank_cell();
+                want = _BLANK;
                 if y < len(desired.cells) and x < len(desired.cells[y]) {
                     want = desired.cells[y][x];
                 }
@@ -409,7 +438,7 @@ impl diff_buffers_ansi(
                     }
                     continue;
                 }
-                had = blank_cell();
+                had = _BLANK;
                 if (
                     previous is not None and y < previous.rows and x < previous.columns
                 ) {

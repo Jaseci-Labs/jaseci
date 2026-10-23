@@ -133,6 +133,7 @@ obj ProjectModel {
     def _add_symbol(owner: StNode, sym: StNode);
     def _clear_module_symbols(mod: StModule);
     def _text(nd: any) -> str;
+    def _source_text(nd: any) -> str;
     def _span(sym: StNode, nd: uni.UniNode);
     def _doc(nd: any) -> str;
     def _ability_node(key: str, ab: uni.Ability, owner: str) -> StAbility;
@@ -479,6 +480,16 @@ impl ProjectModel._text(nd: any) -> str {
     }
 }
 
+impl ProjectModel._source_text(nd: any) -> str {
+    try {
+        loc = nd.loc;
+        raw = loc.orig_src.code.encode("utf-8")[loc.pos_start:loc.pos_end];
+        return " ".join(raw.decode("utf-8", errors="replace").split());
+    } except Exception {
+        return "";
+    }
+}
+
 impl ProjectModel._span(sym: StNode, nd: uni.UniNode) {
     sym.file = os.path.realpath(nd.loc.mod_path);
     sym.line = nd.loc.first_line;
@@ -507,7 +518,7 @@ impl ProjectModel._ability_node(key: str, ab: uni.Ability, owner: str) -> StAbil
         event = self._text(sig.arch_tag_info);
         sig_text = f"with {event} {sig.event.value}".strip();
     } elif isinstance(sig, uni.FuncSignature) {
-        sig_text = self._text(sig);
+        sig_text = self._source_text(sig) or self._text(sig);
     }
     kind = "method" if owner else "def";
     if event or isinstance(sig, uni.EventSignature) {

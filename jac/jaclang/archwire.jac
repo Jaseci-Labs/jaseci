@@ -32822,13 +32822,16 @@ graph import studio {
         session | tui { AgentEvent },
     ]
     agents ++> app | tui { AgentRegistry }
-    bridge ++> studio_mcp {
-        BridgeClient,
-        BridgeError,
-        BridgeUnavailable,
-        SOCKET_ENV,
-        find_studio_socket
-    }
+    bridge ++> [
+        studio_mcp {
+            BridgeClient,
+            BridgeError,
+            BridgeUnavailable,
+            SOCKET_ENV,
+            find_studio_socket
+        },
+        tui { BridgeServer, StudioQueries },
+    ]
     context ++> [
         app { context_blocks, resolve_key },
         native_agent {
@@ -32844,7 +32847,10 @@ graph import studio {
         },
         tui { context_blocks },
     ]
-    gate ++> app { EditGate, EditReview, format_review }
+    gate ++> [
+        app { EditGate, EditReview, format_review },
+        tui { EditGate },
+    ]
     intel ++> [
         app { CodeIntel, Span },
         tui { CodeIntel },
@@ -32904,6 +32910,7 @@ graph import studio {
     tui ++> app { run_tui }
     util ++> [
         app { jac_mcp_server, permission_diffs, unified_diff },
+        gate | intel { COMPILE_LOCK },
         tui { jac_mcp_server, permission_diffs, read_or_empty, unified_diff },
     ]
 }

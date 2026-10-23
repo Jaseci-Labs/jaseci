@@ -55,6 +55,12 @@ def _is_printable_ascii(text: str) -> bool;
 def display_width(text: str) -> int;
 
 
+def _simple_char_width(ch: str) -> int;
+
+
+glob _CHAR_WIDTHS: dict[str, int] = {};
+
+
 obj TruncatedSpan {
     has text: str = "",
         width: int = 0;
@@ -280,13 +286,7 @@ impl strip_ansi(text: str) -> str {
 
 
 impl _is_printable_ascii(text: str) -> bool {
-    for ch in text {
-        code = ord(ch);
-        if code < 32 or code > 126 {
-            return False;
-        }
-    }
-    return True;
+    return text.isascii() and text.isprintable();
 }
 
 
@@ -294,8 +294,27 @@ impl display_width(text: str) -> int {
     if not text {
         return 0;
     }
-    if "\x1b" not in text and "\t" not in text and _is_printable_ascii(text) {
-        return len(text);
+    if "\x1b" not in text and "\t" not in text {
+        if _is_printable_ascii(text) {
+            return len(text);
+        }
+        total = 0;
+        simple = True;
+        for ch in text {
+            w = _CHAR_WIDTHS.get(ch, -2);
+            if w == -2 {
+                w = _simple_char_width(ch);
+                _CHAR_WIDTHS[ch] = w;
+            }
+            if w < 0 {
+                simple = False;
+                break;
+            }
+            total += w;
+        }
+        if simple {
+            return total;
+        }
     }
     clean = text;
     if "\t" in clean {
@@ -446,4 +465,20 @@ impl wrap_text(text: str, width: int) -> list[str] {
 
 impl wrap_text_joined(text: str, width: int) -> str {
     return "\n".join(wrap_text(text, width));
+}
+
+
+impl _simple_char_width(ch: str) -> int {
+    cp = ord(ch);
+    if cp < 32 or cp == 0x7F {
+        return -1;
+    }
+    if _is_non_printing(category(ch))
+        or _is_variation_selector(cp)
+        or _is_regional_indicator(cp)
+        or (cp >= 0x1F300 and cp <= 0x1FAFF)
+        or (cp >= 0x1100 and cp <= 0x11FF) {
+        return -1;
+    }
+    return grapheme_width(ch);
 }

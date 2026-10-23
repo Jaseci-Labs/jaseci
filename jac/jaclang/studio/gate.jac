@@ -867,7 +867,7 @@ impl EditGate._targets(real: str, review: EditReview) -> list[str] {
 impl EditGate.review(path: str, new_text: str) -> EditReview {
     started = time.perf_counter();
     real = os.path.realpath(path);
-    with _GATE_LOCK {
+    with _GATE_LOCK, COMPILE_LOCK {
         old_text = self._disk_text(real);
         self.stage(real, new_text);
         rel = _rel(real, self.root_dir);
