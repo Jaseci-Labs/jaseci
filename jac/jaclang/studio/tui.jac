@@ -5,6 +5,7 @@ import threading;
 import logging;
 import warnings;
 import queue;
+import difflib;
 
 import from jaclang.osprey.ui.model { UiRegion, UiContainer, MainScreen, Overlay }
 import from jaclang.osprey.ui.runtime_core {
@@ -78,7 +79,8 @@ obj ChatEntry {
         kind: str = "",
         ident: str = "",
         detail: str = "",
-        time: float = 0.0;
+        time: float = 0.0,
+        locs: list[str] = [];
 }
 
 obj Studio {
@@ -181,7 +183,14 @@ obj Studio {
         changed: dict[str, str] = {},
         plan_entries: list[dict[str, any]] = [],
         plan_links: list[dict[str, any]] = [],
-        auto_allowed: int = 0;
+        auto_allowed: int = 0,
+        chat_sel: int = -1,
+        chat_open: set[int] = set(),
+        chat_starts: list[int] = [],
+        baselines: dict[str, str] = {},
+        line_marks: dict[str, dict[int, str]] = {},
+        nav_w: int = 34,
+        side_w: int = 0;
 
     def postinit;
     def install_layout;
@@ -353,7 +362,14 @@ glob HELP_TEXT: list[tuple[str, str]] = [
              "verbs that act on the context (also /refactor /doc /fix /move)"
          ),
          ("/agent", "choose the agent"),
-         ("x or Delete", "in the context tray: remove the selected item")
+         ("x or Delete", "in the context tray: remove the selected item"),
+         ("", "Transcript"),
+         ("↑ ↓  j k", "select an entry"),
+         ("Enter", "expand a tool call, or jump to the code a plan step touches"),
+         ("o", "open the files a tool call touched"),
+         ("", "Layout"),
+         ("Alt+← / Alt+→", "move the edge of the focused pane"),
+         ("Ctrl+X → reset layout", "restore the default pane sizes")
      ];
 
 def open_help(app: Studio);
@@ -448,13 +464,20 @@ impl Studio.install_layout {
         LayoutSpec(width=fill_axis(), height=grow_axis(1.0), flow_axis=Axis.HORIZONTAL)
     );
     set_node_contract(
-        r, self.nav, LayoutSpec(width=fixed_axis(34.0), height=fill_axis())
+        r, self.nav, LayoutSpec(width=fixed_axis(float(self.nav_w)), height=fill_axis())
     );
     set_node_contract(
         r, self.center, LayoutSpec(width=grow_axis(3.0), height=fill_axis())
     );
     set_node_contract(
-        r, self.right, LayoutSpec(width=grow_axis(2.0), height=fill_axis())
+        r,
+        self.right,
+        LayoutSpec(
+            width=(
+                fixed_axis(float(self.side_w)) if self.side_w > 0 else grow_axis(2.0)
+            ),
+            height=fill_axis()
+        )
     );
     set_node_contract(
         r, self.chat_pane, LayoutSpec(width=fill_axis(), height=grow_axis(1.0))
@@ -853,6 +876,10 @@ impl handle_key(app: Studio, key: str) -> None {
     }
     if key == "ctrl+l" {
         app.focus = "prompt";
+        return;
+    }
+    if key in ["alt+left", "alt+right"] {
+        resize_panes(app, -1 if key == "alt+left" else 1);
         return;
     }
     if key == "escape" and app.focus != "prompt" {
@@ -1568,11 +1595,24 @@ impl wire_key(app: Studio, key: str) -> None {
 }
 
 impl chat_key(app: Studio, key: str) {
-    if key in ["up", "k"] {
-        app.chat_follow = False;
-        app.chat_top = max(0, app.chat_top - 1);
-    } elif key in ["down", "j"] {
-        app.chat_top += 1;
+    n = len(app.chat);
+    if key in ["up", "k", "down", "j"] {
+        if app.chat_sel < 0 or app.chat_sel >= n {
+            app.chat_sel = n - 1;
+        } elif key in ["up", "k"] {
+            app.chat_sel = max(0, app.chat_sel - 1);
+        } else {
+            app.chat_sel = min(n - 1, app.chat_sel + 1);
+        }
+        app.chat_follow = app.chat_sel == n - 1;
+        if 0 <= app.chat_sel < len(app.chat_starts) {
+            at = app.chat_starts[app.chat_sel];
+            if at < app.chat_top {
+                app.chat_top = at;
+            } elif at >= app.chat_top + app.chat_h - 2 {
+                app.chat_top = max(0, at - app.chat_h + 4);
+            }
+        }
     } elif key == "page_up" {
         app.chat_follow = False;
         app.chat_top = max(0, app.chat_top - app.chat_h + 2);
@@ -1580,9 +1620,26 @@ impl chat_key(app: Studio, key: str) {
         app.chat_top += app.chat_h - 2;
     } elif key in ["end", "G"] {
         app.chat_follow = True;
+        app.chat_sel = n - 1;
     } elif key in ["home", "g"] {
         app.chat_follow = False;
         app.chat_top = 0;
+        app.chat_sel = 0 if n else -1;
+    } elif key in ["enter", "space", " ", "o"] and 0 <= app.chat_sel < n {
+        e = app.chat[app.chat_sel];
+        if e.role == "plan" {
+            open_plan_links(app);
+        } elif e.role == "tool" and key == "o" and e.locs {
+            open_locations(app, e.locs, e.title or "Tool locations");
+        } elif e.role == "tool" and key == "o" {
+            app.say("this tool call names no files", "warn");
+        } elif e.role == "tool" {
+            if app.chat_sel in app.chat_open {
+                app.chat_open.discard(app.chat_sel);
+            } else {
+                app.chat_open.add(app.chat_sel);
+            }
+        }
     }
 }
 
@@ -1916,6 +1973,9 @@ impl palette_items(app: Studio) -> list[PickItem] {
             PickItem(key="clear-tray", label="Clear the context tray"),
             PickItem(key="clear-chat", label="Clear the transcript   /clear"),
             PickItem(key="reindex", label="Re-index the project"),
+            PickItem(key="plan-links", label="Go to the code linked to the plan"),
+            PickItem(key="changed", label="Go to symbols changed this session"),
+            PickItem(key="reset-layout", label="Reset the pane sizes"),
             PickItem(key="help", label="Keys and help   F1"),
             PickItem(key="quit", label="Quit   Ctrl+Q")
         ];
@@ -1942,6 +2002,14 @@ impl run_palette(app: Studio, key: str) {
         if not app.indexing {
             start_indexing(app);
         }
+    } elif key == "plan-links" {
+        open_plan_links(app);
+    } elif key == "changed" {
+        open_changed(app);
+    } elif key == "reset-layout" {
+        app.nav_w = 34;
+        app.side_w = 0;
+        app.install_layout();
     } elif key == "help" {
         open_help(app);
     } elif key == "quit" {
@@ -2380,6 +2448,7 @@ impl paint_code(app: Studio) -> None {
             diag_lines[d.line] = d.severity;
         }
     }
+    marks = app.line_marks.get(os.path.realpath(app.code_path), {});
     sym_lo = 0;
     sym_hi = -1;
     if sym is not None {
@@ -2395,10 +2464,16 @@ impl paint_code(app: Studio) -> None {
         mark = " ";
         mark_a = THEME.gutter;
         sev = diag_lines.get(i + 1, "");
+        chg = marks.get(i + 1, "");
         if sev == "error" {
             (mark, mark_a) = ("●", THEME.err);
         } elif sev {
             (mark, mark_a) = ("●", THEME.warn);
+        } elif chg {
+            (mark, mark_a) = (
+                "▌",
+                StyleAttrs(fg=({"added": 114, "removed": 203}.get(chg, 179)))
+            );
         } elif sym_lo <= i + 1 <= sym_hi {
             (mark, mark_a) = ("│", StyleAttrs(fg=24));
         }
@@ -2518,8 +2593,12 @@ impl paint_wiring(app: Studio) -> None {
 
 impl chat_lines(app: Studio, width: int) -> list[list[TextSpan]] {
     out: list[list[TextSpan]] = [];
+    starts: list[int] = [];
     inner = max(width - 2, 10);
-    for e in app.chat {
+    focused = app.focus == "chat";
+    for (idx, e) in enumerate(app.chat) {
+        starts.append(len(out));
+        first = len(out);
         if e.role == "user" {
             out.append(fit([sp("▍you", THEME.accent2)], width, None));
             for ln in wrap_plain(e.text, inner) {
@@ -2552,22 +2631,60 @@ impl chat_lines(app: Studio, width: int) -> list[list[TextSpan]] {
             a = THEME.ok
                 if e.status == "completed"
                 else (THEME.err if e.status == "failed" else THEME.dim);
+            body = wrap_plain(e.detail, inner - 6) if e.detail else [];
+            is_open = idx in app.chat_open;
+            fold = "";
+            if len(body) > 1 or e.locs {
+                fold = " ▾" if is_open else " ▸";
+            }
             out.append(
                 fit(
-                    [sp(f"  {icon} ", a), sp(e.title or e.kind or "tool", THEME.dim)],
+                    [
+                        sp(f"  {icon} ", a),
+                        sp(e.title or e.kind or "tool", THEME.dim),
+                        sp(fold, THEME.faint)
+                    ],
                     width,
                     None
                 )
             );
-            if e.detail {
-                for ln in wrap_plain(e.detail, inner - 4)[:6] {
-                    out.append(fit([sp("      " + ln, THEME.faint)], width, None));
-                }
+            shown = body[:60] if is_open else body[:1];
+            for ln in shown {
+                out.append(fit([sp("      " + ln, THEME.faint)], width, None));
+            }
+            if not is_open and len(body) > 1 {
+                out.append(
+                    fit(
+                        [sp(f"      … {len(body) - 1} more line(s)", THEME.faint)],
+                        width,
+                        None
+                    )
+                );
             }
         } elif e.role == "plan" {
-            out.append(fit([sp("  plan", THEME.accent2)], width, None));
+            out.append(
+                fit(
+                    [
+                        sp("  plan", THEME.accent2),
+                        sp(
+                            "  Enter jumps to linked code" if app.plan_links else "",
+                            THEME.faint
+                        )
+                    ],
+                    width,
+                    None
+                )
+            );
             for ln in e.text.split("\n") {
-                out.append(fit([sp("    " + ln, THEME.dim)], width, None));
+                for (k, part) in enumerate(wrap_plain(ln, inner - 6)) {
+                    out.append(
+                        fit(
+                            [sp(("    " if k == 0 else "      ") + part, THEME.dim)],
+                            width,
+                            None
+                        )
+                    );
+                }
             }
         } elif e.role == "error" {
             for ln in wrap_plain(e.text, inner) {
@@ -2578,8 +2695,12 @@ impl chat_lines(app: Studio, width: int) -> list[list[TextSpan]] {
                 out.append(fit([sp("  " + ln, THEME.dim)], width, None));
             }
         }
+        if focused and idx == app.chat_sel and first < len(out) {
+            out[first] = restyle(out[first], C_SEL_FOCUS);
+        }
         out.append(blank(width));
     }
+    app.chat_starts = starts;
     return out;
 }
 
@@ -2724,7 +2845,7 @@ impl paint_status(app: Studio) -> None {
         hints = {
             "nav": "↑↓ move  →← open/close  Enter open  Space add to context  w wiring",
             "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  w wiring",
-            "chat": "↑↓ PgUp PgDn scroll  End follow",
+            "chat": "↑↓ select  Enter expand / plan links  o open tool file  End follow",
             "tray": "↑↓ select  x remove  Enter open  C clear",
             "prompt": "Enter send  Alt+Enter newline  @ add  ↑ history"
         }.get(
@@ -3174,20 +3295,17 @@ impl summarize_tool(d: dict[str, any]) -> str {
         if c.get("type") == "diff" {
             old = str(c.get("oldText") or "");
             new = str(c.get("newText") or "");
-            added = len(
-                [
-                    l
-                    for l in new.split("\n")
-                    if l not in old.split("\n")
-                ]
+            added = 0;
+            removed = 0;
+            sm = difflib.SequenceMatcher(
+                None, old.split("\n"), new.split("\n"), autojunk=False
             );
-            removed = len(
-                [
-                    l
-                    for l in old.split("\n")
-                    if l not in new.split("\n")
-                ]
-            );
+            for (tag, i1, i2, j1, j2) in sm.get_opcodes() {
+                if tag != "equal" {
+                    added += j2 - j1;
+                    removed += i2 - i1;
+                }
+            }
             out.append(f"edit {c.get('path', '')}  +{added} -{removed}");
         } elif c.get("type") == "content" {
             inner = c.get("content") or {};
@@ -3259,7 +3377,7 @@ impl handle_agent_event(app: Studio, ev: any) -> None {
         }
         e = app.chat[idx];
         if d.get("title") {
-            e.title = str(d["title"]);
+            e.title = rel_text(app, str(d["title"]));
         }
         if d.get("kind") {
             e.kind = str(d["kind"]);
@@ -3269,7 +3387,15 @@ impl handle_agent_event(app: Studio, ev: any) -> None {
         }
         detail = summarize_tool(d);
         if detail {
-            e.detail = detail;
+            e.detail = rel_text(app, detail);
+        }
+        for loc in (d.get("locations") or []) {
+            if isinstance(loc, dict) and loc.get("path") {
+                ref = str(loc["path"]) + (f":{loc['line']}" if loc.get("line") else "");
+                if ref not in e.locs {
+                    e.locs.append(ref);
+                }
+            }
         }
     } elif kind == "plan" {
         close_message(app);
@@ -3392,12 +3518,12 @@ impl open_approval(app: Studio) -> None {
     open_sheet(
         app,
         "approval",
-        max(40, min(cols - 6, 130)),
+        max(40, min(cols - 2, 170)),
         max(10, rows - 6),
         OverlayAnchor.CENTER
     );
     req = app.pending[0];
-    w = max(40, min(cols - 6, 130));
+    w = max(40, min(cols - 2, 170));
     lines: list[list[TextSpan]] = [];
     if req["type"] == "permission" {
         tc = req["data"].get("tool_call") or {};
@@ -3953,6 +4079,11 @@ impl pump_reviews(app: Studio) -> None {
 }
 
 impl mark_changed(app: Studio, path: str, review: any) {
+    real = os.path.realpath(path);
+    if real not in app.baselines {
+        app.baselines[real] = review.old_text;
+    }
+    app.line_marks[real] = line_changes(app.baselines[real], review.new_text);
     md = app.model.module_for_file(path);
     prefix = md.key if md is not None else "";
     for sc in review.symbol_changes {
@@ -4049,3 +4180,136 @@ impl plan_text(app: Studio) -> str {
 }
 
 glob TRACE: bool = os.environ.get("JAC_STUDIO_TRACE", "") == "1";
+
+def rel_text(app: Studio, text: str) -> str;
+
+def line_changes(old: str, new: str) -> dict[int, str];
+
+def resize_panes(app: Studio, step: int);
+
+def open_locations(app: Studio, refs: list[str], title: str) -> None;
+
+def open_plan_links(app: Studio) -> None;
+
+def open_changed(app: Studio) -> None;
+
+impl rel_text(app: Studio, text: str) -> str {
+    top = app.root_dir.rstrip("/") + "/";
+    real = os.path.realpath(app.root_dir).rstrip("/") + "/";
+    return text.replace(real, "").replace(top, "");
+}
+
+impl line_changes(old: str, new: str) -> dict[int, str] {
+    out: dict[int, str] = {};
+    sm = difflib.SequenceMatcher(
+        None, old.split("\n"), new.split("\n"), autojunk=False
+    );
+    for (tag, i1, i2, j1, j2) in sm.get_opcodes() {
+        if tag == "insert" {
+            for j in range(j1, j2) {
+                out[j + 1] = "added";
+            }
+        } elif tag == "replace" {
+            for j in range(j1, j2) {
+                out[j + 1] = "changed";
+            }
+        } elif tag == "delete" {
+            out.setdefault(j1 + 1, "removed");
+        }
+    }
+    return out;
+}
+
+impl resize_panes(app: Studio, step: int) {
+    (cols, rows) = screen_size(app);
+    if app.focus == "nav" {
+        app.nav_w = max(16, min(cols // 2, app.nav_w + 4 * step));
+    } else {
+        cur = app.side_w;
+        if cur <= 0 {
+            (rw, rh) = pane_rect(app, app.right);
+            cur = rw or (cols - app.nav_w) * 2 // 5;
+        }
+        grow = -step;
+        app.side_w = max(24, min(cols - app.nav_w - 30, cur + 4 * grow));
+    }
+    app.install_layout();
+    app.dirty = True;
+}
+
+impl open_locations(app: Studio, refs: list[str], title: str) -> None {
+    items: list[PickItem] = [];
+    for ref in refs {
+        (path, sep, tail) = ref.rpartition(":");
+        line = 0;
+        if sep and tail.isdigit() {
+            line = max(int(tail) - 1, 0);
+        } else {
+            path = ref;
+        }
+        nd = app.model.node_for(ref);
+        if nd is not None and nd.file {
+            path = nd.file;
+            line = max(nd.line - 1, 0);
+        }
+        if not path or not os.path.isfile(path) {
+            continue;
+        }
+        items.append(
+            PickItem(
+                key=ref,
+                label=rel_text(app, ref),
+                detail=f"{os.path.relpath(path, app.root_dir)}:{line + 1}",
+                kind=(nd.kind if nd is not None else "module"),
+                data=(path, line)
+            )
+        );
+    }
+    if not items {
+        app.say("nothing to open there", "warn");
+        return;
+    }
+    if len(items) == 1 {
+        (f, ln) = items[0].data;
+        load_code(app, f);
+        goto_line(app, ln);
+        app.center_mode = "code";
+        app.focus = "code";
+        return;
+    }
+    app.loc_items = items;
+    open_picker(app, "locations", title, "");
+}
+
+impl open_plan_links(app: Studio) -> None {
+    refs: list[str] = [];
+    for stp in app.plan_links {
+        for k in (stp.get("keys") or []) {
+            if str(k) not in refs {
+                refs.append(str(k));
+            }
+        }
+    }
+    if not refs {
+        app.say(
+            "the plan has no linked code yet (agents link it with studio_link_plan)",
+            "warn",
+            5.0
+        );
+        return;
+    }
+    open_locations(app, refs, "Code the plan touches");
+}
+
+impl open_changed(app: Studio) -> None {
+    refs = [
+        k
+        for k in app.changed
+        if app.changed[k] != "removed"
+    ];
+    if not refs {
+        app.say("no accepted edits in this session yet", "warn");
+        return;
+    }
+    open_locations(app, refs, "Changed this session");
+}
