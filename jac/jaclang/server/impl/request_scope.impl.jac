@@ -41,8 +41,19 @@ impl RequestScope.close {
     } except Exception as e {
         logger.warning(f"Failed to close request context: {e}", exc_info=True);
     } finally {
-        JacRuntime.reset_request_context(self._token);
+        if self._token is not None {
+            JacRuntime.reset_request_context(self._token);
+            self._token = None;
+        }
     }
+}
+
+impl RequestScope.lease(body: any) -> ScopedStream {
+    if self._token is not None {
+        JacRuntime.reset_request_context(self._token);
+        self._token = None;
+    }
+    return ScopedStream(scope=self, body=body);
 }
 
 impl RequestScope.__enter__ -> ExecutionContext {
@@ -56,4 +67,54 @@ impl RequestScope.__exit__(
 ) -> bool {
     self.close();
     return False;
+}
+
+impl ScopedStream.__aiter__ -> ScopedStream {
+    return self;
+}
+
+impl ScopedStream.__anext__ -> any {
+    if self._done {
+        raise StopAsyncIteration;
+    }
+    source: AsyncIterator[any];
+    if self._source is not None {
+        source = self._source;
+    } elif isinstance(self.body, AsyncIterable) {
+        source = self.body.__aiter__();
+    } else {
+        source = iterate_sync(self.body);
+    }
+    self._source = source;
+    try {
+        return await source.__anext__();
+    } except StopAsyncIteration {
+        await self._finish(True);
+        raise;
+    } except BaseException {
+        await self._finish(False);
+        raise;
+    }
+}
+
+impl ScopedStream.aclose {
+    await self._finish(False);
+}
+
+impl ScopedStream._finish(delivered: bool) {
+    if self._done {
+        return;
+    }
+    self._done = True;
+    try {
+        if not delivered {
+            self.scope.abort();
+            if self._source is not None {
+                await close_stream(self._source);
+            }
+            await close_stream(self.body);
+        }
+    } finally {
+        self.scope.close();
+    }
 }
