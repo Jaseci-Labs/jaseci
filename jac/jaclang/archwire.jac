@@ -12,7 +12,7 @@ graph import {
     edge Jac0: jac0 --> dist.*;
     edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Lsp: lsp.* --> cli.*;
-    edge MetaImporter: meta_importer --> client.*;
+    edge MetaImporter: meta_importer --> cli.* | client.*;
     edge Packages: packages.* --> cli.* | client.* | dist.* | project.*;
     edge Project: project.* --> artifacts.* | byllm.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | lsp.* | packages.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Runtime: runtime.* --> byllm.* | cli.* | client.* | compiler.* | comptime | data.* | dist.* | lib.* | project.* | scale.* | server.* | testing.*;
@@ -707,17 +707,27 @@ graph import {
             | project.kernel_compile
             | project.kernel_snapshot
             | testing.cl_test_runner.module_is_client { CompileOptions },
-        cli.commands.analysis.explain
-            | dist.precompile_bytecode.prebuild_native_closure { CompileOptions },
-        cli.commands.analysis.grammar | dist.precompile_bytecode.precompile_context {
+        cli.commands.analysis.explain | dist.precompile_bytecode._precompile_unit {
             CompileOptions
         },
+        cli.commands.analysis.grammar
+            | dist.precompile_bytecode.prebuild_native_closure { CompileOptions },
+        cli.commands.execution._apply_graphmend
+            | runtime.runtime.JacRuntime.reset_process_state {
+            override_graphmend_disable
+        },
+        cli.commands.execution.run {
+            graphmend_disable_override,
+            override_graphmend_disable
+        },
+        cli.commands.execution.serve { mark_process_serving },
         cli.commands.native_build._restore_target { pop_native_target },
         cli.commands.native_build.native_build {
             CompileOptions,
             NATIVE_LINK_MODES,
             push_native_target
         },
+        dist.precompile_bytecode.precompile_context { CompileOptions },
         dist.precompile_bytecode.precompile_native_unit { CompileOptions },
         dist.precompile_bytecode.seal_native { CompileOptions },
         lsp.server.engine { CancelToken },
@@ -1294,6 +1304,9 @@ graph import {
     type compiler.passes.context ++> client.client_diagnostics
         | lsp.server.engine
         | server.hmr { Alert }
+    compiler.passes.graphmend.auto_detect ++> cli.commands.execution._graphmend_may_engage {
+        file_imports_torch
+    }
     compiler.passes.import_wiring_pass ++> cli.commands.architecture {
         unused_wire_bindings
     }
@@ -1802,6 +1815,9 @@ graph import {
     meta_importer ++> client.targets.desktop.native.host_boot._ensure_jac_meta_importer {
         JacMetaImporter
     }
+    meta_importer --> cli.commands.execution._apply_graphmend {
+        install_graphmend_loader_hook_for_torch
+    }
     packages.artifact ++> [
         cli.commands.project._bundle_jab {
             ArtifactError,
@@ -1922,7 +1938,7 @@ graph import {
             | cli.commands.architecture
             | cli.commands.build.build
             | cli.commands.config.config
-            | cli.commands.execution._ensure_watchdog_installed
+            | cli.commands.execution._configured_graphmend
             | cli.commands.mcp.mcp_cmd
             | cli.commands.project.bundle
             | cli.shadcn.cli.retheme
@@ -1940,7 +1956,7 @@ graph import {
             | server.server.JacAPIServer._ensure_client_bundle
             | server.sv_client._read_cache_enabled { get_config },
         cli.commands.analysis._is_project_wide_run
-            | cli.commands.execution._exec_file
+            | cli.commands.execution._ensure_watchdog_installed
             | cli.commands.project.clean
             | cli.shadcn.cli.run_shadcn_add
             | data.pg_dist._database_config
@@ -1948,17 +1964,17 @@ graph import {
             | server.endpoints.pages.register_diagnostics_endpoints.client_error
             | server.server.print_endpoint_docs { get_config },
         cli.commands.analysis.check
-            | cli.commands.execution._load_cwd_config
+            | cli.commands.execution._exec_file
             | cli.commands.project.deps
             | cli.shadcn.cli.run_shadcn_remove { get_config },
         cli.commands.analysis.format
-            | cli.commands.execution._resolve_target
+            | cli.commands.execution._load_cwd_config
             | cli.commands.project.install { get_config },
         cli.commands.analysis.precommit
-            | cli.commands.execution._run_node_tool
+            | cli.commands.execution._resolve_target
             | cli.commands.project.publish { get_config },
         cli.commands.analysis.test
-            | cli.commands.execution._tool_tiers
+            | cli.commands.execution._run_node_tool
             | cli.commands.project.remove { get_config },
         cli.commands.code
             | cli.commands.project._create_app
@@ -2033,8 +2049,9 @@ graph import {
             get_config,
             pin_project_scope
         },
-        cli.commands.execution.serve | cli.commands.project.script { get_config },
-        cli.commands.execution.x | cli.commands.project.update { get_config },
+        cli.commands.execution._tool_tiers | cli.commands.project.script { get_config },
+        cli.commands.execution.serve | cli.commands.project.update { get_config },
+        cli.commands.execution.x { get_config },
         cli.commands.fix._append_app_table { _toml_append_section },
         cli.commands.project._bootstrap_project_deps
             | testing.testing.JacTestClient._ensure_initialized {
@@ -2346,6 +2363,7 @@ graph import {
     project.textio --> [
         cli.commands.analysis._check_file_job { read_file_with_encoding as _read_src },
         compiler.driver.compiler.JacCompiler.get_bytecode
+            | compiler.driver.jir.read_source_shared
             | compiler.driver.nativecache._module_files_and_imports {
             read_file_with_encoding
         },
@@ -2600,6 +2618,7 @@ graph import {
         compiler.backends.es.esast_gen_pass
             | compiler.backends.py.jcir_gen_pass
             | compiler.passes.comptime_resolve_pass
+            | compiler.passes.graphmend.graph_break_detect_pass
             | compiler.passes.jsx_intrinsic_guard_pass
             | compiler.passes.scope_walk
             | compiler.tools.grammar_extract_pass { osp_skip_rest },
@@ -5786,6 +5805,9 @@ graph import compiler {
         passes.context | passes.execution | tests.test_pipeline_products {
             CancelToken
         },
+        passes.graphmend.defer_side_effect_pass.DeferSideEffectPass.prepare {
+            defer_declines_here
+        },
     ]
     driver.compile_options --> [
         backends.native.na_ir_gen_pass.NaIRGenPass._full_ast_of { env_na_debug },
@@ -5827,16 +5849,27 @@ graph import compiler {
         backends.native.na_compile_pass.NativeCompilePass._emit_debug_products {
             get_native_debug_dir
         },
+        passes.graphmend.auto_detect.file_imports_torch { read_source_shared },
+        passes.graphmend.scope_facts.region_context_probe {
+            GM_PROBE_VARIANT,
+            swap_graphmend_cache_variant
+        },
     ]
-    driver.jir --> backends.native.kernel_resolve.KernelArtifact.build {
-        require_exact_compiler_products
-    }
+    driver.jir --> [
+        backends.native.kernel_resolve.KernelArtifact.build {
+            require_exact_compiler_products
+        },
+        passes.graphmend.scope_facts._closure_source_digest { read_source_shared },
+    ]
     driver.module_analysis ++> [
         frontend.kernel_analyze { ModuleAnalysis },
         frontend.kernel_host { ModuleAnalysis, analyze_module },
     ]
     type driver.module_analysis ++> frontend.host { ModuleAnalysis }
-    driver.module_compile ++> frontend.kernel_host { compile_task }
+    driver.module_compile ++> [
+        frontend.kernel_host { compile_task },
+        passes.graphmend.scope_facts.module_binds_torch { binds_torch_import },
+    ]
     driver.na_coverage ++> backends.native.link_plan._build_link_plan {
         na_coverage_replay
     }
@@ -5887,7 +5920,8 @@ graph import compiler {
             | passes.layout_pass.get_layout_registry
             | tools.lang_tools { CompilationProduct, require },
         jc_unit { early_passes },
-        tests.test_module_exports
+        passes.graphmend.auto_detect._py_imports_torch
+            | tests.test_module_exports
             | tools.cfg_dot.cfg_dot_from_file
             | tools.jac_formatter_pass.format_module
             | tools.lang_tools.AstTool.ir { run_utility },
@@ -5938,6 +5972,10 @@ graph import compiler {
             | passes.comptime_resolve_pass
             | passes.decl_impl_match_pass
             | passes.freeze_structure_pass
+            | passes.graphmend.defer_side_effect_pass
+            | passes.graphmend.graph_break_detect_pass
+            | passes.graphmend.predicate_ctrl_flow_pass
+            | passes.graphmend.trap_lowering_pass
             | passes.import_wiring_pass
             | passes.ownership_check_pass
             | passes.package_boundary_pass
@@ -5949,7 +5987,8 @@ graph import compiler {
             | passes.type_checker_pass
             | passes.variant_agreement_pass
             | placement.placement_solver { AnalysisFact, PassContract },
-        tests.test_module_exports
+        passes.graphmend.auto_detect._py_imports_torch
+            | tests.test_module_exports
             | tools.cfg_dot.cfg_dot_from_file
             | tools.jac_formatter_pass.format_module
             | tools.lang_tools.AstTool.ir { CompilationProduct },
@@ -5975,6 +6014,7 @@ graph import compiler {
             | backends.native.wasm_build.compile_to_wasm
             | frontend.kernel_analyze
             | frontend.kernel_host
+            | passes.graphmend.auto_detect._jac_binds_torch
             | placement.placement_facts.discover_spaces
             | placement.placement_solver._native_dep_scan
             | tests.test_batch_decl_identity
@@ -5998,6 +6038,7 @@ graph import compiler {
             | tools.lang_tools
             | types.stubcat.build.build_catalog { JacProgram },
         backends.native.kernel_stage0.plan_kernel_prefix
+            | passes.graphmend.auto_detect._py_imports_torch
             | tools.jac_formatter_pass.unparse_module { JacProgram },
     ]
     driver.program --> tests.test_graph_fragment_equivalence
@@ -6012,6 +6053,7 @@ graph import compiler {
         | native_bindings
         | passes.context
         | passes.execution
+        | passes.graphmend.scope_facts
         | passes.layout_pass
         | passes.placement_pass
         | passes.wasm_contract
@@ -6700,6 +6742,21 @@ graph import compiler {
             Tokens as Tok
         },
         passes.endpoint_effect_pass { SymbolType, Tokens as Tok },
+        passes.graphmend.ast_edit | passes.graphmend.trap_lowering_pass {
+            GraphBreakKind,
+            GraphMendHelper
+        },
+        passes.graphmend.defer_side_effect_pass {
+            GraphBreakKind,
+            GraphMendHelper,
+            Tokens as Tok
+        },
+        passes.graphmend.graph_break_detect_pass { GraphBreakKind },
+        passes.graphmend.predicate_ctrl_flow_pass {
+            GraphBreakKind,
+            SymbolType,
+            Tokens as Tok
+        },
         passes.layout_pass | types.ct_eval { OwnershipKind, Tokens as Tok },
         passes.osp_analysis { CodeContext, Tokens as Tok },
         passes.ownership_check_pass {
@@ -7236,6 +7293,7 @@ graph import compiler {
             | types.type_evaluator.TypeEvaluator.__post_init__ { active_host },
         backends.native.na_ir_gen_pass.NaIRGenPass._seam_warnings_on
             | driver.compilation_context.compilation_scope
+            | driver.compile_options.resolved_graphmend_claim_imports_setting
             | driver.ifacecache.IfaceRegistry.analysis_profile
             | driver.program.JacProgram.jac_file_formatter
             | driver.progstate.ModuleHub.is_fresh
@@ -7244,6 +7302,7 @@ graph import compiler {
             | tools.jac_auto_lint_pass.JacAutoLintPass.__post_init__
             | types.type_evaluator.TypeEvaluator._client_npm_base { active_host },
         driver.compilation_context.context_app
+            | driver.compile_options.resolved_graphmend_disable_setting
             | driver.program.JacProgram.jac_file_linter
             | driver.progstate.ModuleHub.stamp
             | passes.placement_pass.settle_native_module
@@ -7252,11 +7311,12 @@ graph import compiler {
             | types.type_evaluator.TypeEvaluator._declared_missing_dependency {
             active_host
         },
-        driver.pass_driver { CheckSettings, active_host },
-        driver.program.JacProgram.jac_str_formatter
+        driver.compile_options.resolved_graphmend_setting
+            | driver.program.JacProgram.jac_str_formatter
             | types.type_evaluator.TypeEvaluator._jac_virtual_sibling_dts {
             active_host
         },
+        driver.pass_driver { CheckSettings, active_host },
         driver.program.JacProgram.note_stub_tree_served
             | types.type_evaluator.TypeEvaluator._load_ts_declarations { active_host },
         driver.program.JacProgram.parse_source
@@ -7390,6 +7450,9 @@ graph import compiler {
             | types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
         passes.placement_pass.client_refused_elements { client_capability_violations },
     ]
+    frontend.parser ++> passes.graphmend.auto_detect._jac_binds_torch {
+        parse as rd_parse
+    }
     frontend.parser.frontend ++> [
         driver.compiler.JacCompiler._prepare_tool_program
             | driver.wiring.WiringSpec.wire_import { parse_woven },
@@ -7885,6 +7948,7 @@ graph import compiler {
             | types.stubcat.writer
             | types.type_evaluator { Kid },
         driver.wiring
+            | passes.graphmend.ast_edit
             | passes.ownership_check_pass
             | passes.region_infer_pass
             | tools.jac_formatter_pass { BodyRole, Kid },
@@ -7894,6 +7958,10 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
+        passes.graphmend.defer_side_effect_pass | passes.graphmend.trap_lowering_pass {
+            DecoratorsRole,
+            Kid
+        },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
@@ -8266,6 +8334,8 @@ graph import compiler {
             MatchStmt,
             Module,
             ModuleCode,
+            ModuleItem,
+            ModulePath,
             Name,
             ParamVar,
             ReturnStmt,
@@ -9397,7 +9467,16 @@ graph import compiler {
         | driver.unit_products
         | passes.freeze_structure_pass
         | passes.graph_lowering_pass
+        | passes.graphmend.ast_edit
+        | passes.graphmend.auto_detect._py_imports_torch
+        | passes.graphmend.defer_side_effect_pass
+        | passes.graphmend.graph_break_detect_pass
+        | passes.graphmend.predicate_ctrl_flow_pass
+        | passes.graphmend.scope_facts
+        | passes.graphmend.torch_attr_table
+        | passes.graphmend.trap_lowering_pass
         | passes.osp_analysis
+        | passes.sym_resolve
         | placement.placement
         | placement.placement_export
         | placement.placement_facts
@@ -9422,6 +9501,7 @@ graph import compiler {
             | driver.source_products
             | types.stubcat.resolver { Module },
         backends.native.wasm_build { Module as UniModule },
+        passes.graphmend.ast_edit { Ability, UniNode },
         tools.treeprinter { UniNode, UniScopeNode },
         types.ct_value { Ability },
         types.types { Expr, Symbol, UniScopeNode as SymbolTable },
@@ -9430,6 +9510,8 @@ graph import compiler {
     frontend.unparse ++> [
         backends.es.esast_gen_pass
             | boundary_rules.json_refusal
+            | passes.graphmend.defer_side_effect_pass
+            | passes.graphmend.predicate_ctrl_flow_pass
             | passes.layout_pass
             | passes.mtir_gen_pass
             | passes.variant_agreement_pass.annotation_text
@@ -9612,6 +9694,21 @@ graph import compiler {
         FreezeStructurePass
     }
     passes.graph_lowering_pass ++> driver.pipeline { GraphLoweringPass }
+    passes.graphmend.defer_side_effect_pass ++> driver.pipeline.graphmend_passes {
+        DeferSideEffectPass
+    }
+    passes.graphmend.graph_break_detect_pass ++> driver.pipeline.graphmend_passes {
+        GraphBreakDetectPass
+    }
+    passes.graphmend.predicate_ctrl_flow_pass ++> driver.pipeline.graphmend_passes {
+        PredicateCtrlFlowPass
+    }
+    passes.graphmend.scope_facts --> driver.compiler.JacCompiler.get_bytecode {
+        region_context_probe
+    }
+    passes.graphmend.trap_lowering_pass ++> driver.pipeline.graphmend_passes {
+        TrapLoweringPass
+    }
     passes.import_wiring_pass ++> [
         driver.pipeline { ImportWiringPass },
         tools.jac_auto_lint_pass { ScopeReads, is_effect_binding },
@@ -11647,6 +11744,7 @@ graph import compiler.driver {
             | pipeline_runner
             | program
             | session_compile { CompileOptions },
+        compiler.JacCompiler.get_bytecode { defer_declines_here },
         nativecache.NativeBuildSession.finish { pop_native_target, push_native_target },
         nativecache.NativeUnitRegistry._miss { env_na_debug },
         nativecache.NativeUnitRegistry._source_key {
@@ -11719,6 +11817,7 @@ graph import compiler.driver {
             SEC_BYTECODE,
             SEC_CLIENT,
             SEC_CTDEPS,
+            SEC_GM_NOOP,
             SEC_INTEROP,
             SEC_MTIR,
             SEC_NBITCODE,
@@ -11730,12 +11829,14 @@ graph import compiler.driver {
             ct_deps_section,
             get_module_cache_path,
             is_module_cache_valid,
+            is_module_cache_valid_gm_noop,
             patch_co_filenames_bytes,
             precompiled_jir_matches_source,
             read_bytecode_only,
             read_section_bytes,
             read_sections,
             seed_definition_texts,
+            swap_graphmend_cache_variant,
             write_module_cache
         },
         compiler.JacCompiler._get_precompiled_jir_bytecode {
@@ -11812,6 +11913,7 @@ graph import compiler.driver {
             precompiled_jir_matches_source
         },
         compiler.JacCompiler._restore_sections { JirPaths, SEC_PATH_ROOT },
+        compiler.JacCompiler.get_bytecode { read_source_shared },
         ifacecache.IfaceRegistry._deps_match { compute_stub_module_key },
         ifacecache.IfaceRegistry._persist_in_context { SEC_INTEROP },
         ifacecache.IfaceRegistry.client_boundary_facts { SEC_INTEROP, read_dep_rows },
@@ -13745,6 +13847,10 @@ graph import compiler.passes {
             | cfg_build_pass
             | endpoint_effect_pass
             | graph_lowering_pass
+            | graphmend.defer_side_effect_pass
+            | graphmend.graph_break_detect_pass
+            | graphmend.predicate_ctrl_flow_pass
+            | graphmend.trap_lowering_pass
             | jsx_intrinsic_guard_pass
             | semantic_analysis_pass
             | sym_tab_build_pass { TreePass },
@@ -13784,6 +13890,10 @@ graph import compiler.passes {
         },
     ]
     scope_walk ++> static_analysis_pass { ScopeWalker }
+    sym_resolve ++> [
+        graphmend.predicate_ctrl_flow_pass { symbol_ability },
+        graphmend.scope_facts { symbol_ability, symbol_archetype },
+    ]
     type_checker_pass ++> comptime_resolve_pass { TypeCheckPass }
     wasm_contract --> [
         boundary_analysis_pass.BoundaryAnalysisPass._register_na_client_import {
@@ -13791,6 +13901,113 @@ graph import compiler.passes {
             host_contract_dicts
         },
         boundary_analysis_pass.BoundaryAnalysisPass.enter_func_call { check_host_call },
+    ]
+}
+
+graph import compiler.passes.graphmend {
+    ast_edit ++> [
+        defer_side_effect_pass {
+            append_stmt,
+            facts_for,
+            gen_bool,
+            gen_name,
+            gen_string,
+            insert_after,
+            insert_before,
+            need_helper,
+            split_params
+        },
+        graph_break_detect_pass { facts_for },
+        predicate_ctrl_flow_pass {
+            facts_for,
+            gen_name,
+            replace_stmt,
+            split_params,
+            split_params_keyed,
+            torch_call
+        },
+        scope_facts { facts_for, split_params },
+        trap_lowering_pass {
+            facts_for,
+            gen_name,
+            gen_string,
+            insert_after,
+            need_helper,
+            replace_stmt,
+            split_params,
+            torch_call
+        },
+    ]
+    scope_facts ++> [
+        auto_detect._jac_binds_torch { module_binds_torch },
+        auto_detect._py_imports_torch { module_binds_torch },
+        defer_side_effect_pass { torch_binds_name },
+        graph_break_detect_pass {
+            body_is_only,
+            collect_wrap_entries,
+            compiled_region_ids,
+            import_item_of,
+            materialize_claim_chain,
+            module_has_wrap_site,
+            register_claim
+        },
+        predicate_ctrl_flow_pass {
+            attr_annotation,
+            attr_dict_kind,
+            find_class,
+            lexical_ability,
+            module_imports_plain,
+            module_reaches_autograd,
+            param_annotation,
+            param_names,
+            region_in_inference_ctx,
+            resolve_wrapped_entry,
+            self_attr_name,
+            torch_binds_name,
+            wrapping_classes
+        },
+        trap_lowering_pass {
+            claim_chain_reaches,
+            entry_key,
+            entry_module,
+            import_item_of,
+            param_annotation,
+            torch_binds_name
+        },
+    ]
+    torch_attr_table ++> [
+        defer_side_effect_pass { has_torch_compile_decorator, is_torch_attr_target },
+        graph_break_detect_pass {
+            cond_is_data_dependent,
+            defining_assignment,
+            is_side_effect_name,
+            symbol_is_builtin
+        },
+        predicate_ctrl_flow_pass {
+            cond_materializes_scalar,
+            defining_assignment,
+            is_torch_attr_target,
+            symbol_is_builtin
+        },
+        scope_facts {
+            AUTOGRAD_ITEM_NAMES,
+            AUTOGRAD_MODULE_PATHS,
+            AUTOGRAD_SIGNAL_ATTRS,
+            GRAD_OFF_CTX_ATTRS,
+            OPTIM_RECEIVER_PATTERNS,
+            decorator_base,
+            defining_assignment,
+            expr_uses_attr,
+            has_torch_compile_decorator,
+            is_torch_attr_target
+        },
+        trap_lowering_pass {
+            SCALAR_TORCH_ATTRS,
+            defining_assignment,
+            has_torch_compile_decorator,
+            is_torch_attr_target,
+            symbol_is_builtin
+        },
     ]
 }
 
