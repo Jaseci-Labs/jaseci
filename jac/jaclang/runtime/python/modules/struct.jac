@@ -346,18 +346,14 @@ def:pub jacpy_struct_pack(
         index = start;
         for field in plan.fields {
             for repetition in range(field.count) {
-                value = required(jacpy_tuple_item(args, index));
-                try {
-                    pack_field(
-                        plan,
-                        field,
-                        address + (field.offset + repetition * field.size),
-                        value,
-                        error
-                    );
-                } finally {
-                    jacpy_release(value);
-                }
+                # The argument tuple keeps its items alive, so they are borrowed.
+                pack_field(
+                    plan,
+                    field,
+                    address + (field.offset + repetition * field.size),
+                    tuple_get_item(args, index),
+                    error
+                );
                 index += 1;
             }
         }
@@ -417,7 +413,7 @@ def:pub jacpy_struct_unpack(plan: struct_plan, address: ptr) -> ptr[PyObject] {
                 value = unpack_field(
                     plan, field, address + (field.offset + repetition * field.size)
                 );
-                checked(jacpy_tuple_set_owned(result, index, value));
+                tuple_set_item(result, index, value);
                 index += 1;
             }
         }

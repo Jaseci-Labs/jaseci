@@ -20975,9 +20975,7 @@ graph import runtime.python {
             jacpy_native_little_endian,
             jacpy_native_size,
             jacpy_release,
-            jacpy_set_exception,
-            jacpy_tuple_item,
-            jacpy_tuple_set_owned
+            jacpy_set_exception
         },
         modules.suggestions {
             NULL,
@@ -25839,6 +25837,7 @@ graph import runtime.python {
             | modules.socket_object
             | modules.sqlite3 { object_type },
         modules.sre { object_size, object_type, tuple_get_item, tuple_set_item },
+        modules.struct { tuple_get_item, tuple_set_item },
     ]
     object_model.iterator ++> modules.sre { PyCallIter_New }
     object_model.method ++> bindings.functools { PyMethod_New }

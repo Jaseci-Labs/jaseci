@@ -261,6 +261,7 @@ walker NaIRGenPass(CompilerPass) {
         _isa_h_fn: (ir.Function | None) = None,
         _isa_vt_fn: (ir.Function | None) = None,
         _isa_mro_fn: (ir.Function | None) = None,
+        _isa_miss_sites: int = 0,
         _isa_vtobj_fn: (ir.Function | None) = None,
         _vtable_nodes: list[ir.GlobalVariable] = [],
         _cstr_hash_fn: (ir.Function | None) = None,
@@ -3494,6 +3495,9 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Value;
 
     def _isinstance_vtable_hit(vptr: ir.Value, names: list[str]) -> ir.Value;
+    def _isinstance_vtable_walk(
+        vptr: ir.Value, names: list[str], prefix: str
+    ) -> ir.Value;
     def _vtable_slot_certain(ty: (TypeBase | None)) -> bool;
     def _isinstance_vtable_fallback(
         hit: (ir.Value | None), vptr: ir.Value, names: list[str], prefix: str
