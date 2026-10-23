@@ -355,6 +355,22 @@ impl symbol_text(model: ProjectModel, nd: StNode) -> str {
             lines.extend(rules);
         }
     }
+    users = model.users_of(nd.key);
+    if users {
+        lines.append(
+            f"used by ({len(users)}): "
+                + ", ".join([u.key for u in users[:12]])
+                + (" ..." if len(users) > 12 else "")
+        );
+    }
+    uses = model.uses_of(nd.key);
+    if uses {
+        lines.append(
+            f"uses ({len(uses)}): "
+                + ", ".join([u.key for u in uses[:12]])
+                + (" ..." if len(uses) > 12 else "")
+        );
+    }
     budget = MAX_BLOCK_LINES;
     decl = source_section(
         model, "declaration", nd.file, nd.line, nd.end_line, min(budget, MAX_DECL_LINES)

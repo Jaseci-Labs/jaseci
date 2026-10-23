@@ -79,6 +79,8 @@ def choose_permission(
 
 def format_module(model: ProjectModel, key: str) -> str;
 
+def format_symbol(model: ProjectModel, key: str) -> str;
+
 impl out(text: str) {
     sys.stdout.write(text + "\n");
     sys.stdout.flush();
@@ -178,6 +180,13 @@ impl cmd_model(root_dir: str, args: list[str], as_json: bool) -> int {
         sys.stderr.write("\r" + " " * 40 + "\r");
     }
     target = args[0] if args else "";
+    if target
+        and target not in model.modules
+        and target in model.symbols
+        and not as_json {
+        out(format_symbol(model, target));
+        return 0;
+    }
     if target and target not in model.modules {
         hits = model.search(target, limit=1, kinds=["module"]);
         if hits {
@@ -904,4 +913,43 @@ impl AskView.flush_tools -> None {
             self.show_tool(tid, False);
         }
     }
+}
+
+impl format_symbol(model: ProjectModel, key: str) -> str {
+    nd = model.symbols[key];
+    lines = [f"{nd.kind} {nd.key}"];
+    if nd.file {
+        lines.append(f"  {os.path.relpath(nd.file, model.root_dir)}:{nd.line}");
+    }
+    sig = getattr(nd, "signature", "") or getattr(nd, "type_str", "");
+    if sig {
+        lines.append(f"  {sig}");
+    }
+    hood = model.neighbourhood(key);
+    if hood is None {
+        return "\n".join(lines);
+    }
+    for (title, items) in [
+        ("members", hood.members),
+        ("implemented in", hood.impls),
+        ("used by", hood.users),
+        ("uses", hood.uses),
+        ("walkers that visit it", hood.walkers),
+        ("visits", hood.targets)
+    ] {
+        if items {
+            lines.append(f"  {title} ({len(items)}):");
+            for it in items[:30] {
+                where = f"  {os.path.relpath(it.file, model.root_dir)}{(
+                    ":" + str(it.line)
+                )
+                    if it.line
+                    else ""}"
+                    if it.file
+                    else "";
+                lines.append(f"    {it.kind} {it.key}{where}");
+            }
+        }
+    }
+    return "\n".join(lines);
 }

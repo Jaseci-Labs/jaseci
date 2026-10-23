@@ -1,4 +1,5 @@
 import os;
+import re;
 import time;
 import threading;
 
@@ -116,7 +117,8 @@ obj ProjectModel {
         prog: JacProgram postinit,
         lock: any postinit,
         build_secs: float = 0.0,
-        index_secs: float = 0.0;
+        index_secs: float = 0.0,
+        uses_done: set[str] = set();
 
     def postinit;
     def build(on_progress: any = None, index: bool = True);
@@ -152,6 +154,11 @@ obj ProjectModel {
     def traversals(key: str) -> list[StNode];
     def walkers_of(key: str) -> list[StNode];
     def rules_for(key: str) -> list[StRule];
+    def link_uses(key: str) -> None;
+    def neighbourhood(key: str) -> (Neighbourhood | None);
+    def users_of(key: str) -> list[StNode];
+    def _link_for(nd: StNode) -> None;
+    def uses_of(key: str) -> list[StNode];
     def search(
         query: str, limit: int = 50, kinds: (list[str] | None) = None
     ) -> list[StNode];
@@ -715,6 +722,7 @@ impl ProjectModel.refresh(path: str) -> list[str] {
     self.index_module(key);
     with self.lock {
         self._link_walkers();
+        self.uses_done = set();
     }
     return [key];
 }
@@ -1040,4 +1048,201 @@ impl ProjectModel._is_nested_project(arch: str) -> bool {
         cur = os.path.dirname(cur);
     }
     return False;
+}
+
+walker Neighbourhood {
+    has providers: list[StNode] = [],
+        consumers: list[StNode] = [],
+        members: list[StNode] = [],
+        rules: list[StNode] = [],
+        impls: list[StNode] = [],
+        walkers: list[StNode] = [],
+        targets: list[StNode] = [],
+        users: list[StNode] = [],
+        uses: list[StNode] = [];
+
+    can gather with StNode entry;
+}
+
+walker UsesOf {
+    has users: list[StNode] = [],
+        uses: list[StNode] = [];
+
+    can gather with StNode entry;
+}
+
+impl ProjectModel.link_uses(key: str) -> None {
+    with self.lock {
+        mod = self.modules.get(key);
+        if mod is None or key in self.uses_done {
+            return;
+        }
+        self.uses_done.add(key);
+        visible: dict[str, StNode] = {};
+        for w in self.providers(key) {
+            prov = self.modules.get(w.provider);
+            if prov is None {
+                continue;
+            }
+            names = list(w.names);
+            if not names {
+                names = [
+                    k.name
+                    for k in [prov->:Contains:->]
+                    if not isinstance(k, StImpl)
+                ];
+            }
+            for n in names {
+                parts = n.split(" as ");
+                orig = parts[0].strip();
+                local = parts[-1].strip();
+                sym = self.symbols.get(f"{w.provider}.{orig}");
+                if sym is not None {
+                    visible[local] = sym;
+                }
+            }
+        }
+        spans: list[tuple[str, int, int, StNode]] = [];
+        for (k, sym) in self.symbols.items() {
+            if not k.startswith(key + ".") and not k.startswith(key + "::") {
+                continue;
+            }
+            if isinstance(sym, StImpl) {
+                tgt = self.symbols.get(f"{key}.{sym.target}");
+                if tgt is not None {
+                    spans.append((sym.file, sym.line, sym.end_line, tgt));
+                }
+                continue;
+            }
+            if k.count(".") == key.count(".") + 1 {
+                visible.setdefault(sym.name, sym);
+            }
+            spans.append((sym.file, sym.line, sym.end_line, sym));
+        }
+        if not visible {
+            return;
+        }
+        pat = re.compile(
+            r"\b("
+                + "|".join(
+                    [re.escape(n) for n in sorted(visible, key=len, reverse=True)]
+                )
+                + r")\b"
+        );
+        seen: set[tuple[str, str]] = set();
+        for f in mod.files {
+            try {
+                with open(f, encoding="utf-8", errors="replace") as fh {
+                    lines = fh.read().split("\n");
+                }
+            } except OSError {
+                continue;
+            }
+            for (i, text) in enumerate(lines) {
+                ln = i + 1;
+                if "import" in text
+                    or not text.strip()
+                    or text.lstrip().startswith("#") {
+                    continue;
+                }
+                hits = pat.findall(text);
+                if not hits {
+                    continue;
+                }
+                inner: (StNode | None) = None;
+                best = 1 << 30;
+                for (sf, a, b, sym) in spans {
+                    if sf == f and a <= ln <= b and b - a < best {
+                        inner = sym;
+                        best = b - a;
+                    }
+                }
+                user: StNode = inner if inner is not None else mod;
+                for name in hits {
+                    target = visible[name];
+                    if target is user or (target.file == f and target.line == ln) {
+                        continue;
+                    }
+                    if user.key.startswith(target.key + ".") {
+                        continue;
+                    }
+                    pair = (user.key, target.key);
+                    if pair in seen {
+                        continue;
+                    }
+                    seen.add(pair);
+                    if not [edge user->:Uses:->target] {
+                        user +>:Uses():+> target;
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl ProjectModel.neighbourhood(key: str) -> (Neighbourhood | None) {
+    nd = self.node_for(key);
+    if nd is None {
+        return None;
+    }
+    self._link_for(nd);
+    return Neighbourhood() spawn nd;
+}
+
+impl ProjectModel.users_of(key: str) -> list[StNode] {
+    nd = self.node_for(key);
+    if nd is None {
+        return [];
+    }
+    self._link_for(nd);
+    return (UsesOf() spawn nd).users;
+}
+
+impl ProjectModel.uses_of(key: str) -> list[StNode] {
+    nd = self.node_for(key);
+    if nd is None {
+        return [];
+    }
+    self._link_for(nd);
+    return (UsesOf() spawn nd).uses;
+}
+
+impl ProjectModel._link_for(nd: StNode) -> None {
+    mod_key = self.by_file.get(os.path.realpath(nd.file), "") if nd.file else "";
+    if isinstance(nd, StModule) {
+        mod_key = nd.key;
+    }
+    if not mod_key {
+        return;
+    }
+    self.link_uses(mod_key);
+    for w in self.consumers(mod_key) {
+        self.link_uses(w.consumer);
+    }
+}
+
+impl Neighbourhood.gather with StNode entry {
+    self.members = [
+        k
+        for k in [here->:Contains:->]
+        if not isinstance(k, StImpl)
+    ];
+    if isinstance(here, StModule) {
+        self.providers = [here<-:Wire:<-];
+        self.consumers = [here->:Wire:->];
+        self.rules = [here<-:Governs:<-];
+    } else {
+        self.impls = [here<-:Implements:<-];
+        self.walkers = [here<-:Traverses:<-];
+        self.targets = [here->:Traverses:->];
+        self.users = [here<-:Uses:<-];
+        self.uses = [here->:Uses:->];
+    }
+    disengage;
+}
+
+impl UsesOf.gather with StNode entry {
+    self.users = [here<-:Uses:<-];
+    self.uses = [here->:Uses:->];
+    disengage;
 }

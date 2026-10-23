@@ -897,6 +897,17 @@ impl StudioQueries.symbol(key: str) -> dict[str, any] {
     if nd.file and nd.line {
         d["source"] = self.source(nd.file, nd.line, max(nd.end_line, nd.line));
     }
+    hood = self.model.neighbourhood(nd.key);
+    if hood is not None {
+        d["used_by"] = [u.key for u in hood.users][:40];
+        d["uses"] = [u.key for u in hood.uses][:40];
+        if hood.walkers {
+            d["walkers_over"] = [u.key for u in hood.walkers];
+        }
+        if hood.targets {
+            d["traverses"] = [u.key for u in hood.targets];
+        }
+    }
     if isinstance(nd, StImpl) {
         d["target"] = nd.target;
         return d;
