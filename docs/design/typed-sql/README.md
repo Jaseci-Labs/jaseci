@@ -220,5 +220,3 @@ standard-library assertion helpers.
 
 The test account is `sql_test`, database `postgres`. Set up a dedicated cluster
 with trust auth for local tests. SQL construction itself opens no connections.
-Recorded commands, versions, test counts and source hashes accompany the validated
-checkpoint under `validation/`.
