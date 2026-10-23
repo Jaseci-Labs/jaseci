@@ -32822,6 +32822,13 @@ graph import studio {
         session | tui { AgentEvent },
     ]
     agents ++> app | tui { AgentRegistry }
+    bridge ++> studio_mcp {
+        BridgeClient,
+        BridgeError,
+        BridgeUnavailable,
+        SOCKET_ENV,
+        find_studio_socket
+    }
     context ++> [
         app { context_blocks, resolve_key },
         native_agent {
@@ -32851,6 +32858,15 @@ graph import studio {
     ]
     model ++> [
         app { ProjectModel, find_project_root },
+        bridge {
+            ProjectModel,
+            SYM_SCHEME,
+            StAbility,
+            StArchetype,
+            StImpl,
+            StModule,
+            StNode
+        },
         context {
             ProjectModel,
             StAbility,
@@ -32869,6 +32885,7 @@ graph import studio {
         app { StudioSession, list_sessions, load_session, new_session, sessions_dir },
         tui { load_session, new_session },
     ]
+    studio_mcp ++> app { serve_studio_mcp }
     theme ++> tui {
         CODE_STYLES,
         C_SEL,
