@@ -13089,6 +13089,7 @@ graph import compiler.frontend.python {
             alias,
             arg,
             arguments,
+            ast_kind,
             ast_node,
             boolop,
             cmpop,
