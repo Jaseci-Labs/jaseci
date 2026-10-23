@@ -226,6 +226,7 @@ graph import {
             | client.targets.react_native.build
             | client.targets.react_native.dev
             | client.targets.react_native.scaffold
+            | client.targets.seo_build
             | client.targets.static_target
             | client.targets.web_target.WebTarget.dev
             | client.vite_bundler
@@ -1879,8 +1880,10 @@ graph import {
             | client.targets.desktop.desktop_target.DesktopTarget.out_dir_for
             | dist.seal.ensure_client_dist
             | server.server.JacAPIServer._ensure_client_bundle { client_app_dir_for },
+        client.config_loader.JacClientConfig.get_app_root { client_app_root },
         client.config_loader.JacClientConfig.get_assets_config { client_assets_config },
         client.config_loader.JacClientConfig.get_assets_dir { client_assets_dir },
+        client.config_loader.JacClientConfig.get_seo_config { client_seo_config },
         client.targets.react_native.scaffold._project_native_deps {
             client_workspace_app
         },
@@ -1888,7 +1891,8 @@ graph import {
             client_app_dir_for,
             client_app_root,
             client_assets_config,
-            client_assets_dir
+            client_assets_dir,
+            client_seo_config
         },
     ]
     project.client_paths --> [
@@ -4179,6 +4183,12 @@ graph import {
     ]
     server.shared_store as pg_mod ++> scale.tests.misc.test_shared_store_failure;
     server.shared_store as store_mod ++> scale.tests.misc.test_state_backend_selection;
+    server.static_files ++> scale.runtime.gateway.embedded_gateway.EmbeddedGateway.dispatch
+        | scale.runtime.gateway.microservice_gateway.MicroserviceGateway.handle_static {
+        ROBOTS_PATH,
+        robots_override,
+        site_url_for
+    }
     server.sv_client ++> [
         client.targets.client_dev_common { headless_start_args },
         scale.runtime.orchestrator.process_manager.ServiceProcessManager.start_service {
@@ -5029,6 +5039,7 @@ graph import client {
         jac_client_compiler.JacClientCompiler._warn_unrouted_pages {
             describe_unrouted_pages
         },
+        targets.seo_build { RouteEntry, RouteScanner, resolve_route_exports },
     ]
     runtime_source ++> [
         compiler.ViteCompiler.compile_runtime_utils { resolve_client_runtime_cl_path },
@@ -5177,6 +5188,7 @@ graph import client.targets {
         mobile_target | web_target { ClientTarget },
         register { get_target_registry },
     ]
+    seo_build --> web_target.WebTarget.build { apply_seo, scan_routes }
     static_target ++> register { StaticTarget }
     web_target ++> desktop.desktop_target | register | static_target { WebTarget }
     web_target --> mobile_target.MobileTarget.build { WebTarget }
@@ -32616,11 +32628,15 @@ graph import server {
     shared_store --> identity.auth_tokens.AuthTokenStore.__post_init__ { shared_store }
     static_files ++> [
         endpoints.pages {
+            ROBOTS_PATH,
+            SITEMAP_PATH,
             client_dist_index,
             find_root_asset,
             find_static_candidate,
+            robots_override,
             sibling_app_dist,
-            sibling_app_file
+            sibling_app_file,
+            site_url_for
         },
         server.print_endpoint_docs { sibling_app_names },
     ]
