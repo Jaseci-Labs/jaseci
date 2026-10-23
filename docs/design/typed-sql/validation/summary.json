@@ -6,11 +6,11 @@
   "python_host": "CPython 3.14.6 (existing local standalone installation)",
   "jac_version": "0.38.1, source checkout at base commit plus SQL module",
   "postgresql_version": "18.6",
-  "unit_and_execution_tests": 60,
-  "sqlite_cases": 29,
-  "postgresql_cases": 29,
-  "static_test_methods": 2,
-  "expected_rejected_calls": 11,
+  "unit_and_execution_tests": 79,
+  "sqlite_cases": 38,
+  "postgresql_cases": 38,
+  "static_test_methods": 3,
+  "expected_rejected_calls": 14,
   "positive_checked_files": [
     "jac/jaclang/sql.jac",
     "jac/examples/sql/typed_sql.jac"
@@ -21,31 +21,39 @@
   "files": [
     {
       "path": "jac/jaclang/sql.jac",
-      "sha256": "b56b0a3dc0ed2e8219581a0dccbf8d1d14707c6475047364030c6b3331f86390"
+      "sha256": "f6cce52182712918923064c97cb35930ebbad807ffa221fe794365cf55609a11"
     },
     {
       "path": "jac/examples/sql/typed_sql.jac",
-      "sha256": "fa4695d14b8d342a09e0229b581f3afb2ee523a99ad3a82c925a0f283352a3d5"
+      "sha256": "e825d2294522a89cfd6defde4b476a9d1cb0e96755f693476e664c450660c551"
     },
     {
       "path": "jac/tests/sql/sql_cases.jac",
-      "sha256": "acd0c06afb450e5e982aeff4d5ad651f04aae6cd6fde2d94e5d2dabea7a28858"
+      "sha256": "1bf289b3a2259339af8c2a9e82f15383ba4988f2482e20a8933f89801a5019b7"
     },
     {
       "path": "jac/tests/sql/test_postgres.jac",
-      "sha256": "693ce4c8e98beade11deec4f5a2e1655051f9859286685df3853b09ef7c162d0"
+      "sha256": "4b1da21661c47cd0251dd221a5d714aac284a728a79eefd46f5fca5c6b474439"
     },
     {
       "path": "jac/tests/sql/test_sql.jac",
-      "sha256": "f2c7ec705aedba7d2114f23596b70b13820c3ce76a040f4bcf2437bf2c074f80"
+      "sha256": "1b6575787a2de9efbd1678f0514f4e06551fb874aa8521841eeea732e09fef45"
     },
     {
       "path": "jac/tests/sql/test_types.jac",
-      "sha256": "22f5f92a4578b05fbc1e7ab6ba408b908edaff17f2b5406b29a3fa8b8b6afdd0"
+      "sha256": "a33977017e305fb80f6359b6175ed12e7ee512eeca4a42ee1fd61bad2370d519"
     },
     {
       "path": "jac/tests/sql/fixtures/invalid_calls.jac",
-      "sha256": "5a6ddb6b14415ea1b59ab13aa9c2ad4d614ee5033050f44ae19b9eddb3d8e645"
+      "sha256": "fa0ef38fca60fb171f9f575e66d36ceb6929e4735d0e244d6a4ab42c95e9752d"
+    },
+    {
+      "path": "jac/examples/sql/cte_name_collision.jac",
+      "sha256": "38030ff95ec93cb2d14863c9d20f21c8270d49be77f0ec12f9b7f628a7c6315a"
+    },
+    {
+      "path": "jac/tests/sql/fixtures/invalid_cte_calls.jac",
+      "sha256": "89a804e481cf6faacdda1a3d40c9f046df4081f4e2303dd86713b0a979067eb3"
     }
   ],
   "test_runner": "jac test (native Jac test blocks)",
@@ -71,5 +79,16 @@
       "ORDER BY + LIMIT"
     ],
     "rendering": "SELECT * FROM (anchor) AS \"_recursive_anchor\" UNION ALL step"
+  },
+  "cte_identity_regression": {
+    "result": "PASS on PostgreSQL and SQLite",
+    "checks": [
+      "physical table identity preserved",
+      "generated names avoid physical prefixes",
+      "dependency sorting and shared definitions",
+      "independent bindings for self-joins",
+      "undefined and cyclic reference rejection",
+      "deterministic compilation without AST alias mutation"
+    ]
   }
 }

@@ -72,6 +72,22 @@ obj Source {
     has schema: Schema,
         alias: str;
 
+    def ref -> Source {
+        if isinstance(self, Table) {
+            return Table(schema=self.schema, alias='', name=list(self.name));
+        }
+        if isinstance(self, Derived) {
+            return Derived(schema=self.schema, alias='', query=self.query);
+        }
+        if isinstance(self, Cte) {
+            return CteUse(schema=self.schema, alias='', target=self);
+        }
+        if isinstance(self, CteUse) {
+            return CteUse(schema=self.schema, alias='', target=self.target);
+        }
+        raise SqlError('Unknown source binding');
+    }
+
     def col[T](key: Field[T]) -> ScalarExpr[T] {
         actual = self.schema.find(key.name);
         if not same_type(actual.dtype, key.dtype) {
@@ -92,7 +108,12 @@ obj Derived(Source) {
 }
 
 obj Cte(Source) {
-    has name: str;
+    has definition: RelationNode | None,
+        recursive: bool = False;
+}
+
+obj CteUse(Source) {
+    has target: Cte;
 }
 
 obj ExprNode {
@@ -189,22 +210,11 @@ obj UnionNode(RelationNode) {
         keep_duplicates: bool;
 }
 
-obj CteBinding {
-    has reference: Cte,
-        query: RelationNode;
-}
-
-obj WithNode(RelationNode) {
-    has bindings: list[CteBinding],
-        body: RelationNode,
-        recursive: bool;
-}
-
 obj Relation[R, C] {
     has ast: RelationNode;
 
-    def as_source(alias: str) -> Source {
-        return Derived(schema=self.ast.schema, alias=alias, query=self.ast);
+    def as_source -> Source {
+        return Derived(schema=self.ast.schema, alias='', query=self.ast);
     }
 }
 
@@ -254,7 +264,7 @@ def field[T](name: str, dtype: SqlType[T]) -> Field[T] {
 }
 
 def table(
-    name: str, fields: list[FieldDef], alias: str, namespace: str | None = None
+    name: str, fields: list[FieldDef], alias: str = '', namespace: str | None = None
 ) -> Source {
     parts = [name] if namespace is None else [namespace, name];
     return Table(schema=Schema(fields), alias=alias, name=parts);
@@ -440,7 +450,7 @@ def inner_join(
     return Join(source=source, condition=on.ast);
 }
 
-def select_(
+def select(
     projections: list[ProjectionDef],
     source: Source | None = None,
     joins: list[Join] = [],
@@ -501,7 +511,7 @@ def aggregate(
     source: Source | None = None,
     where: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]] | None = None
 ) -> Relation[Schema, ExactlyOne] {
-    q = select_(projections, source=source, where=where);
+    q = select(projections, source=source, where=where);
     q.ast.cardinality = 'exactly_one_aggregate';
     return Relation(q.ast);
 }
@@ -561,32 +571,26 @@ def union_all[R, C, D](
     );
 }
 
-def cte(name: str, fields: list[FieldDef], alias: str) -> Cte {
-    return Cte(schema=Schema(fields), alias=alias, name=name);
+def cte[R, C](query: Relation[R, C]) -> Cte {
+    return Cte(schema=query.ast.schema, alias='', definition=query.ast);
 }
 
-def bind_cte[R, C](reference: Cte, query: Relation[R, C]) -> CteBinding {
-    a = reference.schema.fields;
-    b = query.ast.schema.fields;
-    if len(a) != len(b)
-        or not all([same_type(x.dtype, y.dtype) for (x, y) in zip(a, b)]) {
+def cte_ref(fields: list[FieldDef]) -> Cte {
+    return Cte(schema=Schema(fields), alias='', definition=None);
+}
+
+def define_cte[R, C](
+    reference: Cte, query: Relation[R, C], recursive: bool = False
+) -> Cte {
+    if reference.definition is not None {
+        raise SqlError('CTE reference is already defined');
+    }
+    if not _schema_equal(reference.schema, query.ast.schema, False) {
         raise SqlError('CTE output schema differs from declared schema');
     }
-    return CteBinding(reference=reference, query=query.ast);
-}
-
-def with_ctes[R, C](
-    bindings: list[CteBinding], body: Relation[R, C], recursive: bool = False
-) -> Relation[R, C] {
-    return Relation(
-        WithNode(
-            schema=body.ast.schema,
-            cardinality=body.ast.cardinality,
-            bindings=list(bindings),
-            body=body.ast,
-            recursive=recursive
-        )
-    );
+    reference.definition = query.ast;
+    reference.recursive = recursive;
+    return reference;
 }
 
 
@@ -627,10 +631,200 @@ def _schema_equal(a: Schema, b: Schema, names: bool = True) -> bool {
     );
 }
 
+obj QueryGraph {
+    has follow_definitions: bool = True,
+        ctes: list[Cte] = [],
+        physical_names: set[str] = set(),
+        explicit_aliases: set[str] = set(),
+        seen_sources: set[int] = set(),
+        seen_queries: set[int] = set(),
+        active_queries: set[int] = set(),
+        seen_expressions: set[int] = set();
+
+    def visit_source(src: Source) -> None {
+        identity = id(src);
+        if identity in self.seen_sources {
+            return;
+        }
+        self.seen_sources.add(identity);
+        if isinstance(src, Table) {
+            if src.name {
+                self.physical_names.add(src.name[-1]);
+            }
+            if src.alias {
+                self.explicit_aliases.add(src.alias);
+            }
+        } elif isinstance(src, Derived) {
+            self.visit_query(src.query);
+        } elif isinstance(src, CteUse) {
+            self.visit_source(src.target);
+        } elif isinstance(src, Cte) {
+            self.ctes.append(src);
+            if self.follow_definitions {
+                if src.definition is None {
+                    raise SqlError('CTE reference has no definition');
+                }
+                self.visit_query(src.definition);
+            }
+        } else {
+            raise SqlError('Unknown SQL source ast');
+        }
+    }
+
+    def visit_expr(expr: ExprNode) -> None {
+        if not isinstance(expr, ExprNode) {
+            raise SqlError('Expected a scalar SQL expression');
+        }
+        if id(expr) in self.seen_expressions {
+            return;
+        }
+        self.seen_expressions.add(id(expr));
+        if isinstance(expr, ColumnNode) {
+            self.visit_source(expr.source);
+        } elif isinstance(expr, (ScalarNode, ExistsNode)) {
+            self.visit_query(expr.query);
+        } elif isinstance(expr, BinaryNode) {
+            self.visit_expr(expr.left);
+            self.visit_expr(expr.right);
+        } elif isinstance(expr, BoolNode) {
+            for term in expr.terms {
+                self.visit_expr(term);
+            }
+        } elif isinstance(expr, (UnaryNode, CastNode)) {
+            self.visit_expr(expr.term);
+        } elif isinstance(expr, AggregateNode) {
+            if expr.term is not None {
+                self.visit_expr(expr.term);
+            }
+        } elif isinstance(expr, CoalesceNode) {
+            self.visit_expr(expr.term);
+            self.visit_expr(expr.fallback);
+        } elif not isinstance(expr, ParamNode) {
+            raise SqlError('Unknown scalar SQL ast');
+        }
+    }
+
+    def visit_query(query: RelationNode) -> None {
+        if not isinstance(query, RelationNode) {
+            raise SqlError('Expected a relation ast');
+        }
+        identity = id(query);
+        if identity in self.active_queries {
+            raise SqlError('Cyclic AST: use a recursive CTE reference');
+        }
+        if identity in self.seen_queries {
+            return;
+        }
+        self.active_queries.add(identity);
+        try {
+            if isinstance(query, SelectNode) {
+                if query.source is not None {
+                    self.visit_source(query.source);
+                }
+                for join in query.joins {
+                    self.visit_source(join.source);
+                    self.visit_expr(join.condition);
+                }
+                for projection in query.projections {
+                    self.visit_expr(projection.expr);
+                }
+                for expr in query.groups {
+                    self.visit_expr(expr);
+                }
+                if query.predicate is not None {
+                    self.visit_expr(query.predicate);
+                }
+                if query.having is not None {
+                    self.visit_expr(query.having);
+                }
+                for ordering in query.ordering {
+                    self.visit_expr(ordering.expr);
+                }
+            } elif isinstance(query, UnionNode) {
+                self.visit_query(query.left);
+                self.visit_query(query.right);
+            } else {
+                raise SqlError('Unknown relational ast');
+            }
+        } finally {
+            self.active_queries.remove(identity);
+        }
+        self.seen_queries.add(identity);
+    }
+}
+
+
 obj PostgresRenderer {
     has params: dict[str, bool | int | float | str | UUID | None] = {},
         parameter_ids: dict[int, str] = {},
-        active_queries: set[int] = set();
+        active_queries: set[int] = set(),
+        aliases: dict[int, str] = {},
+        cte_names: dict[int, str] = {},
+        used_names: set[str] = set(),
+        ordered_ctes: list[Cte] = [],
+        cte_states: dict[int, int] = {},
+        alias_counter: int = 0,
+        cte_counter: int = 0;
+
+    def fresh_name(prefix: str) -> str {
+        while True {
+            index = self.cte_counter if prefix == '_cte' else self.alias_counter;
+            if prefix == '_cte' {
+                self.cte_counter += 1;
+            } else {
+                self.alias_counter += 1;
+            }
+            name = prefix + str(index);
+            if name not in self.used_names {
+                self.used_names.add(name);
+                return name;
+            }
+        }
+    }
+
+    def alias_for(src: Source) -> str {
+        if isinstance(src, Table) and src.alias {
+            return src.alias;
+        }
+        if src.alias {
+            raise SqlError('Temporary source aliases are renderer-managed');
+        }
+        identity = id(src);
+        if identity not in self.aliases {
+            self.aliases[identity] = self.fresh_name('_t');
+        }
+        return self.aliases[identity];
+    }
+
+    def order_cte(reference: Cte) -> None {
+        identity = id(reference);
+        state = self.cte_states.get(identity, 0);
+        if state == 2 {
+            return;
+        }
+        if state == 1 {
+            raise SqlError('Mutually dependent CTE definitions are unsupported');
+        }
+        if reference.definition is None {
+            raise SqlError('CTE reference has no definition');
+        }
+        self.cte_states[identity] = 1;
+        scan = QueryGraph(follow_definitions=False);
+        scan.visit_query(reference.definition);
+        for dependency in scan.ctes {
+            if dependency is reference {
+                if not reference.recursive {
+                    raise SqlError(
+                        'Self-reference requires a recursive CTE definition'
+                    );
+                }
+            } else {
+                self.order_cte(dependency);
+            }
+        }
+        self.cte_states[identity] = 2;
+        self.ordered_ctes.append(reference);
+    }
 
     def compile[R, C](query: Relation[R, C]) -> CompiledSQL {
         if not isinstance(query, Relation) {
@@ -639,16 +833,84 @@ obj PostgresRenderer {
         self.params = {};
         self.parameter_ids = {};
         self.active_queries = set();
-        rendered = self.query(query.ast, [], []);
+        self.aliases = {};
+        self.cte_names = {};
+        self.used_names = set();
+        self.ordered_ctes = [];
+        self.cte_states = {};
+        self.alias_counter = 0;
+        self.cte_counter = 0;
+        scan = QueryGraph();
+        scan.visit_query(query.ast);
+        self.used_names = scan.physical_names | scan.explicit_aliases;
+        for reference in scan.ctes {
+            self.order_cte(reference);
+        }
+        for reference in self.ordered_ctes {
+            self.cte_names[id(reference)] = self.fresh_name('_cte');
+        }
+        available: list[Cte] = [];
+        definitions: list[str] = [];
+        for reference in self.ordered_ctes {
+            definition = reference.definition;
+            if definition is None {
+                raise SqlError('CTE reference has no definition');
+            }
+            if not _schema_equal(reference.schema, definition.schema, False) {
+                raise SqlError('CTE output schema mismatch');
+            }
+            if reference.recursive {
+                if not isinstance(definition, UnionNode)
+                    or not definition.keep_duplicates {
+                    raise SqlError('Recursive binding requires UNION ALL');
+                }
+                if not isinstance(definition.left, SelectNode)
+                    or not isinstance(definition.right, SelectNode) {
+                    raise SqlError(
+                        'Recursive CTE requires a SELECT anchor and SELECT step'
+                    );
+                }
+                validate_recursive_step(reference, definition.right);
+                anchor = self.query(definition.left, [], available);
+                step = self.query(definition.right, [], available + [reference]);
+                body_sql = 'SELECT * FROM ('
+                    + anchor.sql
+                    + ') AS "_recursive_anchor" UNION ALL '
+                    + step.sql;
+            } else {
+                body_sql = self.query(definition, [], available).sql;
+            }
+            columns = ', '.join(
+                [quote_identifier(f.name) for f in reference.schema.fields]
+            );
+            definitions.append(
+                quote_identifier(self.cte_names[id(reference)])
+                    + ' ('
+                    + columns
+                    + ') AS ('
+                    + body_sql
+                    + ')'
+            );
+            available.append(reference);
+        }
+        rendered = self.query(query.ast, [], available);
         if rendered.external {
             raise SqlError('Top-level query has unbound correlations');
         }
-        return CompiledSQL(sql=rendered.sql, params=dict(self.params));
+        prefix = '';
+        if definitions {
+            recursive = `any([c.recursive for c in self.ordered_ctes]);
+            prefix = 'WITH '
+                + ('RECURSIVE ' if recursive else '')
+                + ', '.join(definitions)
+                + ' ';
+        }
+        return CompiledSQL(sql=prefix + rendered.sql, params=dict(self.params));
     }
 
     def source(src: Source, ctes: list[Cte]) -> str {
         Schema(list(src.schema.fields));
-        alias = quote_identifier(src.alias);
+        alias = quote_identifier(self.alias_for(src));
         if isinstance(src, Table) {
             if not src.name {
                 raise SqlError('Table needs a name');
@@ -665,11 +927,12 @@ obj PostgresRenderer {
             }
             return '(' + q.sql + ') AS ' + alias;
         }
-        if isinstance(src, Cte) {
-            if not `any([x is src for x in ctes]) {
-                raise SqlError(f'CTE is outside scope: {src.name}');
+        if isinstance(src, (Cte, CteUse)) {
+            reference = src.target if isinstance(src, CteUse) else src;
+            if not `any([x is reference for x in ctes]) {
+                raise SqlError('CTE reference is outside scope');
             }
-            return quote_identifier(src.name) + ' AS ' + alias;
+            return quote_identifier(self.cte_names[id(reference)]) + ' AS ' + alias;
         }
         raise SqlError('Unknown SQL source ast');
     }
@@ -690,7 +953,7 @@ obj PostgresRenderer {
                 raise SqlError('Column type differs from source schema');
             }
             return Checked(
-                sql=quote_identifier(ast.source.alias)
+                sql=quote_identifier(self.alias_for(ast.source))
                     + '.'
                     + quote_identifier(ast.name),
                 free={_key(ast.source, ast.name)}
@@ -898,67 +1161,6 @@ obj PostgresRenderer {
                 external=a.external | b.external
             );
         }
-        if isinstance(ast, WithNode) {
-            if not _schema_equal(ast.schema, ast.body.schema)
-                or ast.cardinality != ast.body.cardinality {
-                raise SqlError('WITH output mismatch');
-            }
-            names = {c.name for c in ctes};
-            available = list(ctes);
-            parts: list[str] = [];
-            for binding in ast.bindings {
-                ref = binding.reference;
-                if ref.name in names {
-                    raise SqlError('Duplicate CTE name');
-                }
-                if not _schema_equal(ref.schema, binding.query.schema, False) {
-                    raise SqlError('CTE schema mismatch');
-                }
-                names.add(ref.name);
-                # Explicit recursive references are accepted only in the recursive UNION ALL arm.
-                if ast.recursive {
-                    if not isinstance(binding.query, UnionNode)
-                        or not binding.query.keep_duplicates {
-                        raise SqlError('Recursive binding requires UNION ALL');
-                    }
-                    body = binding.query;
-                    if not isinstance(body.left, SelectNode)
-                        or not isinstance(body.right, SelectNode) {
-                        raise SqlError(
-                            'Recursive CTE requires a SELECT anchor and SELECT step'
-                        );
-                    }
-                    validate_recursive_step(ref, body.right);
-                    a = self.query(body.left, [], available);
-                    b = self.query(body.right, [], available + [ref]);
-                    sql = 'SELECT * FROM ('
-                        + a.sql
-                        + ') AS "_recursive_anchor" UNION ALL '
-                        + b.sql;
-                } else {
-                    sql = self.query(binding.query, [], available).sql;
-                }
-                columns = ', '.join(
-                    [quote_identifier(f.name) for f in ref.schema.fields]
-                );
-                parts.append(
-                    quote_identifier(ref.name) + ' (' + columns + ') AS (' + sql + ')'
-                );
-                available.append(ref);
-            }
-            if not parts {
-                raise SqlError('WITH requires at least one binding');
-            }
-            result = self.query(ast.body, outer, available);
-            return QueryText(
-                sql='WITH '
-                    + ('RECURSIVE ' if ast.recursive else '')
-                    + ', '.join(parts)
-                    + ' '
-                    + result.sql,
-                external=result.external
-            );
-        }
         raise SqlError('Unknown relational ast');
     }
 
@@ -989,18 +1191,18 @@ obj PostgresRenderer {
         all_free: set[str] = set();
         if ast.source is not None {
             local.append(ast.source);
-            used_aliases.add(ast.source.alias);
+            used_aliases.add(self.alias_for(ast.source));
             from_sql = ' FROM ' + self.source(ast.source, ctes);
         } elif ast.joins {
             raise SqlError('JOIN requires a FROM source');
         }
         for join in ast.joins {
-            if join.source.alias in used_aliases
+            if self.alias_for(join.source) in used_aliases
                 or `any([s is join.source for s in local]) {
                 raise SqlError('Duplicate source binding/alias');
             }
             local.append(join.source);
-            used_aliases.add(join.source.alias);
+            used_aliases.add(self.alias_for(join.source));
             condition = self.expr(join.condition, local + outer, local, ctes);
             if join.condition.dtype.name != 'boolean' or condition.aggregate {
                 raise SqlError('JOIN ON requires a non-aggregate predicate');
@@ -1011,7 +1213,7 @@ obj PostgresRenderer {
                 + ' ON '
                 + condition.sql;
         }
-        if `any([s.alias in used_aliases for s in outer]) {
+        if `any([self.alias_for(s) in used_aliases for s in outer]) {
             raise SqlError('Nested alias shadows a correlated source');
         }
         scope = local + outer;
@@ -1117,7 +1319,7 @@ def validate_recursive_step(ref: Cte, step: SelectNode) -> None {
         [
             s
             for s in sources
-            if s is ref
+            if s is ref or (isinstance(s, CteUse) and s.target is ref)
         ]
     )
         != 1 {

@@ -34,7 +34,7 @@ class SQLTests(unittest.TestCase) {
             sys.path.insert(0, folder);
             try {
                 independent = importlib.import_module('portable_sql');
-                query = independent.select_(
+                query = independent.select(
                     [independent.named('n', independent.int64(7))]
                 );
                 compiled = independent.compile_sql(query);
@@ -49,7 +49,7 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_select_parameters_and_order(self: SQLTests) -> object {
-        q = s.select_(
+        q = s.select(
             [s.named('name', self.people.col(self.name))],
             source=self.people,
             where=s.gt(self.people.col(self.age), s.int64(30)),
@@ -64,7 +64,7 @@ class SQLTests(unittest.TestCase) {
     def test_join_and_shared_parameter(self: SQLTests) -> object {
         age = self.people.col(self.age);
         p = s.int64(30);
-        q = s.select_(
+        q = s.select(
             [s.named('plus', s.add(age, p))], source=self.people, where=s.gt(age, p)
         );
         self.assertEqual(self.execute(q), [(70, ), (70, )]);
@@ -75,7 +75,7 @@ class SQLTests(unittest.TestCase) {
             'CREATE TABLE pets(owner INTEGER); INSERT INTO pets VALUES(2),(2);'
         );
         join = s.inner_join(pets, s.eq(self.people.col(self.id), pets.col(owner)));
-        q = s.select_(
+        q = s.select(
             [s.named('name', self.people.col(self.name))],
             source=self.people,
             joins=[join]
@@ -85,7 +85,7 @@ class SQLTests(unittest.TestCase) {
 
     def test_group_by_count(self: SQLTests) -> object {
         key = self.people.col(self.age);
-        q = s.select_(
+        q = s.select(
             [s.named('age', key), s.named('n', s.count())],
             source=self.people,
             group_by=[key.ast],
@@ -102,30 +102,30 @@ class SQLTests(unittest.TestCase) {
             where=s.gt(self.people.col(self.age), s.int64(100))
         );
         value = s.scalar_one(q, result.key());
-        self.assertEqual(self.execute(s.select_([s.named('n', value)])), [(0, )]);
+        self.assertEqual(self.execute(s.select([s.named('n', value)])), [(0, )]);
     }
 
     def test_scalar_optional_empty_yields_null(self: SQLTests) -> object {
         result = s.named('age', self.people.col(self.age));
         q = s.limit_one(
-            s.select_(
+            s.select(
                 [result],
                 source=self.people,
                 where=s.gt(self.people.col(self.age), s.int64(100))
             )
         );
         value = s.scalar(q, result.key());
-        self.assertEqual(self.execute(s.select_([s.named('age', value)])), [(None, )]);
+        self.assertEqual(self.execute(s.select([s.named('age', value)])), [(None, )]);
     }
 
     def test_scalar_requires_proof_and_one_column(self: SQLTests) -> object {
         result = s.named('age', self.people.col(self.age));
-        q = s.select_([result], source=self.people);
+        q = s.select([result], source=self.people);
         with self.assertRaisesRegex(s.SqlError, 'at-most-one') {
             s.scalar(q, result.key());
         }
         q = s.limit_one(
-            s.select_(
+            s.select(
                 [result, s.named('name', self.people.col(self.name))],
                 source=self.people
             )
@@ -137,7 +137,7 @@ class SQLTests(unittest.TestCase) {
 
     def test_correlated_exists(self: SQLTests) -> object {
         other = s.table('people', [self.id, self.age, self.name], 'other');
-        sub = s.select_(
+        sub = s.select(
             [s.named('id', other.col(self.id))],
             source=other,
             where=s.and_(
@@ -147,7 +147,7 @@ class SQLTests(unittest.TestCase) {
                 ]
             )
         );
-        q = s.select_(
+        q = s.select(
             [s.named('name', self.people.col(self.name))],
             source=self.people,
             where=s.exists(sub)
@@ -157,10 +157,10 @@ class SQLTests(unittest.TestCase) {
 
     def test_derived_schema_and_scope(self: SQLTests) -> object {
         out = s.named('label', self.people.col(self.name));
-        source = s.select_([out], source=self.people).as_source('labels');
+        source = s.select([out], source=self.people).as_source();
         self.assertEqual(
             self.execute(
-                s.select_([s.named('label', source.col(out.key()))], source=source)
+                s.select([s.named('label', source.col(out.key()))], source=source)
             ),
             [('Ann', ), ('Bob', ), ('Cora', )]
         );
@@ -168,73 +168,68 @@ class SQLTests(unittest.TestCase) {
             source.col(self.age);
         }
         with self.assertRaisesRegex(s.SqlError, 'outside scope') {
-            s.compile_sql(s.select_([s.named('name', self.people.col(self.name))]));
+            s.compile_sql(s.select([s.named('name', self.people.col(self.name))]));
         }
     }
 
     def test_union_schema_and_arm_limits(self: SQLTests) -> object {
-        first = s.select_([s.named('n', s.int64(1))], limit=1);
-        second = s.select_([s.named('m', s.int64(2))], limit=1);
+        first = s.select([s.named('n', s.int64(1))], limit=1);
+        second = s.select([s.named('m', s.int64(2))], limit=1);
         self.assertEqual(self.execute(s.union_all(first, second)), [(1, ), (2, )]);
         with self.assertRaisesRegex(s.SqlError, 'UNION') {
-            s.union_all(first, s.select_([s.named('n', s.text('bad'))]));
+            s.union_all(first, s.select([s.named('n', s.text('bad'))]));
         }
     }
 
     def test_cte(self: SQLTests) -> object {
         key = s.field('n', s.int64_type());
-        ref = s.cte('numbers', [key], 'n');
-        binding = s.bind_cte(ref, s.select_([s.named('n', s.int64(7))]));
-        body = s.select_([s.named('n', ref.col(key))], source=ref);
-        q = s.with_ctes([binding], body);
-        self.assertEqual(self.execute(q), [(7, )]);
-        with self.assertRaisesRegex(s.SqlError, 'outside scope') {
-            s.compile_sql(body);
+        ref = s.cte(s.select([s.named('n', s.int64(7))]));
+        body = s.select([s.named('n', ref.col(key))], source=ref);
+        self.assertEqual(self.execute(body), [(7, )]);
+        missing = s.cte_ref([key]);
+        with self.assertRaisesRegex(s.SqlError, 'no definition') {
+            s.compile_sql(s.select([s.named('n', missing.col(key))], source=missing));
         }
     }
 
     def test_recursive_cte(self: SQLTests) -> object {
         key = s.field('n', s.int64_type());
-        ref = s.cte('walk', [key], 'w');
-        first = s.select_([s.named('n', s.int64(1))]);
-        step = s.select_(
+        ref = s.cte_ref([key]);
+        first = s.select([s.named('n', s.int64(1))]);
+        step = s.select(
             [s.named('n', s.add(ref.col(key), s.int64(1)))],
             source=ref,
             where=s.gt(s.int64(4), ref.col(key))
         );
-        body = s.select_(
+        s.define_cte(ref, s.union_all(first, step), recursive=True);
+        body = s.select(
             [s.named('n', ref.col(key))], source=ref, order_by=[s.asc(ref.col(key))]
         );
-        q = s.with_ctes(
-            [s.bind_cte(ref, s.union_all(first, step))], body, recursive=True
-        );
-        self.assertEqual(self.execute(q), [(1, ), (2, ), (3, ), (4, )]);
+        self.assertEqual(self.execute(body), [(1, ), (2, ), (3, ), (4, )]);
     }
 
     def _assert_recursive_anchor(self: SQLTests, first: any, expected: any) -> object {
         key = s.field('n', s.int64_type());
-        ref = s.cte('walk', [key], 'w');
-        step = s.select_(
+        ref = s.cte_ref([key]);
+        step = s.select(
             [s.named('n', s.add(ref.col(key), s.int64(1)))],
             source=ref,
             where=s.gt(s.int64(4), ref.col(key))
         );
-        body = s.select_(
+        s.define_cte(ref, s.union_all(first, step), recursive=True);
+        body = s.select(
             [s.named('n', ref.col(key))], source=ref, order_by=[s.asc(ref.col(key))]
         );
-        q = s.with_ctes(
-            [s.bind_cte(ref, s.union_all(first, step))], body, recursive=True
-        );
-        self.assertEqual(self.execute(q), expected);
+        self.assertEqual(self.execute(body), expected);
     }
 
     def test_recursive_anchor_limit(self: SQLTests) -> object {
-        first = s.select_([s.named('n', s.int64(1))], limit=1);
+        first = s.select([s.named('n', s.int64(1))], limit=1);
         self._assert_recursive_anchor(first, [(1, ), (2, ), (3, ), (4, )]);
     }
 
     def test_recursive_anchor_order(self: SQLTests) -> object {
-        first = s.select_(
+        first = s.select(
             [s.named('n', self.people.col(self.id))],
             source=self.people,
             order_by=[s.desc(self.people.col(self.id))]
@@ -245,7 +240,7 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_recursive_anchor_order_limit(self: SQLTests) -> object {
-        first = s.select_(
+        first = s.select(
             [s.named('n', self.people.col(self.id))],
             source=self.people,
             order_by=[s.desc(self.people.col(self.id))],
@@ -254,48 +249,40 @@ class SQLTests(unittest.TestCase) {
         self._assert_recursive_anchor(first, [(3, ), (4, )]);
     }
 
-    def test_cte_forward_reference_and_recursive_anchor_rejected(
+    def test_cte_dependencies_and_recursive_anchor_validation(
         self: SQLTests
     ) -> object {
         key = s.field('n', s.int64_type());
-        a = s.cte('a', [key], 'a');
-        b = s.cte('b', [key], 'b');
-        from_b = s.select_([s.named('n', b.col(key))], source=b);
-        body = s.select_([s.named('n', a.col(key))], source=a);
-        q = s.with_ctes(
-            [
-                s.bind_cte(a, from_b),
-                s.bind_cte(b, s.select_([s.named('n', s.int64(1))]))
-            ],
-            body
-        );
+        a = s.cte_ref([key]);
+        b = s.cte_ref([key]);
+        s.define_cte(a, s.select([s.named('n', b.col(key))], source=b));
+        s.define_cte(b, s.select([s.named('n', s.int64(1))]));
+        body = s.select([s.named('n', a.col(key))], source=a);
+        self.assertEqual(self.execute(body), [(1, )]);
+        bad = s.cte_ref([key]);
+        bad_body = s.select([s.named('n', bad.col(key))], source=bad);
+        s.define_cte(bad, s.union_all(bad_body, bad_body), recursive=True);
         with self.assertRaises(s.SqlError) {
-            s.compile_sql(q);
-        }
-        recursive = s.with_ctes(
-            [s.bind_cte(a, s.union_all(body, body))], body, recursive=True
-        );
-        with self.assertRaises(s.SqlError) {
-            s.compile_sql(recursive);
+            s.compile_sql(bad_body);
         }
     }
 
     def test_recursive_step_eligibility(self: SQLTests) -> object {
         key = s.field('n', s.int64_type());
-        ref = s.cte('walk', [key], 'w');
-        anchor = s.select_([s.named('n', s.int64(1))]);
-        steps = [
-            s.select_([s.named('n', s.int64(2))]),
-            s.select_([s.named('n', s.count())], source=ref),
-            s.select_([s.named('n', ref.col(key))], source=ref, limit=1)
-        ];
-        body = s.select_([s.named('n', ref.col(key))], source=ref);
-        for step in steps {
-            query = s.with_ctes(
-                [s.bind_cte(ref, s.union_all(anchor, step))], body, recursive=True
-            );
-            with self.subTest(step=step), self.assertRaises(s.SqlError) {
-                s.compile_sql(query);
+        for mode in [0, 1, 2] {
+            ref = s.cte_ref([key]);
+            anchor = s.select([s.named('n', s.int64(1))]);
+            if mode == 0 {
+                step = s.select([s.named('n', s.int64(2))]);
+            } elif mode == 1 {
+                step = s.select([s.named('n', s.count())], source=ref);
+            } else {
+                step = s.select([s.named('n', ref.col(key))], source=ref, limit=1);
+            }
+            s.define_cte(ref, s.union_all(anchor, step), recursive=True);
+            body = s.select([s.named('n', ref.col(key))], source=ref);
+            with self.subTest(mode=mode), self.assertRaises(s.SqlError) {
+                s.compile_sql(body);
             }
         }
     }
@@ -304,14 +291,14 @@ class SQLTests(unittest.TestCase) {
         value = s.param(s.nullable(s.int64_type()), None);
         comparison = s.eq_nullable(value, s.param(s.nullable(s.int64_type()), 3));
         self.assertEqual(
-            self.execute(s.select_([s.named('n', s.int64(1))], where=comparison)), []
+            self.execute(s.select([s.named('n', s.int64(1))], where=comparison)), []
         );
         self.assertEqual(
-            self.execute(s.select_([s.named('n', s.coalesce(value, s.int64(5)))])),
+            self.execute(s.select([s.named('n', s.coalesce(value, s.int64(5)))])),
             [(5, )]
         );
         self.assertEqual(
-            self.execute(s.select_([s.named('missing', s.is_null(value))])), [(1, )]
+            self.execute(s.select([s.named('missing', s.is_null(value))])), [(1, )]
         );
         with self.assertRaises(s.SqlError) {
             s.eq(value, value);
@@ -333,7 +320,7 @@ class SQLTests(unittest.TestCase) {
                 s.param(dtype, value);
             }
         }
-        c = s.compile_sql(s.select_([s.named('id', s.uuid(UUID(int=1)))]));
+        c = s.compile_sql(s.select([s.named('id', s.uuid(UUID(int=1)))]));
         self.assertEqual(c.params['p0'], UUID(int=1));
         s.int64(-(2 ** 63));
         s.int64(((2 ** 63) - 1));
@@ -341,7 +328,7 @@ class SQLTests(unittest.TestCase) {
 
     def test_injection_is_bound_and_identifiers_are_quoted(self: SQLTests) -> object {
         evil = "x'); DROP TABLE people; --";
-        c = s.compile_sql(s.select_([s.named('weird"name', s.text(evil))]));
+        c = s.compile_sql(s.select([s.named('weird"name', s.text(evil))]));
         self.assertNotIn(evil, c.sql);
         self.assertEqual(c.params, {'p0': evil});
         self.assertIn('"weird""name"', c.sql);
@@ -362,20 +349,20 @@ class SQLTests(unittest.TestCase) {
             s.and_([s.int64(1)]);
         }
         with self.assertRaises(s.SqlError) {
-            s.select_([s.named('n', s.int64(1))], where=s.int64(1));
+            s.select([s.named('n', s.int64(1))], where=s.int64(1));
         }
         with self.assertRaises(s.SqlError) {
             s.compile_sql(s.int64(1));
         }
         with self.assertRaises(s.SqlError) {
-            s.named('n', s.select_([s.named('n', s.int64(1))]));
+            s.named('n', s.select([s.named('n', s.int64(1))]));
         }
     }
 
     def test_alias_and_join_scopes(self: SQLTests) -> object {
         other = s.table('people', [self.id, self.age, self.name], 'p');
         join = s.inner_join(other, s.eq(self.people.col(self.id), other.col(self.id)));
-        q = s.select_(
+        q = s.select(
             [s.named('n', self.people.col(self.id))], source=self.people, joins=[join]
         );
         with self.assertRaisesRegex(s.SqlError, 'Duplicate') {
@@ -384,7 +371,7 @@ class SQLTests(unittest.TestCase) {
         future = s.table('people', [self.id], 'future');
         other = s.table('people', [self.id], 'o');
         bad = s.inner_join(other, s.eq(other.col(self.id), future.col(self.id)));
-        q = s.select_(
+        q = s.select(
             [s.named('n', self.people.col(self.id))], source=self.people, joins=[bad]
         );
         with self.assertRaisesRegex(s.SqlError, 'outside scope') {
@@ -394,11 +381,11 @@ class SQLTests(unittest.TestCase) {
 
     def test_aggregate_validation(self: SQLTests) -> object {
         for q in [
-            s.select_(
+            s.select(
                 [s.named('age', self.people.col(self.age)), s.named('n', s.count())],
                 source=self.people
             ),
-            s.select_(
+            s.select(
                 [s.named('age', self.people.col(self.age))],
                 source=self.people,
                 where=s.gt(s.count(), s.int64(1))
@@ -412,13 +399,13 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_mutated_ast_is_revalidated(self: SQLTests) -> object {
-        q = s.limit_one(s.select_([s.named('n', s.int64(1))]));
+        q = s.limit_one(s.select([s.named('n', s.int64(1))]));
         value = s.scalar(q, s.field('n', s.int64_type()));
         q.ast.limit = None;
         with self.assertRaises(s.SqlError) {
-            s.compile_sql(s.select_([s.named('n', value)]));
+            s.compile_sql(s.select([s.named('n', value)]));
         }
-        q = s.select_([s.named('n', s.int64(1))]);
+        q = s.select([s.named('n', s.int64(1))]);
         q.ast.projections[0].expr.dtype = s.DataType('text');
         with self.assertRaises(s.SqlError) {
             s.compile_sql(q);
@@ -426,7 +413,7 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_projection_expression_type_swap_rejected(self: SQLTests) -> object {
-        q = s.select_([s.named('n', s.int64(1))]);
+        q = s.select([s.named('n', s.int64(1))]);
         q.ast.projections[0].expr = s.text('abc').ast;
         with self.assertRaisesRegex(s.SqlError, 'projection n') {
             s.compile_sql(q);
@@ -435,9 +422,9 @@ class SQLTests(unittest.TestCase) {
 
     def test_projection_derived_arithmetic_rejected(self: SQLTests) -> object {
         output = s.named('n', s.int64(1));
-        q = s.select_([output]);
-        derived = q.as_source('sub');
-        outer = s.select_(
+        q = s.select([output]);
+        derived = q.as_source();
+        outer = s.select(
             [s.named('n', s.add(derived.col(output.key()), s.int64(1)))], source=derived
         );
         q.ast.projections[0].expr = s.text('abc').ast;
@@ -447,7 +434,7 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_projection_nullability_swap_rejected(self: SQLTests) -> object {
-        q = s.select_([s.named('n', s.int64(1))]);
+        q = s.select([s.named('n', s.int64(1))]);
         q.ast.projections[0].expr = s.param(s.nullable(s.int64_type()), None).ast;
         with self.assertRaisesRegex(s.SqlError, 'projection n') {
             s.compile_sql(q);
@@ -455,9 +442,136 @@ class SQLTests(unittest.TestCase) {
     }
 
     def test_projection_same_type_swap_allowed(self: SQLTests) -> object {
-        q = s.select_([s.named('n', s.int64(1))]);
+        q = s.select([s.named('n', s.int64(1))]);
         q.ast.projections[0].expr = s.int64(2).ast;
         self.assertEqual(self.execute(q), [(2, )]);
+    }
+
+    def test_cte_names_do_not_capture_physical_tables(self: SQLTests) -> object {
+        kids = s.cte(
+            s.select(
+                [s.named('id', self.people.col(self.id))],
+                source=self.people,
+                where=s.gt(s.int64(30), self.people.col(self.age))
+            )
+        );
+        probe = s.select([s.named('id', kids.col(self.id))], source=kids);
+        query = s.select(
+            [s.named('name', self.people.col(self.name))],
+            source=self.people,
+            where=s.exists(probe),
+            order_by=[s.asc(self.people.col(self.id))]
+        );
+        self.assertEqual(self.execute(query), [('Ann', ), ('Bob', ), ('Cora', )]);
+    }
+
+    def test_generated_names_avoid_physical_prefixes(self: SQLTests) -> object {
+        self.db.executescript(
+            'CREATE TABLE "_cte0" (n BIGINT); INSERT INTO "_cte0" VALUES (7); CREATE TABLE "_t0" (n BIGINT); INSERT INTO "_t0" VALUES (7);'
+        );
+        key = s.field('n', s.int64_type());
+        physical = s.table('_cte0', [key]);
+        other = s.table('_t0', [key]);
+        temp = s.cte(s.select([s.named('n', s.int64(1))]));
+        query = s.select(
+            [
+                s.named('physical', physical.col(key)),
+                s.named('temporary', temp.col(key))
+            ],
+            source=physical,
+            joins=[
+                s.inner_join(other, s.eq(physical.col(key), other.col(key))),
+                s.inner_join(temp, s.gt(physical.col(key), temp.col(key)))
+            ]
+        );
+        self.assertEqual(self.execute(query), [(7, 1)]);
+    }
+
+    def test_cte_reuse_and_independent_bindings(self: SQLTests) -> object {
+        key = s.field('n', s.int64_type());
+        temp = s.cte(s.select([s.named('n', s.int64(3))]));
+        left = temp.ref();
+        right = temp.ref();
+        query = s.select(
+            [s.named('left', left.col(key)), s.named('right', right.col(key))],
+            source=left,
+            joins=[s.inner_join(right, s.eq(left.col(key), right.col(key)))]
+        );
+        self.assertEqual(self.execute(query), [(3, 3)]);
+        self.assertEqual(s.compile_sql(query).sql.count(' AS ('), 1);
+    }
+
+    def test_distinct_cte_objects_have_distinct_names(self: SQLTests) -> object {
+        key = s.field('n', s.int64_type());
+        left = s.cte(s.select([s.named('n', s.int64(1))]));
+        right = s.cte(s.select([s.named('n', s.int64(2))]));
+        query = s.select(
+            [s.named('a', left.col(key)), s.named('b', right.col(key))],
+            source=left,
+            joins=[s.inner_join(right, s.gt(right.col(key), left.col(key)))]
+        );
+        self.assertEqual(self.execute(query), [(1, 2)]);
+    }
+
+    def test_cte_dependencies_in_subqueries(self: SQLTests) -> object {
+        key = s.field('n', s.int64_type());
+        first = s.cte(s.select([s.named('n', s.int64(3))]));
+        second = s.cte(
+            s.select([s.named('n', s.add(first.col(key), s.int64(1)))], source=first)
+        );
+        inner = s.limit_one(s.select([s.named('n', second.col(key))], source=second));
+        query = s.select([s.named('n', s.scalar(inner, key))]);
+        self.assertEqual(self.execute(query), [(4, )]);
+    }
+
+    def test_cte_missing_definition_cycles_and_redefinition(self: SQLTests) -> object {
+        key = s.field('n', s.int64_type());
+        missing = s.cte_ref([key]);
+        with self.assertRaisesRegex(s.SqlError, 'no definition') {
+            s.compile_sql(s.select([s.named('n', missing.col(key))], source=missing));
+        }
+        a = s.cte_ref([key]);
+        b = s.cte_ref([key]);
+        s.define_cte(a, s.select([s.named('n', b.col(key))], source=b));
+        s.define_cte(b, s.select([s.named('n', a.col(key))], source=a));
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(s.select([s.named('n', a.col(key))], source=a));
+        }
+        with self.assertRaisesRegex(s.SqlError, 'already defined') {
+            s.define_cte(a, s.select([s.named('n', s.int64(1))]));
+        }
+    }
+
+    def test_cte_cannot_capture_outer_columns(self: SQLTests) -> object {
+        captured = s.cte(s.select([s.named('id', self.people.col(self.id))]));
+        body = s.select([s.named('id', captured.col(self.id))], source=captured);
+        with self.assertRaisesRegex(s.SqlError, 'outside scope') {
+            s.compile_sql(body);
+        }
+    }
+
+    def test_generated_names_are_deterministic(self: SQLTests) -> object {
+        key = s.field('n', s.int64_type());
+        temp = s.cte(s.select([s.named('n', s.int64(7))]));
+        query = s.select([s.named('n', temp.col(key))], source=temp);
+        before = s.compile_sql(query);
+        after = s.compile_sql(query);
+        self.assertEqual(before.sql, after.sql);
+        self.assertEqual(before.params, after.params);
+        self.assertEqual(temp.alias, '');
+        self.assertEqual(self.execute(query), [(7, )]);
+    }
+
+    def test_auto_source_aliases_for_self_join(self: SQLTests) -> object {
+        left = self.people.ref();
+        right = self.people.ref();
+        query = s.select(
+            [s.named('name', left.col(self.name))],
+            source=left,
+            joins=[s.inner_join(right, s.eq(left.col(self.id), right.col(self.id)))],
+            order_by=[s.asc(left.col(self.id))]
+        );
+        self.assertEqual(self.execute(query), [('Ann', ), ('Bob', ), ('Cora', )]);
     }
 
     def test_source_field_schema_validation(self: SQLTests) -> object {
@@ -469,7 +583,7 @@ class SQLTests(unittest.TestCase) {
         }
         for limit in [True, -1, '3'] {
             with self.assertRaises(s.SqlError) {
-                s.select_([s.named('n', s.int64(1))], limit=limit);
+                s.select([s.named('n', s.int64(1))], limit=limit);
             }
         }
     }

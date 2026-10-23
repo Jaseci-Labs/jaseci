@@ -17,7 +17,7 @@ executes a generated query. Jac itself remains the required language runtime.
 | Category | Meaning | Implementation |
 | --- | --- | --- |
 | `ScalarExpr[T]` | One SQL value of type T | Typed wrapper over expression AST |
-| `Relation[R, C]` | Rows with schema R and cardinality proof C | SELECT, UNION ALL, WITH |
+| `Relation[R, C]` | Rows with schema R and cardinality proof C | SELECT, UNION ALL; reachable CTE definitions |
 | `Source` | A bound table, derived relation or CTE reference | Owns schema and alias |
 | `Command` | Separate category for future data-changing statements | Category marker |
 
@@ -38,13 +38,13 @@ See [the runnable Jac example](../../../jac/examples/sql/typed_sql.jac).
 
 ```jac
 import from jaclang.sql {
-    field, int64_type, text_type, table, named, select_, gt, int64, compile_sql
+    field, int64_type, text_type, table, named, select, gt, int64, compile_sql
 }
 with entry {
     name = field("name", text_type());
     age = field("age", int64_type());
-    people = table("people", [name, age], "p");
-    query = select_(
+    people = table("people", [name, age]);
+    query = select(
         [named("name", people.col(name))],
         source=people,
         where=gt(people.col(age), int64(30))
@@ -58,9 +58,9 @@ with entry {
 Representative PostgreSQL output:
 
 ```sql
-SELECT "p"."name" AS "name"
-FROM "people" AS "p"
-WHERE ("p"."age" > CAST(:p0 AS bigint))
+SELECT "_t0"."name" AS "name"
+FROM "people" AS "_t0"
+WHERE ("_t0"."age" > CAST(:p0 AS bigint))
 ```
 
 Parameters: `{"p0": 30}`. Identifiers are quoted independently from data binding.
@@ -81,7 +81,8 @@ Actual negative Jac fixtures test rejection of:
 - Scalar expressions passed directly in a projection list.
 
 `test_types.jac` checks the positive module/example and asserts E1053 diagnostics
-at all 11 expected invalid-call lines. Runtime/AST validation covers dynamic
+at all 11 expected invalid-call lines. A second fixture rejects all three
+legacy calls that supply temporary SQL names or pass non-relations to `cte`. Runtime/AST validation covers dynamic
 schema information and callers from Python or gradual typing.
 
 ## Whole-query validation
@@ -118,21 +119,39 @@ Int64 range at construction; convenience factories have narrower Jac signatures.
 
 ## CTEs and recursion
 
-`cte` declares output fields and an alias; `bind_cte` checks the body schema;
-`with_ctes` establishes lexical scope. Recursive form is a SELECT anchor UNION ALL
-SELECT step, with exactly one direct self-reference in the step. The initial step
-fragment supports direct sources, predicates and scalar arithmetic. Aggregates,
-subqueries, grouping and step-local ORDER/LIMIT are rejected with SqlError. This
-makes the initial supported PostgreSQL recursive fragment explicit.
+`cte(query)` creates a reference whose output schema comes from the query. The
+renderer follows references, orders dependencies and emits each definition once.
+SQL names and temporary-source aliases are generated per compilation and avoid
+all referenced physical table names and explicit table aliases. Physical table
+names remain supplied by the caller. Generated names do not mutate the AST.
+
+```jac
+kids = cte(kids_query);
+result = select([named("name", kids.col(person_name))], source=kids);
+compiled = compile_sql(result);
+```
+
+`result` is a relation. `cte(result)` creates a reusable CTE reference to it.
+`query.as_source()` creates an unnamed derived source. `source.ref()` creates a
+fresh binding for self-joins while reusing the same table or CTE definition.
+The executable `jac/examples/sql/cte_name_collision.jac` demonstrates physical
+and temporary reads together on PostgreSQL.
+
+For recursion, declare an unnamed forward reference with `cte_ref(fields)`, build
+the step using that reference, then bind it once with
+`define_cte(reference, union_all(anchor, step), recursive=True)`. Dependencies
+may be defined after their references are constructed; compilation orders them.
+Undefined references and mutually recursive definitions raise SqlError.
+
+Recursive form is a SELECT anchor UNION ALL SELECT step, with exactly one direct
+self-reference in the step. The step supports direct sources, predicates and
+scalar arithmetic. Aggregates, subqueries, grouping and step-local ORDER/LIMIT
+raise SqlError. Recursive termination follows the query predicate.
 
 The anchor renders as `SELECT * FROM (anchor) AS "_recursive_anchor"` before
-UNION ALL. This parenthesized subquery keeps anchor-local ORDER BY and LIMIT
-inside the anchor while leaving the recursive step as a direct SELECT. Tests
-execute LIMIT, ORDER BY, and their combination on PostgreSQL and SQLite.
-
-CTE references are identities, not string interpolation. Forward references,
-recursive anchor self-references and direct cyclic AST object graphs are rejected.
-Recursive termination is defined by the query predicate, as with PostgreSQL itself.
+UNION ALL. This subquery keeps anchor-local ORDER BY and LIMIT inside the anchor.
+Tests execute LIMIT, ORDER BY and their combination on PostgreSQL and SQLite.
+CTE definitions are independently scoped and cannot capture outer query columns.
 
 ## Extension path
 
@@ -164,8 +183,8 @@ JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
 
-There are 60 native Jac test entries: 29 SQLite, the same 29 PostgreSQL cases,
-and two static-check tests. Shared fixtures live in `sql_cases.jac` and use
+There are 79 native Jac test entries: 38 SQLite, the same 38 PostgreSQL cases,
+and three static-check tests. Shared fixtures live in `sql_cases.jac` and use
 standard-library assertion helpers.
 
 The test account is `sql_test`, database `postgres`. Set up a dedicated cluster

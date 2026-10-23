@@ -120,8 +120,8 @@ test "PostgreSQL: recursive cte" {
     run_case(PostgresTests("test_recursive_cte"));
 }
 
-test "PostgreSQL: cte forward reference and recursive anchor rejected" {
-    run_case(PostgresTests("test_cte_forward_reference_and_recursive_anchor_rejected"));
+test "PostgreSQL: cte dependencies and recursive anchor validation" {
+    run_case(PostgresTests("test_cte_dependencies_and_recursive_anchor_validation"));
 }
 
 test "PostgreSQL: recursive step eligibility" {
@@ -186,4 +186,40 @@ test "PostgreSQL: recursive anchor clauses order" {
 
 test "PostgreSQL: recursive anchor clauses order and limit" {
     run_case(PostgresTests("test_recursive_anchor_order_limit"));
+}
+
+test "PostgreSQL: cte names do not capture physical tables" {
+    run_case(PostgresTests("test_cte_names_do_not_capture_physical_tables"));
+}
+
+test "PostgreSQL: generated names avoid physical prefixes" {
+    run_case(PostgresTests("test_generated_names_avoid_physical_prefixes"));
+}
+
+test "PostgreSQL: cte reuse and independent bindings" {
+    run_case(PostgresTests("test_cte_reuse_and_independent_bindings"));
+}
+
+test "PostgreSQL: distinct cte objects have distinct names" {
+    run_case(PostgresTests("test_distinct_cte_objects_have_distinct_names"));
+}
+
+test "PostgreSQL: cte dependencies in subqueries" {
+    run_case(PostgresTests("test_cte_dependencies_in_subqueries"));
+}
+
+test "PostgreSQL: cte missing definition cycles and redefinition" {
+    run_case(PostgresTests("test_cte_missing_definition_cycles_and_redefinition"));
+}
+
+test "PostgreSQL: cte cannot capture outer columns" {
+    run_case(PostgresTests("test_cte_cannot_capture_outer_columns"));
+}
+
+test "PostgreSQL: generated names are deterministic" {
+    run_case(PostgresTests("test_generated_names_are_deterministic"));
+}
+
+test "PostgreSQL: auto source aliases for self join" {
+    run_case(PostgresTests("test_auto_source_aliases_for_self_join"));
 }

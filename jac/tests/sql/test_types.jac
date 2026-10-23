@@ -40,6 +40,24 @@ class StaticTypes(unittest.TestCase) {
         self.assertEqual(lines, {7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19}, output);
         self.assertEqual(output.count('error[E1053]'), 11, output);
     }
+
+    def test_temporary_names_are_not_api_arguments(self: StaticTypes) -> object {
+        fixture = ROOT / 'jac/tests/sql/fixtures/invalid_cte_calls.jac';
+        result = subprocess.run(
+            [sys.executable, '-m', 'jaclang', 'check', str(fixture)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True
+        );
+        output = result.stdout + result.stderr;
+        self.assertNotEqual(result.returncode, 0, output);
+        lines = {
+            int(x) for x in re.findall(r'invalid_cte_calls\.jac:(\d+):\d+', output)
+        };
+        self.assertEqual(lines, {4, 5, 7}, output);
+        self.assertEqual(output.count('error[E1053]'), 2, output);
+        self.assertEqual(output.count('error[E1051]'), 1, output);
+    }
 }
 
 
@@ -49,4 +67,8 @@ test "Static types: positive example and module" {
 
 test "Static types: all bad calls are rejected at their lines" {
     run_case(StaticTypes("test_all_bad_calls_are_rejected_at_their_lines"));
+}
+
+test "Static types: temporary names are not API arguments" {
+    run_case(StaticTypes("test_temporary_names_are_not_api_arguments"));
 }
