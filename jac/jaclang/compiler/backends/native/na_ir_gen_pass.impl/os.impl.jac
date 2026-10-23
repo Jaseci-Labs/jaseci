@@ -410,12 +410,12 @@ impl NaIRGenPass._emit_os_call(name: str, nd: uni.FuncCall) -> (ir.Value | None)
         err = self.builder.load(
             self.builder.inttoptr(self.builder.call(errno_fn, []), i32.as_pointer())
         );
-        triple = str(self.llvm_module.triple or "").lower();
-        eagain = 35 if ("darwin" in triple or "apple" in triple) else 11;
+        would_block = self.builder.or_(
+            self.builder.icmp_signed("==", err, ir.Constant(i32, 11)),
+            self.builder.icmp_signed("==", err, ir.Constant(i32, 35))
+        );
         self._emit_runtime_raise(
-            self.builder.and_(
-                failed, self.builder.icmp_signed("==", err, ir.Constant(i32, eagain))
-            ),
+            self.builder.and_(failed, would_block),
             "BlockingIOError",
             "Resource temporarily unavailable",
             [bv]
