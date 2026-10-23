@@ -29,7 +29,12 @@ glob ALIAS: str = "gemma-4-e2b",
          + struct.pack("<IQQQ", 3, 0, 1, 1)
          + b"k"
          + struct.pack("<I", 9)
-         + struct.pack("<IQ", 9, 1) * 100000;
+         + struct.pack("<IQ", 9, 1) * 100000,
+     # One key whose string value claims to be 2**63 - 1 bytes long.
+     HUGE_STRING: bytes = b"GGUF"
+         + struct.pack("<IQQQ", 3, 0, 1, 1)
+         + b"k"
+         + struct.pack("<IQ", 8, 2 ** 63 - 1);
 
 """Point the cache at `<base>/models`, fake `_download` to record each call in `calls`
 and, like huggingface_hub, write `GOOD` only where no file is unless forced, and give
@@ -97,7 +102,8 @@ test "jac model pull replaces a bad weight and keeps a good one" {
         ("only the magic", b"GGUF", 1),
         ("cut in the header", GOOD[:40], 1),
         ("cut in the tensor data", GOOD[:-1], 1),
-        ("deeply nested arrays", NESTED, 1)
+        ("deeply nested arrays", NESTED, 1),
+        ("a string longer than any file", HUGE_STRING, 1)
     ];
     for (label, on_disk, want_downloads) in rows {
         with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack {

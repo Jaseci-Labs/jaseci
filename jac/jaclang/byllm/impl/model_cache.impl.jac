@@ -36,7 +36,7 @@ impl is_downloaded(alias: str, spec: dict[str, any]) -> bool {
         with open(p, "rb") as f {
             return f.read(4) == b"GGUF" and p.stat().st_size >= _gguf_size_needed(f);
         }
-    } except (ValueError, OverflowError, ZeroDivisionError) {
+    } except (ValueError, OverflowError, ZeroDivisionError, OSError) {
         return False;
     }
 }
