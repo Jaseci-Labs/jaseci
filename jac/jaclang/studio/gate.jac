@@ -161,6 +161,12 @@ def match_diagnostics(
 
 def format_review(rv: EditReview) -> str;
 
+def leaf_changes(changes: list[SymbolChange]) -> list[SymbolChange];
+
+def partial_text(
+    old_text: str, new_text: str, changes: list[SymbolChange], keep: set[str]
+) -> str;
+
 def _node_text(nd: any) -> str;
 
 def _lines_text(lines: list[str], first: int, last: int) -> str;
@@ -1336,4 +1342,86 @@ impl format_review(rv: EditReview) -> str {
         }
     }
     return "\n".join(lines);
+}
+
+impl leaf_changes(changes: list[SymbolChange]) -> list[SymbolChange] {
+    def span(sc: SymbolChange) -> tuple[str, int, int] {
+        if sc.change == "removed" and sc.old_lines {
+            return ("old", sc.old_lines[0], sc.old_lines[1]);
+        }
+        if sc.new_lines {
+            return ("new", sc.new_lines[0], sc.new_lines[1]);
+        }
+        return ("none", 0, -1);
+    }
+    out: list[SymbolChange] = [];
+    for sc in changes {
+        (side, a, b) = span(sc);
+        if side == "none" {
+            continue;
+        }
+        container = False;
+        for other in changes {
+            if other is sc {
+                continue;
+            }
+            (os_, c, d) = span(other);
+            if os_ == side and a <= c and d <= b and (c, d) != (a, b) {
+                container = True;
+                break;
+            }
+        }
+        if not container {
+            out.append(sc);
+        }
+    }
+    return out;
+}
+
+impl partial_text(
+    old_text: str, new_text: str, changes: list[SymbolChange], keep: set[str]
+) -> str {
+    old = old_text.split("\n");
+    new = new_text.split("\n");
+    ops = difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes();
+    def map_old(i0: int) -> int {
+        for (tag, a1, a2, b1, b2) in ops {
+            if a1 <= i0 < a2 {
+                return b1 + (i0 - a1) if tag == "equal" else b1;
+            }
+        }
+        return len(new);
+    }
+    edits: list[tuple[int, int, list[str]]] = [];
+    for sc in leaf_changes(changes) {
+        if sc.key in keep {
+            continue;
+        }
+        if sc.change == "added" and sc.new_lines {
+            (a, b) = sc.new_lines;
+            edits.append((a - 1, b, []));
+        } elif sc.change == "changed" and sc.new_lines and sc.old_lines {
+            (a, b) = sc.new_lines;
+            (c, d) = sc.old_lines;
+            edits.append((a - 1, b, old[c - 1:d]));
+        } elif sc.change == "removed" and sc.old_lines {
+            (c, d) = sc.old_lines;
+            at = map_old(c - 1);
+            edits.append((at, at, old[c - 1:d]));
+        }
+    }
+    edits.sort(
+        key=lambda (e: tuple[int, int, list[str]]) -> tuple[int, int] { (e[0], e[1]) },
+        reverse=True
+    );
+    for (a, b, rep) in edits {
+        if not rep
+            and a > 0
+            and not new[a - 1].strip()
+            and (b >= len(new) or new[b].strip() in ["", "}"]) {
+            a -= 1;
+        }
+        new[a:b] = rep;
+    }
+    return "\n".join(new);
 }

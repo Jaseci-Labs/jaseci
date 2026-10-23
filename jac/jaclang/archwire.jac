@@ -32850,7 +32850,7 @@ graph import studio {
     ]
     gate ++> [
         app { EditGate, EditReview, format_review },
-        tui { EditGate },
+        tui { EditGate, leaf_changes, partial_text },
     ]
     intel ++> [
         app { CodeIntel, Span },

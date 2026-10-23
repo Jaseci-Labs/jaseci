@@ -2182,8 +2182,31 @@ impl approval_key(app: Studio, key: str) {
         return;
     }
     if req["type"] == "write" {
+        rv = req.get("review");
+        leaves = leaf_changes(rv.symbol_changes) if rv is not None else [];
+        if key.isdigit() and 1 <= int(key) <= min(len(leaves), 9) and len(leaves) > 1 {
+            keep: set[str] = req.get("keep") or set([lc.key for lc in leaves]);
+            k = leaves[int(key) - 1].key;
+            if k in keep {
+                keep.discard(k);
+            } else {
+                keep.add(k);
+            }
+            req["keep"] = keep;
+            at = app.sheet_scroll;
+            open_approval(app);
+            app.sheet_scroll = at;
+            return;
+        }
         if key in ["a", "y", "enter"] {
-            finish_write(app, req, True, "");
+            keep_now = req.get("keep");
+            if rv is not None
+                and keep_now is not None
+                and len(keep_now) < len(leaves) {
+                finish_partial(app, req, keep_now);
+            } else {
+                finish_write(app, req, True, "");
+            }
         } elif key in ["r", "n", "escape"] {
             finish_write(app, req, False, "The user rejected this edit in jac studio.");
         } elif key == "f" {
@@ -3053,7 +3076,9 @@ def diff_spans(text: str, width: int) -> list[list[TextSpan]];
 
 def open_approval(app: Studio) -> None;
 
-def review_lines(review: any, w: int) -> list[list[TextSpan]];
+def review_lines(
+    review: any, w: int, keep: (set[str] | None) = None
+) -> list[list[TextSpan]];
 
 def approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]];
 
@@ -3583,7 +3608,7 @@ impl open_approval(app: Studio) -> None {
             )
         );
         if app.gate is not None {
-            for ln in review_lines(req.get("review"), w) {
+            for ln in review_lines(req.get("review"), w, req.get("keep")) {
                 lines.append(ln);
             }
         }
@@ -3599,7 +3624,9 @@ impl open_approval(app: Studio) -> None {
     app.sheet_scroll = 0;
 }
 
-impl review_lines(review: any, w: int) -> list[list[TextSpan]] {
+impl review_lines(
+    review: any, w: int, keep: (set[str] | None) = None
+) -> list[list[TextSpan]] {
     out: list[list[TextSpan]] = [];
     bg = 237;
     if review is None {
@@ -3658,15 +3685,26 @@ impl review_lines(review: any, w: int) -> list[list[TextSpan]] {
             )
         );
     }
-    for sc in review.symbol_changes[:10] {
+    leaves = leaf_changes(review.symbol_changes);
+    leaf_keys = [lc.key for lc in leaves];
+    for sc in review.symbol_changes[:12] {
         mark = {"added": "+", "removed": "-"}.get(sc.change, "~");
         col = {"added": 114, "removed": 203}.get(sc.change, 179);
         pubtag = "  (public)" if sc.public else "";
+        box = "      ";
+        if sc.key in leaf_keys and len(leaves) > 1 {
+            n = leaf_keys.index(sc.key) + 1;
+            on = keep is None or sc.key in keep;
+            box = f" {n if n < 10 else ' '} {'☑' if on else '☐'} ";
+            if not on {
+                col = 244;
+            }
+        }
         out.append(
             fit(
                 [
                     sp(
-                        f"    {mark} {sc.kind} {sc.key} {sc.change}{pubtag}",
+                        f"  {box}{mark} {sc.kind} {sc.key} {sc.change}{pubtag}",
                         StyleAttrs(fg=col, bg=bg)
                     )
                 ],
@@ -3793,7 +3831,14 @@ impl approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]] {
             fit(
                 [
                     sp(" ", THEME.overlay),
-                    sp(" a accept ", StyleAttrs(fg=255, bg=28, bold=True)),
+                    sp(
+                        (
+                            " a accept selected "
+                                if req.get("keep") is not None
+                                else " a accept "
+                        ),
+                        StyleAttrs(fg=255, bg=28, bold=True)
+                    ),
                     sp(" ", THEME.overlay),
                     sp(" r reject ", StyleAttrs(fg=255, bg=124, bold=True)),
                     sp(" ", THEME.overlay),
@@ -3808,7 +3853,12 @@ impl approval_view(app: Studio, w: int, h: int) -> list[list[TextSpan]] {
         );
         out.append(
             fit(
-                [sp(" ↑↓ PgUp PgDn scroll the diff", StyleAttrs(fg=244, bg=237))],
+                [
+                    sp(
+                        " 1-9 toggle a symbol · ↑↓ PgUp PgDn scroll the diff",
+                        StyleAttrs(fg=244, bg=237)
+                    )
+                ],
                 w,
                 THEME.overlay
             )
@@ -4362,4 +4412,67 @@ impl with_inlays(
         k += 1;
     }
     return out;
+}
+
+def finish_partial(app: Studio, req: dict[str, any], keep: set[str]) -> None;
+
+impl finish_partial(app: Studio, req: dict[str, any], keep: set[str]) -> None {
+    d = req["data"];
+    rv = req["review"];
+    path = str(d.get("path", ""));
+    rel = os.path.relpath(path, app.root_dir);
+    text = partial_text(rv.old_text, rv.new_text, rv.symbol_changes, keep);
+    leaves = leaf_changes(rv.symbol_changes);
+    kept = [
+        lc.key
+        for lc in leaves
+        if lc.key in keep
+    ];
+    dropped = [
+        lc.key
+        for lc in leaves
+        if lc.key not in keep
+    ];
+    try {
+        with open(path, "w", encoding="utf-8") as fh {
+            fh.write(text);
+        }
+    } except OSError as e {
+        app.say(f"could not write {rel}: {e}", "error", 6.0);
+        return;
+    }
+    msg = (
+        f"The user applied only part of your edit to {rel}. Kept: {', '.join(kept)
+            or 'nothing'}. "
+        + f"Dropped: {', '.join(
+            dropped
+        )}. The file on disk now holds just the kept changes; "
+        + "read it again before you continue, and do not re-apply the dropped changes unless asked."
+    );
+    finish_write(app, req, False, msg);
+    real = os.path.realpath(path);
+    if real not in app.baselines {
+        app.baselines[real] = rv.old_text;
+    }
+    app.line_marks[real] = line_changes(app.baselines[real], text);
+    md = app.model.module_for_file(path);
+    prefix = md.key if md is not None else "";
+    for k in kept {
+        app.changed[f"{prefix}.{k}" if prefix else k] = "changed";
+    }
+    if prefix and kept {
+        app.changed.setdefault(prefix, "changed");
+    }
+    if os.path.realpath(app.code_path) == real {
+        load_code(app, path, keep_pos=True);
+    }
+    app.chat.append(
+        ChatEntry(
+            role="system",
+            text=f"applied {len(kept)} of {len(leaves)} symbol change(s) to {rel}; dropped {', '.join(
+                dropped
+            )}"
+        )
+    );
+    app.say(f"applied part of the edit to {rel}", "ok");
 }
