@@ -8,7 +8,7 @@ import from .model {
     node_id
 }
 
-import from .runtime {
+import from .runtime_core {
     append_child_session,
     create_session,
     set_current_screen,

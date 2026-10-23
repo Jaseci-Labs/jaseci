@@ -335,7 +335,7 @@ impl ProjectModel._discover {
     for (arch, spec) in specs {
         for local in spec.project_modules() {
             path = spec.module_file(local);
-            if not path {
+            if not path or os.path.basename(path) == ARCH_FILE_NAME {
                 continue;
             }
             self._add_module(spec.import_name(local), path, arch, local);

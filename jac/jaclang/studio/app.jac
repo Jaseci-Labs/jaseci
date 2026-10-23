@@ -78,8 +78,7 @@ impl run_studio(
         return cmd_model(root_dir, args, as_json);
     }
     if action == "" {
-        err("jac studio: the workspace UI is not built yet; try `jac studio model`.");
-        return 1;
+        return run_tui(root_dir, agent, session);
     }
     err(
         f"jac studio: unknown action '{action}'. Expected one of: " + ", ".join(ACTIONS)

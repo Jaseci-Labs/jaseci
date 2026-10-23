@@ -1,10 +1,10 @@
 import from .model { MainScreen }
 
-import from .runtime {
+import from .runtime_core {
     create_session,
     dispose_session,
     append_child_session,
-    set_current_screen,
+    set_current_screen
 }
 
 import from .events { dispatch_event }

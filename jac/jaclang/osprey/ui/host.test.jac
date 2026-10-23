@@ -1,6 +1,6 @@
 import from .virtual_terminal { VirtualTerminal, }
 
-import from .input { TextEvent }
+import from .input_events { TextEvent }
 
 
 test "host tick drains inject and maps interrupt" {

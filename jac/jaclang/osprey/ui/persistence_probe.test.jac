@@ -1,6 +1,6 @@
 import from .model { MainScreen, Prompt, node_id, }
 
-import from .runtime { create_session, append_child_session, dispose_session, }
+import from .runtime_core { create_session, append_child_session, dispose_session }
 
 import from .bindings { subscribe }
 

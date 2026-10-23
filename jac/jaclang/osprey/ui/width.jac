@@ -112,13 +112,7 @@ impl _is_emojiish(seg: str) -> bool {
         if cp == 0xFE0F or cp == 0x200D or _is_regional_indicator(cp) {
             return True;
         }
-        if (
-            (cp >= 0x1F300 and cp <= 0x1FAFF)
-            or (cp >= 0x2600 and cp <= 0x27BF)
-            or (cp >= 0x2B00 and cp <= 0x2BFF)
-            or (cp >= 0x2190 and cp <= 0x21FF)
-            or (cp >= 0x2300 and cp <= 0x23FF)
-        ) {
+        if cp >= 0x1F300 and cp <= 0x1FAFF {
             return True;
         }
     }

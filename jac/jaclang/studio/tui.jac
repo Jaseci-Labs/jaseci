@@ -1,0 +1,2593 @@
+import os;
+import sys;
+import time;
+import threading;
+import logging;
+import warnings;
+import from jaclang.osprey.ui.model { UiRegion, UiContainer, MainScreen, Overlay }
+import from jaclang.osprey.ui.runtime_core {
+    UiSession,
+    create_session,
+    append_child_session,
+    set_current_screen,
+    set_focus
+}
+import from jaclang.osprey.ui.runtime { open_modal_overlay, close_overlay }
+import from jaclang.osprey.ui.layout_types_core { Axis, LayoutSpec, OverlayAnchor }
+import from jaclang.osprey.ui.layout_types { fill_axis, fixed_axis, grow_axis, rect_of }
+import from jaclang.osprey.ui.renderer {
+    create_renderer,
+    set_node_contract,
+    set_node_spans,
+    request_cursor,
+    clear_cursor,
+    render_frame,
+    relayout,
+    detach_node
+}
+import from jaclang.osprey.ui.renderer_types { Renderer }
+import from jaclang.osprey.ui.terminal { ProcessTerminal, read_terminal_size }
+import from jaclang.osprey.ui.input { InputNormalizer, coalesce_events }
+import from jaclang.osprey.ui.input_events {
+    KeyEvent,
+    TextEvent,
+    PasteEvent,
+    MouseEvent
+}
+import from jaclang.osprey.ui.cells { StyleAttrs, TextSpan }
+import from jaclang.osprey.ui.width { display_width }
+import from jaclang.osprey.ui.markdown_proj { project_markdown }
+
+node Row(UiContainer) {}
+
+node Col(UiContainer) {}
+
+node Pane(UiRegion) {
+    has pane: str = "";
+}
+
+node Sheet(Overlay) {
+    has sheet: str = "";
+}
+
+obj NavRow {
+    has key: str,
+        label: str,
+        kind: str,
+        depth: int = 0,
+        expandable: bool = False,
+        expanded: bool = False,
+        detail: str = "";
+}
+
+obj PickItem {
+    has key: str,
+        label: str,
+        detail: str = "",
+        kind: str = "",
+        data: any = None;
+}
+
+obj ChatEntry {
+    has role: str,
+        text: str = "",
+        title: str = "",
+        status: str = "",
+        kind: str = "",
+        ident: str = "",
+        detail: str = "",
+        time: float = 0.0;
+}
+
+obj Studio {
+    has root_dir: str,
+        model: ProjectModel,
+        sess: UiSession postinit,
+        r: Renderer postinit,
+        term: ProcessTerminal postinit,
+        norm: InputNormalizer postinit,
+        screen: MainScreen postinit,
+        header: Pane postinit,
+        body: Row postinit,
+        nav: Pane postinit,
+        center: Pane postinit,
+        right: Col postinit,
+        chat_pane: Pane postinit,
+        tray_pane: Pane postinit,
+        prompt: Pane postinit,
+        status: Pane postinit,
+        sheet: (Sheet | None) = None,
+        sheet_kind: str = "",
+        focus: str = "nav",
+        center_mode: str = "code",
+        running: bool = True,
+        dirty: bool = True,
+        indexing: bool = False,
+        index_done: int = 0,
+        index_total: int = 0,
+        index_error: str = "",
+        nav_rows: list[NavRow] = [],
+        nav_sel: int = 0,
+        nav_top: int = 0,
+        expanded: set[str] = set(),
+        code_path: str = "",
+        code_lines: list[str] = [],
+        code_mtime: float = 0.0,
+        code_top: int = 0,
+        code_left: int = 0,
+        cur_line: int = 0,
+        cur_col: int = 0,
+        code_h: int = 10,
+        code_w: int = 40,
+        wire_mod: str = "",
+        wire_col: int = 1,
+        wire_sel: list[int] = [0, 0, 0],
+        wire_top: list[int] = [0, 0, 0],
+        chat: list[ChatEntry] = [],
+        chat_top: int = 0,
+        chat_follow: bool = True,
+        chat_h: int = 10,
+        tray: list[str] = [],
+        tray_sel: int = 0,
+        draft: str = "",
+        caret: int = 0,
+        history: list[str] = [],
+        hist_i: int = -1,
+        flash: str = "",
+        flash_kind: str = "info",
+        flash_until: float = 0.0,
+        hover: str = "",
+        picker_query: str = "",
+        picker_items: list[PickItem] = [],
+        picker_sel: int = 0,
+        picker_purpose: str = "goto",
+        picker_title: str = "",
+        sheet_lines: list[list[TextSpan]] = [],
+        sheet_scroll: int = 0,
+        approval: dict[str, any] = {},
+        quit_armed: float = 0.0,
+        last_stale_check: float = 0.0,
+        file_syms: dict[str, list[StNode]] = {},
+        intel: any = None,
+        agent: any = None,
+        agent_name: str = "",
+        agent_state: str = "none",
+        session_id: str = "",
+        spin: int = 0,
+        log_path: str = "";
+
+    def postinit;
+    def install_layout;
+    def say(text: str, kind: str = "info", secs: float = 4.0);
+}
+
+def run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int;
+
+def start_indexing(app: Studio);
+
+def main_loop(app: Studio);
+
+def pump_background(app: Studio);
+
+def handle_event(app: Studio, ev: any) -> None;
+
+def handle_mouse(app: Studio, ev: MouseEvent) -> None;
+
+def pane_node(app: Studio, name: str) -> any;
+
+def pane_at(app: Studio, x: int, y: int) -> str;
+
+glob FOCUS_RING: list[str] = ["nav", "code", "chat", "tray", "prompt"];
+
+def handle_key(app: Studio, key: str) -> None;
+
+def cycle_focus(app: Studio, step: int);
+
+def toggle_center(app: Studio) -> None;
+
+def current_module_key(app: Studio) -> str;
+
+def module_of_key(app: Studio, key: str) -> str;
+
+def rebuild_nav(app: Studio);
+
+def walk_nav(app: Studio, key: str, depth: int, rows: list[NavRow]);
+
+def nav_key(app: Studio, key: str);
+
+def nav_activate(app: Studio) -> None;
+
+def open_key(app: Studio, key: str, focus: bool = False) -> None;
+
+def reveal_in_nav(app: Studio, key: str);
+
+def load_code(app: Studio, path: str, keep_pos: bool = False) -> None;
+
+def goto_line(app: Studio, line: int);
+
+def clamp_cursor(app: Studio);
+
+def gutter_width(app: Studio) -> int;
+
+def code_key(app: Studio, key: str) -> None;
+
+def symbols_in_file(app: Studio, path: str) -> list[StNode];
+
+def symbol_at_cursor(app: Studio) -> (StNode | None);
+
+def word_at_cursor(app: Studio) -> str;
+
+def jump_decl_impl(app: Studio) -> None;
+
+def goto_definition(app: Studio) -> None;
+
+def find_references(app: Studio) -> None;
+
+def show_locations(app: Studio, title: str, items: list[PickItem]) -> None;
+
+def jump_diagnostic(app: Studio) -> None;
+
+def update_hover(app: Studio) -> None;
+
+def wire_columns(app: Studio) -> list[list[PickItem]];
+
+def wire_key(app: Studio, key: str) -> None;
+
+def chat_key(app: Studio, key: str);
+
+def tray_key(app: Studio, key: str);
+
+def add_to_tray(app: Studio, key: str) -> None;
+
+def prompt_insert(app: Studio, text: str) -> None;
+
+def prompt_key(app: Studio, key: str);
+
+def submit(app: Studio) -> None;
+
+glob VERBS: dict[str, str] = {
+         "explain": "Explain what the selected code does, how it is wired into the rest of the project, and anything surprising.",
+         "tests": "Write tests for the selected code. Follow the project's existing test conventions.",
+         "refactor": "Refactor the selected code for clarity without changing behaviour. Keep the archwire wiring valid.",
+         "review": "Review the selected code for bugs and risky assumptions. Do not change files; report findings.",
+         "doc": "Document the selected code: add or improve its docstrings and sem strings.",
+         "fix": "Fix the problems in the selected code. Check your edits compile.",
+         "move": "Move the selected code to the module named below, updating archwire.jac so every import stays wired:"
+     };
+
+def run_slash(app: Studio, text: str);
+
+def send_to_agent(app: Studio, text: str);
+
+def cancel_turn(app: Studio);
+
+def open_agent_picker(app: Studio);
+
+def open_sheet(app: Studio, kind: str, width: int, height: int, anchor: OverlayAnchor);
+
+def close_sheet(app: Studio) -> None;
+
+def screen_size(app: Studio) -> tuple[int, int];
+
+def open_picker(app: Studio, purpose: str, title: str, query: str);
+
+def refresh_picker(app: Studio);
+
+def palette_items(app: Studio) -> list[PickItem];
+
+def open_palette(app: Studio);
+
+def run_palette(app: Studio, key: str);
+
+def sheet_text(app: Studio, ch: str) -> None;
+
+def sheet_key(app: Studio, key: str) -> None;
+
+def pick(app: Studio, item: PickItem, alt: bool);
+
+def choose_agent(app: Studio, name: str);
+
+glob HELP_TEXT: list[tuple[str, str]] = [
+         ("", "Moving around"),
+         (
+             "Tab / Shift+Tab",
+             "move focus: navigator, code, transcript, context, prompt"
+         ),
+         (
+             "Ctrl+P",
+             "go to any module or symbol (Tab in the list adds it to the context)"
+         ),
+         ("Ctrl+T or w", "switch the centre between code and the archwire wiring view"),
+         ("Ctrl+X", "command palette"),
+         ("Ctrl+L", "jump to the prompt"),
+         ("Ctrl+C / Ctrl+Q", "cancel the agent's turn (twice to quit) / quit"),
+         ("", "Navigator"),
+         ("↑ ↓  j k", "move"),
+         ("→ ←  l h", "expand / collapse"),
+         ("Enter", "open in the code view"),
+         ("Space or a", "add to the context"),
+         ("", "Code"),
+         ("arrows, PgUp/PgDn, g/G", "move the cursor"),
+         ("Space or a", "add the symbol under the cursor to the context"),
+         ("Enter or d", "go to definition"),
+         ("r", "find references"),
+         ("i", "jump between a declaration and its impl"),
+         ("e", "next diagnostic"),
+         ("", "Wiring view"),
+         ("← →", "providers | module | consumers"),
+         ("Enter", "follow a wire to that module, or open a symbol"),
+         ("Space", "add the wire or symbol to the context"),
+         ("", "Context and prompt"),
+         ("@", "in the prompt: pick something to add to the context"),
+         ("Enter / Alt+Enter", "send / new line"),
+         (
+             "/explain /tests /review ...",
+             "verbs that act on the context (also /refactor /doc /fix /move)"
+         ),
+         ("/agent", "choose the agent"),
+         ("x or Delete", "in the context tray: remove the selected item")
+     ];
+
+def open_help(app: Studio);
+
+def approval_key(app: Studio, key: str);
+
+def paint(app: Studio);
+
+def pane_rect(app: Studio, n: any) -> tuple[int, int];
+
+def title_row(
+    app: Studio, text: str, focused: bool, width: int, right: str = ""
+) -> list[TextSpan];
+
+def paint_header(app: Studio) -> None;
+
+glob SPIN: str = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+
+def paint_nav(app: Studio) -> None;
+
+def code_line_spans(
+    app: Studio, idx: int, text: str, styles: (list[list[any]] | None)
+) -> list[TextSpan];
+
+def slice_spans(spans: list[TextSpan], left: int) -> list[TextSpan];
+
+def paint_code(app: Studio) -> None;
+
+def paint_wiring(app: Studio) -> None;
+
+def chat_lines(app: Studio, width: int) -> list[list[TextSpan]];
+
+def paint_chat(app: Studio) -> None;
+
+def paint_tray(app: Studio) -> None;
+
+def paint_prompt(app: Studio) -> None;
+
+def paint_status(app: Studio) -> None;
+
+def paint_sheet(app: Studio) -> None;
+
+impl Studio.postinit {
+    handle = create_session();
+    self.sess = handle.session;
+    self.screen = MainScreen(key="studio");
+    self.header = Pane(key="header", pane="header");
+    self.body = Row(key="body");
+    self.nav = Pane(key="nav", pane="nav");
+    self.center = Pane(key="center", pane="center");
+    self.right = Col(key="right");
+    self.chat_pane = Pane(key="chat", pane="chat");
+    self.tray_pane = Pane(key="tray", pane="tray");
+    self.prompt = Pane(key="prompt", pane="prompt");
+    self.status = Pane(key="status", pane="status");
+    s = self.sess;
+    ui_top = s.ui_root;
+    if ui_top is None {
+        raise RuntimeError("osprey session has no root");
+    }
+    append_child_session(s, ui_top, self.screen);
+    append_child_session(s, self.screen, self.header);
+    append_child_session(s, self.screen, self.body);
+    append_child_session(s, self.body, self.nav);
+    append_child_session(s, self.body, self.center);
+    append_child_session(s, self.body, self.right);
+    append_child_session(s, self.right, self.chat_pane);
+    append_child_session(s, self.right, self.tray_pane);
+    append_child_session(s, self.screen, self.prompt);
+    append_child_session(s, self.screen, self.status);
+    set_current_screen(s, self.screen);
+    set_focus(s, self.nav);
+    (cols, rows) = read_terminal_size(120, 36);
+    self.r = create_renderer(cols, rows);
+    self.term = ProcessTerminal();
+    self.norm = InputNormalizer();
+    self.expanded = set();
+    self.install_layout();
+}
+
+impl Studio.install_layout {
+    r = self.r;
+    set_node_contract(
+        r, self.screen, LayoutSpec(width=fill_axis(), height=fill_axis())
+    );
+    set_node_contract(
+        r, self.header, LayoutSpec(width=fill_axis(), height=fixed_axis(1.0))
+    );
+    set_node_contract(
+        r,
+        self.body,
+        LayoutSpec(width=fill_axis(), height=grow_axis(1.0), flow_axis=Axis.HORIZONTAL)
+    );
+    set_node_contract(
+        r, self.nav, LayoutSpec(width=fixed_axis(34.0), height=fill_axis())
+    );
+    set_node_contract(
+        r, self.center, LayoutSpec(width=grow_axis(3.0), height=fill_axis())
+    );
+    set_node_contract(
+        r, self.right, LayoutSpec(width=grow_axis(2.0), height=fill_axis())
+    );
+    set_node_contract(
+        r, self.chat_pane, LayoutSpec(width=fill_axis(), height=grow_axis(1.0))
+    );
+    set_node_contract(
+        r, self.tray_pane, LayoutSpec(width=fill_axis(), height=fixed_axis(7.0))
+    );
+    set_node_contract(
+        r, self.prompt, LayoutSpec(width=fill_axis(), height=fixed_axis(4.0))
+    );
+    set_node_contract(
+        r, self.status, LayoutSpec(width=fill_axis(), height=fixed_axis(1.0))
+    );
+}
+
+impl Studio.say(text: str, kind: str = "info", secs: float = 4.0) {
+    self.flash = text;
+    self.flash_kind = kind;
+    self.flash_until = time.time() + secs;
+    self.dirty = True;
+}
+
+impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
+    if not sys.stdin.isatty() or not sys.stdout.isatty() {
+        sys.stderr.write(
+            "jac studio needs an interactive terminal; try `jac studio model`.\n"
+        );
+        return 1;
+    }
+    model = ProjectModel(root_dir=root_dir);
+    model.build(index=False);
+    app = Studio(root_dir=root_dir, model=model);
+    app.agent_name = agent_name;
+    app.session_id = session_id;
+    log_dir = os.path.join(root_dir, ".jac", "studio", "logs");
+    os.makedirs(log_dir, exist_ok=True);
+    app.log_path = os.path.join(log_dir, "studio.log");
+    log_file = open(app.log_path, "a", buffering=1);
+    saved_out = sys.stdout;
+    saved_err = sys.stderr;
+    saved_handlers = list(logging.getLogger().handlers);
+    saved_level = logging.getLogger().level;
+    rc = 0;
+    try {
+        logging.getLogger().handlers = [logging.StreamHandler(log_file)];
+        logging.getLogger().setLevel(logging.WARNING);
+        warnings.simplefilter("ignore");
+        app.term.start();
+        app.term.set_title("jac studio");
+        app.term.enable_mouse();
+        sys.stderr = log_file;
+        start_indexing(app);
+        app.say(
+            "Welcome to jac studio. Tab moves focus, Ctrl+P finds anything, F1 shows keys.",
+            "info",
+            8.0
+        );
+        rebuild_nav(app);
+        main_loop(app);
+    } except KeyboardInterrupt {
+        rc = 130;
+    } finally {
+        try {
+            app.term.stop();
+        } except Exception {}
+        sys.stderr = saved_err;
+        sys.stdout = saved_out;
+        logging.getLogger().handlers = saved_handlers;
+        logging.getLogger().setLevel(saved_level);
+        try {
+            if app.agent is not None {
+                app.agent.stop();
+            }
+        } except Exception {}
+        try {
+            if app.intel is not None {
+                app.intel.stop();
+            }
+        } except Exception {}
+        log_file.close();
+    }
+    return rc;
+}
+
+impl start_indexing(app: Studio) {
+    app.indexing = True;
+    app.index_total = len(
+        [
+            m
+            for m in app.model.modules.values()
+            if m.kind == "module"
+        ]
+    );
+    def progress(n: int, total: int, key: str) {
+        app.index_done = n;
+        app.index_total = total;
+        if n % 20 == 0 or n == total {
+            app.dirty = True;
+        }
+    }
+    def work {
+        try {
+            app.model.index_all(progress);
+        } except Exception as e {
+            app.index_error = str(e);
+        }
+        app.indexing = False;
+        app.file_syms = {};
+        app.dirty = True;
+    }
+    threading.Thread(target=work, daemon=True).start();
+}
+
+impl main_loop(app: Studio) {
+    frame_t = 0.0;
+    while app.running {
+        raw = app.term.poll_input(0.03);
+        if getattr(app.term, "eof", False) {
+            break;
+        }
+        events: list[any] = [];
+        if raw {
+            events = app.norm.feed(raw);
+        } elif app.norm.buffer == "\x1b" {
+            events = app.norm.flush_buffer();
+        }
+        for ev in coalesce_events(events) {
+            handle_event(app, ev);
+        }
+        pump_background(app);
+        now = time.time();
+        if app.flash and now > app.flash_until {
+            app.flash = "";
+            app.dirty = True;
+        }
+        if app.indexing or (app.agent_state == "busy") {
+            if now - frame_t > 0.12 {
+                app.spin += 1;
+                app.dirty = True;
+            }
+        }
+        if app.dirty {
+            paint(app);
+            app.dirty = False;
+            frame_t = now;
+        }
+    }
+}
+
+impl pump_background(app: Studio) {
+    now = time.time();
+    if not app.indexing and now - app.last_stale_check > 1.5 {
+        app.last_stale_check = now;
+        try {
+            stale = app.model.stale_files();
+        } except Exception {
+            stale = [];
+        }
+        for f in stale[:5] {
+            app.model.refresh(f);
+            app.file_syms = {};
+            app.dirty = True;
+        }
+        if app.code_path {
+            try {
+                m = os.path.getmtime(app.code_path);
+                if m != app.code_mtime {
+                    load_code(app, app.code_path, keep_pos=True);
+                    app.say(
+                        f"{os.path.basename(app.code_path)} changed on disk; reloaded",
+                        "info"
+                    );
+                }
+            } except OSError {}
+        }
+        if stale {
+            rebuild_nav(app);
+        }
+    }
+}
+
+impl handle_event(app: Studio, ev: any) -> None {
+    if isinstance(ev, KeyEvent) {
+        handle_key(app, ev.key);
+    } elif isinstance(ev, TextEvent) {
+        if not ev.text {
+            return;
+        }
+        if app.sheet is not None {
+            for ch in ev.text {
+                sheet_text(app, ch);
+            }
+        } elif app.focus == "prompt" {
+            prompt_insert(app, ev.text);
+        } else {
+            for ch in ev.text {
+                handle_key(app, ch);
+            }
+        }
+    } elif isinstance(ev, PasteEvent) {
+        if app.sheet is not None and app.sheet_kind == "picker" {
+            app.picker_query += ev.text.replace("\n", " ");
+            refresh_picker(app);
+        } else {
+            app.focus = "prompt";
+            prompt_insert(app, ev.text);
+        }
+    } elif isinstance(ev, MouseEvent) {
+        handle_mouse(app, ev);
+    }
+    app.dirty = True;
+}
+
+impl handle_mouse(app: Studio, ev: MouseEvent) -> None {
+    if app.sheet is not None {
+        return;
+    }
+    (x, y) = (ev.x - 1, ev.y - 1);
+    if ev.button in [64, 65] {
+        delta = -3 if ev.button == 64 else 3;
+        target = pane_at(app, x, y);
+        if target == "center" and app.center_mode == "code" {
+            app.code_top = max(
+                0, min(app.code_top + delta, max(0, len(app.code_lines) - 1))
+            );
+        } elif target == "chat" {
+            app.chat_follow = False;
+            app.chat_top = max(0, app.chat_top + delta);
+        } elif target == "nav" {
+            app.nav_top = max(
+                0, min(app.nav_top + delta, max(0, len(app.nav_rows) - 1))
+            );
+        }
+        return;
+    }
+    if not ev.pressed or ev.motion {
+        return;
+    }
+    target = pane_at(app, x, y);
+    if not target {
+        return;
+    }
+    if target in ["nav", "center", "chat", "tray", "prompt"] {
+        app.focus = "code" if target == "center" else target;
+    }
+    rect = rect_of(app.r.layout, pane_node(app, target));
+    if rect is None {
+        return;
+    }
+    row = y - rect.y - 1;
+    if target == "nav" and row >= 0 {
+        idx = app.nav_top + row;
+        if 0 <= idx < len(app.nav_rows) {
+            if idx == app.nav_sel {
+                nav_activate(app);
+            }
+            app.nav_sel = idx;
+        }
+    } elif target == "center" and app.center_mode == "code" and row >= 0 {
+        app.cur_line = min(max(0, app.code_top + row), max(0, len(app.code_lines) - 1));
+        app.cur_col = max(0, x - rect.x - gutter_width(app) + app.code_left);
+        clamp_cursor(app);
+    } elif target == "tray" and row >= 0 {
+        if row < len(app.tray) {
+            app.tray_sel = row;
+        }
+    }
+}
+
+impl pane_node(app: Studio, name: str) -> any {
+    return {
+        "nav": app.nav,
+        "center": app.center,
+        "chat": app.chat_pane,
+        "tray": app.tray_pane,
+        "prompt": app.prompt,
+        "header": app.header,
+        "status": app.status
+    }.get(
+        name
+    );
+}
+
+impl pane_at(app: Studio, x: int, y: int) -> str {
+    for name in ["nav", "center", "chat", "tray", "prompt"] {
+        rect = rect_of(app.r.layout, pane_node(app, name));
+        if rect is not None
+            and rect.x <= x < rect.x + rect.width
+            and rect.y <= y < rect.y + rect.height {
+            return name;
+        }
+    }
+    return "";
+}
+
+impl handle_key(app: Studio, key: str) -> None {
+    if app.sheet is not None {
+        sheet_key(app, key);
+        return;
+    }
+    if key == "ctrl+q" {
+        app.running = False;
+        return;
+    }
+    if key == "ctrl+c" {
+        if app.agent is not None and app.agent_state == "busy" {
+            cancel_turn(app);
+            return;
+        }
+        if time.time() - app.quit_armed < 2.0 {
+            app.running = False;
+        } else {
+            app.quit_armed = time.time();
+            app.say("Press Ctrl+C again to quit (Ctrl+Q quits at once)", "warn", 2.0);
+        }
+        return;
+    }
+    if key == "tab" {
+        cycle_focus(app, 1);
+        return;
+    }
+    if key == "shift+tab" {
+        cycle_focus(app, -1);
+        return;
+    }
+    if key == "ctrl+p" {
+        open_picker(app, "goto", "Go to symbol or module", "");
+        return;
+    }
+    if key == "ctrl+x" {
+        open_palette(app);
+        return;
+    }
+    if key == "f1" or (key == "?" and app.focus != "prompt") {
+        open_help(app);
+        return;
+    }
+    if key == "ctrl+t" or (key == "w" and app.focus in ["nav", "code"]) {
+        toggle_center(app);
+        return;
+    }
+    if key == "ctrl+l" {
+        app.focus = "prompt";
+        return;
+    }
+    if key == "escape" and app.focus != "prompt" {
+        app.hover = "";
+        return;
+    }
+    if app.focus == "nav" {
+        nav_key(app, key);
+    } elif app.focus == "code" {
+        if app.center_mode == "code" {
+            code_key(app, key);
+        } else {
+            wire_key(app, key);
+        }
+    } elif app.focus == "chat" {
+        chat_key(app, key);
+    } elif app.focus == "tray" {
+        tray_key(app, key);
+    } elif app.focus == "prompt" {
+        prompt_key(app, key);
+    }
+}
+
+impl cycle_focus(app: Studio, step: int) {
+    i = FOCUS_RING.index(app.focus) if app.focus in FOCUS_RING else 0;
+    app.focus = FOCUS_RING[(i + step) % len(FOCUS_RING)];
+}
+
+impl toggle_center(app: Studio) -> None {
+    if app.center_mode == "code" {
+        key = current_module_key(app);
+        if key {
+            app.wire_mod = key;
+        }
+        if not app.wire_mod {
+            app.say(
+                "Select a module first: wiring shows what feeds it and what it feeds",
+                "warn"
+            );
+            return;
+        }
+        app.center_mode = "wiring";
+        app.wire_sel = [0, 0, 0];
+        app.wire_top = [0, 0, 0];
+        app.wire_col = 1;
+    } else {
+        app.center_mode = "code";
+    }
+    app.focus = "code";
+}
+
+impl current_module_key(app: Studio) -> str {
+    if app.focus == "nav" and 0 <= app.nav_sel < len(app.nav_rows) {
+        key = app.nav_rows[app.nav_sel].key;
+        return module_of_key(app, key);
+    }
+    if app.code_path {
+        mod = app.model.module_for_file(app.code_path);
+        if mod is not None {
+            return mod.key;
+        }
+    }
+    return app.wire_mod;
+}
+
+impl module_of_key(app: Studio, key: str) -> str {
+    if key in app.model.modules {
+        return key;
+    }
+    best = "";
+    for mk in app.model.modules {
+        if key.startswith(mk + ".") and len(mk) > len(best) {
+            best = mk;
+        }
+    }
+    return best;
+}
+
+impl rebuild_nav(app: Studio) {
+    rows: list[NavRow] = [];
+    with app.model.lock {
+        walk_nav(app, "", 0, rows);
+    }
+    sel_key = app.nav_rows[app.nav_sel].key
+        if 0 <= app.nav_sel < len(app.nav_rows)
+        else "";
+    app.nav_rows = rows;
+    if sel_key {
+        for (i, r) in enumerate(rows) {
+            if r.key == sel_key {
+                app.nav_sel = i;
+                break;
+            }
+        }
+    }
+    app.nav_sel = min(app.nav_sel, max(0, len(rows) - 1));
+    app.dirty = True;
+}
+
+impl walk_nav(app: Studio, key: str, depth: int, rows: list[NavRow]) {
+    kids = app.model.children(key);
+    pkgs = sorted(
+        [
+            k
+            for k in kids
+            if k.kind == "package"
+        ],
+        key=lambda (k: StNode) -> str { k.name }
+    );
+    mods = sorted(
+        [
+            k
+            for k in kids
+            if k.kind == "module"
+        ],
+        key=lambda (k: StNode) -> str { k.name }
+    );
+    syms = [
+        k
+        for k in kids
+        if k.kind not in ["package", "module", "external", "rule"]
+    ];
+    for kid in pkgs + mods + syms {
+        expandable = kid.kind in ["package", "module"]
+            or len(app.model.children(kid.key)) > 0;
+        open_ = kid.key in app.expanded;
+        detail = "";
+        if kid.kind == "module" and isinstance(kid, StModule) {
+            if kid.error {
+                detail = "!";
+            } elif not kid.indexed {
+                detail = "…";
+            }
+        }
+        rows.append(
+            NavRow(
+                key=kid.key,
+                label=kid.name,
+                kind=kid.kind,
+                depth=depth,
+                expandable=expandable,
+                expanded=open_,
+                detail=detail
+            )
+        );
+        if open_ {
+            walk_nav(app, kid.key, depth + 1, rows);
+        }
+    }
+}
+
+impl nav_key(app: Studio, key: str) {
+    n = len(app.nav_rows);
+    if key in ["down", "j"] {
+        app.nav_sel = min(n - 1, app.nav_sel + 1);
+    } elif key in ["up", "k"] {
+        app.nav_sel = max(0, app.nav_sel - 1);
+    } elif key == "page_down" {
+        app.nav_sel = min(n - 1, app.nav_sel + 15);
+    } elif key == "page_up" {
+        app.nav_sel = max(0, app.nav_sel - 15);
+    } elif key in ["home", "g"] {
+        app.nav_sel = 0;
+    } elif key in ["end", "G"] {
+        app.nav_sel = max(0, n - 1);
+    } elif key in ["right", "l"] {
+        if 0 <= app.nav_sel < n {
+            row = app.nav_rows[app.nav_sel];
+            if row.expandable and not row.expanded {
+                app.expanded.add(row.key);
+                rebuild_nav(app);
+            } elif row.expanded and app.nav_sel + 1 < n {
+                app.nav_sel += 1;
+            }
+        }
+    } elif key in ["left", "h"] {
+        if 0 <= app.nav_sel < n {
+            row = app.nav_rows[app.nav_sel];
+            if row.expanded {
+                app.expanded.discard(row.key);
+                rebuild_nav(app);
+            } else {
+                for i in range(app.nav_sel - 1, -1, -1) {
+                    if app.nav_rows[i].depth < row.depth {
+                        app.nav_sel = i;
+                        break;
+                    }
+                }
+            }
+        }
+    } elif key == "enter" {
+        nav_activate(app);
+    } elif key in [" ", "ctrl+space", "a"] {
+        if 0 <= app.nav_sel < n {
+            add_to_tray(app, app.nav_rows[app.nav_sel].key);
+        }
+    }
+}
+
+impl nav_activate(app: Studio) -> None {
+    if not (0 <= app.nav_sel < len(app.nav_rows)) {
+        return;
+    }
+    row = app.nav_rows[app.nav_sel];
+    if row.kind == "package" {
+        if row.key in app.expanded {
+            app.expanded.discard(row.key);
+        } else {
+            app.expanded.add(row.key);
+        }
+        rebuild_nav(app);
+        return;
+    }
+    open_key(app, row.key);
+    if row.kind == "module" and row.key not in app.expanded {
+        app.expanded.add(row.key);
+        rebuild_nav(app);
+    }
+}
+
+impl open_key(app: Studio, key: str, focus: bool = False) -> None {
+    nd = app.model.node_for(key);
+    if nd is None or not nd.file {
+        app.say(f"{key} has no source", "warn");
+        return;
+    }
+    load_code(app, nd.file);
+    line = max(nd.line - 1, 0);
+    goto_line(app, line);
+    app.center_mode = "code";
+    if isinstance(nd, StModule) {
+        app.wire_mod = nd.key;
+    }
+    if focus {
+        app.focus = "code";
+    }
+    reveal_in_nav(app, key);
+}
+
+impl reveal_in_nav(app: Studio, key: str) {
+    parts = key.split(".");
+    changed = False;
+    for i in range(1, len(parts)) {
+        prefix = ".".join(parts[:i]);
+        if (
+            prefix in app.model.packages
+            or prefix in app.model.modules
+            or prefix in app.model.symbols
+        )
+            and prefix not in app.expanded {
+            app.expanded.add(prefix);
+            changed = True;
+        }
+    }
+    if changed {
+        rebuild_nav(app);
+    }
+    for (i, r) in enumerate(app.nav_rows) {
+        if r.key == key {
+            app.nav_sel = i;
+            break;
+        }
+    }
+}
+
+impl load_code(app: Studio, path: str, keep_pos: bool = False) -> None {
+    try {
+        with open(path, encoding="utf-8", errors="replace") as fh {
+            text = fh.read();
+        }
+        app.code_mtime = os.path.getmtime(path);
+    } except OSError as e {
+        app.say(f"cannot open {path}: {e}", "error");
+        return;
+    }
+    if path != app.code_path {
+        keep_pos = False;
+    }
+    app.code_path = path;
+    app.code_lines = text.replace("\t", "    ").split("\n");
+    if not keep_pos {
+        app.cur_line = 0;
+        app.cur_col = 0;
+        app.code_top = 0;
+        app.code_left = 0;
+    }
+    clamp_cursor(app);
+    if app.intel is not None {
+        try {
+            app.intel.invalidate(path);
+            app.intel.request_check(path);
+        } except Exception {}
+    }
+    app.hover = "";
+}
+
+impl goto_line(app: Studio, line: int) {
+    app.cur_line = max(0, min(line, max(0, len(app.code_lines) - 1)));
+    app.cur_col = 0;
+    app.code_top = max(0, app.cur_line - max(app.code_h // 3, 1));
+}
+
+impl clamp_cursor(app: Studio) {
+    n = len(app.code_lines);
+    app.cur_line = max(0, min(app.cur_line, max(0, n - 1)));
+    ln = app.code_lines[app.cur_line] if n else "";
+    app.cur_col = max(0, min(app.cur_col, len(ln)));
+    if app.cur_line < app.code_top {
+        app.code_top = app.cur_line;
+    }
+    if app.cur_line >= app.code_top + app.code_h {
+        app.code_top = app.cur_line - app.code_h + 1;
+    }
+    textw = app.code_w - gutter_width(app);
+    if app.cur_col < app.code_left {
+        app.code_left = app.cur_col;
+    }
+    if textw > 4 and app.cur_col >= app.code_left + textw - 1 {
+        app.code_left = app.cur_col - textw + 2;
+    }
+}
+
+impl gutter_width(app: Studio) -> int {
+    return len(str(max(len(app.code_lines), 1))) + 3;
+}
+
+impl code_key(app: Studio, key: str) -> None {
+    if not app.code_path {
+        if key in ["enter", " "] {
+            app.focus = "nav";
+        }
+        return;
+    }
+    if key in ["down", "j"] {
+        app.cur_line += 1;
+    } elif key in ["up", "k"] {
+        app.cur_line -= 1;
+    } elif key in ["left", "h"] {
+        app.cur_col -= 1;
+    } elif key in ["right", "l"] {
+        app.cur_col += 1;
+    } elif key == "page_down" {
+        app.cur_line += app.code_h - 2;
+        app.code_top += app.code_h - 2;
+    } elif key == "page_up" {
+        app.cur_line -= app.code_h - 2;
+        app.code_top = max(0, app.code_top - app.code_h + 2);
+    } elif key in ["home", "0"] {
+        app.cur_col = 0;
+    } elif key in ["end", "$"] {
+        app.cur_col = len(app.code_lines[app.cur_line]) if app.code_lines else 0;
+    } elif key == "g" {
+        app.cur_line = 0;
+    } elif key == "G" {
+        app.cur_line = len(app.code_lines) - 1;
+    } elif key in [" ", "ctrl+space", "a"] {
+        sym = symbol_at_cursor(app);
+        if sym is not None {
+            add_to_tray(app, sym.key);
+        } else {
+            mod = app.model.module_for_file(app.code_path);
+            if mod is not None {
+                add_to_tray(app, mod.key);
+            }
+        }
+    } elif key == "i" {
+        jump_decl_impl(app);
+    } elif key in ["enter", "f12", "d"] {
+        goto_definition(app);
+    } elif key in ["r", "ctrl+r"] {
+        find_references(app);
+    } elif key == "e" {
+        jump_diagnostic(app);
+    }
+    clamp_cursor(app);
+    update_hover(app);
+}
+
+impl symbols_in_file(app: Studio, path: str) -> list[StNode] {
+    if path in app.file_syms {
+        return app.file_syms[path];
+    }
+    found: list[StNode] = [];
+    with app.model.lock {
+        for s in app.model.symbols.values() {
+            if s.file == path or (isinstance(s, StAbility) and s.impl_file == path) {
+                found.append(s);
+            }
+        }
+    }
+    app.file_syms[path] = found;
+    return found;
+}
+
+impl symbol_at_cursor(app: Studio) -> (StNode | None) {
+    line = app.cur_line + 1;
+    best: (StNode | None) = None;
+    best_span = 10 ** 9;
+    for s in symbols_in_file(app, app.code_path) {
+        if isinstance(s, StImpl) {
+            continue;
+        }
+        (lo, hi) = (s.line, max(s.end_line, s.line));
+        if isinstance(s, StAbility)
+            and s.impl_file == app.code_path
+            and not (s.file == app.code_path and lo <= line <= hi) {
+            (lo, hi) = (s.impl_line, max(s.impl_end_line, s.impl_line));
+        }
+        if lo <= line <= hi and (hi - lo) < best_span {
+            best = s;
+            best_span = hi - lo;
+        }
+    }
+    return best;
+}
+
+impl word_at_cursor(app: Studio) -> str {
+    if not app.code_lines {
+        return "";
+    }
+    ln = app.code_lines[app.cur_line];
+    i = min(app.cur_col, len(ln));
+    lo = i;
+    while lo > 0 and (ln[lo - 1].isalnum() or ln[lo - 1] == "_") {
+        lo -= 1;
+    }
+    hi = i;
+    while hi < len(ln) and (ln[hi].isalnum() or ln[hi] == "_") {
+        hi += 1;
+    }
+    return ln[lo:hi];
+}
+
+impl jump_decl_impl(app: Studio) -> None {
+    sym = symbol_at_cursor(app);
+    if sym is None or not isinstance(sym, StAbility) or not sym.impl_file {
+        app.say("No separate impl for the symbol here", "warn");
+        return;
+    }
+    in_impl = sym.impl_file == app.code_path
+        and sym.impl_line <= app.cur_line + 1 <= max(sym.impl_end_line, sym.impl_line);
+    if in_impl {
+        load_code(app, sym.file);
+        goto_line(app, sym.line - 1);
+        app.say(f"declaration of {sym.name}");
+    } else {
+        load_code(app, sym.impl_file);
+        goto_line(app, sym.impl_line - 1);
+        app.say(f"impl of {sym.name}  ({os.path.basename(sym.impl_file)})");
+    }
+}
+
+impl goto_definition(app: Studio) -> None {
+    if app.intel is not None {
+        try {
+            t = app.intel.request_definition(
+                app.code_path, app.cur_line + 1, app.cur_col + 1
+            );
+            app.approval["def_ticket"] = t;
+            app.say("finding definition…");
+            return;
+        } except Exception {}
+    }
+    word = word_at_cursor(app);
+    if not word {
+        return;
+    }
+    hits = [
+        h
+        for h in app.model.search(word, limit=20)
+        if h.name == word
+    ];
+    if not hits {
+        app.say(f"no definition found for {word}", "warn");
+        return;
+    }
+    if len(hits) == 1 {
+        open_key(app, hits[0].key);
+        return;
+    }
+    open_picker(app, "goto", f"Definitions of {word}", word);
+}
+
+impl find_references(app: Studio) -> None {
+    if app.intel is not None {
+        try {
+            t = app.intel.request_references(
+                app.code_path, app.cur_line + 1, app.cur_col + 1
+            );
+            app.approval["refs_ticket"] = t;
+            app.say("finding references…");
+            return;
+        } except Exception {}
+    }
+    word = word_at_cursor(app);
+    if not word {
+        return;
+    }
+    items: list[PickItem] = [];
+    for mod in list(app.model.modules.values()) {
+        for f in mod.files {
+            try {
+                with open(f, encoding="utf-8", errors="replace") as fh {
+                    for (i, ln) in enumerate(fh) {
+                        if word in ln {
+                            items.append(
+                                PickItem(
+                                    key=f"{f}:{i + 1}",
+                                    label=f"{os.path.relpath(f, app.root_dir)}:{i + 1}",
+                                    detail=ln.strip()[:80],
+                                    kind="ref",
+                                    data=(f, i)
+                                )
+                            );
+                        }
+                    }
+                }
+            } except OSError {}
+        }
+        if len(items) > 400 {
+            break;
+        }
+    }
+    show_locations(app, f"Text matches of {word}", items);
+}
+
+impl show_locations(app: Studio, title: str, items: list[PickItem]) -> None {
+    if not items {
+        app.say(f"{title}: none", "warn");
+        return;
+    }
+    open_picker(app, "locations", title, "");
+    app.picker_items = items;
+    app.picker_sel = 0;
+    app.approval["loc_items"] = items;
+}
+
+impl jump_diagnostic(app: Studio) -> None {
+    if app.intel is None {
+        app.say("diagnostics need the code intelligence service", "warn");
+        return;
+    }
+    diags = sorted(
+        app.intel.diagnostics(app.code_path), key=lambda (d: any) -> int { d.line }
+    );
+    for d in diags {
+        if d.line - 1 > app.cur_line {
+            goto_line(app, d.line - 1);
+            app.cur_col = max(d.col - 1, 0);
+            return;
+        }
+    }
+    if diags {
+        goto_line(app, diags[0].line - 1);
+        app.cur_col = max(diags[0].col - 1, 0);
+    } else {
+        app.say("no diagnostics in this file", "ok");
+    }
+}
+
+impl update_hover(app: Studio) -> None {
+    sym = symbol_at_cursor(app);
+    if sym is None {
+        app.hover = "";
+        return;
+    }
+    sig = getattr(sym, "signature", "") or getattr(sym, "type_str", "");
+    app.hover = f"{sym.kind} {sym.key}  {sig}".strip();
+    if app.intel is not None {
+        try {
+            t = app.intel.request_hover(
+                app.code_path, app.cur_line + 1, app.cur_col + 1
+            );
+            app.approval["hover_ticket"] = t;
+        } except Exception {}
+    }
+}
+
+impl wire_columns(app: Studio) -> list[list[PickItem]] {
+    m = app.model;
+    key = app.wire_mod;
+    provs: list[PickItem] = [];
+    for w in m.providers(key) {
+        names = ", ".join(w.names) if w.names else "(whole module)";
+        scope = f" → {w.scope}" if w.scope else "";
+        provs.append(
+            PickItem(
+                key=w.provider,
+                label=w.provider,
+                detail=names + scope,
+                kind="wire",
+                data=w
+            )
+        );
+    }
+    mids: list[PickItem] = [];
+    mod = m.modules.get(key);
+    if mod is not None {
+        mids.append(PickItem(key=key, label=key, detail=mod.kind, kind="module"));
+        for r in m.rules_for(key) {
+            mids.append(
+                PickItem(
+                    key=r.key,
+                    label=f"rule {r.name}",
+                    detail=" | ".join(r.sources) + " → " + " | ".join(r.targets),
+                    kind="rule"
+                )
+            );
+        }
+        with m.lock {
+            for s in m.children(key) {
+                sig = getattr(s, "signature", "") or "";
+                mids.append(PickItem(key=s.key, label=s.name, detail=sig, kind=s.kind));
+            }
+        }
+    }
+    cons: list[PickItem] = [];
+    for w in m.consumers(key) {
+        names = ", ".join(w.names) if w.names else "(whole module)";
+        scope = f" → {w.scope}" if w.scope else "";
+        cons.append(
+            PickItem(
+                key=w.consumer,
+                label=w.consumer + scope,
+                detail=names,
+                kind="wire",
+                data=w
+            )
+        );
+    }
+    return [provs, mids, cons];
+}
+
+impl wire_key(app: Studio, key: str) -> None {
+    cols = wire_columns(app);
+    c = app.wire_col;
+    n = len(cols[c]);
+    if key in ["left", "h"] {
+        app.wire_col = max(0, c - 1);
+    } elif key in ["right", "l"] {
+        app.wire_col = min(2, c + 1);
+    } elif key in ["down", "j"] {
+        app.wire_sel[c] = min(max(n - 1, 0), app.wire_sel[c] + 1);
+    } elif key in ["up", "k"] {
+        app.wire_sel[c] = max(0, app.wire_sel[c] - 1);
+    } elif key == "enter" {
+        if n == 0 {
+            return;
+        }
+        item = cols[c][app.wire_sel[c]];
+        if c in [0, 2] {
+            target = item.key;
+            if target in app.model.modules
+                and app.model.modules[target].kind == "module" {
+                app.wire_mod = target;
+                app.wire_sel = [0, 0, 0];
+                app.wire_top = [0, 0, 0];
+                app.wire_col = 1;
+                reveal_in_nav(app, target);
+            } else {
+                app.say(f"{target} is outside the project", "warn");
+            }
+        } elif item.kind == "rule" {
+            nd = None;
+            for r in app.model.rules {
+                if r.key == item.key {
+                    nd = r;
+                }
+            }
+            if nd is not None {
+                load_code(app, nd.file);
+                app.center_mode = "code";
+                app.say(f"rule {nd.name} lives in {os.path.basename(nd.file)}");
+            }
+        } else {
+            open_key(app, item.key);
+        }
+    } elif key in [" ", "ctrl+space", "a"] {
+        if n == 0 {
+            return;
+        }
+        item = cols[c][app.wire_sel[c]];
+        if c in [0, 2] and item.data is not None {
+            w = item.data;
+            add_to_tray(app, f"wire:{w.provider}->{w.consumer}");
+        } else {
+            add_to_tray(app, item.key);
+        }
+    } elif key == "o" {
+        open_key(app, app.wire_mod);
+    } elif key == "escape" {
+        app.center_mode = "code";
+    }
+}
+
+impl chat_key(app: Studio, key: str) {
+    if key in ["up", "k"] {
+        app.chat_follow = False;
+        app.chat_top = max(0, app.chat_top - 1);
+    } elif key in ["down", "j"] {
+        app.chat_top += 1;
+    } elif key == "page_up" {
+        app.chat_follow = False;
+        app.chat_top = max(0, app.chat_top - app.chat_h + 2);
+    } elif key == "page_down" {
+        app.chat_top += app.chat_h - 2;
+    } elif key in ["end", "G"] {
+        app.chat_follow = True;
+    } elif key in ["home", "g"] {
+        app.chat_follow = False;
+        app.chat_top = 0;
+    }
+}
+
+impl tray_key(app: Studio, key: str) {
+    n = len(app.tray);
+    if key in ["down", "j"] {
+        app.tray_sel = min(max(n - 1, 0), app.tray_sel + 1);
+    } elif key in ["up", "k"] {
+        app.tray_sel = max(0, app.tray_sel - 1);
+    } elif key in ["delete", "backspace", "x", "d"] {
+        if 0 <= app.tray_sel < n {
+            gone = app.tray.pop(app.tray_sel);
+            app.tray_sel = min(app.tray_sel, max(0, len(app.tray) - 1));
+            app.say(f"removed {gone} from context");
+        }
+    } elif key == "enter" {
+        if 0 <= app.tray_sel < n {
+            k = app.tray[app.tray_sel];
+            if not k.startswith("wire:") {
+                open_key(app, k, focus=True);
+            }
+        }
+    } elif key == "C" {
+        app.tray = [];
+        app.tray_sel = 0;
+        app.say("context cleared");
+    }
+}
+
+impl add_to_tray(app: Studio, key: str) -> None {
+    if key in app.tray {
+        app.say(f"{key} is already in the context", "info");
+        return;
+    }
+    app.tray.append(key);
+    app.tray_sel = len(app.tray) - 1;
+    app.say(f"+ {key} added to the context", "ok");
+}
+
+impl prompt_insert(app: Studio, text: str) -> None {
+    if text == "@"
+        and (app.caret == 0 or app.draft[app.caret - 1:app.caret] in [" ", "\n"]) {
+        open_picker(app, "tray", "Add to context", "");
+        return;
+    }
+    app.draft = app.draft[:app.caret] + text + app.draft[app.caret:];
+    app.caret += len(text);
+}
+
+impl prompt_key(app: Studio, key: str) {
+    if key == "enter" {
+        submit(app);
+    } elif key in ["alt+\r", "alt+enter", "ctrl+j"] {
+        prompt_insert(app, "\n");
+    } elif key == "backspace" {
+        if app.caret > 0 {
+            app.draft = app.draft[:app.caret - 1] + app.draft[app.caret:];
+            app.caret -= 1;
+        }
+    } elif key == "delete" {
+        app.draft = app.draft[:app.caret] + app.draft[app.caret + 1:];
+    } elif key == "left" {
+        app.caret = max(0, app.caret - 1);
+    } elif key == "right" {
+        app.caret = min(len(app.draft), app.caret + 1);
+    } elif key in ["home", "ctrl+a"] {
+        app.caret = app.draft.rfind("\n", 0, app.caret) + 1;
+    } elif key in ["end", "ctrl+e"] {
+        nl = app.draft.find("\n", app.caret);
+        app.caret = len(app.draft) if nl < 0 else nl;
+    } elif key == "ctrl+u" {
+        app.draft = "";
+        app.caret = 0;
+    } elif key == "ctrl+k" {
+        nl = app.draft.find("\n", app.caret);
+        app.draft = app.draft[:app.caret] + (app.draft[nl:] if nl >= 0 else "");
+    } elif key == "ctrl+w" {
+        i = app.caret;
+        while i > 0 and app.draft[i - 1] == " " {
+            i -= 1;
+        }
+        while i > 0 and app.draft[i - 1] not in [" ", "\n"] {
+            i -= 1;
+        }
+        app.draft = app.draft[:i] + app.draft[app.caret:];
+        app.caret = i;
+    } elif key == "up" {
+        if app.history and "\n" not in app.draft {
+            app.hist_i = len(app.history) - 1
+                if app.hist_i < 0
+                else max(0, app.hist_i - 1);
+            app.draft = app.history[app.hist_i];
+            app.caret = len(app.draft);
+        }
+    } elif key == "down" {
+        if app.hist_i >= 0 {
+            app.hist_i += 1;
+            if app.hist_i >= len(app.history) {
+                app.hist_i = -1;
+                app.draft = "";
+            } else {
+                app.draft = app.history[app.hist_i];
+            }
+            app.caret = len(app.draft);
+        }
+    } elif key == "escape" {
+        app.focus = "nav";
+    }
+}
+
+impl submit(app: Studio) -> None {
+    text = app.draft.strip();
+    if not text {
+        return;
+    }
+    app.history.append(text);
+    app.hist_i = -1;
+    app.draft = "";
+    app.caret = 0;
+    if text.startswith("/") {
+        run_slash(app, text);
+        return;
+    }
+    send_to_agent(app, text);
+}
+
+impl run_slash(app: Studio, text: str) {
+    parts = text[1:].split(" ", 1);
+    verb = parts[0].lower();
+    rest = parts[1] if len(parts) > 1 else "";
+    if verb in VERBS {
+        send_to_agent(app, (VERBS[verb] + " " + rest).strip());
+    } elif verb in ["help", "?"] {
+        open_help(app);
+    } elif verb == "clear" {
+        app.chat = [];
+        app.chat_top = 0;
+    } elif verb == "agent" {
+        open_agent_picker(app);
+    } elif verb == "quit" {
+        app.running = False;
+    } else {
+        app.say(
+            f"unknown command /{verb}; try /explain /tests /refactor /review /doc /fix /move /agent /clear",
+            "warn"
+        );
+    }
+}
+
+impl send_to_agent(app: Studio, text: str) {
+    app.chat.append(
+        ChatEntry(role="user", text=text, detail=", ".join(app.tray), time=time.time())
+    );
+    app.chat_follow = True;
+    app.chat.append(
+        ChatEntry(
+            role="system",
+            text="No agent is connected yet. Agents arrive in the next step of the build.",
+            time=time.time()
+        )
+    );
+}
+
+impl cancel_turn(app: Studio) {
+    if app.agent is not None {
+        try {
+            app.agent.cancel();
+        } except Exception {}
+    }
+    app.say("cancelling the agent's turn…", "warn");
+}
+
+impl open_agent_picker(app: Studio) {
+    app.say("agent selection arrives with the agents step", "warn");
+}
+
+impl open_sheet(
+    app: Studio, kind: str, width: int, height: int, anchor: OverlayAnchor
+) {
+    close_sheet(app);
+    sh = Sheet(key=f"sheet-{kind}", sheet=kind);
+    append_child_session(app.sess, app.screen, sh);
+    open_modal_overlay(app.sess, app.screen, sh, initial_focus=sh, z_index=20);
+    set_node_contract(
+        app.r,
+        sh,
+        LayoutSpec(
+            width=fixed_axis(float(width)),
+            height=fixed_axis(float(height)),
+            overlay_anchor=anchor
+        )
+    );
+    app.sheet = sh;
+    app.sheet_kind = kind;
+    app.sheet_scroll = 0;
+    app.dirty = True;
+}
+
+impl close_sheet(app: Studio) -> None {
+    sh = app.sheet;
+    if sh is None {
+        return;
+    }
+    app.sheet = None;
+    app.sheet_kind = "";
+    detach_node(app.r, sh);
+    try {
+        close_overlay(app.sess, sh);
+    } except Exception {}
+    app.dirty = True;
+}
+
+impl screen_size(app: Studio) -> tuple[int, int] {
+    return (app.r.layout.viewport.columns, app.r.layout.viewport.rows);
+}
+
+impl open_picker(app: Studio, purpose: str, title: str, query: str) {
+    (cols, rows) = screen_size(app);
+    w = min(max(60, cols * 2 // 3), cols - 4);
+    h = min(24, rows - 4);
+    open_sheet(app, "picker", w, h, OverlayAnchor.TOP);
+    app.picker_purpose = purpose;
+    app.picker_title = title;
+    app.picker_query = query;
+    app.picker_sel = 0;
+    refresh_picker(app);
+}
+
+impl refresh_picker(app: Studio) {
+    if app.picker_purpose == "locations" {
+        base = app.approval.get("loc_items", []);
+        q = app.picker_query.lower();
+        app.picker_items = [
+            i
+            for i in base
+            if q in i.label.lower() or q in i.detail.lower()
+        ];
+    } elif app.picker_purpose == "palette" {
+        q = app.picker_query.lower();
+        app.picker_items = [
+            i
+            for i in palette_items(app)
+            if q in i.label.lower()
+        ];
+    } elif app.picker_purpose == "agents" {
+        app.picker_items = app.approval.get("agent_items", []);
+    } else {
+        hits = app.model.search(app.picker_query, limit=200);
+        app.picker_items = [
+            PickItem(
+                key=h.key,
+                label=h.key,
+                detail=getattr(h, "signature", "")
+                    or (os.path.relpath(h.file, app.root_dir) if h.file else ""),
+                kind=h.kind
+            ) for h in hits
+        ];
+    }
+    app.picker_sel = min(app.picker_sel, max(0, len(app.picker_items) - 1));
+}
+
+impl palette_items(app: Studio) -> list[PickItem] {
+    return [
+        PickItem(key="goto", label="Go to symbol or module   Ctrl+P"),
+        PickItem(key="wiring", label="Toggle code / wiring view   Ctrl+T"),
+        PickItem(key="agent", label="Choose agent   /agent"),
+        PickItem(key="explain", label="Ask: explain the context   /explain"),
+        PickItem(key="tests", label="Ask: write tests   /tests"),
+        PickItem(key="refactor", label="Ask: refactor   /refactor"),
+        PickItem(key="review", label="Ask: review   /review"),
+        PickItem(key="clear-tray", label="Clear the context tray"),
+        PickItem(key="clear-chat", label="Clear the transcript   /clear"),
+        PickItem(key="reindex", label="Re-index the project"),
+        PickItem(key="help", label="Keys and help   F1"),
+        PickItem(key="quit", label="Quit   Ctrl+Q")
+    ];
+}
+
+impl open_palette(app: Studio) {
+    open_picker(app, "palette", "Command palette", "");
+}
+
+impl run_palette(app: Studio, key: str) {
+    if key == "goto" {
+        open_picker(app, "goto", "Go to symbol or module", "");
+    } elif key == "wiring" {
+        toggle_center(app);
+    } elif key == "agent" {
+        open_agent_picker(app);
+    } elif key in VERBS {
+        send_to_agent(app, VERBS[key]);
+    } elif key == "clear-tray" {
+        app.tray = [];
+    } elif key == "clear-chat" {
+        app.chat = [];
+    } elif key == "reindex" {
+        if not app.indexing {
+            start_indexing(app);
+        }
+    } elif key == "help" {
+        open_help(app);
+    } elif key == "quit" {
+        app.running = False;
+    }
+}
+
+impl sheet_text(app: Studio, ch: str) -> None {
+    if app.sheet_kind == "picker" {
+        if ord(ch) >= 32 {
+            app.picker_query += ch;
+            app.picker_sel = 0;
+            refresh_picker(app);
+        }
+        return;
+    }
+    sheet_key(app, ch);
+}
+
+impl sheet_key(app: Studio, key: str) -> None {
+    kind = app.sheet_kind;
+    if kind == "picker" {
+        n = len(app.picker_items);
+        if key == "escape" {
+            close_sheet(app);
+        } elif key in ["down", "ctrl+n"] {
+            app.picker_sel = min(max(n - 1, 0), app.picker_sel + 1);
+        } elif key in ["up", "ctrl+p"] {
+            app.picker_sel = max(0, app.picker_sel - 1);
+        } elif key == "page_down" {
+            app.picker_sel = min(max(n - 1, 0), app.picker_sel + 10);
+        } elif key == "page_up" {
+            app.picker_sel = max(0, app.picker_sel - 10);
+        } elif key == "backspace" {
+            app.picker_query = app.picker_query[:-1];
+            app.picker_sel = 0;
+            refresh_picker(app);
+        } elif key == "ctrl+u" {
+            app.picker_query = "";
+            refresh_picker(app);
+        } elif key in ["enter", "tab"] {
+            if 0 <= app.picker_sel < n {
+                pick(app, app.picker_items[app.picker_sel], key == "tab");
+            } else {
+                close_sheet(app);
+            }
+        }
+        return;
+    }
+    if kind == "help" {
+        if key in ["escape", "q", "f1", "?", "enter"] {
+            close_sheet(app);
+        } elif key in ["down", "j"] {
+            app.sheet_scroll += 1;
+        } elif key in ["up", "k"] {
+            app.sheet_scroll = max(0, app.sheet_scroll - 1);
+        }
+        return;
+    }
+    if kind == "approval" {
+        approval_key(app, key);
+        return;
+    }
+    if key == "escape" {
+        close_sheet(app);
+    }
+}
+
+impl pick(app: Studio, item: PickItem, alt: bool) {
+    purpose = app.picker_purpose;
+    close_sheet(app);
+    if purpose == "goto" {
+        if alt {
+            add_to_tray(app, item.key);
+        } else {
+            open_key(app, item.key, focus=True);
+        }
+    } elif purpose == "tray" {
+        add_to_tray(app, item.key);
+        app.focus = "prompt";
+    } elif purpose == "locations" {
+        (f, line) = item.data;
+        load_code(app, f);
+        goto_line(app, line);
+        app.center_mode = "code";
+        app.focus = "code";
+    } elif purpose == "palette" {
+        run_palette(app, item.key);
+    } elif purpose == "agents" {
+        choose_agent(app, item.key);
+    }
+}
+
+impl choose_agent(app: Studio, name: str) {
+    app.agent_name = name;
+    app.say(f"agent set to {name}");
+}
+
+impl open_help(app: Studio) {
+    (cols, rows) = screen_size(app);
+    open_sheet(
+        app,
+        "help",
+        min(84, cols - 4),
+        min(len(HELP_TEXT) + 4, rows - 2),
+        OverlayAnchor.CENTER
+    );
+}
+
+impl approval_key(app: Studio, key: str) {
+    close_sheet(app);
+}
+
+impl paint(app: Studio) {
+    (cols, rows) = app.term.size();
+    if cols != app.r.layout.viewport.columns or rows != app.r.layout.viewport.rows {
+        app.r.layout.viewport.columns = cols;
+        app.r.layout.viewport.rows = rows;
+    }
+    relayout(app.r, app.screen);
+    paint_header(app);
+    paint_nav(app);
+    if app.center_mode == "code" {
+        paint_code(app);
+    } else {
+        paint_wiring(app);
+    }
+    paint_chat(app);
+    paint_tray(app);
+    paint_prompt(app);
+    paint_status(app);
+    if app.sheet is not None {
+        paint_sheet(app);
+    }
+    render_frame(app.r, app.screen, app.term);
+}
+
+impl pane_rect(app: Studio, n: any) -> tuple[int, int] {
+    rect = rect_of(app.r.layout, n);
+    if rect is None {
+        return (0, 0);
+    }
+    return (rect.width, rect.height);
+}
+
+impl title_row(
+    app: Studio, text: str, focused: bool, width: int, right: str = ""
+) -> list[TextSpan] {
+    a = THEME.title_focus if focused else THEME.title;
+    spans = [sp(" " + text + " ", a)];
+    used = display_width(" " + text + " ");
+    if right {
+        pad = width - used - display_width(right) - 1;
+        if pad > 0 {
+            spans.append(sp(" " * pad, a));
+            spans.append(sp(right + " ", a));
+        }
+    }
+    return fit(spans, width, a);
+}
+
+impl paint_header(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.header);
+    if w <= 0 {
+        return;
+    }
+    st_ = app.model.stats() if not app.indexing else {};
+    proj = os.path.basename(app.root_dir);
+    mods = len(
+        [
+            m
+            for m in app.model.modules.values()
+            if m.kind == "module"
+        ]
+    );
+    agent = app.agent_name or "no agent";
+    spans = [
+        sp(" ◆ jac studio ", THEME.header),
+        sp("│ ", THEME.header_dim),
+        sp(proj + " ", THEME.header),
+        sp(f"│ {mods} modules · {len(app.model.wires)} wires ", THEME.header_dim),
+        sp(f"│ agent: {agent} ({app.agent_state}) ", THEME.header_dim)
+    ];
+    if app.session_id {
+        spans.append(sp(f"│ session {app.session_id[:8]} ", THEME.header_dim));
+    }
+    set_node_spans(app.r, app.header, [fit(spans, w, THEME.header)]);
+}
+
+impl paint_nav(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.nav);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "nav";
+    right = "";
+    if app.indexing {
+        right = f"{SPIN[app.spin % len(SPIN)]} {app.index_done}/{app.index_total}";
+    }
+    out: list[list[TextSpan]] = [title_row(app, "NAVIGATOR", focused, w, right)];
+    body_h = h - 1;
+    if app.nav_sel < app.nav_top {
+        app.nav_top = app.nav_sel;
+    }
+    if app.nav_sel >= app.nav_top + body_h {
+        app.nav_top = app.nav_sel - body_h + 1;
+    }
+    if not app.nav_rows and app.indexing {
+        out.append(plain("  indexing the project…", w, THEME.dim));
+    }
+    for i in range(app.nav_top, min(len(app.nav_rows), app.nav_top + body_h)) {
+        row = app.nav_rows[i];
+        sel = i == app.nav_sel;
+        arrow = "  ";
+        if row.expandable {
+            arrow = "▾ " if row.expanded else "▸ ";
+        }
+        spans = [
+            sp(" " + "  " * row.depth + arrow, THEME.faint),
+            sp(kind_icon(row.kind) + " ", kind_attrs(row.kind)),
+            sp(row.label, THEME.text if row.kind != "has" else THEME.dim)
+        ];
+        if row.detail {
+            spans.append(sp(" " + row.detail, THEME.warn));
+        }
+        line = fit(spans, w, None);
+        if sel {
+            line = restyle(line, C_SEL_FOCUS if focused else C_SEL);
+        }
+        out.append(line);
+    }
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.nav, out[:h], THEME.pane);
+}
+
+impl code_line_spans(
+    app: Studio, idx: int, text: str, styles: (list[list[any]] | None)
+) -> list[TextSpan] {
+    if styles is None or idx >= len(styles) or not styles[idx] {
+        return [sp(text, THEME.text)];
+    }
+    spans: list[TextSpan] = [];
+    pos = 0;
+    for s in sorted(styles[idx], key=lambda (x: any) -> int { x.start }) {
+        (a, b) = (max(s.start, pos), min(s.end, len(text)));
+        if a > pos {
+            spans.append(sp(text[pos:a], THEME.text));
+        }
+        if b > a {
+            spans.append(sp(text[a:b], CODE_STYLES.get(s.style, THEME.text)));
+            pos = b;
+        }
+    }
+    if pos < len(text) {
+        spans.append(sp(text[pos:], THEME.text));
+    }
+    return spans;
+}
+
+impl slice_spans(spans: list[TextSpan], left: int) -> list[TextSpan] {
+    if left <= 0 {
+        return spans;
+    }
+    out: list[TextSpan] = [];
+    skipn = left;
+    for s in spans {
+        if skipn <= 0 {
+            out.append(s);
+        } elif len(s.text) <= skipn {
+            skipn -= len(s.text);
+        } else {
+            out.append(sp(s.text[skipn:], s.attrs));
+            skipn = 0;
+        }
+    }
+    return out;
+}
+
+impl paint_code(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.center);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "code";
+    app.code_h = max(h - 1, 1);
+    app.code_w = w;
+    if not app.code_path {
+        out = [title_row(app, "CODE", focused, w)];
+        tips = [
+            "",
+            "  Pick something in the navigator (Enter), or press Ctrl+P to find any",
+            "  module or symbol. Ctrl+T shows how a module is wired: what feeds it",
+            "  and what it feeds.",
+            "",
+            "  Select code (Space) to put it in the context, then tell an agent what",
+            "  to do with it in the prompt below."
+        ];
+        for t in tips {
+            out.append(plain(t, w, THEME.dim));
+        }
+        while len(out) < h {
+            out.append(blank(w));
+        }
+        set_node_spans(app.r, app.center, out[:h], THEME.pane);
+        return;
+    }
+    rel = os.path.relpath(app.code_path, app.root_dir);
+    sym = symbol_at_cursor(app);
+    status = "";
+    diags: list[any] = [];
+    styles: (list[list[any]] | None) = None;
+    if app.intel is not None {
+        try {
+            status = app.intel.status(app.code_path);
+            diags = app.intel.diagnostics(app.code_path);
+            styles = app.intel.line_styles(app.code_path);
+        } except Exception {}
+    }
+    right = f"{app.cur_line + 1}:{app.cur_col + 1}";
+    if diags {
+        ne = len(
+            [
+                d
+                for d in diags
+                if d.severity == "error"
+            ]
+        );
+        nw = len(diags) - ne;
+        right = f"✖{ne} ⚠{nw}  " + right;
+    }
+    if status and status not in ["ready", "idle"] {
+        right = status + "  " + right;
+    }
+    title = rel + (f"  ›  {sym.key}" if sym is not None else "");
+    out = [title_row(app, title, focused, w, right)];
+    gw = gutter_width(app);
+    diag_lines: dict[int, str] = {};
+    for d in diags {
+        sev = diag_lines.get(d.line, "");
+        if sev != "error" {
+            diag_lines[d.line] = d.severity;
+        }
+    }
+    sym_lo = 0;
+    sym_hi = -1;
+    if sym is not None {
+        if sym.file == app.code_path {
+            (sym_lo, sym_hi) = (sym.line, sym.end_line);
+        } elif isinstance(sym, StAbility) {
+            (sym_lo, sym_hi) = (sym.impl_line, sym.impl_end_line);
+        }
+    }
+    for i in range(app.code_top, min(len(app.code_lines), app.code_top + h - 1)) {
+        text = app.code_lines[i];
+        cur = i == app.cur_line;
+        mark = " ";
+        mark_a = THEME.gutter;
+        sev = diag_lines.get(i + 1, "");
+        if sev == "error" {
+            (mark, mark_a) = ("●", THEME.err);
+        } elif sev {
+            (mark, mark_a) = ("●", THEME.warn);
+        } elif sym_lo <= i + 1 <= sym_hi {
+            (mark, mark_a) = ("│", StyleAttrs(fg=24));
+        }
+        num = str(i + 1).rjust(gw - 3);
+        gutter = [
+            sp(num, THEME.gutter_cur if cur else THEME.gutter),
+            sp(" " + mark + " ", mark_a)
+        ];
+        body = slice_spans(code_line_spans(app, i, text, styles), app.code_left);
+        line = fit(gutter + body, w, None);
+        if cur and focused {
+            line = restyle(line, 236);
+        }
+        out.append(line);
+    }
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.center, out[:h], THEME.pane);
+    if focused and app.sheet is None {
+        row = app.cur_line - app.code_top + 1;
+        col = gw + app.cur_col - app.code_left;
+        if 0 < row < h and 0 <= col < w {
+            request_cursor(app.r, app.center, row_offset=row, col_offset=col);
+        }
+    }
+}
+
+impl paint_wiring(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.center);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "code";
+    cols = wire_columns(app);
+    out = [
+        title_row(
+            app,
+            f"WIRING  {app.wire_mod}",
+            focused,
+            w,
+            "← feeds it │ module │ it feeds →"
+        )
+    ];
+    side = max(int((w - 2) * 0.37), 12);
+    widths = [side, w - 2 - 2 * side, side];
+    heads = [
+        f"feeds this ({len(cols[0])})",
+        "module, rules and symbols",
+        f"consumed by ({len(cols[2])})"
+    ];
+    head = [];
+    for c in range(3) {
+        a = THEME.accent if c == app.wire_col and focused else THEME.dim;
+        head += fit([sp(" " + heads[c], a)], widths[c], None);
+        if c < 2 {
+            head.append(sp("│", THEME.faint));
+        }
+    }
+    out.append(head);
+    body_h = h - 2;
+    rows_per = 2;
+    vis = max(body_h // rows_per, 1);
+    for c in range(3) {
+        if app.wire_sel[c] < app.wire_top[c] {
+            app.wire_top[c] = app.wire_sel[c];
+        }
+        if app.wire_sel[c] >= app.wire_top[c] + vis {
+            app.wire_top[c] = app.wire_sel[c] - vis + 1;
+        }
+    }
+    for r in range(body_h) {
+        line: list[TextSpan] = [];
+        for c in range(3) {
+            idx = app.wire_top[c] + r // rows_per;
+            cell: list[TextSpan] = [];
+            if idx < len(cols[c]) {
+                item = cols[c][idx];
+                if r % rows_per == 0 {
+                    icon = kind_icon(item.kind);
+                    label = item.label;
+                    room = widths[c] - 4;
+                    if room > 4 and len(label) > room {
+                        label = "…" + label[len(label) - room + 1:];
+                    }
+                    cell = [
+                        sp(" " + icon + " ", kind_attrs(item.kind)),
+                        sp(label, THEME.text)
+                    ];
+                } else {
+                    cell = [sp("    " + item.detail, THEME.dim)];
+                }
+                cell = fit(cell, widths[c], None);
+                if idx == app.wire_sel[c] and (c == app.wire_col) {
+                    cell = restyle(cell, C_SEL_FOCUS if focused else C_SEL);
+                }
+            } else {
+                cell = blank(widths[c]);
+            }
+            line += cell;
+            if c < 2 {
+                line.append(sp("│", THEME.faint));
+            }
+        }
+        out.append(fit(line, w, None));
+    }
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.center, out[:h], THEME.pane);
+}
+
+impl chat_lines(app: Studio, width: int) -> list[list[TextSpan]] {
+    out: list[list[TextSpan]] = [];
+    inner = max(width - 2, 10);
+    for e in app.chat {
+        if e.role == "user" {
+            out.append(fit([sp("▍you", THEME.accent2)], width, None));
+            for ln in wrap_plain(e.text, inner) {
+                out.append(fit([sp("  " + ln, THEME.text)], width, None));
+            }
+            if e.detail {
+                out.append(fit([sp("  ⊕ " + e.detail, THEME.faint)], width, None));
+            }
+        } elif e.role == "agent" {
+            out.append(
+                fit([sp("▍" + (app.agent_name or "agent"), THEME.accent)], width, None)
+            );
+            for pl in project_markdown(e.text, inner) {
+                spans = [sp("  ", None)] + [sp(s.text, s.attrs) for s in pl.spans];
+                out.append(fit(spans, width, None));
+            }
+        } elif e.role == "thought" {
+            for ln in wrap_plain(e.text, inner)[-6:] {
+                out.append(fit([sp("  ∴ " + ln, THEME.faint)], width, None));
+            }
+        } elif e.role == "tool" {
+            icon = {
+                "completed": "✓",
+                "failed": "✗",
+                "in_progress": "…",
+                "pending": "·"
+            }.get(
+                e.status, "·"
+            );
+            a = THEME.ok
+                if e.status == "completed"
+                else (THEME.err if e.status == "failed" else THEME.dim);
+            out.append(
+                fit(
+                    [sp(f"  {icon} ", a), sp(e.title or e.kind or "tool", THEME.dim)],
+                    width,
+                    None
+                )
+            );
+            if e.detail {
+                for ln in wrap_plain(e.detail, inner - 4)[:6] {
+                    out.append(fit([sp("      " + ln, THEME.faint)], width, None));
+                }
+            }
+        } elif e.role == "plan" {
+            out.append(fit([sp("  plan", THEME.accent2)], width, None));
+            for ln in e.text.split("\n") {
+                out.append(fit([sp("    " + ln, THEME.dim)], width, None));
+            }
+        } elif e.role == "error" {
+            for ln in wrap_plain(e.text, inner) {
+                out.append(fit([sp("  ✖ " + ln, THEME.err)], width, None));
+            }
+        } else {
+            for ln in wrap_plain(e.text, inner) {
+                out.append(fit([sp("  " + ln, THEME.dim)], width, None));
+            }
+        }
+        out.append(blank(width));
+    }
+    return out;
+}
+
+impl paint_chat(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.chat_pane);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "chat";
+    right = "";
+    if app.agent_state == "busy" {
+        right = f"{SPIN[app.spin % len(SPIN)]} working";
+    }
+    out = [title_row(app, "AGENT", focused, w, right)];
+    lines = chat_lines(app, w);
+    body_h = h - 1;
+    app.chat_h = body_h;
+    max_top = max(0, len(lines) - body_h);
+    if app.chat_follow or app.chat_top > max_top {
+        app.chat_top = max_top;
+        if app.chat_top >= max_top {
+            app.chat_follow = True;
+        }
+    }
+    if not lines {
+        out.append(
+            plain(
+                "  Ask about the selected code, or use /explain, /tests,", w, THEME.dim
+            )
+        );
+        out.append(
+            plain("  /refactor. The context tray below is sent along.", w, THEME.dim)
+        );
+    }
+    out += lines[app.chat_top:app.chat_top + body_h];
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.chat_pane, out[:h], THEME.pane);
+}
+
+impl paint_tray(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.tray_pane);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "tray";
+    out = [
+        title_row(
+            app,
+            f"CONTEXT ({len(app.tray)})",
+            focused,
+            w,
+            "x removes" if focused else ""
+        )
+    ];
+    if not app.tray {
+        out.append(
+            plain("  Space on code, a symbol or a wire adds it here.", w, THEME.dim)
+        );
+    }
+    for (i, k) in enumerate(app.tray[:h - 1]) {
+        nd = app.model.node_for(k) if not k.startswith("wire:") else None;
+        kind = nd.kind
+            if nd is not None
+            else ("wire" if k.startswith("wire:") else "?");
+        label = k[5:] if k.startswith("wire:") else k;
+        line = fit(
+            [sp(" " + kind_icon(kind) + " ", kind_attrs(kind)), sp(label, THEME.text)],
+            w,
+            None
+        );
+        if i == app.tray_sel and focused {
+            line = restyle(line, C_SEL_FOCUS);
+        }
+        out.append(line);
+    }
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.tray_pane, out[:h], THEME.pane);
+}
+
+impl paint_prompt(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.prompt);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    focused = app.focus == "prompt";
+    hint = "Enter send · Alt+Enter newline · @ add context · /explain /tests /refactor"
+        if focused
+        else "Ctrl+L to type";
+    out = [title_row(app, "PROMPT", focused, w, hint)];
+    lines = app.draft.split("\n");
+    before = app.draft[:app.caret];
+    crow = before.count("\n");
+    ccol = display_width(before.split("\n")[-1]);
+    body_h = h - 1;
+    top = max(0, crow - body_h + 1);
+    for (i, ln) in enumerate(lines[top:top + body_h]) {
+        lead = "❯ " if top + i == 0 else "  ";
+        out.append(fit([sp(lead, THEME.accent), sp(ln, THEME.text)], w, None));
+    }
+    if not app.draft {
+        out[1] = fit(
+            [
+                sp("❯ ", THEME.accent),
+                sp("Tell the agent what to do with the context…", THEME.faint)
+            ],
+            w,
+            None
+        );
+    }
+    while len(out) < h {
+        out.append(blank(w));
+    }
+    set_node_spans(app.r, app.prompt, out[:h], THEME.pane);
+    if focused and app.sheet is None {
+        request_cursor(
+            app.r, app.prompt, row_offset=1 + crow - top, col_offset=2 + ccol
+        );
+    } elif app.focus != "code" or app.sheet is not None {
+        clear_cursor(app.r);
+    }
+}
+
+impl paint_status(app: Studio) -> None {
+    (w, h) = pane_rect(app, app.status);
+    if w <= 0 {
+        return;
+    }
+    if app.flash {
+        a = {"warn": THEME.warn, "error": THEME.err, "ok": THEME.ok}.get(
+            app.flash_kind, THEME.status
+        );
+        spans = [sp(" " + app.flash, with_bg(a, 236))];
+    } elif app.hover and app.focus == "code" {
+        spans = [sp(" " + app.hover.split("\n")[0], THEME.status)];
+    } else {
+        hints = {
+            "nav": "↑↓ move  →← open/close  Enter open  Space add to context  w wiring",
+            "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  w wiring",
+            "chat": "↑↓ PgUp PgDn scroll  End follow",
+            "tray": "↑↓ select  x remove  Enter open  C clear",
+            "prompt": "Enter send  Alt+Enter newline  @ add  ↑ history"
+        }.get(
+            app.focus, ""
+        );
+        if app.center_mode == "wiring" and app.focus == "code" {
+            hints = "←→ column  ↑↓ select  Enter follow/open  Space add  o open module  Esc code";
+        }
+        spans = [
+            sp(f" {app.focus.upper()} ", THEME.status_key),
+            sp(" " + hints, THEME.status)
+        ];
+    }
+    right = "Tab focus · Ctrl+P find · Ctrl+X commands · F1 help ";
+    used = sum([display_width(s.text) for s in spans]);
+    if used + display_width(right) + 2 < w {
+        spans.append(sp(" " * (w - used - display_width(right)), THEME.status));
+        spans.append(sp(right, StyleAttrs(fg=244, bg=236)));
+    }
+    set_node_spans(app.r, app.status, [fit(spans, w, THEME.status)]);
+}
+
+impl paint_sheet(app: Studio) -> None {
+    sh = app.sheet;
+    if sh is None {
+        return;
+    }
+    (w, h) = pane_rect(app, sh);
+    if w <= 0 or h <= 0 {
+        return;
+    }
+    out: list[list[TextSpan]] = [];
+    if app.sheet_kind == "picker" {
+        out.append(
+            fit(
+                [sp(" " + app.picker_title, THEME.overlay_title)],
+                w,
+                THEME.overlay_title
+            )
+        );
+        out.append(
+            fit(
+                [
+                    sp(" ❯ ", StyleAttrs(fg=75, bg=237, bold=True)),
+                    sp(app.picker_query, THEME.overlay),
+                    sp("▏", StyleAttrs(fg=75, bg=237))
+                ],
+                w,
+                THEME.overlay
+            )
+        );
+        body_h = h - 3;
+        top = max(0, app.picker_sel - body_h + 1);
+        for i in range(top, min(len(app.picker_items), top + body_h)) {
+            item = app.picker_items[i];
+            sel = i == app.picker_sel;
+            base = THEME.overlay_sel if sel else THEME.overlay;
+            spans = [
+                sp(
+                    " " + kind_icon(item.kind) + " ",
+                    with_bg(kind_attrs(item.kind), base.bg)
+                ),
+                sp(item.label, base)
+            ];
+            if item.detail {
+                spans.append(
+                    sp("  " + item.detail, with_bg(StyleAttrs(fg=244), base.bg))
+                );
+            }
+            out.append(fit(spans, w, base));
+        }
+        if not app.picker_items {
+            out.append(
+                fit(
+                    [sp("   nothing matches", with_bg(THEME.dim, 237))],
+                    w,
+                    THEME.overlay
+                )
+            );
+        }
+        while len(out) < h - 1 {
+            out.append(blank(w, THEME.overlay));
+        }
+        foot = " ↑↓ select · Enter open · Tab add to context · Esc close"
+            if app.picker_purpose == "goto"
+            else " ↑↓ select · Enter choose · Esc close";
+        out.append(fit([sp(foot, StyleAttrs(fg=244, bg=237))], w, THEME.overlay));
+    } elif app.sheet_kind == "help" {
+        out.append(fit([sp(" Keys", THEME.overlay_title)], w, THEME.overlay_title));
+        rows = HELP_TEXT[app.sheet_scroll:];
+        for (k, v) in rows[:h - 2] {
+            if not k {
+                out.append(
+                    fit(
+                        [sp(" " + v, StyleAttrs(fg=179, bg=237, bold=True))],
+                        w,
+                        THEME.overlay
+                    )
+                );
+            } else {
+                out.append(
+                    fit(
+                        [
+                            sp("   " + k[:27].ljust(28), StyleAttrs(fg=117, bg=237)),
+                            sp(v, THEME.overlay)
+                        ],
+                        w,
+                        THEME.overlay
+                    )
+                );
+            }
+        }
+        while len(out) < h - 1 {
+            out.append(blank(w, THEME.overlay));
+        }
+        out.append(
+            fit([sp(" Esc closes", StyleAttrs(fg=244, bg=237))], w, THEME.overlay)
+        );
+    } else {
+        for ln in app.sheet_lines[app.sheet_scroll:app.sheet_scroll + h] {
+            out.append(fit(ln, w, THEME.overlay));
+        }
+        while len(out) < h {
+            out.append(blank(w, THEME.overlay));
+        }
+    }
+    set_node_spans(app.r, sh, out[:h], THEME.overlay);
+}

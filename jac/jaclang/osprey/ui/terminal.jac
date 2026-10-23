@@ -17,7 +17,9 @@ glob ENABLE_BRACKETED_PASTE: str = "\x1b[?2004h",
      SYNC_END: str = "\x1b[?2026l",
      HIDE_CURSOR: str = "\x1b[?25l",
      SHOW_CURSOR: str = "\x1b[?25h",
-     CLEAR_SCREEN: str = "\x1b[2J\x1b[H";
+     CLEAR_SCREEN: str = "\x1b[2J\x1b[H",
+     ENABLE_MOUSE: str = "\x1b[?1000h\x1b[?1002h\x1b[?1006h",
+     DISABLE_MOUSE: str = "\x1b[?1006l\x1b[?1002l\x1b[?1000l";
 
 
 obj Terminal {
@@ -28,7 +30,8 @@ obj Terminal {
         alternate_screen: bool = False,
         bracketed_paste: bool = False,
         cursor_visible: bool = True,
-        sync_active: bool = False;
+        sync_active: bool = False,
+        mouse: bool = False;
 
     def size -> tuple[int, int];
     def write(data: str);
@@ -43,6 +46,8 @@ obj Terminal {
     def clear_screen;
     def enable_bracketed_paste;
     def disable_bracketed_paste;
+    def enable_mouse;
+    def disable_mouse;
     def set_title(title: str);
     def move_cursor(row: int, col: int);
     def restore;
@@ -158,6 +163,16 @@ impl Terminal.enable_bracketed_paste {
 impl Terminal.disable_bracketed_paste {
     self.write(DISABLE_BRACKETED_PASTE);
     self.bracketed_paste = False;
+}
+
+impl Terminal.enable_mouse {
+    self.write(ENABLE_MOUSE);
+    self.mouse = True;
+}
+
+impl Terminal.disable_mouse {
+    self.write(DISABLE_MOUSE);
+    self.mouse = False;
 }
 
 impl Terminal.set_title(title: str) {
@@ -418,6 +433,9 @@ impl ProcessTerminal.stop -> None {
         }
         if self.bracketed_paste {
             self.disable_bracketed_paste();
+        }
+        if self.mouse {
+            self.disable_mouse();
         }
         if self.alternate_screen {
             self.leave_alternate_screen();

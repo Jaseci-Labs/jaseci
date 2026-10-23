@@ -7,6 +7,17 @@ def set_node_contract(renderer: Renderer, n: UiNode, spec: LayoutSpec);
 def set_node_content(renderer: Renderer, n: UiNode, lines: list[str]);
 
 
+def set_node_spans(
+    renderer: Renderer,
+    n: UiNode,
+    rows: list[list[TextSpan]],
+    fill: StyleAttrs | None = None,
+);
+
+
+def set_node_fill(renderer: Renderer, n: UiNode, fill: StyleAttrs | None);
+
+
 def mark_semantic_dirty(renderer: Renderer, n: UiNode);
 
 
@@ -51,6 +62,7 @@ impl set_node_contract(renderer: Renderer, n: UiNode, spec: LayoutSpec) {
 
 impl set_node_content(renderer: Renderer, n: UiNode, lines: list[str]) {
     nid = node_id(n);
+    renderer.styled.pop(nid, None);
     rev = renderer.content_revisions.get(nid, 0) + 1;
     renderer.content_revisions[nid] = rev;
     set_content(renderer.layout, n, lines, rev);
@@ -192,4 +204,31 @@ impl damage_cell_count(damage: list[DamageRect]) -> int {
         }
     }
     return total;
+}
+
+
+impl set_node_spans(
+    renderer: Renderer,
+    n: UiNode,
+    rows: list[list[TextSpan]],
+    fill: StyleAttrs | None = None,
+) {
+    set_node_content(renderer, n, ["".join([s.text for s in row]) for row in rows]);
+    nid = node_id(n);
+    renderer.styled[nid] = rows;
+    if fill is not None {
+        renderer.fills[nid] = fill;
+    }
+    renderer.pending_semantic.add(nid);
+}
+
+
+impl set_node_fill(renderer: Renderer, n: UiNode, fill: StyleAttrs | None) {
+    nid = node_id(n);
+    if fill is None {
+        renderer.fills.pop(nid, None);
+    } else {
+        renderer.fills[nid] = fill;
+    }
+    renderer.pending_semantic.add(nid);
 }

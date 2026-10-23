@@ -1,13 +1,11 @@
-import from .layout_types {
+import from .layout_types_core {
     Axis,
     AxisSize,
     LayoutRelation,
     LayoutRelationKind,
-    LayoutSpec,
-    add_relation,
-    create_layout_state,
-    set_spec
+    LayoutSpec
 }
+import from .layout_types { add_relation, create_layout_state, set_spec }
 import from .model { Child, Header, MainScreen, Prompt, Status, TranscriptView }
 
 

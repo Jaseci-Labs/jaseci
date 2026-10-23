@@ -310,7 +310,7 @@ impl buffer_blit_spans(
         }
         buffer_blit_text(buf, row, x, span.text, span.attrs, remaining);
         text = span.text;
-        adv = grapheme_width(text);
+        adv = display_width(text);
         if adv > remaining {
             adv = remaining;
         }

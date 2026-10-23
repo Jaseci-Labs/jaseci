@@ -282,6 +282,15 @@ impl decode_sequence(seq: str) -> HostEvent {
     if seq == "\x17" {
         return KeyEvent(key="ctrl+w");
     }
+    if seq == "\x00" {
+        return KeyEvent(key="ctrl+space");
+    }
+    if len(seq) == 1 and 1 <= ord(seq) <= 26 {
+        return KeyEvent(key="ctrl+" + chr(ord(seq) + 96));
+    }
+    if seq == "\x1f" {
+        return KeyEvent(key="ctrl+/");
+    }
 
     if len(seq) == 2 and seq[0] == ESC and seq[1] != "[" and seq[1] != "O" {
         return KeyEvent(key="alt+" + seq[1]);

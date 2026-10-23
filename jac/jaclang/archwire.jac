@@ -32785,7 +32785,26 @@ graph import server.serving {
 }
 
 graph import studio {
-    model ++> app { ProjectModel, find_project_root }
+    model ++> [
+        app { ProjectModel, find_project_root },
+        tui { ProjectModel, StAbility, StImpl, StModule, StNode },
+    ]
+    theme ++> tui {
+        CODE_STYLES,
+        C_SEL,
+        C_SEL_FOCUS,
+        THEME,
+        blank,
+        fit,
+        kind_attrs,
+        kind_icon,
+        plain,
+        restyle,
+        sp,
+        with_bg,
+        wrap_plain
+    }
+    tui ++> app { run_tui }
 }
 
 graph import testing {

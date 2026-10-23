@@ -2,14 +2,8 @@ import from .model { MainScreen, Prompt, ApprovalOverlay, UiRegion, Layer }
 
 import from .mutation { append_child, detach, }
 
-import from .layout_types {
-    AxisSize,
-    fill_axis,
-    fixed_axis,
-    grow_axis,
-    intrinsic_axis,
-    rect_of
-}
+import from .layout_types_core { AxisSize }
+import from .layout_types { fill_axis, fixed_axis, grow_axis, intrinsic_axis, rect_of }
 
 import from .virtual_terminal { VirtualTerminal, }
 

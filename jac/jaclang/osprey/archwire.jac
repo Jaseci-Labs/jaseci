@@ -18,10 +18,8 @@ graph import {
         ui.layout_types { is_finite },
         ui.layout_types_core { StrengthTier },
     ]
-    constraints.solver ++> [
-        ui.layout_compile | ui.layout_compile_model { Solver },
-        ui.layout_compile_emit { SolveError },
-    ]
+    constraints.results ++> ui.layout_compile_emit { SolveError }
+    constraints.solver ++> ui.layout_compile | ui.layout_compile_model { Solver }
 }
 
 graph import constraints {
@@ -149,16 +147,18 @@ graph import ui {
     ]
     cells ++> [
         markdown_proj { StyleAttrs },
-        renderer { buffer_to_plain_rows },
+        renderer { StyleAttrs, TextSpan, buffer_to_plain_rows },
         renderer_damage { CellBuffer, diff_buffers_ansi },
         renderer_paint {
             CellBuffer,
             StyleAttrs,
+            TextSpan,
+            buffer_blit_spans,
             buffer_blit_text,
             buffer_clear_rect,
             create_buffer
         },
-        renderer_types { CellBuffer },
+        renderer_types { CellBuffer, StyleAttrs, TextSpan },
     ]
     demo_live_shell ++> demo_entry { run_live_shell_demo }
     demo_live_shell_messages ++> demo_live_shell { _push_turn, _rewrite_turn }
@@ -177,25 +177,12 @@ graph import ui {
         screen { Cancel, InsertText, SendPrompt, Submit, dispatch_event },
     ]
     input ++> [
-        demo_live_shell {
-            HostEvent,
-            InputNormalizer,
-            KeyEvent,
-            PasteEvent,
-            TextEvent,
-            coalesce_events
-        },
+        demo_live_shell | host { InputNormalizer, coalesce_events },
         demo_live_shell_model { InputNormalizer },
-        host {
-            EofEvent,
-            HostEvent,
-            InputNormalizer,
-            InterruptEvent,
-            KeyEvent,
-            coalesce_events
-        },
     ]
     input_events ++> [
+        demo_live_shell { HostEvent, KeyEvent, PasteEvent, TextEvent },
+        host { EofEvent, HostEvent, InterruptEvent, KeyEvent },
         input {
             BRACKETED_PASTE_END,
             BRACKETED_PASTE_START,
@@ -213,7 +200,7 @@ graph import ui {
     input_sequences ++> input { decode_sequence, extract_sequences }
     inspect ++> gates { validate_invariants }
     layout ++> renderer_damage { compute_layout }
-    layout_compile ++> layout { CompileResult, PartitionInfo, compile_layout }
+    layout_compile ++> layout { compile_layout }
     layout_compile_emit ++> [
         layout_compile { _emit_invariants, _emit_root, _req },
         layout_compile_flow {
@@ -232,6 +219,7 @@ graph import ui {
     ]
     layout_compile_flow ++> layout_compile { _emit_partition }
     layout_compile_model ++> [
+        layout { CompileResult, PartitionInfo },
         layout_compile { CompileResult, NodeEdges, _Entry, _Scope },
         layout_compile_emit | layout_compile_overlays {
             CompileResult,
@@ -260,8 +248,32 @@ graph import ui {
     layout_quantize ++> layout { PartitionRequest, quantize_partition, snap_edge }
     layout_scope ++> layout { _ScopedNode, _collect_scope }
     layout_types ++> [
+        demo_live_shell_render { fill_axis, fixed_axis, grow_axis },
+        layout {
+            _copy_rect,
+            add_relation,
+            clear_node,
+            create_layout_state,
+            frame_entry_of,
+            rect_of,
+            remove_relation,
+            set_content,
+            set_scroll_offset,
+            set_spec,
+            validate_spec
+        },
+        renderer {
+            clear_node,
+            create_layout_state,
+            frame_entry_of,
+            set_content,
+            set_spec
+        },
+        screen { fixed_axis, set_spec },
+    ]
+    layout_types_core ++> [
         cells { Rect },
-        demo_live_shell_render { LayoutSpec, fill_axis, fixed_axis, grow_axis },
+        demo_live_shell_render { LayoutSpec },
         layout {
             Axis,
             AxisSize,
@@ -280,18 +292,7 @@ graph import ui {
             RelationHandle,
             Size,
             SizeMode,
-            Viewport,
-            _copy_rect,
-            add_relation,
-            clear_node,
-            create_layout_state,
-            frame_entry_of,
-            rect_of,
-            remove_relation,
-            set_content,
-            set_scroll_offset,
-            set_spec,
-            validate_spec
+            Viewport
         },
         layout_compile {
             LayoutDiagnostic,
@@ -329,49 +330,31 @@ graph import ui {
             LayoutError,
             LayoutSeverity
         },
-        renderer {
-            LayoutResult,
+        layout_types {
+            Axis,
+            AxisSize,
+            ContentEntry,
+            FrameEntry,
+            LayoutDiagnostic,
+            LayoutError,
+            LayoutRelation,
+            LayoutRelationKind,
+            LayoutSeverity,
             LayoutSpec,
             LayoutState,
+            MutationResult,
             Rect,
-            clear_node,
-            create_layout_state,
-            frame_entry_of,
-            set_content,
-            set_spec
+            RelationHandle,
+            Size,
+            SizeMode,
+            Viewport
         },
+        renderer { LayoutResult, LayoutSpec, LayoutState, Rect },
         renderer_damage { LayoutResult, Rect, Viewport, rect_union },
         renderer_paint { FrameEntry, LayoutState },
         renderer_types { LayoutState, Rect },
-        screen {
-            AxisSize,
-            LayoutDiagnostic,
-            LayoutSpec,
-            LayoutState,
-            SizeMode,
-            fixed_axis,
-            set_spec
-        },
+        screen { AxisSize, LayoutDiagnostic, LayoutSpec, LayoutState, SizeMode },
     ]
-    layout_types_core ++> layout_types {
-        Axis,
-        AxisSize,
-        ContentEntry,
-        FrameEntry,
-        LayoutDiagnostic,
-        LayoutError,
-        LayoutRelation,
-        LayoutRelationKind,
-        LayoutSeverity,
-        LayoutSpec,
-        LayoutState,
-        MutationResult,
-        Rect,
-        RelationHandle,
-        Size,
-        SizeMode,
-        Viewport
-    }
     markdown_proj ++> transcript {
         looks_like_markdown,
         proj_lines_to_span_dicts,
@@ -517,7 +500,6 @@ graph import ui {
     ]
     renderer ++> [
         demo_live_shell { create_renderer },
-        demo_live_shell_model { Renderer },
         demo_live_shell_render {
             mark_layout_dirty,
             mark_semantic_dirty,
@@ -541,13 +523,12 @@ graph import ui {
         renderer_damage { _layered_overlays },
     ]
     renderer_types ++> [
+        demo_live_shell_model { Renderer },
         renderer { DamageRect, FrameResult, Renderer },
         renderer_damage { AnsiDiff, CursorPos, DamageRect, Renderer },
         renderer_paint { Renderer, _OverlayHit },
     ]
     runtime ++> [
-        demo_live_shell | gates { create_session, dispose_session },
-        demo_live_shell_model | events { UiSession },
         focus {
             OverlayBounds,
             OverlayCloseResult,
@@ -559,34 +540,40 @@ graph import ui {
             layers_paint_order,
             open_modal_overlay
         },
-        inspect { UiSession, validate_session },
         screen {
             OverlayBounds,
             OverlayCloseResult,
             OverlayOpenResult,
+            close_overlay,
+            open_modal_overlay
+        },
+    ]
+    runtime_core ++> [
+        demo_live_shell | gates { create_session, dispose_session },
+        demo_live_shell_model | events { UiSession },
+        inspect { UiSession, validate_session },
+        runtime {
+            UiSession,
+            append_child_session,
+            create_session,
+            dispose_session,
+            get_focus_node,
+            register_capability,
+            release_capabilities,
+            set_focus,
+            track_node,
+            validate_session
+        },
+        screen {
             SessionEventRecord,
             UiSession,
             append_child_session,
-            close_overlay,
-            open_modal_overlay,
             register_capability,
             set_current_screen,
             set_focus,
             track_node
         },
     ]
-    runtime_core ++> runtime {
-        UiSession,
-        append_child_session,
-        create_session,
-        dispose_session,
-        get_focus_node,
-        register_capability,
-        release_capabilities,
-        set_focus,
-        track_node,
-        validate_session
-    }
     screen ++> [
         demo_live_shell {
             build_main_shell,
@@ -635,7 +622,7 @@ graph import ui {
     ]
     virtual_terminal ++> gates { VirtualTerminal }
     width ++> [
-        cells { grapheme_width, segment_graphemes },
+        cells { display_width, grapheme_width, segment_graphemes },
         demo_live_shell_render { display_width, truncate_text },
         editor { display_width },
         layout { wrap_text_joined },

@@ -51,5 +51,7 @@ obj Renderer {
         pending_semantic: set[str] = set(),
         pending_layout: set[str] = set(),
         last_frame_columns: int = 0,
-        last_frame_rows: int = 0;
+        last_frame_rows: int = 0,
+        styled: dict[str, list[list[TextSpan]]] = {},
+        fills: dict[str, StyleAttrs] = {};
 }

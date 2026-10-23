@@ -1,11 +1,11 @@
 import from .model { MainScreen, UiRegion }
 
-import from .runtime {
+import from .runtime_core {
     append_child_session,
     create_session,
     dispose_session,
     set_current_screen,
-    set_focus,
+    set_focus
 }
 
 

@@ -1,11 +1,11 @@
 import from .model { MainScreen, Prompt, TranscriptView }
 
-import from .runtime {
+import from .runtime_core {
     append_child_session,
     create_session,
     set_current_screen,
     set_focus,
-    record_invalidation,
+    record_invalidation
 }
 
 import from .bindings { subscribe, }
