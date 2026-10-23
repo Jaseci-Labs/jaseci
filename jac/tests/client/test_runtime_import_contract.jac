@@ -84,7 +84,7 @@ test "missing runtime exports fail before either client bundler starts" {
 }
 
 test "client providers export exactly the names client importers bind" {
-    # (provider, provider source, importer source, export line, held pull indexes)
+    # (provider, provider source, importer source, provider's export lines)
     cases = [
         (
             "shared",
@@ -95,16 +95,29 @@ test "client providers export exactly the names client importers bind" {
             'import from .shared { Card, LABELS, Model }\n'
             'def show(m: Model) -> JsxElement { return <Card m={m} />; }\n'
             'def:pub app -> any { return <div>{LABELS["new"]}</div>; }\n',
-            "export {Card, LABELS};",
-            [0, 2]
+            ["export {Card, LABELS};"]
+        ),
+        (
+            "widgets",
+            'obj Model { has name: str = "new"; }\n'
+            'def Card(m: Model) -> JsxElement { return <b>{m.name}</b>; }\n',
+            'import from .widgets { Card, Model }\n'
+            'def:pub app(m: Model) -> any { return <Card m={m} />; }\n',
+            ["/*jac:refresh-boundary*/;", "export {Card};"]
         ),
         (
             "provider",
             'obj Hidden { has name: str = ""; }\n',
             'import from .provider { Hidden }\n'
             'def:pub app -> any { value = Hidden(); return <div>{value.name}</div>; }\n',
-            "export {Hidden};",
-            [0]
+            ["export {Hidden};"]
+        ),
+        (
+            "relay",
+            'import from .badge { Badge }\n',
+            'import from .relay { Badge }\n'
+            'def:pub app -> any { return <Badge />; }\n',
+            ['export {Badge} from "./badge.js";']
         ),
 
     ];
@@ -112,25 +125,35 @@ test "client providers export exactly the names client importers bind" {
         set_config(None);
         project = Path(tmp);
         compiler = _compiler(project);
+        (project / "badge.jac").write_text(
+            'def Badge -> JsxElement { return <i>badge</i>; }\n'
+        );
+        def export_lines(name: str) -> list[str] {
+            js = (project / "compiled" / f"{name}.js").read_text();
+            return [
+                line
+                for line in js.splitlines()
+                if line.startswith("export {") or line.startswith("/*jac:")
+            ];
+        }
         try {
-            for (name, source, importer, export_line, pulled) in cases {
+            for (name, source, importer, expected) in cases {
                 (project / f"{name}.jac").write_text(source);
                 (project / f"use_{name}.jac").write_text(importer);
                 compiler.emit_dependencies(
                     project / f"use_{name}.jac", source_root=project
                 );
-                js = (project / "compiled" / f"{name}.js").read_text();
-                exports = [
-                    line
-                    for line in js.splitlines()
-                    if line.startswith("export {")
-                ];
-                assert exports == [export_line] , (name, js);
-                artifact = compiler.jac_compiler.compile_module(
-                    project / f"{name}.jac"
+                assert export_lines(name) == expected , (name, export_lines(name));
+                # A dev-server edit recompiles the provider alone.
+                compiler.emit_dependencies(
+                    project / f"{name}.jac", source_root=project
                 );
-                assert artifact.pulled == pulled , (name, artifact.pulled);
+                assert export_lines(name) == expected , (name, export_lines(name));
             }
+            assert export_lines("badge")
+                == ["/*jac:refresh-boundary*/;", "export {Badge};"] , export_lines(
+                "badge"
+            );
         } finally {
             set_config(None);
         }

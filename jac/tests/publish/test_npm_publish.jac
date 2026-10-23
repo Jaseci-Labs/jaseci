@@ -220,6 +220,36 @@ test "collect_npm_sources compiles client modules to JS with .js paths" {
     }
 }
 
+test "collect_npm_sources exports the plain names sibling modules import" {
+    tmpdir = tempfile.mkdtemp();
+    try {
+        _scaffold_lib(tmpdir, "mylib");
+        pkg = Path(tmpdir) / "mylib";
+        (pkg / "util.jac").write_text(
+            'def double(x: int) -> int {\n    return x * 2;\n}\n\n'
+            'def unused(x: int) -> int {\n    return x;\n}\n'
+        );
+        (pkg / "index.jac").write_text(
+            'import from .util { double }\n\n'
+            'def:pub add(a: int, b: int) -> int {\n    return double(a) + b;\n}\n'
+        );
+        cfg = JacConfig.from_toml_str(
+            '[project]\nname = "mylib"\nversion = "1.0.0"\n\n'
+            '[project.include]\npackages = ["mylib"]\n'
+        );
+        cfg.project_root = Path(tmpdir);
+        files = {
+            f.npm_path: f.js
+            for f in collect_npm_sources(cfg, project_root=Path(tmpdir))
+        };
+        assert _exported_names(files["mylib/util.js"]) == ["double"] , files[
+            "mylib/util.js"
+        ];
+    } finally {
+        shutil.rmtree(tmpdir, ignore_errors=True);
+    }
+}
+
 
 # npm_builder - end-to-end --------------------------------------------------------------------------
 test "NpmBuilder.build produces a valid npm tarball with package.json and JS" {

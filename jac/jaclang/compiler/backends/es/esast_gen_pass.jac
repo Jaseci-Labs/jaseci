@@ -180,7 +180,6 @@ walker EsastGenPass(TreePass) {
         _jsx_processor: EsJsxProcessor | None = None,
         scoped_styles: (ScopedStyleSheet | None) = None,
         reactive_vars: set[str] = set(),
-        component_export_names: set[str] = set(),
         shared_arch_names: set[str] = set(),
         reactive_vars_stack: list[set[str]] = [],
         injected_imports: set[str] = set(),
@@ -627,7 +626,7 @@ walker EsastGenPass(TreePass) {
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);
     def _return_type_route_role(rt: uni.Expr) -> (str | None);
-    def _exports_to_client(nd: uni.ContextAwareNode) -> bool;
+    def _client_linkable(nd: uni.AstAccessNode) -> bool;
     def _component_pascal_name(nd: uni.Ability) -> (str | None);
     def _component_call_abi(ability_node: uni.Ability) -> str;
     def _build_props_spread_component_call(

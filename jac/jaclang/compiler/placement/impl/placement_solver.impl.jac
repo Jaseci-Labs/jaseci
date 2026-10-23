@@ -499,36 +499,6 @@ impl _seed_from_summary(module: uni.Module, prog: JacProgram) -> int {
     return seeded;
 }
 
-impl _invalidate_client_codegen(module: uni.Module, prog: JacProgram) {
-    if module.gen.js or module.gen.es_ast is not None {
-        import from jaclang.compiler.driver.pipeline { invalidate }
-        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-        invalidate(prog, module, CompilationProduct.CLIENT);
-    }
-}
-
-impl _mark_client_imported(
-    target: uni.Module, top_ids: set[int], prog: JacProgram
-) -> int {
-    marked = 0;
-    for stmt in target.body {
-        if (
-            id(stmt) in top_ids
-            and isinstance(stmt, uni.ContextAwareNode)
-            and not isinstance(stmt, uni.Import)
-            and stmt.code_context == CodeContext.CLIENT
-            and not stmt.client_imported
-        ) {
-            stmt.client_imported = True;
-            marked += 1;
-        }
-    }
-    if marked {
-        _invalidate_client_codegen(target, prog);
-    }
-    return marked;
-}
-
 impl solve_module_placement(
     module: uni.Module,
     prog: JacProgram,
@@ -569,8 +539,10 @@ impl solve_module_placement(
     }
 
     def _invalidate_stale_codegen {
-        if stamp_count[0] {
-            _invalidate_client_codegen(module, prog);
+        if stamp_count[0] and (module.gen.js or module.gen.es_ast is not None) {
+            import from jaclang.compiler.driver.pipeline { invalidate }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            invalidate(prog, module, CompilationProduct.CLIENT);
         }
     }
 
@@ -808,26 +780,10 @@ impl _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
     return held;
 }
 
-impl _imported_at_runtime(item: uni.ModuleItem) -> bool {
-    local = item.alias if item.alias is not None else item.name;
-    sym = local.sym if isinstance(local, uni.Name) else None;
-    if sym is None {
-        return True;
-    }
-    return any(
-        not uni.in_type_position(use, include_subscripts=False) for use in sym.uses
-    );
-}
-
 impl _pull_into_target(
-    imp: uni.Import,
-    target: uni.Module,
-    module: uni.Module,
-    prog: JacProgram,
-    pinned: bool = False
+    imp: uni.Import, target: uni.Module, module: uni.Module, prog: JacProgram
 ) -> int {
     seed_ids: set[int] = set();
-    runtime_ids: set[int] = set();
     for item in imp.items {
         if not (isinstance(item, uni.ModuleItem) and isinstance(item.name, uni.Name)) {
             continue;
@@ -835,9 +791,6 @@ impl _pull_into_target(
         top = _named_top_element(target, item.name.value);
         if top is not None and _closure_pullable(top, target, prog, set()) {
             seed_ids.add(id(top));
-            if _imported_at_runtime(item) {
-                runtime_ids.add(id(top));
-            }
         }
     }
     if not seed_ids {
@@ -846,26 +799,19 @@ impl _pull_into_target(
     import from jaclang.compiler.frontend.host { active_host }
     work = placement_work(prog);
     target_path = os.path.realpath(target.loc.mod_path or '');
-    held_ids: set[int] = set();
     if id(target) not in work.seeded {
         work.seeded.add(id(target));
         held_ids = _held_pull_ids(target, target_path);
         if held_ids
-            and not pinned
             and solve_module_placement(
                 target, prog, seed_ref_ids=held_ids, dual=True, pull_dependents=False
             ) {
             work.changed(target);
         }
     }
-    new_stamps = 0
-        if pinned
-        else solve_module_placement(
-            target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
-        );
-    if _mark_client_imported(target, runtime_ids | held_ids, prog) and not new_stamps {
-        active_host().client_pull_grew(target_path);
-    }
+    new_stamps = solve_module_placement(
+        target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
+    );
     if new_stamps {
         active_host().client_pull_grew(target_path);
         work.changed(target);
@@ -915,7 +861,9 @@ impl _pull_boundary_import(
         return 0;
     }
     work.observe_path(resolved);
-    pinned = _module_externally_pinned(resolved);
+    if _module_externally_pinned(resolved) {
+        return 0;
+    }
     targets: list[uni.Module] = [];
     hub_target = _materialize_module(os.path.abspath(resolved), prog);
     if hub_target is not None and hub_target is not module {
@@ -937,7 +885,7 @@ impl _pull_boundary_import(
     new_stamps = 0;
     for target in targets {
         work.observe(target);
-        new_stamps += _pull_into_target(imp, target, module, prog, pinned);
+        new_stamps += _pull_into_target(imp, target, module, prog);
     }
     return new_stamps;
 }

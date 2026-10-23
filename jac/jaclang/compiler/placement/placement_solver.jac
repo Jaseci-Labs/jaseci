@@ -71,12 +71,6 @@ def _python_backend_forced(prog: JacProgram) -> bool;
 
 def _seed_from_summary(module: uni.Module, prog: JacProgram) -> int;
 
-def _invalidate_client_codegen(module: uni.Module, prog: JacProgram);
-
-def _mark_client_imported(
-    target: uni.Module, top_ids: set[int], prog: JacProgram
-) -> int;
-
 def solve_module_placement(
     module: uni.Module,
     prog: JacProgram,
@@ -93,14 +87,8 @@ def _warn_state_forks(target: uni.Module, prog: JacProgram);
 
 def _held_pull_ids(target: uni.Module, target_path: str) -> set[int];
 
-def _imported_at_runtime(item: uni.ModuleItem) -> bool;
-
 def _pull_into_target(
-    imp: uni.Import,
-    target: uni.Module,
-    module: uni.Module,
-    prog: JacProgram,
-    pinned: bool = False
+    imp: uni.Import, target: uni.Module, module: uni.Module, prog: JacProgram
 ) -> int;
 
 def _pull_boundary_import(

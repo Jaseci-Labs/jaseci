@@ -29,11 +29,17 @@ impl EsastGenPass.exit_module_code with uni.ModuleCode exit {
 impl EsastGenPass.exit_global_vars with uni.GlobalVars exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        if self._exports_to_client(here) {
+        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
+        linkable = not is_pub and self._client_linkable(here);
+        if is_pub or linkable {
             for assignment in here.assignments {
                 for target in assignment.target {
                     if isinstance(target, (uni.NameAtom, uni.AstSymbolNode))
                         and (sym_name := target.sym_name) {
+                        if linkable {
+                            self.client_manifest.linkable.append(sym_name);
+                            continue;
+                        }
                         self.client_manifest.globals.append(sym_name);
                         if (
                             assignment.value
@@ -212,19 +218,6 @@ impl EsastGenPass.exit_module with uni.Module exit {
             );
         }
 
-        if (
-            not self.client_manifest.globals
-            and all(name in self.component_export_names for name in module_export_names)
-        ) {
-            body.append(
-                self.sync_loc(
-                    es.ExpressionStatement(
-                        expression=es.Identifier(name='/*jac:refresh-boundary*/')
-                    ),
-                    jac_node=here
-                )
-            );
-        }
         comprehensive_export = es.ExportNamedDeclaration(
             declaration=None, specifiers=export_specifiers, source=None
         );

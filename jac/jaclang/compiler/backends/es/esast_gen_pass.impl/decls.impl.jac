@@ -27,13 +27,9 @@ impl EsastGenPass.exit_func_signature with uni.FuncSignature exit {
     here.gen.es_ast = None;
 }
 
-impl EsastGenPass._exports_to_client(nd: uni.ContextAwareNode) -> bool {
-    access = nd.access if isinstance(nd, uni.AstAccessNode) else None;
-    tag = access.tag.name if access is not None else None;
-    if tag == Tok.KW_PUB or nd.codespace_dual {
-        return True;
-    }
-    return nd.client_imported and tag != Tok.KW_PRIV;
+impl EsastGenPass._client_linkable(nd: uni.AstAccessNode) -> bool {
+    return isinstance(nd.parent, uni.Module)
+        and not (nd.access is not None and nd.access.tag.name == Tok.KW_PRIV);
 }
 
 impl EsastGenPass.exit_ability with uni.Ability exit {
@@ -75,6 +71,7 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
     }
     if (here.code_context == CodeContext.CLIENT and not here.is_method) {
         self.client_manifest.has_client = True;
+        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
         route_role: (str | None) = None;
         if (
             isinstance(here.signature, uni.FuncSignature)
@@ -83,17 +80,16 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
             route_role = self._return_type_route_role(here.signature.return_type);
         }
 
-        if route_role or self._exports_to_client(here) {
-            name = here.name_ref.sym_name;
+        name = here.name_ref.sym_name;
+        if (
+            isinstance(here.signature, uni.FuncSignature)
+            and here.signature.return_type is not None
+            and return_type_is_jsx(here.signature.return_type)
+        ) {
+            self.client_manifest.components.append(name);
+        }
+        if is_pub or route_role {
             self.client_manifest.exports.append(name);
-            if (
-                isinstance(here.signature, uni.FuncSignature)
-                and here.signature.return_type is not None
-                and return_type_is_jsx(here.signature.return_type)
-            ) {
-                self.component_export_names.add(name);
-            }
-
             self.client_manifest.params[name] = [
                 p.name.sym_name
                 for p in here.signature.params
@@ -107,6 +103,8 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
                 and self.client_manifest.layout_export is None {
                 self.client_manifest.layout_export = name;
             }
+        } elif self._client_linkable(here) {
+            self.client_manifest.linkable.append(name);
         }
     }
     component_call_abi = self._component_call_abi(here);
@@ -349,8 +347,11 @@ impl EsastGenPass.enter_enum with uni.Enum entry {
 impl EsastGenPass.exit_enum with uni.Enum exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        if self._exports_to_client(here) {
+        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
+        if is_pub {
             self.client_manifest.exports.append(here.name.sym_name);
+        } elif self._client_linkable(here) {
+            self.client_manifest.linkable.append(here.name.sym_name);
         }
     }
     properties: list[(es.Property | es.SpreadElement)] = [];
@@ -416,8 +417,11 @@ impl EsastGenPass.exit_type_alias with uni.TypeAlias exit {
     }
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        if self._exports_to_client(here) {
+        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
+        if is_pub {
             self.client_manifest.exports.append(here.name.sym_name);
+        } elif self._client_linkable(here) {
+            self.client_manifest.linkable.append(here.name.sym_name);
         }
     }
     self.needs_jac_runtime = True;
@@ -442,8 +446,11 @@ impl EsastGenPass.exit_type_param with uni.TypeParam exit {
 impl EsastGenPass.exit_archetype with uni.Archetype exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        if self._exports_to_client(here) {
+        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
+        if is_pub {
             self.client_manifest.exports.append(here.name.sym_name);
+        } elif self._client_linkable(here) {
+            self.client_manifest.linkable.append(here.name.sym_name);
         }
     }
     body_stmts: list[es.MethodDefinition | es.PropertyDefinition] = [];

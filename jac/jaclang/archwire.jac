@@ -360,6 +360,7 @@ graph import {
     comptime client.cli ++> cli.manifest { SPEC_SETUP }
     client.client_bundle ++> [
         compiler.driver.client_graph.collect_client_graph
+            | dist.publish.npm_sources._link_modules
             | server.hmr.HotReloader._recompile_client_unified { ClientBundleError },
         compiler.tests.test_client_codegen_facts {
             _client_target_module,
@@ -670,9 +671,14 @@ graph import {
         cli.commands.analysis.precommit { discover_annex_files },
         testing.test_runner._suite_source { discover_base_file },
     ]
-    compiler.driver.client_graph ++> client.jac_client_compiler.JacClientCompiler.emit_dependencies {
-        collect_client_graph
-    }
+    compiler.driver.client_graph ++> [
+        client.jac_client_compiler.JacClientCompiler._module_text
+            | dist.publish.npm_sources.collect_npm_sources { append_link },
+        client.jac_client_compiler.JacClientCompiler.emit_dependencies
+            | dist.publish.npm_sources._link_modules { collect_client_graph },
+    ]
+    type compiler.driver.client_graph ++> client.jac_client_compiler
+        | dist.publish.npm_sources { ClientLink }
     compiler.driver.compilation_context ++> [
         dist.precompile_bytecode._application_sources { bind_options },
         dist.precompile_bytecode.precompile_context { bind_options, context_program },
@@ -1018,6 +1024,7 @@ graph import {
             | dist.precompiled._pkg_dir { jaclang_pkg_root },
         client.vite_client_bundle { ClientArtifact },
         dist.precompile_bytecode._compiler_kernel_units { kernel_unit_paths },
+        dist.publish.npm_sources._link_modules { ClientArtifact, ClientManifest },
         dist.publish.runtime_vendor._runtime_module_options {
             is_native_by_location,
             is_shared_runtime_module
@@ -5885,8 +5892,10 @@ graph import compiler {
     ]
     driver.pipeline --> [
         frontend.kernel_host.KernelHost.lower_dependency { product_ready, require },
-        placement.placement_solver._invalidate_client_codegen { invalidate },
         placement.placement_solver.invalidate_importers_es { invalidate },
+        placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
+            invalidate
+        },
         tools.jac_formatter_pass.unparse_module { run_utility },
     ]
     driver.pipeline_runner ++> backends.native.wasm_build.compile_to_wasm { build_wasm }
@@ -5945,9 +5954,11 @@ graph import compiler {
     ]
     driver.pipeline_types --> [
         frontend.kernel_host.KernelHost.lower_dependency
-            | placement.placement_solver._invalidate_client_codegen
+            | placement.placement_solver.invalidate_importers_es
             | tools.jac_formatter_pass.unparse_module { CompilationProduct },
-        placement.placement_solver.invalidate_importers_es { CompilationProduct },
+        placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
+            CompilationProduct
+        },
     ]
     driver.program ++> [
         backends.es.client_kernel_cache._lower
@@ -6529,7 +6540,7 @@ graph import compiler {
             | driver.nativecache { CodeGenTarget },
         backends.native.na_ir_gen_pass { NativeModuleLayout },
         driver.boundary_classify { InteropManifest },
-        driver.client_graph { ClientArtifact },
+        driver.client_graph { ClientArtifact, ClientManifest },
         driver.compiler { CodeGenTarget, NativeModuleLayout },
         driver.progstate { ClientArtifact, CodeGenTarget },
     ]
