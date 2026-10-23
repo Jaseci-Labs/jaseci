@@ -8,6 +8,8 @@ def:pub AuthForm(
     loading: bool,
     onUsernameChange: Callable[[ChangeEvent], None],
     onPasswordChange: Callable[[ChangeEvent], None],
+    email: str = "",
+    onEmailChange: Callable[[ChangeEvent], None] = lambda (e: ChangeEvent) {},
     onSubmit: Callable[[FormEvent], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,

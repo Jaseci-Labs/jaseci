@@ -1,8 +1,14 @@
 impl JacYac(initialTab: str = "feed") -> JsxElement {
     model = useJacYac();
+    loc = useLocation();
+    path_parts = loc.pathname.split("/");
+    focus = path_parts[3]
+        if len(path_parts) > 3 and path_parts[2] == model.activeTab
+        else "";
+    claw = useClaw(model.activeTab, focus);
     can with entry {
-        if initialTab == "scores" {
-            model.navigate("scores");
+        if initialTab != "feed" {
+            model.navigate(initialTab);
         }
     }
     async def handleAvatarFile(file: any) -> None {
@@ -26,15 +32,19 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
             </div>;
     }
 
-    if not model.session.loggedIn and model.activeTab not in ["scores", "user"] {
+    if not model.session.loggedIn and model.activeTab not in PUBLIC_TABS {
         return
             <AuthForm
                 isSignup={model.session.signup}
                 username={model.session.username}
+                email={model.session.email}
                 password={model.session.password}
                 error={model.session.error}
                 loading={model.session.busy}
                 onUsernameChange={lambda (e: ChangeEvent) { model.session.setUsername(
+                    e.target.value
+                ); }}
+                onEmailChange={lambda (e: ChangeEvent) { model.session.setEmail(
                     e.target.value
                 ); }}
                 onPasswordChange={lambda (e: ChangeEvent) { model.session.setPassword(
@@ -76,25 +86,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
     )
         if model.viewedProfile
         else "Profile";
-    tab_title = "Ninja Scores"
-        if model.activeTab == "scores"
-        else (
-            "Home"
-                if model.activeTab == "feed"
-                else (
-                    "Explore"
-                        if model.activeTab == "explore"
-                        else (
-                            "Channels"
-                                if model.activeTab == "channels"
-                                else (
-                                    "Profile"
-                                        if model.activeTab == "profile"
-                                        else viewedName
-                                )
-                        )
-                )
-        );
+    tab_title = TAB_TITLES.get(model.activeTab, viewedName);
 
     <div
         className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl bg-background text-foreground"
@@ -143,8 +135,10 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                     </Button>
                 </div>
             }}
-            {if model.activeTab == "scores" {
-                <NinjaScores model={model}/>
+            {if model.activeTab == "ninjaclaw" {
+                <NinjaclawTab model={claw} {focus}/>
+            } elif model.activeTab == "tutorials" {
+                <TutorialsTab model={claw} {focus}/>
             } elif model.activeTab == "feed" {
                 <FeedTab
                     showWelcome={model.showWelcome}
@@ -166,19 +160,10 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                 />
             } elif model.activeTab == "explore" {
                 <ExploreTab
-                    mode={model.exploreMode}
-                    onModeChange={lambda (m: str) {
-                        model.setExploreMode(m);
-                        if m == "repos" {
-                            model.loadProjects();
-                        }
-                    }}
                     allProfiles={model.allProfiles}
                     {followingIds}
                     {myProfileId}
                     avatars={model.avatars}
-                    projects={model.allProjects}
-                    projectsLoading={model.projectsLoading}
                     onFollow={model.handleFollow}
                     onUnfollow={model.handleUnfollow}
                     onViewProfile={model.handleViewProfile}
@@ -241,18 +226,6 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         </p>
                     }
                 }
-                <ProjectsPanel
-                    projects={model.myProfile.projects or []}
-                    isMine={True}
-                    avatars={model.avatars}
-                    busy={model.projectBusy}
-                    error={model.projectError}
-                    notice={model.projectNotice}
-                    onAdd={model.handleAddProject}
-                    onRemove={model.handleRemoveProject}
-                    onRescore={model.handleRescoreProject}
-                    onViewOwner={model.handleViewProfile}
-                />
                 <div className="border-t border-border">
                     {for tweet in (model.myProfile.tweets or []) {
                         <TweetCard
@@ -288,18 +261,6 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         onAvatarFile={lambda (_f: any) {}}
                         onClearAvatar={lambda {}}
                     />
-                    <ProjectsPanel
-                        projects={model.viewedProfile.projects or []}
-                        isMine={False}
-                        avatars={model.avatars}
-                        busy={False}
-                        error=""
-                        notice=""
-                        onAdd={lambda (_u: str) {}}
-                        onRemove={lambda (_id: str) {}}
-                        onRescore={lambda (_id: str) {}}
-                        onViewOwner={model.handleViewProfile}
-                    />
                     <div className="border-t border-border">
                         {for tweet in (model.viewedProfile.tweets or []) {
                             <TweetCard
@@ -316,7 +277,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         }}
                     </div>
                 }
-            }     }
+            }      }
         </main>
         <RightSidebar
             searchQuery={model.searchQuery}

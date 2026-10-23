@@ -414,7 +414,7 @@ hash_cost = 14           # log2 of the scrypt work factor, 10..17
 
 [serve.auth.registration]
 enabled = true           # false = no self-registration; accounts are created by an admin
-challenge = false        # Proof-of-work challenge before /user/register
+challenge = false        # Proof-of-work challenge before /user/register; jacSignup solves it
 attempts_per_hour = 0    # Per source address; 0 = unlimited
 challenges_per_10_minutes = 0
 

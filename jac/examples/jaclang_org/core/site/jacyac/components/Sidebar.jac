@@ -5,7 +5,9 @@ import from "lucide-react" {
     User,
     Feather,
     LogOut,
-    MoreHorizontal
+    MoreHorizontal,
+    BookOpen,
+    Bot
 }
 
 def:pub Sidebar(

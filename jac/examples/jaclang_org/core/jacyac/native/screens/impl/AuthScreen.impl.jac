@@ -6,18 +6,22 @@ impl AuthScreen(
     loading: bool,
     onUsernameChange: Callable[[str], None],
     onPasswordChange: Callable[[str], None],
+    email: str = "",
+    onEmailChange: Callable[[str], None] = lambda (t: str) {},
     onSubmit: Callable[[], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
     onGithub: Callable[[], None] = lambda {},
     embedded: bool = False,
-    onScores: Callable[[], None] = lambda {},
 ) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);
     viewport = useWindowDimensions();
-    can_submit = username.strip() != "" and password != "" and not loading;
+    can_submit = username.strip() != ""
+        and password != ""
+        and (not isSignup or email.strip() != "")
+        and not loading;
 
     <KeyboardAvoidingView
         style={[
@@ -69,13 +73,28 @@ impl AuthScreen(
                 <TextInput
                     style={styles.fieldInput}
                     value={username}
-                    placeholder="Username"
+                    placeholder={"Username" if isSignup else "Username or email"}
                     placeholderTextColor={C.muted}
                     autoCapitalize="none"
                     autoCorrect={False}
                     onChangeText={onUsernameChange}
                 />
             </View>
+            {if isSignup {
+                <View style={styles.fieldRow}>
+                    <Icon name="mail" size={18} color={C.muted}/>
+                    <TextInput
+                        style={styles.fieldInput}
+                        value={email}
+                        placeholder="Email"
+                        placeholderTextColor={C.muted}
+                        autoCapitalize="none"
+                        autoCorrect={False}
+                        keyboardType="email-address"
+                        onChangeText={onEmailChange}
+                    />
+                </View>
+            }}
             <View style={styles.fieldRow}>
                 <Icon name="lock" size={18} color={C.muted}/>
                 <TextInput
@@ -118,11 +137,6 @@ impl AuthScreen(
                     </Text>
                 </Pressable>
             </View>
-            <Pressable accessibilityRole="button" onPress={onScores}>
-                <Text style={[styles.switchLink, {"textAlign": "center"}]}>
-                    Browse Ninja Scores
-                </Text>
-            </Pressable>
             <Text style={styles.footnote}>
                 Same accounts and the same graph as jaclang.org/jacyac.
             </Text>

@@ -1,4 +1,6 @@
+import from "@jac/runtime" { Link as RouterLink }
 import from "lucide-react" {
+    Bot,
     MapPin,
     Link2,
     Github,

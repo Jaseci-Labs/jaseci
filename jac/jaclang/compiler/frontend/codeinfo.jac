@@ -311,7 +311,7 @@ def resolve_native_module(
 
 def native_wasm_stem(path: str) -> str;
 
-glob NATIVE_ABI_VERSION: int = 2;
+glob NATIVE_ABI_VERSION: int = 3;
 
 obj NativeModuleLayout {
     has abi_version: int = NATIVE_ABI_VERSION,

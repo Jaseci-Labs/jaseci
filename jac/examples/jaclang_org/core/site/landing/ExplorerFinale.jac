@@ -6,7 +6,7 @@ import from "@hugeicons/core-free-icons" {
     ComputerIcon,
     CommandLineIcon,
     UserGroupIcon,
-    ChartHistogramIcon,
+    LibraryIcon,
     StarIcon,
     Book02Icon,
     BookOpen01Icon,

@@ -1,8 +1,32 @@
+impl account_handle(fallback: str) -> str {
+    token = __getLocalStorage("jac_token");
+    if not token {
+        return fallback;
+    }
+    try {
+        response = await fetch(
+            __getApiBaseUrl() + "/user/me",
+            {"headers": {"Authorization": "Bearer " + token}}
+        );
+        if not response.ok {
+            return fallback;
+        }
+        envelope: any = await response.json();
+        for ident in (envelope.data?.identities or []) {
+            if ident.type == "username" and ident.value {
+                return str(ident.value);
+            }
+        }
+    } except Exception {}
+    return fallback;
+}
+
 impl useSession -> Session {
     has loggedIn: bool = False,
         checking: bool = True,
         signup: bool = False,
         username: str = "",
+        email: str = "",
         password: str = "",
         error: str = "",
         busy: bool = False,
@@ -43,33 +67,43 @@ impl useSession -> Session {
             return;
         }
         error = "";
-        if not username.strip() or not password {
+        if not username.strip() or not password or (signup and not email.strip()) {
             error = "Please fill in all fields";
             return;
         }
-        if signup and len(password) < 4 {
-            error = "Password must be at least 4 characters";
+        if signup and "@" in username {
+            error = "Your username can't contain @; your email goes in the email field";
+            return;
+        }
+        if signup and "@" not in email {
+            error = "Please enter a valid email address";
             return;
         }
         busy = True;
         try {
             if signup {
-                registration_error = await register_with_challenge(
-                    username.strip(), password
+                result = await jacSignup(
+                    [
+                        {"type": "username", "value": username.strip()},
+                        {"type": "email", "value": email.strip()}
+                    ],
+                    password
                 );
-                if registration_error {
-                    error = registration_error;
+                if not result.success {
+                    error = result.error or "Registration failed. Please try again.";
                     return;
                 }
             }
             if await jacLogin(username.strip(), password) {
-                __setLocalStorage("jacyac_username", username.strip());
+                __setLocalStorage(
+                    "jacyac_username", await account_handle(username.strip())
+                );
                 password = "";
                 loggedIn = True;
             } else {
                 error = "Account created. Please log in."
                     if signup
-                    else "Invalid username or password";
+                    else "Invalid username, email or password";
                 signup = False;
             }
         } except Exception {
@@ -92,6 +126,7 @@ impl useSession -> Session {
         }
         loggedIn = False;
         username = "";
+        email = "";
         password = "";
         error = "";
         signup = False;
@@ -102,12 +137,14 @@ impl useSession -> Session {
         checking=checking,
         signup=signup,
         username=username,
+        email=email,
         password=password,
         error=error,
         busy=busy,
         githubEnabled=githubEnabled,
         githubLogin=githubLogin,
         setUsername=lambda (value: str) { username = value; },
+        setEmail=lambda (value: str) { email = value; },
         setPassword=lambda (value: str) { password = value; },
         toggleMode=lambda {
             signup = not signup;

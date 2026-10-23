@@ -29,11 +29,11 @@ impl MDSpans(text: str) -> JsxElement {
                     </code>
                 } elif sp["k"] == "strong" {
                     <strong key={str(i)} className="font-semibold text-foreground">
-                        <MDLabel text={sp["t"] as str}/>
+                        <MDSpans text={sp["t"] as str}/>
                     </strong>
                 } elif sp["k"] == "em" {
                     <em key={str(i)}>
-                        <MDLabel text={sp["t"] as str}/>
+                        <MDSpans text={sp["t"] as str}/>
                     </em>
                 } elif sp["k"] == "icon" {
                     if (sp["name"] as str) in _ICON_MAP {

@@ -9,9 +9,9 @@ import from "@jac/mobui" {
 
 glob TAB_TITLES: dict[str, str] = {
          "feed": "Home",
-         "scores": "Ninja Scores",
          "explore": "Explore",
          "channels": "Channels",
+         "ninjaclaw": "ninjaclaw",
          "profile": "Profile"
      };
 

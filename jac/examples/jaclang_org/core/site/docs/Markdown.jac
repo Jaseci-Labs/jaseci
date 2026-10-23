@@ -201,6 +201,10 @@ impl _parse_blocks(
             level = _count_hashes(s);
             if level <= 6 and level < len(s) and s[level] == " " {
                 text = s[level + 1:].strip();
+                attr_at = text.rfind(" {#");
+                if attr_at >= 0 and text.endswith("}") {
+                    text = text[:attr_at].rstrip();
+                }
                 anchor = "";
                 if level == 2 or level == 3 {
                     if anchors is not None and seen_headings < len(anchors) {

@@ -21,7 +21,10 @@ import from "lucide-react" {
     WifiOff,
     RefreshCw,
     Check,
-    Inbox
+    Inbox,
+    Bot,
+    BookOpen,
+    Mail
 }
 
 glob LUCIDE: dict[str, any] = {
@@ -47,7 +50,10 @@ glob LUCIDE: dict[str, any] = {
          "offline": WifiOff,
          "refresh": RefreshCw,
          "check": Check,
-         "inbox": Inbox
+         "inbox": Inbox,
+         "bot": Bot,
+         "book": BookOpen,
+         "mail": Mail
      };
 
 def:pub Icon(name: str, size: int, color: str, fill: bool = False) -> JsxElement;

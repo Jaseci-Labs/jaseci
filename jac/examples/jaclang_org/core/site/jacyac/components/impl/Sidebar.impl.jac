@@ -27,19 +27,6 @@ impl Sidebar(
                 className={cn(
                     nav_base,
                     "text-primary bg-primary/10"
-                        if activeTab == "scores"
-                        else "text-foreground"
-                )}
-                onClick={lambda { onNavigate("scores"); }}
-            >
-                <Compass size={24}/>
-                <span className="hidden xl:inline">Ninja Scores</span>
-            </Button>
-            <Button
-                variant="ghost"
-                className={cn(
-                    nav_base,
-                    "text-primary bg-primary/10"
                         if activeTab == "feed"
                         else "text-foreground"
                 )}
@@ -73,6 +60,32 @@ impl Sidebar(
             >
                 <Hash size={24}/>
                 <span className="hidden xl:inline">Channels</span>
+            </Button>
+            <Button
+                variant="ghost"
+                className={cn(
+                    nav_base,
+                    "text-primary bg-primary/10"
+                        if activeTab == "tutorials"
+                        else "text-foreground"
+                )}
+                onClick={lambda { onNavigate("tutorials"); }}
+            >
+                <BookOpen size={24}/>
+                <span className="hidden xl:inline">Tutorials</span>
+            </Button>
+            <Button
+                variant="ghost"
+                className={cn(
+                    nav_base,
+                    "text-primary bg-primary/10"
+                        if activeTab == "ninjaclaw"
+                        else "text-foreground"
+                )}
+                onClick={lambda { onNavigate("ninjaclaw"); }}
+            >
+                <Bot size={24}/>
+                <span className="hidden xl:inline">ninjaclaw</span>
             </Button>
             <Button
                 variant="ghost"
