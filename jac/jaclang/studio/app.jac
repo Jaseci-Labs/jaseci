@@ -19,6 +19,8 @@ def run_studio(
 
 def cmd_model(root_dir: str, args: list[str], as_json: bool) -> int;
 
+def cmd_gate(directory: str, args: list[str], as_json: bool) -> int;
+
 def format_summary(model: ProjectModel) -> str;
 
 def format_module(model: ProjectModel, key: str) -> str;
@@ -73,6 +75,9 @@ impl run_studio(
         }
     }
     args = rest;
+    if action == "gate" {
+        return cmd_gate(directory, args, as_json);
+    }
     root_dir = find_project_root(directory or os.getcwd());
     if action == "model" {
         return cmd_model(root_dir, args, as_json);
@@ -120,6 +125,52 @@ impl cmd_model(root_dir: str, args: list[str], as_json: bool) -> int {
     }
     out(format_summary(model));
     return 0;
+}
+
+impl cmd_gate(directory: str, args: list[str], as_json: bool) -> int {
+    repeat = 1;
+    files: list[str] = [];
+    i = 0;
+    while i < len(args) {
+        if args[i] == "--repeat" and i + 1 < len(args) {
+            repeat = max(1, int(args[i + 1]));
+            i += 2;
+            continue;
+        }
+        files.append(args[i]);
+        i += 1;
+    }
+    if len(files) != 2 {
+        err("usage: jac studio gate <file> <new-file> [--repeat N] [-d DIR] [--json]");
+        return 2;
+    }
+    target = os.path.abspath(files[0]);
+    if not os.path.isfile(files[1]) {
+        err(f"jac studio gate: no such file '{files[1]}'");
+        return 2;
+    }
+    with open(files[1], encoding="utf-8") as fh {
+        new_text = fh.read();
+    }
+    root_dir = find_project_root(directory or os.path.dirname(target));
+    gate = EditGate(root_dir=root_dir);
+    reviews: list[EditReview] = [];
+    for _ in range(repeat) {
+        reviews.append(gate.review(target, new_text));
+    }
+    rv = reviews[-1];
+    if as_json {
+        data = rv.to_dict();
+        data["timings"] = [round(r.elapsed, 3) for r in reviews];
+        data["feedback"] = rv.feedback();
+        out(json.dumps(data, indent=2));
+    } else {
+        out(format_review(rv));
+        if repeat > 1 {
+            out("\ntimings: " + ", ".join([f"{r.elapsed:.2f}s" for r in reviews]));
+        }
+    }
+    return 0 if rv.clean() else 1;
 }
 
 impl format_summary(model: ProjectModel) -> str {
