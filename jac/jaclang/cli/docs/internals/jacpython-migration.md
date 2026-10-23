@@ -689,6 +689,12 @@ callers pass `ptr[u8]("literal")`. A key computed as a Jac `str` goes
 through `capi.dict_set_text` / `dict_get_text`, which make the key object
 and call `PyDict_SetItem` / `PyDict_GetItemRef`.
 
+`memoryobject.c` (`object_model/memory.jac`) keeps the managed buffer that
+every view of one export shares, and the views' shape and strides in the
+object's trailing array. Items in native formats are packed and unpacked in
+Jac; other formats go through the `struct` module, as in C. The `Py_buffer`
+values C keeps on the stack are heap allocations freed on every path.
+
 Order after these: numbers and text (`complexobject.c`, `longobject.c`,
 `bytesobject.c`, `unicodeobject.c`), and `typeobject.c` (12,312 lines)
 last. The allocator (`obmalloc.c` and the

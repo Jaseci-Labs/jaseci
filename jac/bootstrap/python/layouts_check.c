@@ -34,6 +34,7 @@ typedef struct { PyObject_HEAD PyDictObject *di_dict; Py_ssize_t di_used; Py_ssi
 struct _odictobject { PyDictObject od_dict; _ODictNode *od_first; _ODictNode *od_last; _ODictNode **od_fast_nodes; Py_ssize_t od_fast_nodes_size; void *od_resize_sentinel; size_t od_state; PyObject *od_inst_dict; PyObject *od_weakreflist; };
 struct _odictnode { PyObject *key; Py_hash_t hash; _ODictNode *next; _ODictNode *prev; };
 typedef struct { PyObject_HEAD int kind; PyODictObject *di_odict; Py_ssize_t di_size; size_t di_state; PyObject *di_current; PyObject *di_result; } odictiterobject;
+typedef struct { PyObject_HEAD Py_ssize_t it_index; PyMemoryViewObject *it_seq; Py_ssize_t it_length; const char *it_fmt; } memoryiterobject;
 typedef struct { PyObject_HEAD PyObject *mapping; } mappingproxyobject;
 typedef struct { PyObject_HEAD PyWrapperDescrObject *descr; PyObject *self; } wrapperobject;
 typedef struct { PyObject_HEAD PyObject *cm_callable; PyObject *cm_dict; } classmethod;
@@ -690,6 +691,86 @@ FIELD(odictiterobject, di_result, 56, 8);
 KIND(odictiterobject, di_result, 5);
 LAYOUT(odictiterobject, 64, 8);
 
+/* Py_buffer */
+FIELD(Py_buffer, buf, 0, 8);
+KIND(Py_buffer, buf, 5);
+FIELD(Py_buffer, obj, 8, 8);
+KIND(Py_buffer, obj, 5);
+FIELD(Py_buffer, len, 16, 8);
+KIND(Py_buffer, len, 1);
+SIGNED(Py_buffer, len, 1);
+FIELD(Py_buffer, itemsize, 24, 8);
+KIND(Py_buffer, itemsize, 1);
+SIGNED(Py_buffer, itemsize, 1);
+FIELD(Py_buffer, readonly, 32, 4);
+KIND(Py_buffer, readonly, 1);
+SIGNED(Py_buffer, readonly, 1);
+FIELD(Py_buffer, ndim, 36, 4);
+KIND(Py_buffer, ndim, 1);
+SIGNED(Py_buffer, ndim, 1);
+FIELD(Py_buffer, format, 40, 8);
+KIND(Py_buffer, format, 5);
+FIELD(Py_buffer, shape, 48, 8);
+KIND(Py_buffer, shape, 5);
+FIELD(Py_buffer, strides, 56, 8);
+KIND(Py_buffer, strides, 5);
+FIELD(Py_buffer, suboffsets, 64, 8);
+KIND(Py_buffer, suboffsets, 5);
+FIELD(Py_buffer, internal, 72, 8);
+KIND(Py_buffer, internal, 5);
+LAYOUT(Py_buffer, 80, 8);
+
+/* _PyManagedBufferObject */
+FIELD(_PyManagedBufferObject, ob_base, 0, 16);
+KIND(_PyManagedBufferObject, ob_base, 12);
+FIELD(_PyManagedBufferObject, flags, 16, 4);
+KIND(_PyManagedBufferObject, flags, 1);
+SIGNED(_PyManagedBufferObject, flags, 1);
+FIELD(_PyManagedBufferObject, exports, 24, 8);
+KIND(_PyManagedBufferObject, exports, 1);
+SIGNED(_PyManagedBufferObject, exports, 1);
+FIELD(_PyManagedBufferObject, master, 32, 80);
+KIND(_PyManagedBufferObject, master, 12);
+LAYOUT(_PyManagedBufferObject, 112, 8);
+
+/* PyMemoryViewObject */
+FIELD(PyMemoryViewObject, ob_base, 0, 24);
+KIND(PyMemoryViewObject, ob_base, 12);
+FIELD(PyMemoryViewObject, mbuf, 24, 8);
+KIND(PyMemoryViewObject, mbuf, 5);
+FIELD(PyMemoryViewObject, hash, 32, 8);
+KIND(PyMemoryViewObject, hash, 1);
+SIGNED(PyMemoryViewObject, hash, 1);
+FIELD(PyMemoryViewObject, flags, 40, 4);
+KIND(PyMemoryViewObject, flags, 1);
+SIGNED(PyMemoryViewObject, flags, 1);
+FIELD(PyMemoryViewObject, exports, 48, 8);
+KIND(PyMemoryViewObject, exports, 1);
+SIGNED(PyMemoryViewObject, exports, 1);
+FIELD(PyMemoryViewObject, view, 56, 80);
+KIND(PyMemoryViewObject, view, 12);
+FIELD(PyMemoryViewObject, weakreflist, 136, 8);
+KIND(PyMemoryViewObject, weakreflist, 5);
+FIELD(PyMemoryViewObject, ob_array, 144, 8);
+KIND(PyMemoryViewObject, ob_array[0], 1);
+SIGNED(PyMemoryViewObject, ob_array[0], 1);
+LAYOUT(PyMemoryViewObject, 152, 8);
+
+/* memoryiterobject */
+FIELD(memoryiterobject, ob_base, 0, 16);
+KIND(memoryiterobject, ob_base, 12);
+FIELD(memoryiterobject, it_index, 16, 8);
+KIND(memoryiterobject, it_index, 1);
+SIGNED(memoryiterobject, it_index, 1);
+FIELD(memoryiterobject, it_seq, 24, 8);
+KIND(memoryiterobject, it_seq, 5);
+FIELD(memoryiterobject, it_length, 32, 8);
+KIND(memoryiterobject, it_length, 1);
+SIGNED(memoryiterobject, it_length, 1);
+FIELD(memoryiterobject, it_fmt, 40, 8);
+KIND(memoryiterobject, it_fmt, 5);
+LAYOUT(memoryiterobject, 48, 8);
+
 /* PyDescrObject */
 FIELD(PyDescrObject, ob_base, 0, 16);
 KIND(PyDescrObject, ob_base, 12);
@@ -1254,35 +1335,6 @@ KIND(PyDateTime_CAPI, DateTime_FromDateAndTimeAndFold, 5);
 FIELD(PyDateTime_CAPI, Time_FromTimeAndFold, 112, 8);
 KIND(PyDateTime_CAPI, Time_FromTimeAndFold, 5);
 LAYOUT(PyDateTime_CAPI, 120, 8);
-
-/* Py_buffer */
-FIELD(Py_buffer, buf, 0, 8);
-KIND(Py_buffer, buf, 5);
-FIELD(Py_buffer, obj, 8, 8);
-KIND(Py_buffer, obj, 5);
-FIELD(Py_buffer, len, 16, 8);
-KIND(Py_buffer, len, 1);
-SIGNED(Py_buffer, len, 1);
-FIELD(Py_buffer, itemsize, 24, 8);
-KIND(Py_buffer, itemsize, 1);
-SIGNED(Py_buffer, itemsize, 1);
-FIELD(Py_buffer, readonly, 32, 4);
-KIND(Py_buffer, readonly, 1);
-SIGNED(Py_buffer, readonly, 1);
-FIELD(Py_buffer, ndim, 36, 4);
-KIND(Py_buffer, ndim, 1);
-SIGNED(Py_buffer, ndim, 1);
-FIELD(Py_buffer, format, 40, 8);
-KIND(Py_buffer, format, 5);
-FIELD(Py_buffer, shape, 48, 8);
-KIND(Py_buffer, shape, 5);
-FIELD(Py_buffer, strides, 56, 8);
-KIND(Py_buffer, strides, 5);
-FIELD(Py_buffer, suboffsets, 64, 8);
-KIND(Py_buffer, suboffsets, 5);
-FIELD(Py_buffer, internal, 72, 8);
-KIND(Py_buffer, internal, 5);
-LAYOUT(Py_buffer, 80, 8);
 
 /* PyBufferProcs */
 FIELD(PyBufferProcs, bf_getbuffer, 0, 8);
@@ -1864,6 +1916,27 @@ CONSTANT(_Py_MEMORYVIEW_C, 2LL);
 CONSTANT(_Py_MEMORYVIEW_FORTRAN, 4LL);
 CONSTANT(offsetof(PyMemoryViewObject, view), 56LL);
 CONSTANT(offsetof(PyMemoryViewObject, flags), 40LL);
+CONSTANT(sizeof(_PyManagedBufferObject), 112LL);
+CONSTANT(offsetof(_PyManagedBufferObject, master), 32LL);
+CONSTANT(offsetof(PyMemoryViewObject, ob_array), 144LL);
+CONSTANT(offsetof(PyMemoryViewObject, weakreflist), 136LL);
+CONSTANT(sizeof(memoryiterobject), 48LL);
+CONSTANT(_Py_MANAGED_BUFFER_RELEASED, 1LL);
+CONSTANT(_Py_MANAGED_BUFFER_FREE_FORMAT, 2LL);
+CONSTANT(_Py_MEMORYVIEW_RELEASED, 1LL);
+CONSTANT(_Py_MEMORYVIEW_SCALAR, 8LL);
+CONSTANT(_Py_MEMORYVIEW_PIL, 16LL);
+CONSTANT(_Py_MEMORYVIEW_RESTRICTED, 32LL);
+CONSTANT(PyBUF_WRITABLE, 1LL);
+CONSTANT(PyBUF_FORMAT, 4LL);
+CONSTANT(PyBUF_ND, 8LL);
+CONSTANT(PyBUF_STRIDES, 24LL);
+CONSTANT(PyBUF_C_CONTIGUOUS, 56LL);
+CONSTANT(PyBUF_F_CONTIGUOUS, 88LL);
+CONSTANT(PyBUF_ANY_CONTIGUOUS, 152LL);
+CONSTANT(PyBUF_INDIRECT, 280LL);
+CONSTANT(PyBUF_WRITE, 512LL);
+CONSTANT(PyBUF_MAX_NDIM, 64LL);
 CONSTANT(sizeof(PyComplexObject), 32LL);
 CONSTANT(offsetof(PyComplexObject, cval.real), 16LL);
 CONSTANT(offsetof(PyComplexObject, cval.imag), 24LL);

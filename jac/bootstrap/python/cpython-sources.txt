@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 152 C files / 274,324 lines; 138 headers / 122,210 lines.
-#   Total: 290 files / 396,534 source lines.
+#   Excluded: 153 C files / 277,934 lines; 139 headers / 122,710 lines.
+#   Total: 292 files / 400,644 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -238,7 +238,7 @@ Objects/clinic/frameobject.c.h
 # Objects/clinic/interpolationobject.c.h  # removed: 94 source lines
 # Objects/clinic/listobject.c.h  # removed: 471 source lines
 Objects/clinic/longobject.c.h
-Objects/clinic/memoryobject.c.h
+# Objects/clinic/memoryobject.c.h  # removed: 500 source lines
 # Objects/clinic/moduleobject.c.h  # removed: 80 source lines
 # Objects/clinic/odictobject.c.h  # removed: 455 source lines
 # Objects/clinic/setobject.c.h  # removed: 557 source lines
@@ -263,7 +263,7 @@ Objects/genobject.c
 # Objects/iterobject.c  # removed: 541 source lines
 # Objects/listobject.c  # removed: 4,263 source lines
 Objects/longobject.c
-Objects/memoryobject.c
+# Objects/memoryobject.c  # removed: 3,610 source lines
 # Objects/methodobject.c  # removed: 578 source lines
 Objects/mimalloc/alloc-aligned.c
 Objects/mimalloc/alloc-override.c

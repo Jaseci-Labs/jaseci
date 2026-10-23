@@ -15793,6 +15793,13 @@ graph import runtime.python {
             PARSE_KEYWORDS,
             invoke_vector
         },
+        object_model.memory {
+            BoundArguments,
+            CallSignature,
+            PARSE_KEYWORDS,
+            invoke,
+            invoke_vector
+        },
     ]
     bindings.array ++> inittab { PyInit_array }
     bindings.asyncio ++> inittab { PyInit__asyncio }
@@ -15991,6 +15998,7 @@ graph import runtime.python {
             | object_model.interpolation
             | object_model.iterator
             | object_model.list
+            | object_model.memory
             | object_model.method
             | object_model.module
             | object_model.namespace
@@ -22173,6 +22181,88 @@ graph import runtime.python {
             jacpy_unicode_data,
             jacpy_unicode_kind
         },
+        object_model.memory {
+            NULL,
+            PyBool_FromLong,
+            PyBuffer_IsContiguous,
+            PyBuffer_Release,
+            PyBytes_AsString,
+            PyBytes_FromString,
+            PyBytes_FromStringAndSize,
+            PyErr_BadInternalCall,
+            PyErr_Clear,
+            PyErr_ExceptionMatches,
+            PyErr_Format,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetString,
+            PyExc_BufferError,
+            PyExc_ImportError,
+            PyExc_IndexError,
+            PyExc_MemoryError,
+            PyExc_NotImplementedError,
+            PyExc_OverflowError,
+            PyExc_RuntimeError,
+            PyExc_SystemError,
+            PyExc_TypeError,
+            PyExc_ValueError,
+            PyFloat_AsDouble,
+            PyFloat_FromDouble,
+            PyImport_ImportModuleAttrString,
+            PyIndex_Check,
+            PyList_New,
+            PyLong_AsInt,
+            PyLong_AsLong,
+            PyLong_AsLongLong,
+            PyLong_AsSize_t,
+            PyLong_AsSsize_t,
+            PyLong_AsUnsignedLong,
+            PyLong_AsUnsignedLongLong,
+            PyLong_FromLong,
+            PyLong_FromLongLong,
+            PyLong_FromSize_t,
+            PyLong_FromSsize_t,
+            PyLong_FromUnsignedLong,
+            PyLong_FromUnsignedLongLong,
+            PyLong_FromVoidPtr,
+            PyMem_Calloc,
+            PyMem_Free,
+            PyMem_Malloc,
+            PyMethodDef,
+            PyNumber_AsSsize_t,
+            PyObject,
+            PyObject_CallOneArg,
+            PyObject_CheckBuffer,
+            PyObject_ClearWeakRefs,
+            PyObject_GC_Del,
+            PyObject_GenericGetAttr,
+            PyObject_GetAttrString,
+            PyObject_GetBuffer,
+            PyObject_GetIter,
+            PyObject_Hash,
+            PyObject_IsTrue,
+            PyObject_RichCompareBool,
+            PyObject_SelfIter,
+            PySlice_Type,
+            PyTuple_New,
+            PyUnicode_AsASCIIString,
+            PyUnicode_AsUTF8AndSize,
+            PyUnicode_FromFormat,
+            PyUnicode_FromString,
+            Py_Ellipsis,
+            Py_HashBuffer,
+            Py_None,
+            Py_NotImplemented,
+            Py_buffer,
+            _PyArg_BadArgument,
+            _PyArg_CheckPositional,
+            _PyNumber_Index,
+            _PyObject_GC_New,
+            _PyObject_GC_NewVar,
+            jacpy_memory_copy,
+            jacpy_memory_move,
+            jacpy_native_little_endian
+        },
         object_model.method {
             NULL,
             PyCallable_Check,
@@ -23760,6 +23850,62 @@ graph import runtime.python {
             _Py_freelists_LISTS,
             _Py_freelists_LIST_ITERS,
             _object
+        },
+        object_model.memory {
+            METH_CLASS,
+            METH_FASTCALL,
+            METH_KEYWORDS,
+            METH_NOARGS,
+            METH_O,
+            METH_VARARGS,
+            PY_BUFFER_SIZE,
+            PyBUF_ANY_CONTIGUOUS,
+            PyBUF_C_CONTIGUOUS,
+            PyBUF_FORMAT,
+            PyBUF_FULL_RO,
+            PyBUF_F_CONTIGUOUS,
+            PyBUF_INDIRECT,
+            PyBUF_MAX_NDIM,
+            PyBUF_ND,
+            PyBUF_STRIDES,
+            PyBUF_WRITABLE,
+            PyBUF_WRITE,
+            PyBufferProcs,
+            PyGetSetDef,
+            PyListObject,
+            PyMappingMethods,
+            PyMemoryViewObject,
+            PyMemoryViewObject_OB_ARRAY,
+            PyMemoryViewObject_VIEW,
+            PyMemoryViewObject_WEAKREFLIST,
+            PySequenceMethods,
+            PyTypeObject,
+            PyVarObject,
+            Py_EQ,
+            Py_NE,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_DEFAULT,
+            Py_TPFLAGS_HAVE_GC,
+            Py_TPFLAGS_LIST_SUBCLASS,
+            Py_TPFLAGS_LONG_SUBCLASS,
+            Py_TPFLAGS_SEQUENCE,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_TPFLAGS_UNICODE_SUBCLASS,
+            _PyManagedBufferObject,
+            _PyManagedBufferObject_MASTER,
+            _PyManagedBufferObject_SIZE,
+            _Py_MANAGED_BUFFER_FREE_FORMAT,
+            _Py_MANAGED_BUFFER_RELEASED,
+            _Py_MEMORYVIEW_C,
+            _Py_MEMORYVIEW_FORTRAN,
+            _Py_MEMORYVIEW_PIL,
+            _Py_MEMORYVIEW_RELEASED,
+            _Py_MEMORYVIEW_RESTRICTED,
+            _Py_MEMORYVIEW_SCALAR,
+            _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+            _object,
+            memoryiterobject,
+            memoryiterobject_SIZE
         },
         object_model.method {
             METH_NOARGS,
@@ -31687,6 +31833,7 @@ graph import runtime.python.object_model {
         | func
         | interpolation
         | list
+        | memory
         | set
         | template
         | tuple
@@ -31867,6 +32014,20 @@ graph import runtime.python.object_model {
             rich_compare_values,
             tuple_get_item,
             tuple_items,
+            type_has_feature
+        },
+        memory {
+            fast_items,
+            object_decref,
+            object_gc_track,
+            object_gc_untrack,
+            object_is_type,
+            object_new_ref,
+            object_size,
+            object_type,
+            object_xdecref,
+            tuple_get_item,
+            tuple_set_item,
             type_has_feature
         },
         method {
@@ -32064,7 +32225,7 @@ graph import runtime.python.object_model {
     method ++> func { PyMethod_New }
     set ++> exceptions { Py_FatalError }
     slice ++> [
-        list | tuple { PySlice_AdjustIndices, PySlice_Unpack },
+        list | memory | tuple { PySlice_AdjustIndices, PySlice_Unpack },
         range { slice_check, slice_get_long_indices },
     ]
     structseq ++> float { PyStructSequence_New }
