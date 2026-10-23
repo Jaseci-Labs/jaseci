@@ -128,6 +128,7 @@ obj ProjectModel {
     def _add_module(key: str, path: str, archwire: str, local_name: str) -> StModule;
     def _discover;
     def _spec_key(spec: WiringSpec, local: str) -> str;
+    def _is_nested_project(arch: str) -> bool;
     def _add_wiring(arch: str, spec: WiringSpec);
     def _add_symbol(owner: StNode, sym: StNode);
     def _clear_module_symbols(mod: StModule);
@@ -333,12 +334,16 @@ impl ProjectModel._discover {
         specs.append((arch, spec));
     }
     for (arch, spec) in specs {
+        nested = self._is_nested_project(arch);
         for local in spec.project_modules() {
             path = spec.module_file(local);
             if not path or os.path.basename(path) == ARCH_FILE_NAME {
                 continue;
             }
-            self._add_module(spec.import_name(local), path, arch, local);
+            key = self._rel_dotted(os.path.realpath(path))
+                if nested
+                else spec.import_name(local);
+            self._add_module(key, path, arch, local);
         }
     }
     for path in self._head_files() {
@@ -1009,4 +1014,15 @@ impl find_project_root(start: str) -> str {
         }
         cur = parent;
     }
+}
+
+impl ProjectModel._is_nested_project(arch: str) -> bool {
+    cur = os.path.dirname(os.path.realpath(arch));
+    while cur.startswith(self.root_dir) and cur != self.root_dir {
+        if os.path.exists(os.path.join(cur, "jac.toml")) {
+            return True;
+        }
+        cur = os.path.dirname(cur);
+    }
+    return False;
 }

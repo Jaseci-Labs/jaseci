@@ -154,7 +154,9 @@ obj Studio {
         agent_state: str = "none",
         session_id: str = "",
         spin: int = 0,
-        log_path: str = "";
+        log_path: str = "",
+        verbs: dict[str, str] = {},
+        config: dict[str, any] = {};
 
     def postinit;
     def install_layout;
@@ -317,6 +319,7 @@ glob HELP_TEXT: list[tuple[str, str]] = [
          ("← →", "providers | module | consumers"),
          ("Enter", "follow a wire to that module, or open a symbol"),
          ("Space", "add the wire or symbol to the context"),
+         ("A", "add every item in the column to the context"),
          ("", "Context and prompt"),
          ("@", "in the prompt: pick something to add to the context"),
          ("Enter / Alt+Enter", "send / new line"),
@@ -459,7 +462,12 @@ impl run_tui(root_dir: str, agent_name: str = "", session_id: str = "") -> int {
     model = ProjectModel(root_dir=root_dir);
     model.build(index=False);
     app = Studio(root_dir=root_dir, model=model);
-    app.agent_name = agent_name;
+    app.config = load_studio_config(root_dir);
+    app.verbs = dict(VERBS);
+    for (vk, vv) in app.config.get("verbs", {}).items() {
+        app.verbs[str(vk)] = str(vv);
+    }
+    app.agent_name = agent_name or str(app.config.get("default_agent", ""));
     app.session_id = session_id;
     log_dir = os.path.join(root_dir, ".jac", "studio", "logs");
     os.makedirs(log_dir, exist_ok=True);
@@ -939,6 +947,7 @@ impl nav_key(app: Studio, key: str) {
         if 0 <= app.nav_sel < n {
             row = app.nav_rows[app.nav_sel];
             if row.expandable and not row.expanded {
+                ensure_indexed(app, row.key);
                 app.expanded.add(row.key);
                 rebuild_nav(app);
             } elif row.expanded and app.nav_sel + 1 < n {
@@ -991,6 +1000,7 @@ impl nav_activate(app: Studio) -> None {
 }
 
 impl open_key(app: Studio, key: str, focus: bool = False) -> None {
+    ensure_indexed(app, key);
     nd = app.model.node_for(key);
     if nd is None or not nd.file {
         app.say(f"{key} has no source", "warn");
@@ -1036,6 +1046,10 @@ impl reveal_in_nav(app: Studio, key: str) {
 }
 
 impl load_code(app: Studio, path: str, keep_pos: bool = False) -> None {
+    fmod = app.model.module_for_file(path);
+    if fmod is not None and not fmod.indexed {
+        ensure_indexed(app, fmod.key);
+    }
     try {
         with open(path, encoding="utf-8", errors="replace") as fh {
             text = fh.read();
@@ -1458,6 +1472,19 @@ impl wire_key(app: Studio, key: str) -> None {
         } else {
             add_to_tray(app, item.key);
         }
+    } elif key == "A" {
+        added = 0;
+        for item in cols[c] {
+            k = item.key;
+            if c in [0, 2] and item.data is not None {
+                k = f"wire:{item.data.provider}->{item.data.consumer}";
+            }
+            if k not in app.tray {
+                app.tray.append(k);
+                added += 1;
+            }
+        }
+        app.say(f"+ {added} items from this column added to the context", "ok");
     } elif key == "o" {
         open_key(app, app.wire_mod);
     } elif key == "escape" {
@@ -1611,8 +1638,8 @@ impl run_slash(app: Studio, text: str) {
     parts = text[1:].split(" ", 1);
     verb = parts[0].lower();
     rest = parts[1] if len(parts) > 1 else "";
-    if verb in VERBS {
-        send_to_agent(app, (VERBS[verb] + " " + rest).strip());
+    if verb in app.verbs {
+        send_to_agent(app, (app.verbs[verb] + " " + rest).strip());
     } elif verb in ["help", "?"] {
         open_help(app);
     } elif verb == "clear" {
@@ -1624,7 +1651,9 @@ impl run_slash(app: Studio, text: str) {
         app.running = False;
     } else {
         app.say(
-            f"unknown command /{verb}; try /explain /tests /refactor /review /doc /fix /move /agent /clear",
+            f"unknown command /{verb}; try "
+                + " ".join(["/" + v for v in app.verbs])
+                + " /agent /clear",
             "warn"
         );
     }
@@ -1743,20 +1772,26 @@ impl refresh_picker(app: Studio) {
 }
 
 impl palette_items(app: Studio) -> list[PickItem] {
-    return [
-        PickItem(key="goto", label="Go to symbol or module   Ctrl+P"),
-        PickItem(key="wiring", label="Toggle code / wiring view   Ctrl+T"),
-        PickItem(key="agent", label="Choose agent   /agent"),
-        PickItem(key="explain", label="Ask: explain the context   /explain"),
-        PickItem(key="tests", label="Ask: write tests   /tests"),
-        PickItem(key="refactor", label="Ask: refactor   /refactor"),
-        PickItem(key="review", label="Ask: review   /review"),
-        PickItem(key="clear-tray", label="Clear the context tray"),
-        PickItem(key="clear-chat", label="Clear the transcript   /clear"),
-        PickItem(key="reindex", label="Re-index the project"),
-        PickItem(key="help", label="Keys and help   F1"),
-        PickItem(key="quit", label="Quit   Ctrl+Q")
+    extra = [
+        PickItem(key=v, label=f"Ask: {v}   /{v}")
+        for v in app.verbs
+        if v not in ["explain", "tests", "refactor", "review"]
     ];
+    return extra
+        + [
+            PickItem(key="goto", label="Go to symbol or module   Ctrl+P"),
+            PickItem(key="wiring", label="Toggle code / wiring view   Ctrl+T"),
+            PickItem(key="agent", label="Choose agent   /agent"),
+            PickItem(key="explain", label="Ask: explain the context   /explain"),
+            PickItem(key="tests", label="Ask: write tests   /tests"),
+            PickItem(key="refactor", label="Ask: refactor   /refactor"),
+            PickItem(key="review", label="Ask: review   /review"),
+            PickItem(key="clear-tray", label="Clear the context tray"),
+            PickItem(key="clear-chat", label="Clear the transcript   /clear"),
+            PickItem(key="reindex", label="Re-index the project"),
+            PickItem(key="help", label="Keys and help   F1"),
+            PickItem(key="quit", label="Quit   Ctrl+Q")
+        ];
 }
 
 impl open_palette(app: Studio) {
@@ -1770,8 +1805,8 @@ impl run_palette(app: Studio, key: str) {
         toggle_center(app);
     } elif key == "agent" {
         open_agent_picker(app);
-    } elif key in VERBS {
-        send_to_agent(app, VERBS[key]);
+    } elif key in app.verbs {
+        send_to_agent(app, app.verbs[key]);
     } elif key == "clear-tray" {
         app.tray = [];
     } elif key == "clear-chat" {
@@ -2590,4 +2625,35 @@ impl paint_sheet(app: Studio) -> None {
         }
     }
     set_node_spans(app.r, sh, out[:h], THEME.overlay);
+}
+
+def load_studio_config(root_dir: str) -> dict[str, any];
+
+def ensure_indexed(app: Studio, key: str) -> None;
+
+impl load_studio_config(root_dir: str) -> dict[str, any] {
+    path = os.path.join(root_dir, "jac.toml");
+    if not os.path.exists(path) {
+        return {};
+    }
+    try {
+        import tomllib;
+        with open(path, "rb") as fh {
+            data = tomllib.load(fh);
+        }
+    } except Exception {
+        return {};
+    }
+    st = data.get("studio", {});
+    return st if isinstance(st, dict) else {};
+}
+
+impl ensure_indexed(app: Studio, key: str) -> None {
+    mk = module_of_key(app, key);
+    mod = app.model.modules.get(mk) if mk else None;
+    if mod is None or mod.kind != "module" or mod.indexed {
+        return;
+    }
+    app.model.index_module(mk);
+    app.file_syms = {};
 }
