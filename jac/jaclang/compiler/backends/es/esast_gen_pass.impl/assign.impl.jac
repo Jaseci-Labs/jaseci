@@ -499,25 +499,25 @@ impl EsastGenPass._unpack_pattern(
         elements = [
             self._unpack_pattern(v, prefix, leaves, trailing) for v in values[:star]
         ];
-        rest = f"{prefix}_rest{len(trailing)}";
+        self._unpack_seq += 1;
+        rest = f"__jac_unpack_{self._unpack_seq}";
         elements.append(es.RestElement(argument=es.Identifier(name=rest)));
         after = len(values) - star - 1;
         star_node = cast(uni.UnaryExpr, values[star]);
-        self._unpack_bind(
-            star_node.operand,
-            es.RawCode(code=f"{rest}.slice(0, {rest}.length - {after})"),
-            prefix,
-            leaves,
-            trailing
+        head = es.CallExpression(
+            callee=es.MemberExpression(
+                object=es.Identifier(name=rest), property=es.Identifier(name="slice")
+            ),
+            arguments=[es.Literal(value=0), self._from_end(rest, after)]
         );
+        self._unpack_bind(star_node.operand, head, prefix, leaves, trailing);
         for (j, v) in enumerate(values[star + 1:]) {
-            self._unpack_bind(
-                v,
-                es.RawCode(code=f"{rest}[{rest}.length - {after - j}]"),
-                prefix,
-                leaves,
-                trailing
+            item = es.MemberExpression(
+                object=es.Identifier(name=rest),
+                property=self._from_end(rest, after - j),
+                computed=True
             );
+            self._unpack_bind(v, item, prefix, leaves, trailing);
         }
         return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=expr);
     }
@@ -537,14 +537,24 @@ impl EsastGenPass._unpack_bind(
     trailing: list[es.VariableDeclarator]
 ) -> None {
     if isinstance(target, (uni.TupleVal, uni.ListVal)) {
-        slot = len(trailing);
-        trailing.append(es.VariableDeclarator(id=es.Identifier(name='_'), init=source));
-        pattern = self._unpack_pattern(target, prefix, leaves, trailing);
-        trailing[slot] = es.VariableDeclarator(id=pattern, init=source);
+        nested: list[es.VariableDeclarator] = [];
+        pattern = self._unpack_pattern(target, prefix, leaves, nested);
+        trailing.append(es.VariableDeclarator(id=pattern, init=source));
+        trailing.extend(nested);
         return;
     }
     leaves.append((target, f"{prefix}_{len(leaves)}"));
     trailing.append(
         es.VariableDeclarator(id=es.Identifier(name=leaves[-1][1]), init=source)
+    );
+}
+
+impl EsastGenPass._from_end(name: str, offset: int) -> es.Expression {
+    return es.BinaryExpression(
+        operator="-",
+        left=es.MemberExpression(
+            object=es.Identifier(name=name), property=es.Identifier(name="length")
+        ),
+        right=es.Literal(value=offset)
     );
 }

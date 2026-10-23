@@ -198,9 +198,9 @@ def assert_state_unpack(js: str, backend_name: str) {
         f"[{backend_name}] a rest element must be the last element:\n{js}"
     );
     middle = re.search(
-        r"const \[(__jac_unpack_\d+)_0, \.\.\.\1_rest0\] = __jacS_items\.val,\s*"
-        r"\1_1 = \1_rest0\.slice\(0, \1_rest0\.length - 1\),\s*"
-        r"\1_2 = \1_rest0\[\1_rest0\.length - 1\];",
+        r"const \[(__jac_unpack_\d+)_0, \.\.\.(__jac_unpack_\d+)\] = __jacS_items\.val,\s*"
+        r"\1_1 = \2\.slice\(0, \(?\2\.length - 1\)?\),\s*"
+        r"\1_2 = \2\[\(?\2\.length - 1\)?\];",
         js
     );
     assert middle is not None , (

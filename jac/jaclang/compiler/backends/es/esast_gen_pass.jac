@@ -626,6 +626,7 @@ walker EsastGenPass(TreePass) {
         trailing: list[es.VariableDeclarator]
     ) -> None;
 
+    def _from_end(name: str, offset: int) -> es.Expression;
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);
     def _return_type_route_role(rt: uni.Expr) -> (str | None);
