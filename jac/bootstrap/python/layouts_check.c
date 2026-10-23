@@ -36,6 +36,7 @@ struct _odictnode { PyObject *key; Py_hash_t hash; _ODictNode *next; _ODictNode 
 typedef struct { PyObject_HEAD int kind; PyODictObject *di_odict; Py_ssize_t di_size; size_t di_state; PyObject *di_current; PyObject *di_result; } odictiterobject;
 typedef struct { PyObject_HEAD Py_ssize_t it_index; PyMemoryViewObject *it_seq; Py_ssize_t it_length; const char *it_fmt; } memoryiterobject;
 typedef struct { PyObject_HEAD Py_ssize_t it_index; PyBytesObject *it_seq; } striterobject;
+typedef struct { PyObject_HEAD Py_ssize_t it_index; PyByteArrayObject *it_seq; } bytesiterobject;
 typedef struct { PyObject_HEAD PyObject *mapping; } mappingproxyobject;
 typedef struct { PyObject_HEAD PyWrapperDescrObject *descr; PyObject *self; } wrapperobject;
 typedef struct { PyObject_HEAD PyObject *cm_callable; PyObject *cm_dict; } classmethod;
@@ -791,6 +792,31 @@ SIGNED(striterobject, it_index, 1);
 FIELD(striterobject, it_seq, 24, 8);
 KIND(striterobject, it_seq, 5);
 LAYOUT(striterobject, 32, 8);
+
+/* PyByteArrayObject */
+FIELD(PyByteArrayObject, ob_base, 0, 24);
+KIND(PyByteArrayObject, ob_base, 12);
+FIELD(PyByteArrayObject, ob_alloc, 24, 8);
+KIND(PyByteArrayObject, ob_alloc, 1);
+SIGNED(PyByteArrayObject, ob_alloc, 1);
+FIELD(PyByteArrayObject, ob_bytes, 32, 8);
+KIND(PyByteArrayObject, ob_bytes, 5);
+FIELD(PyByteArrayObject, ob_start, 40, 8);
+KIND(PyByteArrayObject, ob_start, 5);
+FIELD(PyByteArrayObject, ob_exports, 48, 8);
+KIND(PyByteArrayObject, ob_exports, 1);
+SIGNED(PyByteArrayObject, ob_exports, 1);
+LAYOUT(PyByteArrayObject, 56, 8);
+
+/* bytesiterobject */
+FIELD(bytesiterobject, ob_base, 0, 16);
+KIND(bytesiterobject, ob_base, 12);
+FIELD(bytesiterobject, it_index, 16, 8);
+KIND(bytesiterobject, it_index, 1);
+SIGNED(bytesiterobject, it_index, 1);
+FIELD(bytesiterobject, it_seq, 24, 8);
+KIND(bytesiterobject, it_seq, 5);
+LAYOUT(bytesiterobject, 32, 8);
 
 /* PyDescrObject */
 FIELD(PyDescrObject, ob_base, 0, 16);
@@ -1957,6 +1983,9 @@ CONSTANT(sizeof(striterobject), 32LL);
 CONSTANT(_Py_TYPE_VERSION_BYTES, 10LL);
 CONSTANT(offsetof(_PyBytesWriter, small_buffer), 36LL);
 CONSTANT(sizeof(_PyBytesWriter), 552LL);
+CONSTANT(sizeof(PyByteArrayObject), 56LL);
+CONSTANT(sizeof(bytesiterobject), 32LL);
+CONSTANT(_Py_TYPE_VERSION_BYTEARRAY, 9LL);
 CONSTANT(_Py_MANAGED_BUFFER_RELEASED, 1LL);
 CONSTANT(_Py_MANAGED_BUFFER_FREE_FORMAT, 2LL);
 CONSTANT(_Py_MEMORYVIEW_RELEASED, 1LL);

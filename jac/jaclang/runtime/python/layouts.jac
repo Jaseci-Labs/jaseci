@@ -350,6 +350,16 @@ import from c {
         has ob_base: _object,
             it_index: i64,
             it_seq: ptr[PyBytesObject];
+    }  obj PyByteArrayObject {
+        has ob_base: PyVarObject,
+            ob_alloc: i64,
+            ob_bytes: ptr[u8],
+            ob_start: ptr[u8],
+            ob_exports: i64;
+    }  obj bytesiterobject {
+        has ob_base: _object,
+            it_index: i64,
+            it_seq: ptr[PyByteArrayObject];
     }  obj PyDescrObject {
         has ob_base: _object,
             d_type: ptr[PyTypeObject],
@@ -1087,6 +1097,9 @@ glob _Py_STATIC_IMMORTAL_INITIAL_REFCNT: Final[i64] = 1407378104778752,
      _Py_TYPE_VERSION_BYTES: Final[u32] = 10,
      _PyBytesWriter_SMALL_BUFFER: Final[i64] = 36,
      _PyBytesWriter_SIZE: Final[i64] = 552,
+     PyByteArrayObject_SIZE: Final[i64] = 56,
+     bytesiterobject_SIZE: Final[i64] = 32,
+     _Py_TYPE_VERSION_BYTEARRAY: Final[u32] = 9,
      _Py_MANAGED_BUFFER_RELEASED: Final[i32] = 1,
      _Py_MANAGED_BUFFER_FREE_FORMAT: Final[i32] = 2,
      _Py_MEMORYVIEW_RELEASED: Final[i32] = 1,

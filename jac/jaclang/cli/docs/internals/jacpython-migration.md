@@ -720,8 +720,13 @@ variadic, is Jac. A Jac `bytes` value reaches `PyBytes_FromStringAndSize`'s
 callers through `jacpy_bytes_from_payload`, since the C definition takes a
 pointer.
 
-Order after these: text (`bytearrayobject.c`,
-`unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
+`bytearrayobject.c` (`object_model/bytearray.jac`) keeps C's resize
+policy (1.125 overallocation and the `ob_start` offset that makes deleting
+from the front O(1)) and counts buffer exports in `ob_exports`, so a resize
+during an export raises as in C. Its search, split and padding methods run
+on the shared byte stringlib.
+
+Order after these: text (`unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
 (`obmalloc.c` and the mimalloc copy under `Objects/mimalloc/`) follows the
 object model.
 

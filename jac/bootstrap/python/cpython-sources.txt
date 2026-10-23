@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 156 C files / 289,293 lines; 141 headers / 124,620 lines.
-#   Total: 297 files / 413,913 source lines.
+#   Excluded: 157 C files / 292,370 lines; 142 headers / 126,428 lines.
+#   Total: 299 files / 418,798 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -216,14 +216,14 @@ Python/uniqueid.c
 # Builtin objects
 Objects/abstract.c
 # Objects/boolobject.c  # removed: 227 source lines
-Objects/bytearrayobject.c
+# Objects/bytearrayobject.c  # removed: 3,077 source lines
 # Objects/bytes_methods.c  # removed: 740 source lines
 # Objects/bytesobject.c  # removed: 3,744 source lines
 Objects/call.c
 # Objects/capsule.c  # removed: 366 source lines
 # Objects/cellobject.c  # removed: 212 source lines
 # Objects/classobject.c  # removed: 518 source lines
-Objects/clinic/bytearrayobject.c.h
+# Objects/clinic/bytearrayobject.c.h  # removed: 1,808 source lines
 # Objects/clinic/bytesobject.c.h  # removed: 1,419 source lines
 # Objects/clinic/classobject.c.h  # removed: 85 source lines
 Objects/clinic/codeobject.c.h
