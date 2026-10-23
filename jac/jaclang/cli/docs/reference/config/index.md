@@ -662,13 +662,13 @@ select = ["combine-has", "remove-empty-parens"]
 | `remove-redundant-semi` | `W3013` | Remove standalone no-op semicolons from any body (`{;}` → `{}`, `x = 1;;` → `x = 1;`); `remove-import-semi` is an accepted alias for this rule | default |
 | `strip-comments` | `W3050` | Remove **all** comments | all |
 | `strip-docstrings` | `W3051` | Remove **all** docstrings | all |
-| `separate-impls` | `W3055` | Move every function, method and ability body into an `impl` at the bottom of its module | all |
+| `separate-impls` | `W3055` | Move every function, method and ability body into an `impl` in its module's `.impl.jac` annex | all |
 
 Diagnostic codes can be suppressed inline with `# jac:ignore[CODE]` comments. See the full [Errors & Warnings](../diagnostics.md) reference for all diagnostic codes.
 
 **Rules only `all` turns on:**
 
-`strip-comments` and `strip-docstrings` are destructive "deslop" rules: they delete content rather than restructure it. `separate-impls` restructures every module: `jac fmt --lintfix` keeps each declaration in place (`def f(x: int) -> int;`) and moves its body into `impl f(x: int) -> int { ... }` at the bottom of the module, in declaration order. Bodies an `impl` cannot name stay inline: nested functions, nameless abilities (`can with Root entry`), accessors and `@property` methods, and names a field or another member of the same scope also uses. A generic function or method is separated like any other, and its impl restates the type parameters: `def first[T](items: list[T]) -> T;` is implemented by `impl first[T](items: list[T]) -> T { ... }`. Client component bodies are separated like any other: a body behaves the same inline and in an `impl`, so JSX, body-level `has` state and a `JsxElement` return type all move with it.
+`strip-comments` and `strip-docstrings` are destructive "deslop" rules: they delete content rather than restructure it. `separate-impls` restructures every module: `jac fmt --lintfix` keeps each declaration in place (`def f(x: int) -> int;`) and moves its body into `impl f(x: int) -> int { ... }` in the module's impl annex, in declaration order. The annex is the module's existing `.impl.jac` file, or a new `impl/<module>.impl.jac` beside it. `impl` blocks already in the module stay where they are. Bodies an `impl` cannot name stay inline: nested functions, nameless abilities (`can with Root entry`), accessors and `@property` methods, and names a field or another member of the same scope also uses. A generic function or method is separated like any other, and its impl restates the type parameters: `def first[T](items: list[T]) -> T;` is implemented by `impl first[T](items: list[T]) -> T { ... }`. Client component bodies are separated like any other: a body behaves the same inline and in an `impl`, so JSX, body-level `has` state and a `JsxElement` return type all move with it.
 
 `select = ["all"]` turns all three on; `select = ["default"]` leaves them off. Each can also be named on its own, or turned off under `all` with `ignore`:
 
