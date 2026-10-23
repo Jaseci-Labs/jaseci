@@ -2595,7 +2595,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         func = self._module_function((real_path(source), func_name))
             if source is not None
             else None;
-        if func is None and func_name not in self.generic_fns {
+        if func is None and _mod_qual == "os" and func_name not in self.generic_fns {
             self.emit(
                 E5092,
                 node_override=nd,
