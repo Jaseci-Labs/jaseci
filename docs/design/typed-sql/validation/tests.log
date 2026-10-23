@@ -25,6 +25,9 @@ PASSED   SQLite: projection expression type swap rejected  [/home/baichuan/jasec
 PASSED   SQLite: projection derived arithmetic rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: projection nullability swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   SQLite: projection same type swap allowed  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive anchor clauses limit  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive anchor clauses order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
+PASSED   SQLite: recursive anchor clauses order and limit  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_sql.jac] [ 33%]
 PASSED   PostgreSQL: module is portable as one file  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: select parameters and order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: join and shared parameter  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
@@ -51,7 +54,10 @@ PASSED   PostgreSQL: projection expression type swap rejected  [/home/baichuan/j
 PASSED   PostgreSQL: projection derived arithmetic rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: projection nullability swap rejected  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   PostgreSQL: projection same type swap allowed  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive anchor clauses limit  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive anchor clauses order  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
+PASSED   PostgreSQL: recursive anchor clauses order and limit  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_postgres.jac] [ 66%]
 PASSED   Static types: positive example and module  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 PASSED   Static types: all bad calls are rejected at their lines  [/home/baichuan/jaseci/jac-sql/jac/tests/sql/test_types.jac] [100%]
 
-54 passed in 16.10s
+60 passed in 19.96s

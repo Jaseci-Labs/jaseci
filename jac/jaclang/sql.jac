@@ -931,7 +931,10 @@ obj PostgresRenderer {
                     validate_recursive_step(ref, body.right);
                     a = self.query(body.left, [], available);
                     b = self.query(body.right, [], available + [ref]);
-                    sql = a.sql + ' UNION ALL ' + b.sql;
+                    sql = 'SELECT * FROM ('
+                        + a.sql
+                        + ') AS "_recursive_anchor" UNION ALL '
+                        + b.sql;
                 } else {
                     sql = self.query(binding.query, [], available).sql;
                 }

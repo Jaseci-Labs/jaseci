@@ -6,9 +6,9 @@
   "python_host": "CPython 3.14.6 (existing local standalone installation)",
   "jac_version": "0.38.1, source checkout at base commit plus SQL module",
   "postgresql_version": "18.6",
-  "unit_and_execution_tests": 54,
-  "sqlite_cases": 26,
-  "postgresql_cases": 26,
+  "unit_and_execution_tests": 60,
+  "sqlite_cases": 29,
+  "postgresql_cases": 29,
   "static_test_methods": 2,
   "expected_rejected_calls": 11,
   "positive_checked_files": [
@@ -21,7 +21,7 @@
   "files": [
     {
       "path": "jac/jaclang/sql.jac",
-      "sha256": "4170d6096a712f92a3642c79d21585248c1c90296316e9a45515f71d83939265"
+      "sha256": "b56b0a3dc0ed2e8219581a0dccbf8d1d14707c6475047364030c6b3331f86390"
     },
     {
       "path": "jac/examples/sql/typed_sql.jac",
@@ -29,15 +29,15 @@
     },
     {
       "path": "jac/tests/sql/sql_cases.jac",
-      "sha256": "3bdc9bb98cffe37c7fdc82dee264ccbc32dad015a3d6fa94363876c54119af65"
+      "sha256": "acd0c06afb450e5e982aeff4d5ad651f04aae6cd6fde2d94e5d2dabea7a28858"
     },
     {
       "path": "jac/tests/sql/test_postgres.jac",
-      "sha256": "6532b85fadbb562185a01fd5260f96f524be829a18c916bbd3bffb5cc412df7d"
+      "sha256": "693ce4c8e98beade11deec4f5a2e1655051f9859286685df3853b09ef7c162d0"
     },
     {
       "path": "jac/tests/sql/test_sql.jac",
-      "sha256": "6bad9e2db595c1bec2f50337ef41cfe8246f9a13ea8ee5fbc8c094222e749884"
+      "sha256": "f2c7ec705aedba7d2114f23596b70b13820c3ce76a040f4bcf2437bf2c074f80"
     },
     {
       "path": "jac/tests/sql/test_types.jac",
@@ -60,5 +60,16 @@
       "nullability equality",
       "same-type expression replacement remains valid"
     ]
+  },
+  "recursive_anchor_regression": {
+    "baseline_commit": "f868b71f3",
+    "before": "3 PostgreSQL execution failures, syntax error near UNION (42601)",
+    "after": "all three anchor-clause cases pass on PostgreSQL and SQLite",
+    "cases": [
+      "LIMIT",
+      "ORDER BY",
+      "ORDER BY + LIMIT"
+    ],
+    "rendering": "SELECT * FROM (anchor) AS \"_recursive_anchor\" UNION ALL step"
   }
 }

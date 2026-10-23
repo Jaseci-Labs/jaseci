@@ -175,3 +175,15 @@ test "PostgreSQL: projection nullability swap rejected" {
 test "PostgreSQL: projection same type swap allowed" {
     run_case(PostgresTests("test_projection_same_type_swap_allowed"));
 }
+
+test "PostgreSQL: recursive anchor clauses limit" {
+    run_case(PostgresTests("test_recursive_anchor_limit"));
+}
+
+test "PostgreSQL: recursive anchor clauses order" {
+    run_case(PostgresTests("test_recursive_anchor_order"));
+}
+
+test "PostgreSQL: recursive anchor clauses order and limit" {
+    run_case(PostgresTests("test_recursive_anchor_order_limit"));
+}

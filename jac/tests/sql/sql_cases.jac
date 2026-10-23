@@ -211,6 +211,49 @@ class SQLTests(unittest.TestCase) {
         self.assertEqual(self.execute(q), [(1, ), (2, ), (3, ), (4, )]);
     }
 
+    def _assert_recursive_anchor(self: SQLTests, first: any, expected: any) -> object {
+        key = s.field('n', s.int64_type());
+        ref = s.cte('walk', [key], 'w');
+        step = s.select_(
+            [s.named('n', s.add(ref.col(key), s.int64(1)))],
+            source=ref,
+            where=s.gt(s.int64(4), ref.col(key))
+        );
+        body = s.select_(
+            [s.named('n', ref.col(key))], source=ref, order_by=[s.asc(ref.col(key))]
+        );
+        q = s.with_ctes(
+            [s.bind_cte(ref, s.union_all(first, step))], body, recursive=True
+        );
+        self.assertEqual(self.execute(q), expected);
+    }
+
+    def test_recursive_anchor_limit(self: SQLTests) -> object {
+        first = s.select_([s.named('n', s.int64(1))], limit=1);
+        self._assert_recursive_anchor(first, [(1, ), (2, ), (3, ), (4, )]);
+    }
+
+    def test_recursive_anchor_order(self: SQLTests) -> object {
+        first = s.select_(
+            [s.named('n', self.people.col(self.id))],
+            source=self.people,
+            order_by=[s.desc(self.people.col(self.id))]
+        );
+        self._assert_recursive_anchor(
+            first, [(1, ), (2, ), (2, ), (3, ), (3, ), (3, ), (4, ), (4, ), (4, )]
+        );
+    }
+
+    def test_recursive_anchor_order_limit(self: SQLTests) -> object {
+        first = s.select_(
+            [s.named('n', self.people.col(self.id))],
+            source=self.people,
+            order_by=[s.desc(self.people.col(self.id))],
+            limit=1
+        );
+        self._assert_recursive_anchor(first, [(3, ), (4, )]);
+    }
+
     def test_cte_forward_reference_and_recursive_anchor_rejected(
         self: SQLTests
     ) -> object {

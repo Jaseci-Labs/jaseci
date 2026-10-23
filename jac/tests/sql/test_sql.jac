@@ -103,3 +103,15 @@ test "SQLite: projection nullability swap rejected" {
 test "SQLite: projection same type swap allowed" {
     run_case(SQLTests("test_projection_same_type_swap_allowed"));
 }
+
+test "SQLite: recursive anchor clauses limit" {
+    run_case(SQLTests("test_recursive_anchor_limit"));
+}
+
+test "SQLite: recursive anchor clauses order" {
+    run_case(SQLTests("test_recursive_anchor_order"));
+}
+
+test "SQLite: recursive anchor clauses order and limit" {
+    run_case(SQLTests("test_recursive_anchor_order_limit"));
+}

@@ -125,6 +125,11 @@ fragment supports direct sources, predicates and scalar arithmetic. Aggregates,
 subqueries, grouping and step-local ORDER/LIMIT are rejected with SqlError. This
 makes the initial supported PostgreSQL recursive fragment explicit.
 
+The anchor renders as `SELECT * FROM (anchor) AS "_recursive_anchor"` before
+UNION ALL. This parenthesized subquery keeps anchor-local ORDER BY and LIMIT
+inside the anchor while leaving the recursive step as a direct SELECT. Tests
+execute LIMIT, ORDER BY, and their combination on PostgreSQL and SQLite.
+
 CTE references are identities, not string interpolation. Forward references,
 recursive anchor self-references and direct cyclic AST object graphs are rejected.
 Recursive termination is defined by the query predicate, as with PostgreSQL itself.
@@ -159,7 +164,7 @@ JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac -j 1 -v
 ```
 
-There are 54 native Jac test entries: 26 SQLite, the same 26 PostgreSQL cases,
+There are 60 native Jac test entries: 29 SQLite, the same 29 PostgreSQL cases,
 and two static-check tests. Shared fixtures live in `sql_cases.jac` and use
 standard-library assertion helpers.
 
