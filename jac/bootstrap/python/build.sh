@@ -226,7 +226,25 @@ _curses_panel
 readline
 SETUP
     archives=
+    jacpython_configure=
     if [ -n "$host" ]; then
+        # JacPython drops remote debugging and perf trampolines instead of
+        # porting them: configure leaves both out, the _remote_debugging
+        # module is not built, and the interpreter objects that held them
+        # leave the build. interpreter/perf_trampoline.jac and
+        # interpreter/remote_debugging.jac define what the rest of the
+        # interpreter still calls, as the C files do in that configuration.
+        jacpython_configure=--without-remote-debug
+        echo '_remote_debugging' >> Modules/Setup.local
+        sed 's/perf_trampoline=yes/perf_trampoline=no/' configure > configure.new
+        mv configure.new configure
+        chmod +x configure
+        sed -e '/Python\/perf_trampoline\.o \\$/d' \
+            -e '/Python\/perf_jit_trampoline\.o \\$/d' \
+            -e '/Python\/remote_debugging\.o \\$/d' \
+            -e '/\$(srcdir)\/Python\/remote_debug\.h \\$/d' \
+            Makefile.pre.in > Makefile.pre.in.new
+        mv Makefile.pre.in.new Makefile.pre.in
         # Setup.local is read first and its first rule wins, so a registered
         # module never builds from the C source Setup.bootstrap or
         # Setup.stdlib still names. Its rule carries only linker flags: the
@@ -280,7 +298,8 @@ SETUP
         --with-tail-call-interp "$python_lto" \
         --disable-test-modules --with-ensurepip=no --with-pkg-config=no \
         --with-openssl="$deps" --with-openssl-rpath=no \
-        --with-system-expat --with-system-libmpdec --without-readline
+        --with-system-expat --with-system-libmpdec --without-readline \
+        $jacpython_configure
     if [ -n "$host" ]; then
         # Native Jac defines and reads objects through layouts.jac; its
         # generated asserts fail the build if this configuration disagrees.

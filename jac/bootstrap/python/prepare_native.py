@@ -38,13 +38,15 @@ import jaclang.compiler.backends.native.llvm.binding as llvm
 program = JacProgram()
 # The roots of the native object: the compiler's entry points, the table of
 # built-in modules (its PyInit addresses root every native extension module)
-# and the object model ports, which define interpreter types and functions
-# under their C names for C callers no Jac module imports.
+# and the object model and interpreter ports, which define interpreter types
+# and functions under their C names for C callers no Jac module imports.
 entries = [
     root / "jaclang/compiler/backends/py/jacpython/native_api.jac",
     root / "jaclang/runtime/python/inittab.jac",
     *sorted(
-        path for path in (root / "jaclang/runtime/python/object_model").glob("*.jac")
+        path
+        for package in ("object_model", "interpreter")
+        for path in (root / "jaclang/runtime/python" / package).glob("*.jac")
         if path.name != "__init__.jac"
     ),
 ]

@@ -25,6 +25,13 @@ build time, and the previous JacPython builds the next one. The scope:
 | remote debugging, perf trampolines, `getaddrinfo`/`getnameinfo` fallbacks | dropped, not ported |
 | HACL\*, OpenSSL, sqlite, expat, libmpdec, libffi, zlib, bzip2, xz, zstd | stay vendored libraries |
 
+A dropped feature's files are `# removed:` entries like a port's. `build.sh`
+configures JacPython without the feature, and `runtime/python/interpreter/`
+defines the entry points the rest of the interpreter still calls, each as the
+C file defines it in that configuration (`perf_trampoline.jac`,
+`remote_debugging.jac`). `interpreter/` is also where ports of `Python/` go;
+`prepare_native.py` links every module in it and in `object_model/`.
+
 The order follows cost. The binding layer's per-call overhead (thread-state
 lookups through `pthread_getspecific`, a `sigsetjmp` per `try`, heap
 allocation on call paths, C API checks that are not inlined) comes down before the hot

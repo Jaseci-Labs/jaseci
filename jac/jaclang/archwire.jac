@@ -16767,6 +16767,7 @@ graph import runtime.python {
             | bindings.sysconfig
             | bindings.tracemalloc
             | inittab
+            | interpreter.perf_trampoline
             | modules.codecs_cn
             | modules.codecs_hk
             | modules.codecs_jp
@@ -17572,6 +17573,7 @@ graph import runtime.python {
             jacpy_set_new,
             jacpy_tuple_set_owned
         },
+        interpreter.remote_debugging { PyErr_SetString, PyExc_RuntimeError },
         layouts { PyMemberDef, PyMethodDef, PyObject, Py_buffer, Py_complex },
         modules.abc {
             NULL,
@@ -22280,6 +22282,10 @@ graph import runtime.python {
             Py_tp_str
         },
         bindings.type { PyGetSetDef },
+        interpreter.perf_trampoline | modules.posix_core {
+            PyStatus,
+            _PyStatus_TYPE_OK
+        },
         modules.asyncio {
             PYGEN_ERROR,
             PYGEN_NEXT,
@@ -22370,7 +22376,6 @@ graph import runtime.python {
             _object
         },
         modules.decimal_objects { PyTypeObject, _object },
-        modules.posix_core { PyStatus, _PyStatus_TYPE_OK },
         modules.posix_fileio { PY_BUFFER_SIZE },
         modules.posix_stat { PyTypeObject as TypeLayout },
         modules.socket_address {

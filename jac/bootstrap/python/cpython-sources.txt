@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 133 C files / 232,044 lines; 122 headers / 116,444 lines.
-#   Total: 255 files / 348,488 source lines.
+#   Excluded: 139 C files / 238,977 lines; 127 headers / 118,217 lines.
+#   Total: 266 files / 357,194 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -98,8 +98,8 @@ Python/Python-ast.c
 Python/_contextvars.c
 Python/_warnings.c
 Python/asdl.c
-Python/asm_trampoline.S
-Python/asm_trampoline_aarch64.h
+# Python/asm_trampoline.S  # removed: 63 source lines
+# Python/asm_trampoline_aarch64.h  # removed: 56 source lines
 # Python/assemble.c  # removed: 802 source lines
 # Python/ast.c  # removed: 1,091 source lines
 # Python/ast_preprocess.c  # removed: 990 source lines
@@ -180,8 +180,8 @@ Python/optimizer.c
 # Python/optimizer_symbols.c  # pruned: 880 source lines
 Python/parking_lot.c
 Python/pathconfig.c
-Python/perf_jit_trampoline.c
-Python/perf_trampoline.c
+# Python/perf_jit_trampoline.c  # removed: 1,376 source lines
+# Python/perf_trampoline.c  # removed: 641 source lines
 Python/preconfig.c
 Python/pyarena.c
 Python/pyctype.c
@@ -196,8 +196,8 @@ Python/pystrtod.c
 Python/pythonrun.c
 Python/pytime.c
 Python/qsbr.c
-Python/remote_debug.h
-Python/remote_debugging.c
+# Python/remote_debug.h  # removed: 1,191 source lines
+# Python/remote_debugging.c  # removed: 401 source lines
 Python/specialize.c
 Python/stackrefs.c
 Python/stdlib_module_names.h
@@ -416,7 +416,7 @@ Modules/_math.h
 # Modules/_posixsubprocess.c  # removed: 1,357 source lines
 # Modules/_queuemodule.c  # removed: 628 source lines
 # Modules/_randommodule.c  # removed: 679 source lines
-Modules/_remote_debugging_module.c
+# Modules/_remote_debugging_module.c  # removed: 3,666 source lines
 Modules/_scproxy.c
 # Modules/_sqlite/blob.c  # removed: 631 source lines
 # Modules/_sqlite/blob.h  # removed: 24 source lines
@@ -480,7 +480,7 @@ Modules/_threadmodule.c
 # Modules/_zstd/decompressor.c  # removed: 717 source lines
 # Modules/_zstd/zstddict.c  # removed: 275 source lines
 # Modules/_zstd/zstddict.h  # removed: 29 source lines
-Modules/addrinfo.h
+# Modules/addrinfo.h  # removed: 172 source lines
 # Modules/arraymodule.c  # removed: 3,359 source lines
 # Modules/atexitmodule.c  # removed: 361 source lines
 # Modules/binascii.c  # removed: 1,337 source lines
@@ -524,7 +524,7 @@ Modules/addrinfo.h
 # Modules/clinic/_posixsubprocess.c.h  # removed: 153 source lines
 # Modules/clinic/_queuemodule.c.h  # removed: 363 source lines
 # Modules/clinic/_randommodule.c.h  # removed: 177 source lines
-Modules/clinic/_remote_debugging_module.c.h
+# Modules/clinic/_remote_debugging_module.c.h  # removed: 291 source lines
 # Modules/clinic/_ssl.c.h  # removed: 2,909 source lines
 # Modules/clinic/_statisticsmodule.c.h  # removed: 51 source lines
 # Modules/clinic/_struct.c.h  # removed: 461 source lines
@@ -569,9 +569,9 @@ Modules/config.c.in
 Modules/faulthandler.c
 # Modules/fcntlmodule.c  # removed: 789 source lines
 Modules/gcmodule.c
-Modules/getaddrinfo.c
+# Modules/getaddrinfo.c  # removed: 642 source lines
 Modules/getbuildinfo.c
-Modules/getnameinfo.c
+# Modules/getnameinfo.c  # removed: 207 source lines
 Modules/getpath.c
 Modules/getpath.py
 Modules/getpath_noop.c
