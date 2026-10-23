@@ -265,6 +265,9 @@ impl JSCodeGenerator.gen_yield_expression(nd: es.YieldExpression) -> str {
 
 impl JSCodeGenerator.gen_new_expression(nd: es.NewExpression) -> str {
     callee = self.generate(nd.callee);
+    if isinstance(nd.callee, (es.AwaitExpression, es.YieldExpression)) {
+        callee = f"({callee})";
+    }
     if isinstance(nd.arguments, es.ObjectExpression) {
         args = self.generate(nd.arguments);
     } else {
@@ -276,7 +279,15 @@ impl JSCodeGenerator.gen_new_expression(nd: es.NewExpression) -> str {
 impl JSCodeGenerator.gen_call_expression(nd: es.CallExpression) -> str {
     callee = self.generate(nd.callee);
 
-    if isinstance(nd.callee, (es.ArrowFunctionExpression, es.FunctionExpression)) {
+    if isinstance(
+        nd.callee,
+        (
+            es.ArrowFunctionExpression,
+            es.FunctionExpression,
+            es.AwaitExpression,
+            es.YieldExpression
+        )
+    ) {
         callee = f"({callee})";
     }
     optional = '?.' if nd.optional else '';
