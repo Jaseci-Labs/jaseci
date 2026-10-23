@@ -93,7 +93,7 @@ impl resolve_sv_callbacks(
             failures.append(f"{name}: '{src}' defines no callable '{name}'");
             continue;
         }
-        functions[symbol] = fn;
+        functions[symbol] = cast(Callable, fn);
     }
     return (functions, failures);
 }

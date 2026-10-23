@@ -200,7 +200,6 @@ graph import {
     cli.commands.execution ++> client.targets.web_target.WebTarget.start { serve }
     cli.commands.execution --> scale.tests.server.test_serve { _find_free_port }
     cli.commands.native_build ++> dist.seal.bake_native_payloads {
-        native_build,
         native_build_sealed_pair
     }
     cli.console ++> [
@@ -584,10 +583,6 @@ graph import {
         },
         cli.commands.native_build.native_build_sealed_pair {
             ArtifactKind,
-            LinkPlan,
-            LinkPlanError,
-            build_link_plan,
-            link_artifact,
             resolved_callback_bindings
         },
         dist.native_product.write_native_product {
@@ -2326,15 +2321,12 @@ graph import {
         client.client_diagnostics.ClientDiagnostic.render
             | compiler.passes.context.Alert.pretty_print { render_diagnostic },
         compiler.passes.context.Alert.as_log { render_diagnostic_header },
-        compiler.passes.import_wiring_pass | compiler.tools.lang_tools {
-            pascal_to_snake
-        },
+        compiler.passes.import_wiring_pass
+            | compiler.passes.pyast_load_pass
+            | compiler.tools.lang_tools { pascal_to_snake },
         runtime.traceback_render { pretty_print_source_location },
         scale.injector.bundle.BundleSourceFilter.parks { path_matches_exclude },
     ]
-    project.source --> compiler.passes.pyast_load_pass.PyastBuildPass.convert {
-        pascal_to_snake
-    }
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
         cli.commands.project._create_app { scaffold_app },
@@ -2572,6 +2564,7 @@ graph import {
         cli.commands.execution._run_native_lib {
             NativeCallback,
             NativeLibrary,
+            _loaded_native_libraries,
             resolve_sv_callbacks
         },
         compiler.backends.native.na_compile_pass.NativeCompilePass._run_impl
@@ -3752,35 +3745,39 @@ graph import {
     }
     server.request_scope ++> scale.server.websocket_ext { RequestScope }
     server.sealed_serve ++> [
-        cli.commands.execution._jab_interop_record { interop_record_path },
-        cli.commands.execution._jab_native_bin
-            | dist.precompile_bytecode._native_payload_meta { NATIVE_DIR_REL },
-        cli.commands.execution._jab_run_entry_lib {
-            NATIVE_DIR_REL,
-            interop_record_path,
-            native_lib_name
-        },
-        cli.commands.execution._run_native_lib { interop_record_path },
+        cli.commands.execution { NATIVE_DIR_REL },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
         compiler.driver.application._prepare_sealed {
             CLIENT_DIST_REL,
             read_serve_manifest
         },
-        dist.precompile_bytecode.app_metadata { CLIENT_DIST_REL, NATIVE_DIR_REL },
-        dist.precompile_bytecode.collect_payloads {
+        dist.precompile_bytecode {
             CLIENT_DIST_REL,
             NATIVE_DIR_REL,
             SERVE_MANIFEST_REL
         },
         dist.precompile_bytecode.seal_native,
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
-        dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
+        dist.seal {
+            CLIENT_DIST_REL,
+            NATIVE_DIR_REL,
+            SERVE_MANIFEST_REL,
+            native_lib_name
+        },
         dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
         dist.seal.build_serve_manifest { serve_manifest_stamp },
     ]
     server.sealed_serve --> [
-        cli.commands.native_build.native_build_sealed_pair { interop_record_path },
+        cli.commands.execution._jab_interop_record
+            | cli.commands.native_build.native_build_sealed_pair {
+            interop_record_path
+        },
+        cli.commands.execution._jab_run_entry_lib {
+            interop_record_path,
+            native_lib_name
+        },
+        cli.commands.execution._run_native_lib { interop_record_path },
         compiler.driver.application.prepare_application {
             sealed_root_for,
             unlisted_image_root

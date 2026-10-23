@@ -1,7 +1,7 @@
 import ctypes;
 import logging;
 import from collections.abc { Callable, Iterable }
-import from typing { Protocol }
+import from typing { Protocol, cast }
 class CallbackSignature(Protocol) {
     has native_symbol: str,
         lookup_name: str,
