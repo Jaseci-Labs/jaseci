@@ -100,17 +100,38 @@ obj json_input {
     has source: ptr[PyObject],
         length: int,
         position: int,
-        strict: bool;
+        strict: bool,
+        data: ptr = ptr(),
+        kind: i64 = 0;
 
+    def postinit {
+        self.data = jacpy_unicode_data(self.source);
+        self.kind = jacpy_unicode_kind(self.source);
+    }
+
+    # PyUnicode_READ over the string's own storage, as the C scanner reads it.
     def character(index: int) -> int {
         if index < 0 or index >= self.length {
             return -1;
         }
-        return int(PyUnicode_ReadChar(self.source, i64(index)));
+        if self.kind == 1 {
+            return int((ptr[u8](int(self.data)) + index).view(1)[0]);
+        }
+        if self.kind == 2 {
+            return int((ptr[u16](int(self.data)) + index).view(1)[0]);
+        }
+        return int((ptr[u32](int(self.data)) + index).view(1)[0]);
     }
 
     def whitespace {
-        while self.character(self.position) in [32, 9, 10, 13] {
+        while True {
+            character = self.character(self.position);
+            if character != 32
+                and character != 9
+                and character != 10
+                and character != 13 {
+                return;
+            }
             self.position += 1;
         }
     }
@@ -174,6 +195,27 @@ obj json_input {
 
     def string -> ptr[PyObject] {
         begin = self.position - 1;
+        start = self.position;
+        # scanstring_unicode's fast path: a string with no escape is a
+        # substring of the source.
+        while self.position < self.length {
+            character = self.character(self.position);
+            if character == 34 or character == 92 {
+                break;
+            }
+            if character < 32 and self.strict {
+                self.error("Invalid control character at", self.position);
+            }
+            self.position += 1;
+        }
+        if self.character(self.position) == 34 {
+            result = required(
+                PyUnicode_Substring(self.source, i64(start), i64(self.position))
+            );
+            self.position += 1;
+            return result;
+        }
+        self.position = start;
         writer = new_writer();
         try {
             while True {
@@ -460,27 +502,36 @@ obj json_scan {
                 Py_LeaveRecursiveCall();
             }
         }
-        if self.input.matches("null") {
+        # scan_once_unicode dispatches on the first character; anything that
+        # is not a literal is a number.
+        if character == 110 and self.input.matches("null") {
             self.input.position += 4;
             return Py_NewRef(Py_None);
         }
-        if self.input.matches("true") {
+        if character == 116 and self.input.matches("true") {
             self.input.position += 4;
             return PyBool_FromLong(1);
         }
-        if self.input.matches("false") {
+        if character == 102 and self.input.matches("false") {
             self.input.position += 5;
             return PyBool_FromLong(0);
         }
-        for constant in ["NaN", "Infinity", "-Infinity"] {
-            if self.input.matches(constant) {
-                self.input.position += len(constant);
-                text = text_object(constant);
-                try {
-                    return required(PyObject_CallOneArg(self.parse_constant, text));
-                } finally {
-                    jacpy_release(text);
-                }
+        constant = "";
+        if character == 78 {
+            constant = "NaN";
+        } elif character == 73 {
+            constant = "Infinity";
+        } elif character == 45
+            and self.input.character(self.input.position + 1) == 73 {
+            constant = "-Infinity";
+        }
+        if constant and self.input.matches(constant) {
+            self.input.position += len(constant);
+            text = text_object(constant);
+            try {
+                return required(PyObject_CallOneArg(self.parse_constant, text));
+            } finally {
+                jacpy_release(text);
             }
         }
         return self.number();

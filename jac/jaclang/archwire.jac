@@ -17865,10 +17865,12 @@ graph import runtime.python {
         },
         modules.binascii {
             NULL,
+            PyBytes_AsString,
+            PyBytes_FromStringAndSize,
+            PyErr_NoMemory,
             PyExc_SystemError,
             PyExc_TypeError,
             PyExc_ValueError,
-            PyLong_AsUnsignedLongMask,
             PyLong_FromLongLong,
             PyObject,
             PySequence_Size,
@@ -18986,6 +18988,8 @@ graph import runtime.python {
             jacpy_recursion_enter,
             jacpy_release,
             jacpy_tuple_item,
+            jacpy_unicode_data,
+            jacpy_unicode_kind,
             jacpy_unicode_size
         },
         modules.locale {
@@ -19129,6 +19133,7 @@ graph import runtime.python {
             PyIter_Next,
             PyLong_AsDouble,
             PyLong_AsLongLong,
+            PyLong_AsLongLongAndOverflow,
             PyLong_AsUnsignedLongLong,
             PyLong_FromDouble,
             PyLong_FromLongLong,

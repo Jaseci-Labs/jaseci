@@ -161,9 +161,15 @@ obj module_failure(Exception) {
 
 obj boundary_failure(Exception) {}
 
+# The raise lives in its own function so that the checks below own no local:
+# they then link no unwind record and inline into their callers.
+def raise_boundary_failure {
+    raise boundary_failure();
+}
+
 def required(handle: ptr[PyObject]) -> ptr[PyObject] {
     if handle == 0 {
-        raise boundary_failure();
+        raise_boundary_failure();
     }
     return handle;
 }
@@ -202,7 +208,7 @@ def pair(first: ptr[PyObject], second: ptr[PyObject]) -> ptr[PyObject] {
 
 def checked(status: i64) {
     if status < 0 {
-        raise boundary_failure();
+        raise_boundary_failure();
     }
 }
 

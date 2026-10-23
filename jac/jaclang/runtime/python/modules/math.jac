@@ -196,6 +196,555 @@ def:pub jacpy_math_isqrt(argument: ptr[PyObject]) -> ptr[PyObject] {
     }
 }
 
+import from c {
+    glob:priv reduced_factorial_odd_part: list[u64] = [
+             u64(0x1),
+             u64(0x1),
+             u64(0x1),
+             u64(0x3),
+             u64(0x3),
+             u64(0xf),
+             u64(0x2d),
+             u64(0x13b),
+             u64(0x13b),
+             u64(0xb13),
+             u64(0x375f),
+             u64(0x26115),
+             u64(0x7233f),
+             u64(0x5cca33),
+             u64(0x2898765),
+             u64(0x260eeeeb),
+             u64(0x260eeeeb),
+             u64(0x286fddd9b),
+             u64(0x16beecca73),
+             u64(0x1b02b930689),
+             u64(0x870d9df20ad),
+             u64(0xb141df4dae31),
+             u64(0x79dd498567c1b),
+             u64(0xaf2e19afc5266d),
+             u64(0x20d8a4d0f4f7347),
+             u64(0x335281867ec241ef),
+             u64(0x9b3093d46fdd5923),
+             u64(0x5e1f9767cc5866b1),
+             u64(0x92dd23d6966aced7),
+             u64(0xa30d0f4f0a196e5b),
+             u64(0x8dc3e5a1977d7755),
+             u64(0x2ab8ce915831734b),
+             u64(0x2ab8ce915831734b),
+             u64(0x81d2a0bc5e5fdcab),
+             u64(0x9efcac82445da75b),
+             u64(0xbc8b95cf58cde171),
+             u64(0xa0e8444a1f3cecf9),
+             u64(0x4191deb683ce3ffd),
+             u64(0xddd3878bc84ebfc7),
+             u64(0xcb39a64b83ff3751),
+             u64(0xf8203f7993fc1495),
+             u64(0xbd2a2a78b35f4bdd),
+             u64(0x84757be6b6d13921),
+             u64(0x3fbbcfc0b524988b),
+             u64(0xbd11ed47c8928df9),
+             u64(0x3c26b59e41c2f4c5),
+             u64(0x677a5137e883fdb3),
+             u64(0xff74e943b03b93dd),
+             u64(0xfe5ebbcb10b2bb97),
+             u64(0xb021f1de3235e7e7),
+             u64(0x33509eb2e743a58f),
+             u64(0x390f9da41279fb7d),
+             u64(0xe5cb0154f031c559),
+             u64(0x93074695ba4ddb6d),
+             u64(0x81c471caa636247f),
+             u64(0xe1347289b5a1d749),
+             u64(0x286f21c3f76ce2ff),
+             u64(0xbe84a2173e8ac7),
+             u64(0x1595065ca215b88b),
+             u64(0xf95877595b018809),
+             u64(0x9c2efe3c5516f887),
+             u64(0x373294604679382b),
+             u64(0xaf1ff7a888adcd35),
+             u64(0x18ddf279a2c5800b),
+             u64(0x18ddf279a2c5800b),
+             u64(0x505a90e2542582cb),
+             u64(0x5bacad2cd8d5dc2b),
+             u64(0xfe3152bcbff89f41),
+             u64(0xe1467e88bf829351),
+             u64(0xb8001adb9e31b4d5),
+             u64(0x2803ac06a0cbb91f),
+             u64(0x1904b5d698805799),
+             u64(0xe12a648b5c831461),
+             u64(0x3516abbd6160cfa9),
+             u64(0xac46d25f12fe036d),
+             u64(0x78bfa1da906b00ef),
+             u64(0xf6390338b7f111bd),
+             u64(0xf25f80f538255d9),
+             u64(0x4ec8ca55b8db140f),
+             u64(0x4ff670740b9b30a1),
+             u64(0x8fd032443a07f325),
+             u64(0x80dfe7965c83eeb5),
+             u64(0xa3dc1714d1213afd),
+             u64(0x205b7bbfcdc62007),
+             u64(0xa78126bbe140a093),
+             u64(0x9de1dc61ca7550cf),
+             u64(0x84f0046d01b492c5),
+             u64(0x2d91810b945de0f3),
+             u64(0xf5408b7f6008aa71),
+             u64(0x43707f4863034149),
+             u64(0xdac65fb9679279d5),
+             u64(0xc48406e7d1114eb7),
+             u64(0xa7dc9ed3c88e1271),
+             u64(0xfb25b2efdb9cb30d),
+             u64(0x1bebda0951c4df63),
+             u64(0x5c85e975580ee5bd),
+             u64(0x1591bc60082cb137),
+             u64(0x2c38606318ef25d7),
+             u64(0x76ca72f7c5c63e27),
+             u64(0xf04a75d17baa0915),
+             u64(0x77458175139ae30d),
+             u64(0xe6c1330bc1b9421),
+             u64(0xdf87d2b5797e8293),
+             u64(0xefa5c703e1e68925),
+             u64(0x2b6b1b3278b4f6e1),
+             u64(0xceee27b382394249),
+             u64(0xd74e3829f5dab91d),
+             u64(0xfdb17989c26b5f1f),
+             u64(0xc1b7d18781530845),
+             u64(0x7b4436b2105a8561),
+             u64(0x7ba7c0418372a7d7),
+             u64(0x9dbc5c67feb6c639),
+             u64(0x502686d7f6ff6b8f),
+             u64(0x6101855406be7a1f),
+             u64(0x9956afb5806930e7),
+             u64(0xe1f0ee88af40f7c5),
+             u64(0x984b057bda5c1151),
+             u64(0x9a49819acc13ea05),
+             u64(0x8ef0dead0896ef27),
+             u64(0x71f7826efe292b21),
+             u64(0xad80a480e46986ef),
+             u64(0x1cdc0ebf5e0c6f7),
+             u64(0x6e06f839968f68db),
+             u64(0xdd5943ab56e76139),
+             u64(0xcdcf31bf8604c5e7),
+             u64(0x7e2b4a847054a1cb),
+             u64(0xca75697a4d3d0f5),
+             u64(0x4703f53ac514a98b)
+         ],
+         inverted_factorial_odd_part: list[u64] = [
+             u64(0x1),
+             u64(0x1),
+             u64(0x1),
+             u64(0xaaaaaaaaaaaaaaab),
+             u64(0xaaaaaaaaaaaaaaab),
+             u64(0xeeeeeeeeeeeeeeef),
+             u64(0x4fa4fa4fa4fa4fa5),
+             u64(0x2ff2ff2ff2ff2ff3),
+             u64(0x2ff2ff2ff2ff2ff3),
+             u64(0x938cc70553e3771b),
+             u64(0xb71c27cddd93e49f),
+             u64(0xb38e3229fcdee63d),
+             u64(0xe684bb63544a4cbf),
+             u64(0xc2f684917ca340fb),
+             u64(0xf747c9cba417526d),
+             u64(0xbb26eb51d7bd49c3),
+             u64(0xbb26eb51d7bd49c3),
+             u64(0xb0a7efb985294093),
+             u64(0xbe4b8c69f259eabb),
+             u64(0x6854d17ed6dc4fb9),
+             u64(0xe1aa904c915f4325),
+             u64(0x3b8206df131cead1),
+             u64(0x79c6009fea76fe13),
+             u64(0xd8c5d381633cd365),
+             u64(0x4841f12b21144677),
+             u64(0x4a91ff68200b0d0f),
+             u64(0x8f9513a58c4f9e8b),
+             u64(0x2b3e690621a42251),
+             u64(0x4f520f00e03c04e7),
+             u64(0x2edf84ee600211d3),
+             u64(0xadcaa2764aaacdfd),
+             u64(0x161f4f9033f4fe63),
+             u64(0x161f4f9033f4fe63),
+             u64(0xbada2932ea4d3e03),
+             u64(0xcec189f3efaa30d3),
+             u64(0xf7475bb68330bf91),
+             u64(0x37eb7bf7d5b01549),
+             u64(0x46b35660a4e91555),
+             u64(0xa567c12d81f151f7),
+             u64(0x4c724007bb2071b1),
+             u64(0xf4a0cce58a016bd),
+             u64(0xfa21068e66106475),
+             u64(0x244ab72b5a318ae1),
+             u64(0x366ce67e080d0f23),
+             u64(0xd666fdae5dd2a449),
+             u64(0xd740ddd0acc06a0d),
+             u64(0xb050bbbb28e6f97b),
+             u64(0x70b003fe890a5c75),
+             u64(0xd03aabff83037427),
+             u64(0x13ec4ca72c783bd7),
+             u64(0x90282c06afdbd96f),
+             u64(0x4414ddb9db4a95d5),
+             u64(0xa2c68735ae6832e9),
+             u64(0xbf72d71455676665),
+             u64(0xa8469fab6b759b7f),
+             u64(0xc1e55b56e606caf9),
+             u64(0x40455630fc4a1cff),
+             u64(0x120a7b0046d16f7),
+             u64(0xa7c3553b08faef23),
+             u64(0x9f0bfd1b08d48639),
+             u64(0xa433ffce9a304d37),
+             u64(0xa22ad1d53915c683),
+             u64(0xcb6cbc723ba5dd1d),
+             u64(0x547fb1b8ab9d0ba3),
+             u64(0x547fb1b8ab9d0ba3),
+             u64(0x8f15a826498852e3),
+             u64(0x32e1a03f38880283),
+             u64(0x3de4cce63283f0c1),
+             u64(0x5dfe6667e4da95b1),
+             u64(0xfda6eeeef479e47d),
+             u64(0xf14de991cc7882df),
+             u64(0xe68db79247630ca9),
+             u64(0xa7d6db8207ee8fa1),
+             u64(0x255e1f0fcf034499),
+             u64(0xc9a8990e43dd7e65),
+             u64(0x3279b6f289702e0f),
+             u64(0xe7b5905d9b71b195),
+             u64(0x3025ba41ff0da69),
+             u64(0xb7df3d6d3be55aef),
+             u64(0xf89b212ebff2b361),
+             u64(0xfe856d095996f0ad),
+             u64(0xd6e533e9fdf20f9d),
+             u64(0xf8c0e84a63da3255),
+             u64(0xa677876cd91b4db7),
+             u64(0x7ed4f97780d7d9b),
+             u64(0x90a8705f258db62f),
+             u64(0xa41bbb2be31b1c0d),
+             u64(0x6ec28690b038383b),
+             u64(0xdb860c3bb2edd691),
+             u64(0x838286838a980f9),
+             u64(0x558417a74b36f77d),
+             u64(0x71779afc3646ef07),
+             u64(0x743cda377ccb6e91),
+             u64(0x7fdf9f3fe89153c5),
+             u64(0xdc97d25df49b9a4b),
+             u64(0x76321a778eb37d95),
+             u64(0x7cbb5e27da3bd487),
+             u64(0x9cff4ade1a009de7),
+             u64(0x70eb166d05c15197),
+             u64(0xdcf0460b71d5fe3d),
+             u64(0x5ac1ee5260b6a3c5),
+             u64(0xc922dedfdd78efe1),
+             u64(0xe5d381dc3b8eeb9b),
+             u64(0xd57e5347bafc6aad),
+             u64(0x86939040983acd21),
+             u64(0x395b9d69740a4ff9),
+             u64(0x1467299c8e43d135),
+             u64(0x5fe440fcad975cdf),
+             u64(0xcaa9a39794a6ca8d),
+             u64(0xf61dbd640868dea1),
+             u64(0xac09d98d74843be7),
+             u64(0x2b103b9e1a6b4809),
+             u64(0x2ab92d16960f536f),
+             u64(0x6653323d5e3681df),
+             u64(0xefd48c1c0624e2d7),
+             u64(0xa496fefe04816f0d),
+             u64(0x1754a7b07bbdd7b1),
+             u64(0x23353c829a3852cd),
+             u64(0xbf831261abd59097),
+             u64(0x57a8e656df0618e1),
+             u64(0x16e9206c3100680f),
+             u64(0xadad4c6ee921dac7),
+             u64(0x635f2b3860265353),
+             u64(0xdd6d0059f44b3d09),
+             u64(0xac4dd6b894447dd7),
+             u64(0x42ea183eeaa87be3),
+             u64(0x15612d1550ee5b5d),
+             u64(0x226fa19d656cb623)
+         ],
+         factorial_trailing_zeros: list[u8] = [
+             u8(0),
+             u8(0),
+             u8(1),
+             u8(1),
+             u8(3),
+             u8(3),
+             u8(4),
+             u8(4),
+             u8(7),
+             u8(7),
+             u8(8),
+             u8(8),
+             u8(10),
+             u8(10),
+             u8(11),
+             u8(11),
+             u8(15),
+             u8(15),
+             u8(16),
+             u8(16),
+             u8(18),
+             u8(18),
+             u8(19),
+             u8(19),
+             u8(22),
+             u8(22),
+             u8(23),
+             u8(23),
+             u8(25),
+             u8(25),
+             u8(26),
+             u8(26),
+             u8(31),
+             u8(31),
+             u8(32),
+             u8(32),
+             u8(34),
+             u8(34),
+             u8(35),
+             u8(35),
+             u8(38),
+             u8(38),
+             u8(39),
+             u8(39),
+             u8(41),
+             u8(41),
+             u8(42),
+             u8(42),
+             u8(46),
+             u8(46),
+             u8(47),
+             u8(47),
+             u8(49),
+             u8(49),
+             u8(50),
+             u8(50),
+             u8(53),
+             u8(53),
+             u8(54),
+             u8(54),
+             u8(56),
+             u8(56),
+             u8(57),
+             u8(57),
+             u8(63),
+             u8(63),
+             u8(64),
+             u8(64),
+             u8(66),
+             u8(66),
+             u8(67),
+             u8(67),
+             u8(70),
+             u8(70),
+             u8(71),
+             u8(71),
+             u8(73),
+             u8(73),
+             u8(74),
+             u8(74),
+             u8(78),
+             u8(78),
+             u8(79),
+             u8(79),
+             u8(81),
+             u8(81),
+             u8(82),
+             u8(82),
+             u8(85),
+             u8(85),
+             u8(86),
+             u8(86),
+             u8(88),
+             u8(88),
+             u8(89),
+             u8(89),
+             u8(94),
+             u8(94),
+             u8(95),
+             u8(95),
+             u8(97),
+             u8(97),
+             u8(98),
+             u8(98),
+             u8(101),
+             u8(101),
+             u8(102),
+             u8(102),
+             u8(104),
+             u8(104),
+             u8(105),
+             u8(105),
+             u8(109),
+             u8(109),
+             u8(110),
+             u8(110),
+             u8(112),
+             u8(112),
+             u8(113),
+             u8(113),
+             u8(116),
+             u8(116),
+             u8(117),
+             u8(117),
+             u8(119),
+             u8(119),
+             u8(120),
+             u8(120)
+         ],
+         fast_comb_limits1: list[u8] = [
+             u8(0),
+             u8(0),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(127),
+             u8(116),
+             u8(105),
+             u8(97),
+             u8(91),
+             u8(86),
+             u8(82),
+             u8(78),
+             u8(76),
+             u8(74),
+             u8(72),
+             u8(71),
+             u8(70),
+             u8(69),
+             u8(68),
+             u8(68),
+             u8(67),
+             u8(67),
+             u8(67),
+             u8(67)
+         ],
+         fast_comb_limits2: list[u64] = [
+             u64(0x0),
+             u64(0xffffffffffffffff),
+             u64(0x100000000),
+             u64(0x32cbfe),
+             u64(0x190aa),
+             u64(0x349b),
+             u64(0xe1c),
+             u64(0x5a9),
+             u64(0x2ea),
+             u64(0x1c5),
+             u64(0x134),
+             u64(0xe3),
+             u64(0xb2),
+             u64(0x93)
+         ],
+         fast_perm_limits: list[u64] = [
+             u64(0x0),
+             u64(0xffffffffffffffff),
+             u64(0x100000000),
+             u64(0x285146),
+             u64(0x10001),
+             u64(0x1bdd),
+             u64(0x65b),
+             u64(0x238),
+             u64(0x103),
+             u64(0x8e),
+             u64(0x58),
+             u64(0x3d),
+             u64(0x2d),
+             u64(0x24),
+             u64(0x1e),
+             u64(0x1a),
+             u64(0x18),
+             u64(0x16),
+             u64(0x15),
+             u64(0x14),
+             u64(0x14)
+         ];
+}
+
+def:priv table_u64(table: ptr[u64], index: u64) -> u64 {
+    return (table + i64(index)).view(1)[0];
+}
+
+def:priv table_u8(table: ptr[u8], index: u64) -> u64 {
+    return u64((table + i64(index)).view(1)[0]);
+}
+
+# perm_comb_small(): P(n, k) or C(n, k) for n in the 63-bit range and k != 0.
+# Small enough results are computed in 64-bit arithmetic: the odd part of the
+# factorial quotient modulo 2**64 from three table lookups, shifted by its
+# power of two, or a running product; larger ones split k recursively.
+def:priv perm_comb_small(n: u64, k: u64, combination: bool) -> ptr[PyObject] {
+    odd = addressof(reduced_factorial_odd_part);
+    inverted = addressof(inverted_factorial_odd_part);
+    zeros = addressof(factorial_trailing_zeros);
+    if combination {
+        if k < u64(35) and n <= table_u8(addressof(fast_comb_limits1), k) {
+            part = wrapping_mul(
+                wrapping_mul(table_u64(odd, n), table_u64(inverted, k)),
+                table_u64(inverted, n - k)
+            );
+            shift = table_u8(zeros, n) - table_u8(zeros, k) - table_u8(zeros, n - k);
+            return PyLong_FromUnsignedLongLong(wrapping_shl(part, shift));
+        }
+        if k < u64(14) and n <= table_u64(addressof(fast_comb_limits2), k) {
+            result = n;
+            top = n;
+            i = u64(1);
+            while i < k {
+                top -= u64(1);
+                result *= top;
+                i += u64(1);
+                result //= i;
+            }
+            return PyLong_FromUnsignedLongLong(result);
+        }
+    } elif k < u64(21) and n <= table_u64(addressof(fast_perm_limits), k) {
+        if n <= u64(127) {
+            part = wrapping_mul(table_u64(odd, n), table_u64(inverted, n - k));
+            shift = table_u8(zeros, n) - table_u8(zeros, n - k);
+            return PyLong_FromUnsignedLongLong(wrapping_shl(part, shift));
+        }
+        result = n;
+        top = n;
+        i = u64(1);
+        while i < k {
+            top -= u64(1);
+            result *= top;
+            i += u64(1);
+        }
+        return PyLong_FromUnsignedLongLong(result);
+    }
+    j = k // u64(2);
+    left = perm_comb_small(n, j, combination);
+    if not left {
+        return NULL;
+    }
+    right = perm_comb_small(n - j, k - j, combination);
+    if not right {
+        jacpy_release(left);
+        return NULL;
+    }
+    product = PyNumber_Multiply(left, right);
+    jacpy_release(left);
+    jacpy_release(right);
+    if not product or not combination {
+        return product;
+    }
+    divisor = perm_comb_small(k, j, True);
+    if not divisor {
+        jacpy_release(product);
+        return NULL;
+    }
+    quotient = PyNumber_FloorDivide(product, divisor);
+    jacpy_release(product);
+    jacpy_release(divisor);
+    return quotient;
+}
+
 # Balanced recursive products keep operand sizes similar for long multiplication.
 def:priv perm_comb(n: ptr[PyObject], k: i64, combination: bool) -> ptr[PyObject] {
     if k == 0 {
@@ -211,7 +760,6 @@ def:priv perm_comb(n: ptr[PyObject], k: i64, combination: bool) -> ptr[PyObject]
     remaining: ptr[PyObject] = NULL;
     product: ptr[PyObject] = NULL;
     denominator: ptr[PyObject] = NULL;
-    count: ptr[PyObject] = NULL;
     try {
         left = perm_comb(n, middle, combination);
         offset = required(PyLong_FromLongLong(middle));
@@ -221,8 +769,7 @@ def:priv perm_comb(n: ptr[PyObject], k: i64, combination: bool) -> ptr[PyObject]
         if not combination {
             return Py_NewRef(product);
         }
-        count = required(PyLong_FromLongLong(k));
-        denominator = perm_comb(count, middle, True);
+        denominator = required(perm_comb_small(u64(k), u64(middle), True));
         return required(PyNumber_FloorDivide(product, denominator));
     } finally {
         jacpy_release(left);
@@ -231,7 +778,6 @@ def:priv perm_comb(n: ptr[PyObject], k: i64, combination: bool) -> ptr[PyObject]
         jacpy_release(remaining);
         jacpy_release(product);
         jacpy_release(denominator);
-        jacpy_release(count);
     }
 }
 
@@ -271,6 +817,14 @@ def:pub jacpy_math_comb(
             if comparison != 0 {
                 jacpy_release(k);
                 k = Py_NewRef(difference);
+            }
+        }
+        overflow = i32(0);
+        small_n = PyLong_AsLongLongAndOverflow(n, &mut overflow);
+        if overflow == 0 {
+            small_k = PyLong_AsLongLong(k);
+            if small_k > 1 {
+                return perm_comb_small(u64(small_n), u64(small_k), combination != 0);
             }
         }
         if _PyLong_NumBits(k) > 63 {

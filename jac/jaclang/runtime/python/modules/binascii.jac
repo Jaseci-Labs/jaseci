@@ -684,7 +684,7 @@ def _crctab32(i: int) -> int {
 
 glob _CRC32_TABLE: list[int] = [_crctab32(i) for i in range(256)];
 
-def crc32(data: ptr[PyObject], crc: int = 0) -> int {
+def crc32_table(data: ptr[PyObject], crc: int = 0) -> int {
     # unsigned_int(bitwise=True) converter: mask like the C unsigned int.
     c = (~crc) & 0xFFFFFFFF;
     for k in range(int(jacpy_buffer_size(data))) {
@@ -707,7 +707,7 @@ def:pub jacpy_binascii_convert(
             return PyLong_FromLongLong(i64(crc_hqx(source, int(option))));
         }
         if operation == 9 {
-            return PyLong_FromLongLong(i64(crc32(source, int(option))));
+            return PyLong_FromLongLong(i64(crc32_table(source, int(option))));
         }
         data = list(read_buffer(source));
         result: list[int] = [];
@@ -737,6 +737,75 @@ def:pub jacpy_binascii_convert(
         jacpy_set_exception(error_type, message, i64(len(message.encode("utf-8"))));
         return NULL;
     }
+}
+
+import from c { def crc32(crc: u64, buf: ptr, length: u32) -> u64;  }
+
+glob:priv CRC_CHUNK: i64 = 0x40000000;
+
+# b2a_hex without a separator (_Py_strhex_impl): two digits per byte, written
+# into the result in place.
+def:priv hex_buffer(source: ptr, length: i64) -> ptr[PyObject] {
+    if length > 0x3FFFFFFFFFFFFFFF {
+        return PyErr_NoMemory();
+    }
+    result = PyBytes_FromStringAndSize(ptr[u8](), length * 2);
+    if not result {
+        return NULL;
+    }
+    src = ptr[u8](int(source));
+    dst = PyBytes_AsString(result);
+    digits = ptr[u8]("0123456789abcdef");
+    i: i64 = 0;
+    while i < length {
+        byte = (src + i).view(1)[0];
+        (dst + 2 * i).view(1)[0] = (digits + i64(byte >> 4)).view(1)[0];
+        (dst + 2 * i + 1).view(1)[0] = (digits + i64(byte & u8(0x0F))).view(1)[0];
+        i += 1;
+    }
+    return result;
+}
+
+# binascii_b2a_base64_impl's encoder: each three bytes become four characters,
+# the tail is padded with '=', written into the result in place.
+def:priv base64_buffer(source: ptr, length: i64, newline: bool) -> ptr[PyObject] {
+    size = ((length + 2) // 3) * 4 + (1 if newline else 0);
+    result = PyBytes_FromStringAndSize(ptr[u8](), size);
+    if not result {
+        return NULL;
+    }
+    src = ptr[u8](int(source));
+    dst = PyBytes_AsString(result);
+    table = ptr[u8]("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+    i: i64 = 0;
+    o: i64 = 0;
+    while i + 2 < length {
+        b0 = i64((src + i).view(1)[0]);
+        b1 = i64((src + i + 1).view(1)[0]);
+        b2 = i64((src + i + 2).view(1)[0]);
+        (dst + o).view(1)[0] = (table + (b0 >> 2)).view(1)[0];
+        (dst + o + 1).view(1)[0] = (table + (((b0 & 3) << 4) | (b1 >> 4))).view(1)[0];
+        (dst + o + 2).view(1)[0] = (table + (((b1 & 15) << 2) | (b2 >> 6))).view(1)[0];
+        (dst + o + 3).view(1)[0] = (table + (b2 & 63)).view(1)[0];
+        i += 3;
+        o += 4;
+    }
+    left = length - i;
+    if left > 0 {
+        b0 = i64((src + i).view(1)[0]);
+        b1 = i64((src + i + 1).view(1)[0]) if left == 2 else i64(0);
+        (dst + o).view(1)[0] = (table + (b0 >> 2)).view(1)[0];
+        (dst + o + 1).view(1)[0] = (table + (((b0 & 3) << 4) | (b1 >> 4))).view(1)[0];
+        (dst + o + 2).view(1)[0] = (table + ((b1 & 15) << 2)).view(1)[0]
+            if left == 2
+            else u8(61);
+        (dst + o + 3).view(1)[0] = u8(61);
+        o += 4;
+    }
+    if newline {
+        (dst + o).view(1)[0] = u8(10);
+    }
+    return result;
 }
 
 # ascii_buffer_converter(): a bytes-like object or an ASCII str, as a buffer
@@ -796,7 +865,10 @@ def binascii_a2b_base64_impl(
 def binascii_b2a_base64_impl(
     module: ptr[PyObject], data: BufferArgument, newline: bool
 ) -> ptr[PyObject] {
-    return convert(module, data, 3, i64(newline));
+    if data.size() > _BASE64_MAXBIN {
+        return convert(module, data, 3, i64(newline));
+    }
+    return base64_buffer(data.address(), data.size(), newline);
 }
 
 def binascii_a2b_hex_impl(
@@ -838,6 +910,9 @@ def:priv hex_with_separator(
             return NULL;
         }
     }
+    if option < 0 {
+        return hex_buffer(data.address(), data.size());
+    }
     return convert(module, data, 5, option, i64(bytes_per_sep));
 }
 
@@ -876,12 +951,17 @@ def binascii_crc_hqx_impl(
 }
 
 # crc32 returns clinic's unsigned int: (unsigned)-1 with an error on failure.
+# crc32 returns clinic's unsigned int. Built with zlib, binascii.c hands the
+# buffer to zlib's crc32 in chunks its unsigned length can hold.
 def binascii_crc32_impl(module: ptr[PyObject], data: BufferArgument, crc: u32) -> u32 {
-    result = convert(module, data, 9, i64(crc));
-    if result == 0 {
-        return u32(0xFFFFFFFF);
+    checksum = u64(crc);
+    position = data.address();
+    remains = data.size();
+    while remains > CRC_CHUNK {
+        checksum = crc32(checksum, position, u32(CRC_CHUNK));
+        position += CRC_CHUNK;
+        remains -= CRC_CHUNK;
     }
-    value = u32(PyLong_AsUnsignedLongMask(result));
-    jacpy_release(result);
-    return value;
+    checksum = crc32(checksum, position, u32(remains));
+    return u32(checksum & u64(0xFFFFFFFF));
 }
