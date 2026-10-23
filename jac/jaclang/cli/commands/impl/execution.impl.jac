@@ -315,36 +315,41 @@ impl run(
         return _show_run(plan, app, target, file, want_serve);
     }
 
+    prior_disable = graphmend_disable_override();
     _apply_graphmend(graphmend_disable);
-    if want_serve {
-        return _serve_with(
-            file or (plan.entry_path if plan is not None else ""),
-            _kind_serve_flags(plan, kind_serves, serve_mode),
-            over,
-            main,
-            app.name if app is not None else "",
-            takeover=takeover is True
-        );
-    }
-    if plan is not None and plan.action == "build" and not file {
-        return _build_plan(plan);
-    }
+    try {
+        if want_serve {
+            return _serve_with(
+                file or (plan.entry_path if plan is not None else ""),
+                _kind_serve_flags(plan, kind_serves, serve_mode),
+                over,
+                main,
+                app.name if app is not None else "",
+                takeover=takeover is True
+            );
+        }
+        if plan is not None and plan.action == "build" and not file {
+            return _build_plan(plan);
+        }
 
-    exec_target = file or (plan.entry_path if plan is not None else "");
-    if not exec_target {
-        console.error(
-            "Nothing to run: no entry-point resolved.\n"
-            "  Usage: jac run <app> or jac run <file.jac>."
-        );
-        return 1;
+        exec_target = file or (plan.entry_path if plan is not None else "");
+        if not exec_target {
+            console.error(
+                "Nothing to run: no entry-point resolved.\n"
+                "  Usage: jac run <app> or jac run <file.jac>."
+            );
+            return 1;
+        }
+        if debug_mode {
+            return debug(filename=exec_target, main=main, cache=cache);
+        }
+        if entry_name {
+            return _invoke_entrypoint(exec_target, entry_name, args, main, root_id, nd);
+        }
+        return _exec_file(exec_target, main, cache, diagnostics, args, backend);
+    } finally {
+        override_graphmend_disable(prior_disable);
     }
-    if debug_mode {
-        return debug(filename=exec_target, main=main, cache=cache);
-    }
-    if entry_name {
-        return _invoke_entrypoint(exec_target, entry_name, args, main, root_id, nd);
-    }
-    return _exec_file(exec_target, main, cache, diagnostics, args, backend);
 }
 
 def _exec_file(

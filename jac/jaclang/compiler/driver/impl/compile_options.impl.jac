@@ -11,6 +11,10 @@ impl override_graphmend_disable(names: list[str]) {
     _graphmend_disable_override.extend(names);
 }
 
+impl graphmend_disable_override -> list[str] {
+    return list(_graphmend_disable_override);
+}
+
 impl defer_declines_here -> bool {
     return (not GM_DEFER_BUFFERS_THREAD_SCOPED) and process_is_serving();
 }

@@ -13,7 +13,10 @@ import from tests.support {
     graphmend_compile_opts as _compile
 }
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.compile_options { CompileOptions }
+import from jaclang.compiler.driver.compile_options {
+    CompileOptions,
+    override_graphmend_disable
+}
 import from jaclang.compiler.driver.jir { get_module_cache_path }
 import from jaclang.project.config { JacConfig }
 import jaclang.project.config as config_mod;
@@ -136,6 +139,7 @@ test "run graphmend in jac toml is the off switch without a cli flag" {
             "the cli flag must reach the carrier every entry point reads"
         );
     } finally {
+        override_graphmend_disable([]);
         config_mod._config = old_config;
     }
 }

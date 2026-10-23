@@ -6,6 +6,7 @@ import from tests.support {
 }
 import from jaclang.compiler.driver.compile_options {
     CompileOptions,
+    graphmend_disable_override,
     override_graphmend_disable
 }
 
@@ -133,6 +134,7 @@ test "the cli disable flag reaches every run path and survives config rediscover
     import jaclang.project.config as config_mod;
     import from unittest.mock { patch }
     seen: list[(list[str] | None)] = [];
+    restored: list[str] = [];
     def _capture(*a: any, **k: any) -> int {
         config_mod.get_config(force_discover=True);
         seen.append(CompileOptions().graphmend_disable);
@@ -149,6 +151,7 @@ test "the cli disable flag reaches every run path and survives config rediscover
             with open(path, "w") as fh {
                 fh.write("def start {}\n");
             }
+            override_graphmend_disable(["trap"]);
             with patch.object(execution, "_invoke_entrypoint", _capture), patch.object(
                 execution, "debug", _capture
             ) {
@@ -161,12 +164,25 @@ test "the cli disable flag reaches every run path and survives config rediscover
                 )
                     == 0;
             }
+            restored = graphmend_disable_override();
         }
     } finally {
         override_graphmend_disable([]);
         (config_mod._config, config_mod._config_explicit, config_mod._config_by_root) = saved;
     }
     assert seen == [["where"], ["where"]];
+    assert restored == ["trap"] , "a run must hand back the override it found";
+}
+
+test "a session reset clears the cli disable override" {
+    import from jaclang.runtime.runtime { JacRuntime }
+    try {
+        override_graphmend_disable(["trap"]);
+        JacRuntime.reset_process_state(clear_modules=False);
+        assert graphmend_disable_override() == [];
+    } finally {
+        override_graphmend_disable([]);
+    }
 }
 
 test "explicit compile options decide the transforms the compile runs" {

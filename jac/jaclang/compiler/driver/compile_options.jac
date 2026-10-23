@@ -6,6 +6,8 @@ def mark_process_serving;
 
 def override_graphmend_disable(names: list[str]);
 
+def graphmend_disable_override -> list[str];
+
 def process_is_serving -> bool;
 
 def defer_declines_here -> bool;
