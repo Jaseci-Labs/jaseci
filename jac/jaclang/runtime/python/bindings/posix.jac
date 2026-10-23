@@ -95,7 +95,7 @@ def:priv add_confname_table(
             jacpy_release(table);
             return False;
         }
-        status = PyDict_SetItemString(table, key, number);
+        status = dict_set_text(table, key, number);
         jacpy_release(number);
         if status < 0 {
             jacpy_release(table);

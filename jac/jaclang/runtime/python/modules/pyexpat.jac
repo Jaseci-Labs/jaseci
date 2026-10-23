@@ -8,6 +8,7 @@ pyexpat.c line CPython reports, stops the parser and clears every handler.
 """
 
 import from c {
+    def PyModule_NewObject(name: ptr[PyObject]) -> ptr[PyObject];
     # xmlparseobject after its header; `intern` comes first so the member
     # descriptor reads it at offset 0.
     obj xmlparser_record {
@@ -2008,11 +2009,12 @@ glob ERROR_INFO: list[tuple[str, str]] = [
 # `module`; it is returned borrowed.
 def:priv add_submodule(module: ptr[PyObject], fullname: str) -> ptr[PyObject] {
     name = fullname.split(".")[-1];
-    submodule = PyModule_New(fullname);
+    key = text_object(fullname);
+    submodule = PyModule_NewObject(key);
     if not submodule {
+        jacpy_release(key);
         return NULL;
     }
-    key = text_object(fullname);
     if _PyImport_SetModule(key, submodule) < 0 {
         jacpy_release(submodule);
         jacpy_release(key);

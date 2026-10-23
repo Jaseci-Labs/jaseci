@@ -26,6 +26,7 @@ enum builtin_kind {
 
 import from jaclang.runtime.python.cpython_api {
     PyUnicode_DecodeUTF8Stateful,
+    PyUnicode_InternFromString,
     jacpy_bytes_copy_to,
     jacpy_bytes_from_memory,
     jacpy_bytes_length,
@@ -44,6 +45,8 @@ import from jaclang.runtime.python.cpython_api {
     PyByteArray_Type,
     PyBytes_FromStringAndSize,
     PyBytes_Type,
+    PyDict_GetItemRef,
+    PyDict_SetItem,
     PyDict_Type,
     PyErr_GetRaisedException,
     PyErr_SetRaisedException,
@@ -284,6 +287,31 @@ def serialization_note(
     } except boundary_failure {} finally {
         PyErr_SetRaisedException(error);
     }
+}
+
+# PyDict_SetItemString() for a key held as a Jac str: the C API takes a C
+# string, which only a literal makes.
+def dict_set_text(dict_: ptr[PyObject], key: str, value: ptr[PyObject]) -> i32 {
+    key_object = PyUnicode_InternFromString(key);
+    if not key_object {
+        return i32(-1);
+    }
+    status = PyDict_SetItem(dict_, key_object, value);
+    jacpy_release(key_object);
+    return status;
+}
+
+# PyDict_GetItemStringRef() for a key held as a Jac str: the status (-1
+# error, 0 absent, 1 found) and the new reference or NULL.
+def dict_get_text(dict_: ptr[PyObject], key: str) -> tuple[i32, ptr[PyObject]] {
+    value: ptr[PyObject] = ptr[PyObject]();
+    key_object = PyUnicode_InternFromString(key);
+    if not key_object {
+        return (i32(-1), value);
+    }
+    status = PyDict_GetItemRef(dict_, key_object, &mut value);
+    jacpy_release(key_object);
+    return (status, value);
 }
 
 # A fresh PyUnicodeWriter, or boundary_failure with the error set.

@@ -653,7 +653,7 @@ def:priv add_type_attribute(
     if not value {
         return False;
     }
-    status = PyDict_SetItemString(_PyType_GetDict(ptr[PyObject](type)), name, value);
+    status = dict_set_text(_PyType_GetDict(ptr[PyObject](type)), name, value);
     jacpy_release(value);
     return status >= 0;
 }

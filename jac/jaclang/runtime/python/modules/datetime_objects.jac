@@ -635,7 +635,7 @@ def call_subclass_fold(
         if kwargs {
             value = PyLong_FromLong(fold);
             if value {
-                ready = PyDict_SetItemString(kwargs, "fold", value) >= 0;
+                ready = PyDict_SetItemString(kwargs, ptr[u8]("fold"), value) >= 0;
                 jacpy_release(value);
             }
         }

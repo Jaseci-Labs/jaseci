@@ -44,7 +44,7 @@ def:priv add_type_int(type_dict: ptr[PyObject], name: str, value: i32) -> bool {
     if not number {
         return False;
     }
-    result = PyDict_SetItemString(type_dict, name, number);
+    result = dict_set_text(type_dict, name, number);
     jacpy_release(number);
     return result == 0;
 }

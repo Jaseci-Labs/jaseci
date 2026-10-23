@@ -42,7 +42,7 @@ def:priv add_semlock(module: ptr[PyObject]) -> bool {
     value = PyLong_FromLong(limit);
     stored = bool(namespace)
         and bool(value)
-        and PyDict_SetItemString(namespace, "SEM_VALUE_MAX", value) == 0;
+        and PyDict_SetItemString(namespace, ptr[u8]("SEM_VALUE_MAX"), value) == 0;
     jacpy_release(value);
     jacpy_release(namespace);
     if not stored {
@@ -68,7 +68,7 @@ def:priv add_flags(module: ptr[PyObject]) -> bool {
             continue;
         }
         value = PyLong_FromLong(1);
-        if not value or PyDict_SetItemString(flags, name, value) < 0 {
+        if not value or dict_set_text(flags, name, value) < 0 {
             jacpy_release(value);
             jacpy_release(flags);
             return False;

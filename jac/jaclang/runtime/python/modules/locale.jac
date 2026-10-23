@@ -104,7 +104,7 @@ def:priv set_decoded(dict_: ptr[PyObject], key: str, text: ptr[u8]) -> bool {
     if not value {
         return False;
     }
-    status = PyDict_SetItemString(dict_, key, value);
+    status = dict_set_text(dict_, key, value);
     jacpy_release(value);
     return status >= 0;
 }
@@ -113,7 +113,7 @@ def:priv set_owned(dict_: ptr[PyObject], key: str, value: ptr[PyObject]) -> bool
     if not value {
         return False;
     }
-    status = PyDict_SetItemString(dict_, key, value);
+    status = dict_set_text(dict_, key, value);
     jacpy_release(value);
     return status >= 0;
 }

@@ -35,7 +35,7 @@ def:priv execute(module: ptr[PyObject]) -> i32 {
     if not error_dict {
         return i32(-1);
     }
-    if PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0 {
+    if PyDict_SetItemString(module_dict, ptr[u8]("errorcode"), error_dict) < 0 {
         jacpy_release(error_dict);
         return i32(-1);
     }

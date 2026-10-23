@@ -155,7 +155,7 @@ import from c {
     ) -> i32;  def PyDict_GetItemRef(
         mp: ptr[PyObject], key: ptr[PyObject], result: &mut ptr[PyObject]
     ) -> i32;  def PyDict_GetItemStringRef(
-        mp: ptr[PyObject], key: str, result: &mut ptr[PyObject]
+        mp: ptr[PyObject], key: ptr[u8], result: &mut ptr[PyObject]
     ) -> i32;  def PyDict_GetItemWithError(
         mp: ptr[PyObject], key: ptr[PyObject]
     ) -> ptr[PyObject];  def PyDict_Items(mp: ptr[PyObject]) -> ptr[PyObject];  def PyDict_Keys(
@@ -166,9 +166,9 @@ import from c {
         key: &mut ptr[PyObject],
         value: &mut ptr[PyObject]
     ) -> i32;  def PyDict_Pop(
-        dict_: ptr[PyObject], key: ptr[PyObject], result: &mut ptr[PyObject]
+        dict_: ptr[PyObject], key: ptr[PyObject], result: &mut ptr[PyObject] | None
     ) -> i32;  def PyDict_PopString(
-        dict_: ptr[PyObject], key: str, result: &mut ptr[PyObject]
+        dict_: ptr[PyObject], key: ptr[u8], result: &mut ptr[PyObject]
     ) -> i32;  def PyDict_SetDefaultRef(
         mp: ptr[PyObject],
         key: ptr[PyObject],
@@ -177,7 +177,7 @@ import from c {
     ) -> i32;  def PyDict_SetItem(
         mp: ptr[PyObject], key: ptr[PyObject], item: ptr[PyObject]
     ) -> i32;  def PyDict_SetItemString(
-        dp: ptr[PyObject], key: str, item: ptr[PyObject]
+        dp: ptr[PyObject], key: ptr[u8], item: ptr[PyObject]
     ) -> i32;  def PyDict_Size(mp: ptr[PyObject]) -> i64;  def PyDict_Update(
         mp: ptr[PyObject], other: ptr[PyObject]
     ) -> i32;  def PyErr_BadArgument -> i32;  def PyErr_BadInternalCall;  def PyErr_CheckSignals -> i32;  def PyErr_Clear;  def PyErr_ExceptionMatches(
@@ -321,7 +321,7 @@ import from c {
         module: ptr[PyObject], type_: ptr[PyObject]
     ) -> i32;  def PyModule_GetDict(arg0: ptr[PyObject]) -> ptr[PyObject];  def PyModule_GetNameObject(
         arg0: ptr[PyObject]
-    ) -> ptr[PyObject];  def PyModule_New(name: str) -> ptr[PyObject];  def PyMutex_Lock(
+    ) -> ptr[PyObject];  def PyModule_New(name: ptr[u8]) -> ptr[PyObject];  def PyMutex_Lock(
         m: ptr[PyMutex]
     );  def PyMutex_Unlock(m: ptr[PyMutex]);  def PyNumber_Absolute(
         o: ptr[PyObject]
@@ -543,15 +543,15 @@ import from c {
     ) -> ptr;  def PyType_IsSubtype(arg0: ptr[PyObject], arg1: ptr[PyObject]) -> i32;  def PyType_Modified(
         arg0: ptr[PyObject]
     );  def PyType_Ready(arg0: ptr[PyObject]) -> i32;  def PyUnicodeDecodeError_Create(
-        encoding: ptr, object_: ptr, length: i64, start: i64, end: i64, reason: str
+        encoding: ptr, object_: ptr, length: i64, start: i64, end: i64, reason: ptr[u8]
     ) -> ptr[PyObject];  def PyUnicodeDecodeError_SetEnd(
         arg0: ptr[PyObject], arg1: i64
     ) -> i32;  def PyUnicodeDecodeError_SetReason(
-        exc: ptr[PyObject], reason: str
+        exc: ptr[PyObject], reason: ptr[u8]
     ) -> i32;  def PyUnicodeDecodeError_SetStart(
         arg0: ptr[PyObject], arg1: i64
     ) -> i32;  def PyUnicodeEncodeError_SetEnd(arg0: ptr[PyObject], arg1: i64) -> i32;  def PyUnicodeEncodeError_SetReason(
-        exc: ptr[PyObject], reason: str
+        exc: ptr[PyObject], reason: ptr[u8]
     ) -> i32;  def PyUnicodeEncodeError_SetStart(
         arg0: ptr[PyObject], arg1: i64
     ) -> i32;  def PyUnicodeWriter_Create(length: i64) -> ptr[PyUnicodeWriter];  def PyUnicodeWriter_Discard(

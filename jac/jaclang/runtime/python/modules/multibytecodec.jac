@@ -221,15 +221,15 @@ def:priv multibytecodec_encerror(
     errors: ptr[PyObject],
     e: i64
 ) -> int {
-    reason = "";
+    reason = ptr[u8]("");
     esize: i64 = 0;
     if e > 0 {
-        reason = "illegal multibyte sequence";
+        reason = ptr[u8]("illegal multibyte sequence");
         esize = e;
     } elif e == MBERR_TOOSMALL {
         return 0 if require_encodebuffer(buf, -1) else -1;
     } elif e == MBERR_TOOFEW {
-        reason = "incomplete multibyte sequence";
+        reason = ptr[u8]("incomplete multibyte sequence");
         esize = buf.view(1)[0].inpos;
     } elif e == MBERR_INTERNAL {
         object_error(PyExc_RuntimeError, "internal codec error");
@@ -402,16 +402,16 @@ def:priv multibytecodec_decerror(
     errors: ptr[PyObject],
     e: i64
 ) -> int {
-    reason = "";
+    reason = ptr[u8]("");
     esize: i64 = 0;
     if e > 0 {
-        reason = "illegal multibyte sequence";
+        reason = ptr[u8]("illegal multibyte sequence");
         esize = e;
     } elif e == MBERR_TOOSMALL {
         # retry it
         return 0;
     } elif e == MBERR_TOOFEW {
-        reason = "incomplete multibyte sequence";
+        reason = ptr[u8]("incomplete multibyte sequence");
         esize = i64(buf.view(1)[0].inbuf_end - buf.view(1)[0].inbuf);
     } elif e == MBERR_INTERNAL {
         object_error(PyExc_RuntimeError, "internal codec error");
@@ -999,7 +999,7 @@ def:priv decoder_append_pending(
             bufsize,
             0,
             bufsize,
-            "pending buffer overflow"
+            ptr[u8]("pending buffer overflow")
         );
         if not excobj {
             return -1;
@@ -1397,7 +1397,7 @@ def _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(
             i64(buffersize),
             0,
             i64(buffersize),
-            "pending buffer too large"
+            ptr[u8]("pending buffer too large")
         );
         if excobj {
             PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);

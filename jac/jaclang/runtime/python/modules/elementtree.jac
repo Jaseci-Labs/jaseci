@@ -544,7 +544,7 @@ def:priv create_new_element(
 # removed from kwds.
 def:priv get_attrib_from_keywords(kwds: ptr[PyObject]) -> ptr[PyObject] {
     attrib: ptr[PyObject] = NULL;
-    if PyDict_PopString(kwds, "attrib", &mut attrib) < 0 {
+    if PyDict_PopString(kwds, ptr[u8]("attrib"), &mut attrib) < 0 {
         return NULL;
     }
     if attrib {
@@ -1078,8 +1078,8 @@ def:priv element_setstate_from_Python(
     found = 0;
     failed = False;
     for index in range(len(names)) {
-        value: ptr[PyObject] = NULL;
-        if PyDict_GetItemStringRef(dictionary, names[index], &mut value) < 0 {
+        (status, value) = dict_get_text(dictionary, names[index]);
+        if status < 0 {
             failed = True;
             break;
         }

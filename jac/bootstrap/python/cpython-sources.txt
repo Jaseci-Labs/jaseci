@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 142 C files / 247,348 lines; 130 headers / 119,375 lines.
-#   Total: 272 files / 366,723 source lines.
+#   Excluded: 152 C files / 274,324 lines; 138 headers / 122,210 lines.
+#   Total: 290 files / 396,534 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -228,35 +228,35 @@ Objects/clinic/bytesobject.c.h
 # Objects/clinic/classobject.c.h  # removed: 85 source lines
 Objects/clinic/codeobject.c.h
 # Objects/clinic/complexobject.c.h  # removed: 188 source lines
-Objects/clinic/descrobject.c.h
-Objects/clinic/dictobject.c.h
+# Objects/clinic/descrobject.c.h  # removed: 182 source lines
+# Objects/clinic/dictobject.c.h  # removed: 326 source lines
 # Objects/clinic/enumobject.c.h  # removed: 113 source lines
-Objects/clinic/exceptions.c.h
-Objects/clinic/floatobject.c.h
+# Objects/clinic/exceptions.c.h  # removed: 383 source lines
+# Objects/clinic/floatobject.c.h  # removed: 356 source lines
 Objects/clinic/frameobject.c.h
-Objects/clinic/funcobject.c.h
+# Objects/clinic/funcobject.c.h  # removed: 293 source lines
 # Objects/clinic/interpolationobject.c.h  # removed: 94 source lines
 # Objects/clinic/listobject.c.h  # removed: 471 source lines
 Objects/clinic/longobject.c.h
 Objects/clinic/memoryobject.c.h
-Objects/clinic/moduleobject.c.h
-Objects/clinic/odictobject.c.h
+# Objects/clinic/moduleobject.c.h  # removed: 80 source lines
+# Objects/clinic/odictobject.c.h  # removed: 455 source lines
 # Objects/clinic/setobject.c.h  # removed: 557 source lines
 # Objects/clinic/structseq.c.h  # removed: 68 source lines
 # Objects/clinic/tupleobject.c.h  # removed: 130 source lines
 Objects/clinic/typeobject.c.h
-Objects/clinic/typevarobject.c.h
+# Objects/clinic/typevarobject.c.h  # removed: 760 source lines
 Objects/clinic/unicodeobject.c.h
 Objects/codeobject.c
 # Objects/complexobject.c  # removed: 1,422 source lines
-Objects/descrobject.c
-Objects/dictobject.c
+# Objects/descrobject.c  # removed: 2,082 source lines
+# Objects/dictobject.c  # removed: 7,845 source lines
 # Objects/enumobject.c  # removed: 585 source lines
-Objects/exceptions.c
+# Objects/exceptions.c  # removed: 4,587 source lines
 # Objects/fileobject.c  # removed: 548 source lines
-Objects/floatobject.c
+# Objects/floatobject.c  # removed: 2,642 source lines
 Objects/frameobject.c
-Objects/funcobject.c
+# Objects/funcobject.c  # removed: 1,907 source lines
 # Objects/genericaliasobject.c  # removed: 1,056 source lines
 Objects/genobject.c
 # Objects/interpolationobject.c  # removed: 231 source lines
@@ -264,7 +264,7 @@ Objects/genobject.c
 # Objects/listobject.c  # removed: 4,263 source lines
 Objects/longobject.c
 Objects/memoryobject.c
-Objects/methodobject.c
+# Objects/methodobject.c  # removed: 578 source lines
 Objects/mimalloc/alloc-aligned.c
 Objects/mimalloc/alloc-override.c
 Objects/mimalloc/alloc-posix.c
@@ -288,11 +288,11 @@ Objects/mimalloc/segment-map.c
 Objects/mimalloc/segment.c
 Objects/mimalloc/static.c
 Objects/mimalloc/stats.c
-Objects/moduleobject.c
+# Objects/moduleobject.c  # removed: 1,440 source lines
 # Objects/namespaceobject.c  # removed: 332 source lines
 Objects/object.c
 Objects/obmalloc.c
-Objects/odictobject.c
+# Objects/odictobject.c  # removed: 2,372 source lines
 # Objects/picklebufobject.c  # removed: 224 source lines
 # Objects/rangeobject.c  # removed: 1,317 source lines
 # Objects/setobject.c  # removed: 2,888 source lines
@@ -303,12 +303,12 @@ Objects/stringlib/
 # Objects/tupleobject.c  # removed: 1,220 source lines
 Objects/typeobject.c
 Objects/typeslots.inc
-Objects/typevarobject.c
+# Objects/typevarobject.c  # removed: 2,388 source lines
 Objects/unicodectype.c
 Objects/unicodeobject.c
 Objects/unicodetype_db.h
 # Objects/unionobject.c  # removed: 600 source lines
-Objects/weakrefobject.c
+# Objects/weakrefobject.c  # removed: 1,135 source lines
 
 # Builtin and extension modules
 Modules/Setup

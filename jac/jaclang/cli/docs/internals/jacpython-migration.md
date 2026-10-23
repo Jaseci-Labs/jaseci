@@ -645,10 +645,53 @@ wrapping operations, since an overflowing `i64` traps in Jac. Loops that
 compare keys read a set's table and mask again on every slot, as C does,
 because a compare can resize a set.
 
-Order after the leaf types: containers (`tupleobject.c`, `listobject.c`,
-`setobject.c`, `dictobject.c`), then numbers and text (`floatobject.c`,
-`complexobject.c`, `longobject.c`, `bytesobject.c`, `unicodeobject.c`), and
-`typeobject.c` (12,312 lines) last. The allocator (`obmalloc.c` and the
+`floatobject.c` (`object_model/float.jac`) is the first number type.
+Decimal conversions stay with `Python/dtoa.c` and `Python/pystrtod.c`:
+`round()` with a digit count formats with `_Py_dg_dtoa` and parses the
+rounded digits back with `_Py_dg_strtod`, as floatobject.c does, writing the
+digit string into a byte buffer. Every supported target stores `float` and
+`double` as IEEE 754 in its native byte order, so `PyFloat_Pack2/4/8` and
+`PyFloat_Unpack2/4/8` keep only floatobject.c's IEEE paths, and
+`float.__getformat__` reports the byte order the build targets. A 4-byte
+unpack reads its bits back as a `float` through a scratch glob
+(`f32_slot`). `sys.float_info` is the struct sequence floatobject.c builds.
+
+`dictobject.c` and `odictobject.c` (`object_model/dict.jac`, `odict.jac`)
+keep CPython's compact table: a keys object holds the index table (1, 2, 4
+or 8 byte slots by size) and the entries, general or all-str, and split
+tables share one keys object between the instances of a class while each
+instance (or its inline values) keeps its own values and their insertion
+order. The keys object is read through gen_layouts offsets
+(`PyDictKeysObject_*`), and the empty keys object is an immortal Jac C glob
+with the same header and eight `DKIX_EMPTY` index bytes. The managed-dict
+and inline-values functions `typeobject.c` and `object.c` call are defined
+here. OrderedDict keeps its linked list of nodes and the "fast nodes" table
+indexed like the dict's entries, rebuilt when the dict's keys object
+changes.
+
+`descrobject.c`, `methodobject.c`, `funcobject.c`, `weakrefobject.c`,
+`moduleobject.c`, `typevarobject.c` and `exceptions.c` follow
+(`descr.jac`, `cfunction.jac`, `func.jac`, `weakref.jac`, `module.jac`,
+`typevar.jac`, `exceptions.jac`). Where a header declares a struct through a
+macro member (`PyDescr_COMMON`, `_Py_COMMON_FIELDS` of the function and
+frame-constructor headers), the port reads the fields at gen_layouts
+`offsetof` constants instead of a layout record. `PyModuleDef` stays opaque
+in cpython_api.jac, so its layout is named `ModuleDef`. The exception types
+are generated from exceptions.c's `*ExtendsException` table; the
+Windows-only `winerror` handling is not built. TypeVar, ParamSpec,
+TypeVarTuple, Generic and the constant evaluator are heap types made from
+Jac `PyType_Spec` data at interpreter start, as in C.
+
+The C API functions that take a C string (`PyDict_SetItemString`,
+`PyModule_New`, the `PyUnicode*Error_SetReason` setters, ...) are declared
+with `ptr[u8]` in cpython_api.jac, as their Jac definitions take them, so
+callers pass `ptr[u8]("literal")`. A key computed as a Jac `str` goes
+through `capi.dict_set_text` / `dict_get_text`, which make the key object
+and call `PyDict_SetItem` / `PyDict_GetItemRef`.
+
+Order after these: numbers and text (`complexobject.c`, `longobject.c`,
+`bytesobject.c`, `unicodeobject.c`), and `typeobject.c` (12,312 lines)
+last. The allocator (`obmalloc.c` and the
 mimalloc copy under `Objects/mimalloc/`) follows the object model.
 
 ## Evaluator (`Python/`, 132k lines)

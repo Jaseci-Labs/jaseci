@@ -1749,7 +1749,7 @@ def:priv set_module_name(type: ptr[PyObject]) -> bool {
     if not name {
         return False;
     }
-    status = PyDict_SetItemString(PyType_GetDict(type), "__module__", name);
+    status = PyDict_SetItemString(PyType_GetDict(type), ptr[u8]("__module__"), name);
     jacpy_release(name);
     return status >= 0;
 }

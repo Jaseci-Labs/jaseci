@@ -674,7 +674,7 @@ def zoneinfo_fromutc(receiver: ptr[PyObject], dt: ptr[PyObject]) -> ptr[PyObject
     }
     result = NULL;
     one = PyLong_FromLong(1);
-    if one and PyDict_SetItemString(kwargs, "fold", one) == 0 {
+    if one and PyDict_SetItemString(kwargs, ptr[u8]("fold"), one) == 0 {
         result = PyObject_Call(replace, args, kwargs);
     }
     jacpy_release(one);

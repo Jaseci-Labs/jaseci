@@ -2821,7 +2821,7 @@ def _ssl__SSLContext_session_stats_impl(receiver: ptr[PyObject]) -> ptr[PyObject
             jacpy_release(stats);
             return NULL;
         }
-        r = PyDict_SetItemString(stats, key, value);
+        r = dict_set_text(stats, key, value);
         jacpy_release(value);
         if r < 0 {
             jacpy_release(stats);

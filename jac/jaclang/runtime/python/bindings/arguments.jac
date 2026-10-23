@@ -1234,8 +1234,8 @@ obj ArgumentFormat {
             if i < nargs {
                 current = PyTuple_GetItem(args, i64(i));
             } elif remaining > 0 {
-                found = NULL;
-                if PyDict_GetItemStringRef(kwargs, keywords[i], &mut found) < 0 {
+                (status, found) = dict_get_text(kwargs, keywords[i]);
+                if status < 0 {
                     raise boundary_failure();
                 }
                 if found {
@@ -1280,8 +1280,8 @@ obj ArgumentFormat {
         shown = self.name or "function";
         called = "()" if self.name else "";
         for i in range(int(PyTuple_Size(args))) {
-            found = NULL;
-            if PyDict_GetItemStringRef(kwargs, keywords[i], &mut found) < 0 {
+            (status, found) = dict_get_text(kwargs, keywords[i]);
+            if status < 0 {
                 raise boundary_failure();
             }
             if found {

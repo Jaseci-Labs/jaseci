@@ -877,7 +877,7 @@ def:priv set_item(dictionary: ptr[PyObject], key: str, value: ptr[PyObject]) -> 
     if not value {
         return False;
     }
-    status = PyDict_SetItemString(dictionary, key, value);
+    status = dict_set_text(dictionary, key, value);
     jacpy_release(value);
     return status == 0;
 }

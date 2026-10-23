@@ -257,7 +257,7 @@ import from c {
         if tuple {
             dict = _PyType_GetDict(ptr[PyObject](addressof(_PyInterpolation_Type)));
             if dict {
-                status = PyDict_SetItemString(dict, "__match_args__", tuple);
+                status = PyDict_SetItemString(dict, ptr[u8]("__match_args__"), tuple);
                 jacpy_release(tuple);
                 if status >= 0 {
                     return PyStatus(

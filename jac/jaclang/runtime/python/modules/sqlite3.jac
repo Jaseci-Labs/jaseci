@@ -2825,7 +2825,9 @@ def pysqlite_connection_iterdump_impl(
     args = PyTuple_Pack(1, receiver);
     kwargs = PyDict_New();
     retval = NULL;
-    if args and kwargs and PyDict_SetItemString(kwargs, "filter", filter) == 0 {
+    if args
+        and kwargs
+        and PyDict_SetItemString(kwargs, ptr[u8]("filter"), filter) == 0 {
         retval = PyObject_Call(iterdump, args, kwargs);
     }
     jacpy_release(args);

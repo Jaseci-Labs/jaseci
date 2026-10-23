@@ -73,6 +73,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Include/cpython/initconfig.h",
          "Include/pycapsule.h",
          "Include/descrobject.h",
+         "Include/cpython/descrobject.h",
+         "Include/internal/pycore_descrobject.h",
          "Include/cpython/cellobject.h",
          "Include/sliceobject.h",
          "Include/cpython/pyerrors.h",
@@ -80,6 +82,12 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Include/internal/pycore_tuple.h",
          "Include/internal/pycore_list.h",
          "Include/cpython/setobject.h",
+         "Include/cpython/dictobject.h",
+         "Include/internal/pycore_dict.h",
+         "Include/cpython/methodobject.h",
+         "Include/cpython/weakrefobject.h",
+         "Include/moduleobject.h",
+         "Include/internal/pycore_moduleobject.h",
          "Include/internal/pycore_freelist_state.h",
          "Include/datetime.h",
          "Include/pybuffer.h",
@@ -103,6 +111,11 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Objects/unionobject.c",
          "Objects/genericaliasobject.c",
          "Objects/fileobject.c",
+         "Objects/dictobject.c",
+         "Objects/odictobject.c",
+         "Objects/descrobject.c",
+         "Objects/funcobject.c",
+         "Objects/typevarobject.c",
          # The socket object and the _socket.CAPI record: the _socket and
          # _ssl ports define and read them; the header has no C user left.
          "Modules/socketmodule.h"
@@ -122,7 +135,12 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "internal/pycore_interp_structs.h",
          "internal/pycore_gc.h",
          "internal/pycore_list.h",
-         "internal/pycore_dict.h"
+         "internal/pycore_dict.h",
+         "internal/pycore_descrobject.h",
+         "internal/pycore_function.h",
+         "internal/pycore_code.h",
+         "internal/pycore_interpframe_structs.h",
+         "internal/pycore_object.h"
      ],
      # Jac name and C type of each layout the object ports use. Structs a
      # layout embeds by value are emitted too; pointers to anything else are
@@ -149,6 +167,34 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("_PyListIterObject", "_PyListIterObject"),
          ("setentry", "setentry"),
          ("PySetObject", "PySetObject"),
+         ("PyCFunctionObject", "PyCFunctionObject"),
+         ("PyCMethodObject", "PyCMethodObject"),
+         ("PyWeakReference", "struct _PyWeakReference"),
+         ("PyModuleDef_Base", "PyModuleDef_Base"),
+         ("ModuleDef", "struct PyModuleDef"),
+         ("PyModuleDef_Slot", "struct PyModuleDef_Slot"),
+         ("PyModuleObject", "PyModuleObject"),
+         ("PyDictObject", "PyDictObject"),
+         ("dictiterobject", "dictiterobject"),
+         ("_PyDictViewObject", "_PyDictViewObject"),
+         ("PyODictObject", "struct _odictobject"),
+         ("_ODictNode", "struct _odictnode"),
+         ("odictiterobject", "odictiterobject"),
+         ("PyDescrObject", "PyDescrObject"),
+         ("wrapperbase", "struct wrapperbase"),
+         ("mappingproxyobject", "mappingproxyobject"),
+         ("wrapperobject", "wrapperobject"),
+         ("propertyobject", "propertyobject"),
+         ("classmethod", "classmethod"),
+         ("PyBaseExceptionObject", "PyBaseExceptionObject"),
+         ("PyUnicodeErrorObject", "PyUnicodeErrorObject"),
+         ("staticmethod", "staticmethod"),
+         ("typevarobject", "typevarobject"),
+         ("typevartupleobject", "typevartupleobject"),
+         ("paramspecobject", "paramspecobject"),
+         ("typealiasobject", "typealiasobject"),
+         ("paramspecattrobject", "paramspecattrobject"),
+         ("constevaluatorobject", "constevaluatorobject"),
          ("_Py_freelist", "struct _Py_freelist"),
          ("_PyNamespaceObject", "_PyNamespaceObject"),
          ("PyCapsule", "PyCapsule"),
@@ -206,6 +252,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_TPFLAGS_TUPLE_SUBCLASS", "Py_TPFLAGS_TUPLE_SUBCLASS", "u64"),
          ("Py_TPFLAGS_LIST_SUBCLASS", "Py_TPFLAGS_LIST_SUBCLASS", "u64"),
          ("Py_TPFLAGS_HAVE_GC", "Py_TPFLAGS_HAVE_GC", "u64"),
+         ("Py_TPFLAGS_MAPPING", "Py_TPFLAGS_MAPPING", "u64"),
          ("Py_TPFLAGS_BASETYPE", "Py_TPFLAGS_BASETYPE", "u64"),
          ("Py_TPFLAGS_SEQUENCE", "Py_TPFLAGS_SEQUENCE", "u64"),
          ("_PyLong_FALSE_TAG", "_PyLong_FALSE_TAG", "u64"),
@@ -223,6 +270,12 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PY_TUPLE_OBJECT_SIZE", "sizeof(PyTupleObject)", "i64"),
          ("Py_TPFLAGS_IMMUTABLETYPE", "Py_TPFLAGS_IMMUTABLETYPE", "u64"),
          ("Py_TPFLAGS_MANAGED_DICT", "Py_TPFLAGS_MANAGED_DICT", "u64"),
+         ("Py_TPFLAGS_INLINE_VALUES", "Py_TPFLAGS_INLINE_VALUES", "u64"),
+         (
+             "PyHeapTypeObject_CACHED_KEYS",
+             "offsetof(PyHeapTypeObject, ht_cached_keys)",
+             "i64"
+         ),
          ("Py_TPFLAGS_MANAGED_WEAKREF", "Py_TPFLAGS_MANAGED_WEAKREF", "u64"),
          (
              "Py_TPFLAGS_DISALLOW_INSTANTIATION",
@@ -264,6 +317,455 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PySetObject_USED", "offsetof(PySetObject, used)", "i64"),
          ("PySetObject_SIZE", "sizeof(PySetObject)", "i64"),
          ("PyFloatObject_SIZE", "sizeof(PyFloatObject)", "i64"),
+         ("PyCFunctionObject_SIZE", "sizeof(PyCFunctionObject)", "i64"),
+         ("PyCMethodObject_SIZE", "sizeof(PyCMethodObject)", "i64"),
+         ("PyCFunctionObject_MODULE", "offsetof(PyCFunctionObject, m_module)", "i64"),
+         (
+             "PyCFunctionObject_WEAKREFLIST",
+             "offsetof(PyCFunctionObject, m_weakreflist)",
+             "i64"
+         ),
+         (
+             "PyCFunctionObject_VECTORCALL",
+             "offsetof(PyCFunctionObject, vectorcall)",
+             "i64"
+         ),
+         ("METH_METHOD", "METH_METHOD", "i32"),
+         ("PyWeakReference_SIZE", "sizeof(PyWeakReference)", "i64"),
+         ("PyWeakReference_CALLBACK", "offsetof(PyWeakReference, wr_callback)", "i64"),
+         ("PyWeakReference_VECTORCALL", "offsetof(PyWeakReference, vectorcall)", "i64"),
+         (
+             "managed_static_type_state_TP_WEAKLIST",
+             "offsetof(managed_static_type_state, tp_weaklist)",
+             "i64"
+         ),
+         ("Py_TPFLAGS_TYPE_SUBCLASS", "Py_TPFLAGS_TYPE_SUBCLASS", "u64"),
+         ("Py_TPFLAGS_DICT_SUBCLASS", "Py_TPFLAGS_DICT_SUBCLASS", "u64"),
+         ("PyModuleDef_SIZE", "sizeof(PyModuleDef)", "i64"),
+         ("PyModuleObject_SIZE", "sizeof(PyModuleObject)", "i64"),
+         ("PyModuleObject_DICT", "offsetof(PyModuleObject, md_dict)", "i64"),
+         ("PyModuleObject_WEAKLIST", "offsetof(PyModuleObject, md_weaklist)", "i64"),
+         ("PyDictObject_SIZE", "sizeof(PyDictObject)", "i64"),
+         ("PyDictKeysObject_REFCNT", "offsetof(PyDictKeysObject, dk_refcnt)", "i64"),
+         (
+             "PyDictKeysObject_LOG2_SIZE",
+             "offsetof(PyDictKeysObject, dk_log2_size)",
+             "i64"
+         ),
+         (
+             "PyDictKeysObject_LOG2_INDEX_BYTES",
+             "offsetof(PyDictKeysObject, dk_log2_index_bytes)",
+             "i64"
+         ),
+         ("PyDictKeysObject_KIND", "offsetof(PyDictKeysObject, dk_kind)", "i64"),
+         ("PyDictKeysObject_VERSION", "offsetof(PyDictKeysObject, dk_version)", "i64"),
+         ("PyDictKeysObject_USABLE", "offsetof(PyDictKeysObject, dk_usable)", "i64"),
+         (
+             "PyDictKeysObject_NENTRIES",
+             "offsetof(PyDictKeysObject, dk_nentries)",
+             "i64"
+         ),
+         ("PyDictKeysObject_INDICES", "offsetof(PyDictKeysObject, dk_indices)", "i64"),
+         ("PyDictValues_VALUES", "offsetof(PyDictValues, values)", "i64"),
+         ("dictiterobject_SIZE", "sizeof(dictiterobject)", "i64"),
+         ("_PyDictViewObject_SIZE", "sizeof(_PyDictViewObject)", "i64"),
+         ("_Py_freelists_DICTS", "offsetof(struct _Py_freelists, dicts)", "i64"),
+         ("_Py_freelists_DICTKEYS", "offsetof(struct _Py_freelists, dictkeys)", "i64"),
+         ("Py_dicts_MAXFREELIST", "Py_dicts_MAXFREELIST", "i64"),
+         ("Py_dictkeys_MAXFREELIST", "Py_dictkeys_MAXFREELIST", "i64"),
+         ("_Py_TYPE_VERSION_DICT", "_Py_TYPE_VERSION_DICT", "u32"),
+         ("PyODictObject_SIZE", "sizeof(struct _odictobject)", "i64"),
+         (
+             "PyODictObject_WEAKREFLIST",
+             "offsetof(struct _odictobject, od_weakreflist)",
+             "i64"
+         ),
+         (
+             "PyODictObject_INST_DICT",
+             "offsetof(struct _odictobject, od_inst_dict)",
+             "i64"
+         ),
+         ("_ODictNode_SIZE", "sizeof(struct _odictnode)", "i64"),
+         ("odictiterobject_SIZE", "sizeof(odictiterobject)", "i64"),
+         ("PyDescrObject_TYPE", "offsetof(PyDescrObject, d_type)", "i64"),
+         ("PyDescrObject_NAME", "offsetof(PyDescrObject, d_name)", "i64"),
+         ("PyMethodDescrObject_SIZE", "sizeof(PyMethodDescrObject)", "i64"),
+         (
+             "PyMethodDescrObject_VECTORCALL",
+             "offsetof(PyMethodDescrObject, vectorcall)",
+             "i64"
+         ),
+         (
+             "PyMethodDescrObject_METHOD",
+             "offsetof(PyMethodDescrObject, d_method)",
+             "i64"
+         ),
+         ("PyMemberDescrObject_SIZE", "sizeof(PyMemberDescrObject)", "i64"),
+         (
+             "PyMemberDescrObject_MEMBER",
+             "offsetof(PyMemberDescrObject, d_member)",
+             "i64"
+         ),
+         (
+             "PyGetSetDescrObject_GETSET",
+             "offsetof(PyGetSetDescrObject, d_getset)",
+             "i64"
+         ),
+         ("PyWrapperDescrObject_BASE", "offsetof(PyWrapperDescrObject, d_base)", "i64"),
+         (
+             "PyWrapperDescrObject_WRAPPED",
+             "offsetof(PyWrapperDescrObject, d_wrapped)",
+             "i64"
+         ),
+         ("PyGetSetDescrObject_SIZE", "sizeof(PyGetSetDescrObject)", "i64"),
+         ("PyWrapperDescrObject_SIZE", "sizeof(PyWrapperDescrObject)", "i64"),
+         ("mappingproxyobject_SIZE", "sizeof(mappingproxyobject)", "i64"),
+         ("wrapperobject_SIZE", "sizeof(wrapperobject)", "i64"),
+         ("wrapperobject_SELF", "offsetof(wrapperobject, self)", "i64"),
+         ("propertyobject_SIZE", "sizeof(propertyobject)", "i64"),
+         ("propertyobject_GET", "offsetof(propertyobject, prop_get)", "i64"),
+         ("propertyobject_SET", "offsetof(propertyobject, prop_set)", "i64"),
+         ("propertyobject_DEL", "offsetof(propertyobject, prop_del)", "i64"),
+         ("propertyobject_DOC", "offsetof(propertyobject, prop_doc)", "i64"),
+         ("Py_AUDIT_READ", "Py_AUDIT_READ", "i32"),
+         ("Py_RELATIVE_OFFSET", "Py_RELATIVE_OFFSET", "i32"),
+         ("PyWrapperFlag_KEYWORDS", "PyWrapperFlag_KEYWORDS", "i32"),
+         ("Py_TPFLAGS_METHOD_DESCRIPTOR", "Py_TPFLAGS_METHOD_DESCRIPTOR", "u64"),
+         ("PyFunctionObject_SIZE", "sizeof(PyFunctionObject)", "i64"),
+         (
+             "PyFunctionObject_GLOBALS",
+             "offsetof(PyFunctionObject, func_globals)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_BUILTINS",
+             "offsetof(PyFunctionObject, func_builtins)",
+             "i64"
+         ),
+         ("PyFunctionObject_NAME", "offsetof(PyFunctionObject, func_name)", "i64"),
+         (
+             "PyFunctionObject_QUALNAME",
+             "offsetof(PyFunctionObject, func_qualname)",
+             "i64"
+         ),
+         ("PyFunctionObject_CODE", "offsetof(PyFunctionObject, func_code)", "i64"),
+         (
+             "PyFunctionObject_DEFAULTS",
+             "offsetof(PyFunctionObject, func_defaults)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_KWDEFAULTS",
+             "offsetof(PyFunctionObject, func_kwdefaults)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_CLOSURE",
+             "offsetof(PyFunctionObject, func_closure)",
+             "i64"
+         ),
+         ("PyFunctionObject_DOC", "offsetof(PyFunctionObject, func_doc)", "i64"),
+         ("PyFunctionObject_DICT", "offsetof(PyFunctionObject, func_dict)", "i64"),
+         (
+             "PyFunctionObject_WEAKREFLIST",
+             "offsetof(PyFunctionObject, func_weakreflist)",
+             "i64"
+         ),
+         ("PyFunctionObject_MODULE", "offsetof(PyFunctionObject, func_module)", "i64"),
+         (
+             "PyFunctionObject_ANNOTATIONS",
+             "offsetof(PyFunctionObject, func_annotations)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_ANNOTATE",
+             "offsetof(PyFunctionObject, func_annotate)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_TYPEPARAMS",
+             "offsetof(PyFunctionObject, func_typeparams)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_VECTORCALL",
+             "offsetof(PyFunctionObject, vectorcall)",
+             "i64"
+         ),
+         (
+             "PyFunctionObject_VERSION",
+             "offsetof(PyFunctionObject, func_version)",
+             "i64"
+         ),
+         (
+             "PyFrameConstructor_GLOBALS",
+             "offsetof(PyFrameConstructor, fc_globals)",
+             "i64"
+         ),
+         (
+             "PyFrameConstructor_BUILTINS",
+             "offsetof(PyFrameConstructor, fc_builtins)",
+             "i64"
+         ),
+         ("PyFrameConstructor_NAME", "offsetof(PyFrameConstructor, fc_name)", "i64"),
+         (
+             "PyFrameConstructor_QUALNAME",
+             "offsetof(PyFrameConstructor, fc_qualname)",
+             "i64"
+         ),
+         ("PyFrameConstructor_CODE", "offsetof(PyFrameConstructor, fc_code)", "i64"),
+         (
+             "PyFrameConstructor_DEFAULTS",
+             "offsetof(PyFrameConstructor, fc_defaults)",
+             "i64"
+         ),
+         (
+             "PyFrameConstructor_KWDEFAULTS",
+             "offsetof(PyFrameConstructor, fc_kwdefaults)",
+             "i64"
+         ),
+         (
+             "PyFrameConstructor_CLOSURE",
+             "offsetof(PyFrameConstructor, fc_closure)",
+             "i64"
+         ),
+         ("PyCodeObject_NAME", "offsetof(PyCodeObject, co_name)", "i64"),
+         ("PyCodeObject_QUALNAME", "offsetof(PyCodeObject, co_qualname)", "i64"),
+         ("PyCodeObject_CONSTS", "offsetof(PyCodeObject, co_consts)", "i64"),
+         ("PyCodeObject_FLAGS", "offsetof(PyCodeObject, co_flags)", "i64"),
+         ("PyCodeObject_NFREEVARS", "offsetof(PyCodeObject, co_nfreevars)", "i64"),
+         ("PyCodeObject_VERSION", "offsetof(PyCodeObject, co_version)", "i64"),
+         ("classmethod_SIZE", "sizeof(classmethod)", "i64"),
+         ("classmethod_CALLABLE", "offsetof(classmethod, cm_callable)", "i64"),
+         ("classmethod_DICT", "offsetof(classmethod, cm_dict)", "i64"),
+         ("staticmethod_SIZE", "sizeof(staticmethod)", "i64"),
+         ("staticmethod_CALLABLE", "offsetof(staticmethod, sm_callable)", "i64"),
+         ("staticmethod_DICT", "offsetof(staticmethod, sm_dict)", "i64"),
+         ("CO_HAS_DOCSTRING", "CO_HAS_DOCSTRING", "i32"),
+         ("CO_GENERATOR", "CO_GENERATOR", "i32"),
+         ("CO_COROUTINE", "CO_COROUTINE", "i32"),
+         ("CO_ASYNC_GENERATOR", "CO_ASYNC_GENERATOR", "i32"),
+         ("FUNC_MAX_WATCHERS", "FUNC_MAX_WATCHERS", "i64"),
+         ("FUNC_VERSION_CACHE_SIZE", "FUNC_VERSION_CACHE_SIZE", "i64"),
+         ("Py_TPFLAGS_BASE_EXC_SUBCLASS", "Py_TPFLAGS_BASE_EXC_SUBCLASS", "u64"),
+         ("_Py_ANNOTATE_FORMAT_STRING", "_Py_ANNOTATE_FORMAT_STRING", "i32"),
+         ("PyObject_HEAD_SIZE", "sizeof(PyObject)", "i64"),
+         ("typevarobject_SIZE", "sizeof(typevarobject)", "i64"),
+         ("typevarobject_NAME", "offsetof(typevarobject, name)", "i64"),
+         ("typevarobject_BOUND", "offsetof(typevarobject, bound)", "i64"),
+         (
+             "typevarobject_EVALUATE_BOUND",
+             "offsetof(typevarobject, evaluate_bound)",
+             "i64"
+         ),
+         ("typevarobject_CONSTRAINTS", "offsetof(typevarobject, constraints)", "i64"),
+         (
+             "typevarobject_EVALUATE_CONSTRAINTS",
+             "offsetof(typevarobject, evaluate_constraints)",
+             "i64"
+         ),
+         (
+             "typevarobject_DEFAULT_VALUE",
+             "offsetof(typevarobject, default_value)",
+             "i64"
+         ),
+         (
+             "typevarobject_EVALUATE_DEFAULT",
+             "offsetof(typevarobject, evaluate_default)",
+             "i64"
+         ),
+         ("typevarobject_COVARIANT", "offsetof(typevarobject, covariant)", "i64"),
+         (
+             "typevarobject_CONTRAVARIANT",
+             "offsetof(typevarobject, contravariant)",
+             "i64"
+         ),
+         (
+             "typevarobject_INFER_VARIANCE",
+             "offsetof(typevarobject, infer_variance)",
+             "i64"
+         ),
+         ("typevartupleobject_SIZE", "sizeof(typevartupleobject)", "i64"),
+         ("typevartupleobject_NAME", "offsetof(typevartupleobject, name)", "i64"),
+         (
+             "typevartupleobject_DEFAULT_VALUE",
+             "offsetof(typevartupleobject, default_value)",
+             "i64"
+         ),
+         (
+             "typevartupleobject_EVALUATE_DEFAULT",
+             "offsetof(typevartupleobject, evaluate_default)",
+             "i64"
+         ),
+         ("paramspecobject_SIZE", "sizeof(paramspecobject)", "i64"),
+         ("paramspecobject_NAME", "offsetof(paramspecobject, name)", "i64"),
+         ("paramspecobject_BOUND", "offsetof(paramspecobject, bound)", "i64"),
+         (
+             "paramspecobject_DEFAULT_VALUE",
+             "offsetof(paramspecobject, default_value)",
+             "i64"
+         ),
+         (
+             "paramspecobject_EVALUATE_DEFAULT",
+             "offsetof(paramspecobject, evaluate_default)",
+             "i64"
+         ),
+         ("paramspecobject_COVARIANT", "offsetof(paramspecobject, covariant)", "i64"),
+         (
+             "paramspecobject_CONTRAVARIANT",
+             "offsetof(paramspecobject, contravariant)",
+             "i64"
+         ),
+         (
+             "paramspecobject_INFER_VARIANCE",
+             "offsetof(paramspecobject, infer_variance)",
+             "i64"
+         ),
+         ("typealiasobject_SIZE", "sizeof(typealiasobject)", "i64"),
+         ("typealiasobject_NAME", "offsetof(typealiasobject, name)", "i64"),
+         (
+             "typealiasobject_TYPE_PARAMS",
+             "offsetof(typealiasobject, type_params)",
+             "i64"
+         ),
+         (
+             "typealiasobject_COMPUTE_VALUE",
+             "offsetof(typealiasobject, compute_value)",
+             "i64"
+         ),
+         ("typealiasobject_VALUE", "offsetof(typealiasobject, value)", "i64"),
+         ("typealiasobject_MODULE", "offsetof(typealiasobject, module)", "i64"),
+         ("constevaluatorobject_SIZE", "sizeof(constevaluatorobject)", "i64"),
+         ("constevaluatorobject_VALUE", "offsetof(constevaluatorobject, value)", "i64"),
+         ("paramspecattrobject_SIZE", "sizeof(paramspecattrobject)", "i64"),
+         (
+             "paramspecattrobject_ORIGIN",
+             "offsetof(paramspecattrobject, __origin__)",
+             "i64"
+         ),
+         (
+             "PyBaseExceptionObject_SUPPRESS_CONTEXT",
+             "offsetof(PyBaseExceptionObject, suppress_context)",
+             "i64"
+         ),
+         ("PyBaseExceptionObject_SIZE", "sizeof(PyBaseExceptionObject)", "i64"),
+         ("PyBaseExceptionObject_DICT", "offsetof(PyBaseExceptionObject, dict)", "i64"),
+         ("PyStopIterationObject_SIZE", "sizeof(PyStopIterationObject)", "i64"),
+         ("PyStopIterationObject_DICT", "offsetof(PyStopIterationObject, dict)", "i64"),
+         (
+             "PyStopIterationObject_VALUE",
+             "offsetof(PyStopIterationObject, value)",
+             "i64"
+         ),
+         ("PySystemExitObject_SIZE", "sizeof(PySystemExitObject)", "i64"),
+         ("PySystemExitObject_DICT", "offsetof(PySystemExitObject, dict)", "i64"),
+         ("PySystemExitObject_CODE", "offsetof(PySystemExitObject, code)", "i64"),
+         (
+             "PyBaseExceptionGroupObject_SIZE",
+             "sizeof(PyBaseExceptionGroupObject)",
+             "i64"
+         ),
+         (
+             "PyBaseExceptionGroupObject_DICT",
+             "offsetof(PyBaseExceptionGroupObject, dict)",
+             "i64"
+         ),
+         (
+             "PyBaseExceptionGroupObject_MSG",
+             "offsetof(PyBaseExceptionGroupObject, msg)",
+             "i64"
+         ),
+         (
+             "PyBaseExceptionGroupObject_EXCS",
+             "offsetof(PyBaseExceptionGroupObject, excs)",
+             "i64"
+         ),
+         (
+             "PyBaseExceptionGroupObject_EXCS_STR",
+             "offsetof(PyBaseExceptionGroupObject, excs_str)",
+             "i64"
+         ),
+         ("PyImportErrorObject_SIZE", "sizeof(PyImportErrorObject)", "i64"),
+         ("PyImportErrorObject_DICT", "offsetof(PyImportErrorObject, dict)", "i64"),
+         ("PyImportErrorObject_MSG", "offsetof(PyImportErrorObject, msg)", "i64"),
+         ("PyImportErrorObject_NAME", "offsetof(PyImportErrorObject, name)", "i64"),
+         ("PyImportErrorObject_PATH", "offsetof(PyImportErrorObject, path)", "i64"),
+         (
+             "PyImportErrorObject_NAME_FROM",
+             "offsetof(PyImportErrorObject, name_from)",
+             "i64"
+         ),
+         ("PyOSErrorObject_SIZE", "sizeof(PyOSErrorObject)", "i64"),
+         ("PyOSErrorObject_DICT", "offsetof(PyOSErrorObject, dict)", "i64"),
+         ("PyOSErrorObject_MYERRNO", "offsetof(PyOSErrorObject, myerrno)", "i64"),
+         ("PyOSErrorObject_STRERROR", "offsetof(PyOSErrorObject, strerror)", "i64"),
+         ("PyOSErrorObject_FILENAME", "offsetof(PyOSErrorObject, filename)", "i64"),
+         ("PyOSErrorObject_FILENAME2", "offsetof(PyOSErrorObject, filename2)", "i64"),
+         ("PyNameErrorObject_SIZE", "sizeof(PyNameErrorObject)", "i64"),
+         ("PyNameErrorObject_DICT", "offsetof(PyNameErrorObject, dict)", "i64"),
+         ("PyNameErrorObject_NAME", "offsetof(PyNameErrorObject, name)", "i64"),
+         ("PyAttributeErrorObject_SIZE", "sizeof(PyAttributeErrorObject)", "i64"),
+         (
+             "PyAttributeErrorObject_DICT",
+             "offsetof(PyAttributeErrorObject, dict)",
+             "i64"
+         ),
+         (
+             "PyAttributeErrorObject_NAME",
+             "offsetof(PyAttributeErrorObject, name)",
+             "i64"
+         ),
+         ("PyAttributeErrorObject_OBJ", "offsetof(PyAttributeErrorObject, obj)", "i64"),
+         ("PySyntaxErrorObject_SIZE", "sizeof(PySyntaxErrorObject)", "i64"),
+         ("PySyntaxErrorObject_DICT", "offsetof(PySyntaxErrorObject, dict)", "i64"),
+         ("PySyntaxErrorObject_MSG", "offsetof(PySyntaxErrorObject, msg)", "i64"),
+         (
+             "PySyntaxErrorObject_FILENAME",
+             "offsetof(PySyntaxErrorObject, filename)",
+             "i64"
+         ),
+         ("PySyntaxErrorObject_LINENO", "offsetof(PySyntaxErrorObject, lineno)", "i64"),
+         ("PySyntaxErrorObject_OFFSET", "offsetof(PySyntaxErrorObject, offset)", "i64"),
+         (
+             "PySyntaxErrorObject_END_LINENO",
+             "offsetof(PySyntaxErrorObject, end_lineno)",
+             "i64"
+         ),
+         (
+             "PySyntaxErrorObject_END_OFFSET",
+             "offsetof(PySyntaxErrorObject, end_offset)",
+             "i64"
+         ),
+         ("PySyntaxErrorObject_TEXT", "offsetof(PySyntaxErrorObject, text)", "i64"),
+         (
+             "PySyntaxErrorObject_PRINT_FILE_AND_LINE",
+             "offsetof(PySyntaxErrorObject, print_file_and_line)",
+             "i64"
+         ),
+         (
+             "PySyntaxErrorObject_METADATA",
+             "offsetof(PySyntaxErrorObject, metadata)",
+             "i64"
+         ),
+         ("PyUnicodeErrorObject_SIZE", "sizeof(PyUnicodeErrorObject)", "i64"),
+         ("PyUnicodeErrorObject_DICT", "offsetof(PyUnicodeErrorObject, dict)", "i64"),
+         (
+             "PyUnicodeErrorObject_ENCODING",
+             "offsetof(PyUnicodeErrorObject, encoding)",
+             "i64"
+         ),
+         (
+             "PyUnicodeErrorObject_OBJECT",
+             "offsetof(PyUnicodeErrorObject, object)",
+             "i64"
+         ),
+         ("PyUnicodeErrorObject_START", "offsetof(PyUnicodeErrorObject, start)", "i64"),
+         ("PyUnicodeErrorObject_END", "offsetof(PyUnicodeErrorObject, end)", "i64"),
+         (
+             "PyUnicodeErrorObject_REASON",
+             "offsetof(PyUnicodeErrorObject, reason)",
+             "i64"
+         ),
          ("Py_DTSF_ADD_DOT_0", "Py_DTSF_ADD_DOT_0", "i32"),
          ("Py_TPFLAGS_LONG_SUBCLASS", "Py_TPFLAGS_LONG_SUBCLASS", "u64"),
          ("Py_TPFLAGS_BYTES_SUBCLASS", "Py_TPFLAGS_BYTES_SUBCLASS", "u64"),
@@ -331,6 +833,22 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_list_iters_MAXFREELIST", "Py_list_iters_MAXFREELIST", "i64"),
          ("_Py_freelists_FLOATS", "offsetof(struct _Py_freelists, floats)", "i64"),
          ("Py_floats_MAXFREELIST", "Py_floats_MAXFREELIST", "i64"),
+         (
+             "_Py_freelists_PYCFUNCTIONOBJECT",
+             "offsetof(struct _Py_freelists, pycfunctionobject)",
+             "i64"
+         ),
+         (
+             "_Py_freelists_PYCMETHODOBJECT",
+             "offsetof(struct _Py_freelists, pycmethodobject)",
+             "i64"
+         ),
+         (
+             "Py_pycfunctionobject_MAXFREELIST",
+             "Py_pycfunctionobject_MAXFREELIST",
+             "i64"
+         ),
+         ("Py_pycmethodobject_MAXFREELIST", "Py_pycmethodobject_MAXFREELIST", "i64"),
          ("_Py_freelists_SLICES", "offsetof(struct _Py_freelists, slices)", "i64"),
          ("_Py_freelists_RANGES", "offsetof(struct _Py_freelists, ranges)", "i64"),
          (
@@ -465,6 +983,9 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_tp_methods", "Py_tp_methods", "i32"),
          ("Py_tp_new", "Py_tp_new", "i32"),
          ("Py_tp_repr", "Py_tp_repr", "i32"),
+         ("Py_nb_or", "Py_nb_or", "i32"),
+         ("Py_tp_alloc", "Py_tp_alloc", "i32"),
+         ("Py_tp_free", "Py_tp_free", "i32"),
          ("Py_tp_traverse", "Py_tp_traverse", "i32"),
          ("Py_tp_clear", "Py_tp_clear", "i32"),
          ("Py_tp_getattro", "Py_tp_getattro", "i32"),
@@ -537,12 +1058,120 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
      # Constants whose values differ between the supported platforms, in the
      # form of CONSTANTS.
      PLATFORM_CONSTANTS: list[tuple[str, str, str]] = [
+         ("PyConfig_VERBOSE", "offsetof(PyConfig, verbose)", "i64"),
+         ("PyConfig_SAFE_PATH", "offsetof(PyConfig, safe_path)", "i64"),
+         ("PyConfig_SYS_PATH_0", "offsetof(PyConfig, sys_path_0)", "i64"),
+         (
+             "PyInterpreterState_CEVAL_OWN_GIL",
+             "offsetof(PyInterpreterState, ceval.own_gil)",
+             "i64"
+         ),
          (
              "PyInterpreterState_FREELISTS",
              "offsetof(PyInterpreterState, object_state.freelists)",
              "i64"
          ),
          ("PyInterpreterState_GC", "offsetof(PyInterpreterState, gc)", "i64"),
+         (
+             "PyInterpreterState_CACHED_GENERIC_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.generic_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_TYPEVAR_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.typevar_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_TYPEVARTUPLE_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.typevartuple_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_PARAMSPEC_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.paramspec_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_PARAMSPECARGS_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.paramspecargs_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_PARAMSPECKWARGS_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.paramspeckwargs_type)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CACHED_CONSTEVALUATOR_TYPE",
+             "offsetof(PyInterpreterState, cached_objects.constevaluator_type)",
+             "i64"
+         ),
+         (
+             "PyThreadState_CURRENT_FRAME",
+             "offsetof(PyThreadState, current_frame)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_F_FUNCOBJ",
+             "offsetof(_PyInterpreterFrame, f_funcobj)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_EXC_ERRNOMAP",
+             "offsetof(PyInterpreterState, exc_state.errnomap)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_EXC_GROUP",
+             "offsetof(PyInterpreterState, exc_state.PyExc_ExceptionGroup)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_EXC_MEMERRORS_FREELIST",
+             "offsetof(PyInterpreterState, exc_state.memerrors_freelist)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_EXC_MEMERRORS_NUMFREE",
+             "offsetof(PyInterpreterState, exc_state.memerrors_numfree)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_LAST_RESORT_MEMORY_ERROR",
+             "offsetof(PyInterpreterState, static_objects.singletons.last_resort_memory_error)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_ACTIVE_FUNC_WATCHERS",
+             "offsetof(PyInterpreterState, active_func_watchers)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_FUNC_WATCHERS",
+             "offsetof(PyInterpreterState, func_watchers)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_FUNC_VERSION_CACHE",
+             "offsetof(PyInterpreterState, func_state.func_version_cache)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_RARE_FUNC_MODIFICATION",
+             "offsetof(PyInterpreterState, rare_events.func_modification)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_DICT_NEXT_KEYS_VERSION",
+             "offsetof(PyInterpreterState, dict_state.next_keys_version)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_DICT_WATCHERS",
+             "offsetof(PyInterpreterState, dict_state.watchers)",
+             "i64"
+         ),
          (
              "_PyRuntimeState_REF_TRACER_FUNC",
              "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",
@@ -849,6 +1478,11 @@ def read_headers(found: Headers) {
         ) {
             found.private_scalars[hit.group(2)] = hit.group(0);
         }
+        # Forward typedefs of a source's own structs (typedef struct
+        # _odictnode _ODictNode).
+        for hit in re.finditer(r"\btypedef\s+struct\s+(\w+)\s+(\w+)\s*;", body) {
+            found.private_scalars[hit.group(2)] = hit.group(0);
+        }
         for hit in re.finditer(r"\btypedef\s+struct\s*\{", body) {
             end = closing(body, hit.end() - 1);
             alias = re.match(r"\s*(\w+)\s*;", body[end:]);
@@ -856,6 +1490,17 @@ def read_headers(found: Headers) {
                 found.private[alias.group(1)] = " ".join(
                     body[hit.start():end + alias.end()].split()
                 );
+            }
+        }
+        # A tagged struct whose header typedef names it (odictobject.c's
+        # struct _odictobject behind PyODictObject), keyed by its C type.
+        for hit in re.finditer(r"(?m)^struct\s+(\w+)\s*\{", body) {
+            end = closing(body, hit.end() - 1);
+            if re.match(r"\s*;", body[end:]) is not None {
+                found.private[f"struct {hit.group(1)}"] = " ".join(
+                    body[hit.start():end].split()
+                )
+                    + ";";
             }
         }
         text += "\n" + body;
@@ -1283,10 +1928,13 @@ def render_platform(suffix: str, values: dict[str, int]) -> str {
 
 # The upstream definitions of the private structs among the layouts.
 def private_definitions -> list[str] {
+    c_types = {jac: c for (jac, c) in LAYOUTS};
     structs = [
         headers.private[name]
+            if name in headers.private
+            else headers.private[c_types[name]]
         for name in order
-        if name in headers.private
+        if name in headers.private or c_types.get(name, "") in headers.private
     ];
     scalars = [
         text
