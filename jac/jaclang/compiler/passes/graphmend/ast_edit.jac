@@ -3,6 +3,7 @@ obj GraphMendFacts {
         boundary: dict[(Ability, Ability)] = {},
         helpers: set[GraphMendHelper] = set(),
         noop: bool = False,
+        disabled: list[str] = [],
         wrapped_keys: set[str] = set(),
         covered_by: dict[(str, str)] = {},
         callers: dict[(int, list[tuple[(Ability, bool)]])] = {};

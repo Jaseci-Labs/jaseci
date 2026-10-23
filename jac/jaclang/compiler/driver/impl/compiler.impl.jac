@@ -189,6 +189,19 @@ impl JacCompiler.get_bytecode(
     }
 }
 
+impl JacCompiler._graphmend_hit_matches(
+    mod: uni.Module, gm_active: bool, gm_disable: list[str]
+) -> bool {
+    facts = mod.gen.graphmend_facts;
+    if facts is None {
+        return not gm_active;
+    }
+    if facts.noop {
+        return True;
+    }
+    return gm_active and (facts.disabled == gm_disable);
+}
+
 impl JacCompiler._get_bytecode(
     full_target: str,
     target_program: JacProgram,
@@ -204,6 +217,16 @@ impl JacCompiler._get_bytecode(
         (not rebuild)
         and (full_target in actual_program.mod.hub)
         and not actual_program.is_hub_entry_fresh(full_target)
+    ) {
+        actual_program.invalidate_module(full_target);
+    }
+    if (
+        (not rebuild)
+        and (full_target in actual_program.mod.hub)
+        and actual_program.mod.hub[full_target].gen.py_bytecode
+        and not self._graphmend_hit_matches(
+            actual_program.mod.hub[full_target], gm_active, list(gm_disable or [])
+        )
     ) {
         actual_program.invalidate_module(full_target);
     }

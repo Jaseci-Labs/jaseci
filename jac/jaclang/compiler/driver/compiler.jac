@@ -82,6 +82,10 @@ obj JacCompiler(SessionHooks) {
         gm_disable: (list[str] | None) = None
     ) -> (types.CodeType | None);
 
+    def _graphmend_hit_matches(
+        mod: uni.Module, gm_active: bool, gm_disable: list[str]
+    ) -> bool;
+
     def _get_client_artifact(
         full_target: str, target_program: JacProgram
     ) -> (ClientArtifact | None);

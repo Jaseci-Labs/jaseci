@@ -205,3 +205,35 @@ test "explicit compile options decide the transforms the compile runs" {
         );
     }
 }
+
+test "a module compiled under other graphmend settings is not reused from memory" {
+    import shutil;
+    import tempfile;
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from tests.support { GRAPHMEND_FIXTURES, code_mentions_symbol }
+    with tempfile.TemporaryDirectory() as tmp {
+        path = os.path.join(os.path.realpath(tmp), "guard.jac");
+        shutil.copy(os.path.join(GRAPHMEND_FIXTURES, "val_guard_all.jac"), path);
+        prog = JacProgram();
+        compiler = prog._get_compiler();
+        lowered = compiler.get_bytecode(
+            full_target=path,
+            target_program=prog,
+            options=CompileOptions(graphmend=True, graphmend_disable=[])
+        );
+        assert (lowered is not None) and code_mentions_symbol(lowered, "_assert_async");
+        for opts in [
+            CompileOptions(graphmend=True, graphmend_disable=["trap"]),
+            CompileOptions(graphmend=False)
+        ] {
+            code = compiler.get_bytecode(
+                full_target=path, target_program=prog, options=opts
+            );
+            assert code is not None;
+            assert not code_mentions_symbol(code, "_assert_async") , (
+                f"the first compile was reused under graphmend={opts.graphmend} "
+                f"disable={opts.graphmend_disable}"
+            );
+        }
+    }
+}

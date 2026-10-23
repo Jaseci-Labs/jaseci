@@ -3,6 +3,7 @@ impl GraphBreakDetectPass.prepare with entry {
     if not self._enabled {
         disengage;
     }
+    facts_for(self.module).disabled = sorted(self.prog.options.graphmend_disable or []);
     register_claim(self.prog, self.module, self._mat_seen);
     materialize_claim_chain(self.prog, self.module.loc.mod_path, self._mat_seen);
     self._saw_compile_call = module_has_wrap_site(self.module);
