@@ -1600,6 +1600,10 @@ walker NaIRGenPass(CompilerPass) {
     def _codegen_try(nd: uni.TryStmt) -> None;
     def _codegen_expr(nd: (uni.UniNode | None)) -> (ir.Value | None);
     def _codegen_required(nd: (uni.UniNode | None)) -> (ir.Value | None);
+    def _void_call_value(
+        nd: uni.FuncCall, value: (ir.Value | None)
+    ) -> (ir.Value | None);
+
     def _current_fn_key -> (str | None);
     def _mark_local_unlowered(name: str) -> None;
     def _mark_targets_unlowered(targets: list[uni.UniNode]) -> None;
@@ -3216,6 +3220,10 @@ walker NaIRGenPass(CompilerPass) {
 
     def _tuple_struct_of(elem_types: list[ir.Type]) -> ir.LiteralStructType;
     def _resolve_sig_type(type_expr: (uni.UniNode | None)) -> ir.Type;
+    def _resolve_return_type(
+        type_expr: (uni.UniNode | None), method: bool = False
+    ) -> ir.Type;
+
     def _resolve_field_type(var: uni.UniNode) -> ir.Type;
     def _foreign_optional_field(tb: any) -> bool;
     def _typevar_optional_field(tb: any) -> bool;

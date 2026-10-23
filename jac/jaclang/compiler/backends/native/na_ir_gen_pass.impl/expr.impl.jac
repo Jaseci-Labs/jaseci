@@ -59,7 +59,7 @@ impl NaIRGenPass._codegen_expr(nd: (uni.UniNode | None)) -> (ir.Value | None) {
     } elif isinstance(nd, uni.UnaryExpr) {
         _result = self._codegen_unary(nd);
     } elif isinstance(nd, uni.FuncCall) {
-        _result = self._codegen_call(nd);
+        _result = self._void_call_value(nd, self._codegen_call(nd));
     } elif isinstance(nd, uni.AtomTrailer) {
         _result = self._codegen_atom_trailer(nd);
     } elif isinstance(nd, uni.BoolExpr) {
@@ -180,6 +180,32 @@ impl NaIRGenPass._codegen_required(nd: (uni.UniNode | None)) -> (ir.Value | None
         self.emit(E5092, node_override=nd, kind="expression", name=type(nd).__name__);
     }
     return val;
+}
+
+impl NaIRGenPass._void_call_value(
+    nd: uni.FuncCall, value: (ir.Value | None)
+) -> (ir.Value | None) {
+    if value is None or not isinstance(value.type, ir.VoidType) {
+        return value;
+    }
+    cur: uni.UniNode = nd;
+    up = nd.parent;
+    while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr, uni.CfgExpr))
+        or isinstance(up, uni.IfElseExpr)
+        and cur is not up.condition {
+        cur = up;
+        up = up.parent;
+    }
+    if isinstance(up, (uni.ExprStmt, uni.Assignment, uni.ReturnStmt, uni.LambdaExpr)) {
+        return value;
+    }
+    self.emit(
+        E5092,
+        node_override=nd,
+        kind="the value of a call returning None",
+        name=self._get_name(nd.target) or "call"
+    );
+    return None;
 }
 
 impl NaIRGenPass._current_fn_key -> (str | None) {
@@ -515,8 +541,8 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
             body_value = self._codegen_expr(tail);
             if isinstance(ret_type, ir.VoidType) {
                 """A void lambda evaluates its tail expression for effect
-                only; the expression's value (a call's placeholder, say)
-                is never the function's result.""";
+                only; the expression's value is never the function's
+                result.""";
                 self.builder.ret_void();
             } elif body_value is not None {
                 self.builder.ret(self._coerce_type(body_value, ret_type));
@@ -2409,6 +2435,10 @@ impl NaIRGenPass._codegen_if_else_expr(nd: uni.IfElseExpr) -> (ir.Value | None) 
     self.builder.position_at_end(merge_bb);
     if then_val is None or else_val is None {
         return None;
+    }
+    if isinstance(then_val.type, ir.VoidType)
+        and isinstance(else_val.type, ir.VoidType) {
+        return then_val;
     }
     phi = self.builder.phi(then_val.type, name="ternary.result");
     phi.add_incoming(then_val, then_end_bb);

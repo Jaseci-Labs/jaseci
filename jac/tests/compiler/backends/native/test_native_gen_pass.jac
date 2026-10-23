@@ -2753,6 +2753,8 @@ test "py interop py function not defined in native ir" {
     assert 'define i64 @"py_double"' not in llvm_ir_str;
     # Should have an external declare so the native code can call it
     assert 'declare i64 @"py_double"' in llvm_ir_str;
+    # py_note has no `-> T`: it returns None, so native declares it void
+    assert 'declare void @"py_note"' in llvm_ir_str;
 }
 
 test "py interop py functions in python codegen" {
@@ -2844,11 +2846,17 @@ test "py interop full entry chain" {
         "__jac_interop_py_funcs__": ir.gen.interop_py_funcs
     };
     buf = io.StringIO();
+    err = io.StringIO();
     with contextlib.redirect_stdout(buf) {
-        exec(py_code, namespace);
+        with contextlib.redirect_stderr(err) {
+            exec(py_code, namespace);
+            # a None return crosses back from native, and py_note's None into native
+            assert namespace["native_note"](8) is None;
+        }
     }
     output = buf.getvalue().strip();
-    assert output == "11";
+    assert output.splitlines() == ["11", "7", "8"];
+    assert not err.getvalue() , err.getvalue();
 }
 
 # --- TestNativeMultiModuleInterop ---
