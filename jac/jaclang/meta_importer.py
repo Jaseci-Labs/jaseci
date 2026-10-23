@@ -526,7 +526,7 @@ class JacMetaImporter(MetaPathFinder, Loader):
         propagates, as it would from the stock loader.
         """
         try:
-            with open(file_path, encoding="utf-8") as fh:
+            with open(file_path, "rb") as fh:
                 code = compile(fh.read(), file_path, "exec")
         except Exception:
             return False

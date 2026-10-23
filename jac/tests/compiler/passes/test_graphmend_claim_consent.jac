@@ -345,3 +345,40 @@ test "an error the module raises propagates through the source fallback" {
         cur.warnings_had.extend(prev_warnings);
     }
 }
+
+test "the source fallback honors a non-utf-8 coding declaration" {
+    import os;
+    import sys;
+    import importlib.util;
+    import from jaclang.meta_importer { JacMetaImporter }
+    prog = Jac.get_program();
+    compiler = Jac.get_compiler();
+    prev_warnings = list(prog.warnings_had);
+    def _refuse_bytecode(full_target: str, target_program: any) -> any {
+        raise RuntimeError("front end declined");
+    }
+    with tempfile.TemporaryDirectory() as tmp {
+        path = os.path.join(tmp, "latin1_claim_mod.py");
+        with open(path, "wb") as fh {
+            fh.write(b"# -*- coding: latin-1 -*-\nNAME = '\xe9'\n");
+        }
+        spec = importlib.util.spec_from_file_location("latin1_claim_mod", path);
+        assert spec is not None;
+        mod = importlib.util.module_from_spec(spec);
+        try {
+            setattr(compiler, "get_bytecode", _refuse_bytecode);
+            JacMetaImporter()._exec_compiled_module(mod, path);
+        } finally {
+            if "get_bytecode" in compiler.__dict__ {
+                delattr(compiler, "get_bytecode");
+            }
+            sys.modules.pop("latin1_claim_mod", None);
+        }
+        assert mod.__dict__.get("NAME") == "é" , (
+            "the fallback must decode the file as its coding declaration says"
+        );
+        cur = Jac.get_program();
+        cur.warnings_had.clear();
+        cur.warnings_had.extend(prev_warnings);
+    }
+}
