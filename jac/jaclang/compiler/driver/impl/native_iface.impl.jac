@@ -462,10 +462,7 @@ impl NativeIface._with_references(fields: dict[str, any]) -> dict[str, any] {
     where a provider lives rather than what dependent units must lower
     against, so a callback change alone never re-keys a dependent's cache.""";
     fields["deps"] = [native_unit_ref(x) for x in self.deps];
-    fields["server_callbacks"] = [];
-    for cb in self.server_callbacks {
-        fields["server_callbacks"].append(cb.to_dict());
-    }
+    fields["server_callbacks"] = [cb.to_dict() for cb in self.server_callbacks];
     fields["coverage"] = dict(self.coverage);
     fields["runtime_globals"] = list(self.runtime_globals);
     fields["init_reads"] = list(self.init_reads);
