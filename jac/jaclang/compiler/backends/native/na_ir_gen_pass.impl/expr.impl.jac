@@ -2031,6 +2031,23 @@ impl NaIRGenPass._codegen_unary(nd: uni.UnaryExpr) -> (ir.Value | None) {
     if lent is not None {
         return self._c_lent_address(nd, lent);
     }
+    # `&mut x` for a C declaration's `&mut T` parameter, in a call lowered to
+    # the symbol's Jac definition: lend x's address, as the extern call does.
+    if is_borrow_kind(nd.ownership) {
+        borrow_param = c_lent_param(nd, allow_borrow=True);
+        if borrow_param is not None and nd.parent is not None {
+            slot = self._clib_place_ptr(nd);
+            want = self._c_scalar_llvm(c_param_type(nd.parent, borrow_param));
+            if slot is not None
+                and want is not None
+                and isinstance(slot.type, ir.PointerType)
+                and slot.type.pointee == want {
+                return self.builder.ptrtoint(
+                    slot, ir.IntType(64), name="c.lend.borrow"
+                );
+            }
+        }
+    }
     operand = self._codegen_expr(nd.operand);
     if operand is None {
         return None;

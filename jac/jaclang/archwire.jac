@@ -5446,7 +5446,11 @@ graph import compiler {
             is_va_list_type,
             named_function_of
         },
-        backends.native.na_ir_gen_pass.NaIRGenPass._codegen_unary { c_lent_arg_elem },
+        backends.native.na_ir_gen_pass.NaIRGenPass._codegen_unary {
+            c_lent_arg_elem,
+            c_lent_param,
+            c_param_type
+        },
         backends.native.na_ir_gen_pass.NaIRGenPass._ensure_clib_struct
             | passes.type_checker_pass.TypeCheckPass._foreign_struct_contains {
             foreign_struct_of_type
