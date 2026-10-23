@@ -4250,7 +4250,7 @@ graph import {
         client.targets.mobile_target.MobileTarget.dev
             | client.targets.web_target.WebTarget.dev { JacFileWatcher },
     ]
-    studio.app ++> cli.commands.studio { run_studio }
+    studio.app ++> cli.commands.studio.studio { run_studio }
     testing.cl_test_runner ++> scale.tests.server.test_cl_test_runner {
         run_cl_test_file
     }
