@@ -65,37 +65,23 @@ node UniNode {
     def set_parent(parent: UniNode) -> UniNode;
     def resolve_tok_range -> tuple[(Token, Token)];
     def gen_token(name: Tok, value: (str | None) = None) -> Token;
-    def get_all_sub_nodes[T](typ: type[T]) -> list[T] {
-        result: list[T] = [];
-        if typ in self._sub_node_tab {
-            for i in self._sub_node_tab[typ] {
-                if isinstance(i, typ) {
-                    result.append(i);
-                }
-            }
-        }
-        return result;
-    }
+    def get_all_sub_nodes[T](typ: type[T]) -> list[T];
+    def find_parent_of_type[T](typ: type[T]) -> (T | None);
+    def parent_of_type[T](typ: type[T]) -> T;
 
-    def find_parent_of_type[T](typ: type[T]) -> (T | None) {
-        nd: (UniNode | None) = self.parent;
-        while nd is not None {
-            if isinstance(nd, typ) {
-                return nd;
-            }
-            nd = nd.parent;
-        }
-        return None;
-    }
+    has decl_parent: (UniNode | None) { getter; }
+    has top_element: (UniNode | None) { getter; }
+    has enclosing_frame: (UniNode | None) { getter; }
+    has in_impl_spec: bool { getter; }
 
-    def parent_of_type[T](typ: type[T]) -> T {
-        ret = self.find_parent_of_type(typ);
-        if isinstance(ret, typ) {
-            return ret;
-        }
-        raise ValueError(f"Parent of type {typ} not found from{type(self)}.");
-    }
+    def is_within(outer: UniNode) -> bool;
+    def element_in(mod: Module) -> (UniNode | None);
+    def enclosing_decl[T](typ: type[T]) -> (T | None);
 
+    has own_impls: list[ImplDef] { getter; }
+
+    def linked_impls -> list[ImplDef];
+    def element_sub_nodes[T](typ: type[T]) -> list[T];
     def codespace -> CodeContext;
     def in_client_context -> bool;
     def in_native_context -> bool;
@@ -192,6 +178,11 @@ node UniScopeNode(UniNode) {
     ) -> (UniNode | None);
 
     def find_scope(name: str) -> (UniScopeNode | None);
+
+    has folded: bool { getter; }
+    has owning_scope: UniScopeNode { getter; }
+
+    def fold_scope(impl_scope: UniScopeNode) -> None;
     def set_primary_names(syms: dict[(str, Symbol)]) -> None;
     def adopt_primary(sym: Symbol, alias: str = "") -> None;
     def _drop_primary(sym: Symbol) -> None;
@@ -521,6 +512,7 @@ node Module(AstDocNode, UniScopeNode) {
         managed_borrow_binds: set[int] postinit;
 
     has body: Sequence[ElementStmt | String | EmptyToken] { getter; }
+    has elements: list[UniNode] { getter; }
 
     def init(
         *,
@@ -962,6 +954,7 @@ node Archetype(ContextAwareNode, ArchSpec, AstAccessNode, ArchBlockStmt, AstImpl
 node ImplDef(ContextAwareNode, CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScopeNode) {
     has decorators: (Sequence[Expr] | None) { getter; }
     has target: Sequence[NameAtom] { getter; }
+    has type_params: list[TypeParam] { getter; }
     has spec: (Sequence[Expr] | FuncSignature | EventSignature | None) { getter; }
     has body: Sequence[CodeBlockStmt] | Sequence[EnumBlockStmt] | Expr { getter; }
     has decl_link: (UniNode | None) { getter; }
@@ -972,6 +965,7 @@ node ImplDef(ContextAwareNode, CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSym
         codespace_dual: bool = False,
         decorators: (Sequence[Expr] | None),
         target: Sequence[NameAtom],
+        type_params: (Sequence[TypeParam] | None) = None,
         spec: (Sequence[Expr] | FuncSignature | EventSignature | None),
         body: Sequence[CodeBlockStmt] | Sequence[EnumBlockStmt] | Expr,
         kid: Sequence[UniNode] = []
@@ -2554,7 +2548,7 @@ def is_identifier_slot(nd: UniNode) -> bool;
 
 def find_python_scope_node_of(nd: UniNode) -> (UniScopeNode | None);
 
-def same_lexical_scope(left: UniNode | None, right: UniNode | None) -> bool;
+def is_frame(nd: UniNode) -> bool;
 
 def find_typed_decl_scope_of(nd: AstSymbolNode) -> UniScopeNode;
 
@@ -2563,6 +2557,10 @@ def def_insert_unpacking(
 ) -> None;
 
 def bind_assignment_targets(nd: Assignment) -> None;
+def bind_walrus_target(nd: BinaryExpr) -> None;
+def is_walrus(nd: UniNode) -> bool;
+def binding_sites_in(scope_root: UniNode) -> list[UniNode];
+def typed_rebind_names(nd: Assignment) -> list[Name];
 def definition_qualname(decl: UniNode) -> str;
 
 def lookup_enclosing_binding(from_scope: UniScopeNode, name: str) -> (Symbol | None);
@@ -2596,3 +2594,56 @@ def is_comptime_stmt(nd: UniNode) -> bool;
 def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
 
 def in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool;
+
+impl UniNode.get_all_sub_nodes[T](typ: type[T]) -> list[T] {
+    result: list[T] = [];
+    if typ in self._sub_node_tab {
+        for i in self._sub_node_tab[typ] {
+            if isinstance(i, typ) {
+                result.append(i);
+            }
+        }
+    }
+    return result;
+}
+
+impl UniNode.find_parent_of_type[T](typ: type[T]) -> (T | None) {
+    nd: (UniNode | None) = self.parent;
+    while nd is not None {
+        if isinstance(nd, typ) {
+            return nd;
+        }
+        nd = nd.parent;
+    }
+    return None;
+}
+
+impl UniNode.parent_of_type[T](typ: type[T]) -> T {
+    ret = self.find_parent_of_type(typ);
+    if isinstance(ret, typ) {
+        return ret;
+    }
+    raise ValueError(f"Parent of type {typ} not found from{type(self)}.");
+}
+
+impl UniNode.enclosing_decl[T](typ: type[T]) -> (T | None) {
+    nd: (UniNode | None) = self.decl_parent;
+    while nd is not None {
+        if isinstance(nd, typ) {
+            return nd;
+        }
+        nd = nd.decl_parent;
+    }
+    return None;
+}
+
+impl UniNode.element_sub_nodes[T](typ: type[T]) -> list[T] {
+    found: list[T] = self.get_all_sub_nodes(typ);
+    pending: list[ImplDef] = list(reversed(self.linked_impls()));
+    while pending {
+        impl_def = pending.pop();
+        found.extend(impl_def.get_all_sub_nodes(typ));
+        pending.extend(reversed(impl_def.linked_impls()));
+    }
+    return found;
+}

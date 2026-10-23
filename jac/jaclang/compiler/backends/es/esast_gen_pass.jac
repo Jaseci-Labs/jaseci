@@ -412,6 +412,8 @@ walker EsastGenPass(TreePass) {
     def _es_json_literal(value: any) -> any;
     can exit_type_alias with uni.TypeAlias exit;
     can exit_type_param with uni.TypeParam exit;
+    can enter_archetype with uni.Archetype entry;
+    can enter_enum with uni.Enum entry;
     can exit_archetype with uni.Archetype exit;
     can exit_enum with uni.Enum exit;
     can enter_ability with uni.Ability entry;
@@ -589,6 +591,28 @@ walker EsastGenPass(TreePass) {
         target: uni.UniNode, value_es: (es.Expression | None), jac_node: uni.UniNode
     ) -> (es.Statement | None);
 
+    def _mark_optional_link(recv: es.Expression, lowered: es.Expression) -> bool;
+    def _null_safe_ref(recv: es.Expression, jac_node: uni.UniNode) -> es.Expression;
+    def _null_safe_guard(
+        recv: es.Expression,
+        ref: es.Expression,
+        lowered: es.Expression,
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _null_safe_new(
+        new_expr: es.NewExpression, jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _bind_once(
+        param: es.Identifier,
+        body: es.Expression,
+        value: es.Expression,
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
+    def _awaits_in_place(jac_node: uni.UniNode) -> bool;
+    def _strip_optional_chain(expr: (es.Node | None)) -> None;
     can exit_binary_expr with uni.BinaryExpr exit;
     can exit_cfg_expr with uni.CfgExpr exit;
     can exit_bool_expr with uni.BoolExpr exit;

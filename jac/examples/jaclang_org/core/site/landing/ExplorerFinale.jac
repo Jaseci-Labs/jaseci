@@ -6,7 +6,7 @@ import from "@hugeicons/core-free-icons" {
     ComputerIcon,
     CommandLineIcon,
     UserGroupIcon,
-    ChartHistogramIcon,
+    LibraryIcon,
     StarIcon,
     Book02Icon,
     BookOpen01Icon,
@@ -16,7 +16,11 @@ import from "@hugeicons/core-free-icons" {
 glob BOOK_URL: str = "https://doi.org/10.5281/zenodo.21464040",
      RUN_LINES: list[str] = ["jac create mysite --awesome", "cd mysite", "jac run"];
 
-def:pub WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement {
+def:pub WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement;
+
+def:pub ExplorerFinale -> JsxElement;
+
+impl WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement {
     return
         <div
             className="flex items-start gap-4 rounded-xl border border-border/70 bg-card/40 pt-5 pb-5 pl-5 pr-5"
@@ -42,7 +46,7 @@ def:pub WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxEleme
         </div>;
 }
 
-def:pub ExplorerFinale -> JsxElement {
+impl ExplorerFinale -> JsxElement {
     return
         <section
             id="explorer"
@@ -72,19 +76,19 @@ def:pub ExplorerFinale -> JsxElement {
                             icon={GlobeIcon}
                             tag="web"
                             title="The website"
-                            body="The site in front of you: live docs, the source explorer, JacYac, Ninja Scores, and the WebAssembly rocket arena."
+                            body="The site in front of you: versioned live docs, the source explorer, JacYac with its ninjaclaw agent, and the WebAssembly rocket arena."
                         />
                         <WorkspaceAppCard
                             icon={SmartPhone01Icon}
                             tag="mobile"
                             title="JacYac on your phone"
-                            body="A mobUI app for the JacYac feed, profiles, channels, and Ninja Scores, built on the same social graph and scoring core."
+                            body="A mobUI app for the JacYac feed, profiles, and channels, built on the same social graph core."
                         />
                         <WorkspaceAppCard
                             icon={CommandLineIcon}
                             tag="cli"
                             title="The command line"
-                            body="Score repositories, read and post to JacYac, and sync or inspect the docs graph from your terminal."
+                            body="Read and post to JacYac, and sync or inspect the docs graph from your terminal."
                         />
                         <WorkspaceAppCard
                             icon={ComputerIcon}
@@ -99,10 +103,10 @@ def:pub ExplorerFinale -> JsxElement {
                             body="Profiles, follows, posts, comments, and channels live in a persistent graph, explored and updated by Jac walkers."
                         />
                         <WorkspaceAppCard
-                            icon={ChartHistogramIcon}
-                            tag="scoring"
-                            title="The scoring service"
-                            body="Analyze GitHub codebases, calculate Ninja Scores and belts, and add optional AI insights to the reports."
+                            icon={LibraryIcon}
+                            tag="knowledge"
+                            title="The knowledge service"
+                            body="Keeps one clone of the jac repo: the docs of earlier release lines, and the tree ninjaclaw reads to answer Jac questions."
                         />
                     </div>
                 </Reveal>

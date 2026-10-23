@@ -25,6 +25,33 @@ def run_pass[W: CompilerPass](
     prog: JacProgram,
     cancel_token: (CancelToken | None) = None,
     policy: (DiagnosticPolicy | None) = None
+) -> W;
+
+
+obj CompileProgress {
+    has _listeners: list[Callable[[str], None]] postinit,
+        _finished_listeners: list[Callable[[str], None]] postinit;
+
+    def postinit -> None;
+    def notify(file_path: str) -> None;
+    @contextmanager
+    def track(file_path: str) -> Iterator[None];
+
+    @contextmanager
+    def listen(
+        callback: Callable[[str], None],
+        on_finished: Callable[[str], None] | None = None
+    ) -> Iterator[None];
+}
+
+glob compile_progress = CompileProgress();
+
+impl run_pass[W: CompilerPass](
+    pass_cls: type[W],
+    ir_in: Module,
+    prog: JacProgram,
+    cancel_token: (CancelToken | None) = None,
+    policy: (DiagnosticPolicy | None) = None
 ) -> W {
     pol = policy if policy is not None else build_diagnostic_policy(prog);
     errors: list[Alert] = [];
@@ -88,22 +115,3 @@ def run_pass[W: CompilerPass](
         } except Exception {}
     }
 }
-
-
-obj CompileProgress {
-    has _listeners: list[Callable[[str], None]] postinit,
-        _finished_listeners: list[Callable[[str], None]] postinit;
-
-    def postinit -> None;
-    def notify(file_path: str) -> None;
-    @contextmanager
-    def track(file_path: str) -> Iterator[None];
-
-    @contextmanager
-    def listen(
-        callback: Callable[[str], None],
-        on_finished: Callable[[str], None] | None = None
-    ) -> Iterator[None];
-}
-
-glob compile_progress = CompileProgress();

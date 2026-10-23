@@ -229,3 +229,78 @@ test "native runtime emits dependencies for bare imports" {
         }
     }
 }
+
+test "a provider an earlier page emitted is refreshed when a later page grows it" {
+    import from jaclang.compiler.driver.client_graph { collect_client_graph }
+    import from jaclang.compiler.frontend.codeinfo { ClientArtifact, ClientManifest }
+
+    with TemporaryDirectory() as tmp {
+        base = Path(tmp).resolve();
+        (layout, page, provider, nested, extra) = (
+            base / "layout.jac",
+            base / "page.jac",
+            base / "provider.jac",
+            base / "nested.jac",
+            base / "extra.jac"
+        );
+        for path in (layout, page, provider, nested, extra) {
+            path.write_text("");
+        }
+        grown = {"pulled": False};
+        def module(
+            exports: list[str], imports: dict[str, str], needs: dict[str, list[str]]
+        ) -> ClientArtifact {
+            return ClientArtifact(
+                js=",".join(exports),
+                manifest=ClientManifest(
+                    exports=exports, imports=imports, runtime_imports=needs
+                )
+            );
+        }
+        def artifact_of(path: Path) -> ClientArtifact {
+            if path == layout {
+                return module(
+                    [], {"provider": str(provider)}, {str(provider): ["palette"]}
+                );
+            }
+            if path == page {
+                grown["pulled"] = True;
+                return module(
+                    [], {"provider": str(provider)}, {str(provider): ["spacing"]}
+                );
+            }
+            if path == provider {
+                if grown["pulled"] {
+                    return module(
+                        ["palette", "spacing"],
+                        {"nested": str(nested), "extra": str(extra)},
+                        {str(nested): ["base", "gap"], str(extra): ["tool"]}
+                    );
+                }
+                return module(
+                    ["palette"], {"nested": str(nested)}, {str(nested): ["base"]}
+                );
+            }
+            if path == extra {
+                return module(["tool"], {}, {});
+            }
+            return module(["base", "gap"] if grown["pulled"] else ["base"], {}, {});
+        }
+        def same(path: Path) -> Path {
+            return path;
+        }
+        visited: set[Path] = set();
+        first = collect_client_graph([layout], artifact_of, same, set(), visited);
+        second = collect_client_graph([page], artifact_of, same, set(), visited);
+    }
+    assert [u.path for u in first.modules] == [layout, provider, nested];
+    assert [u.path for u in second.modules] == [page, extra] , (
+        "a module the grown provider newly imports must be compiled and emitted"
+    );
+    assert [u.path for u in second.refreshed] == [provider, nested] , (
+        "the modules the first page emitted must be re-emitted with what the second "
+        "page pulled, including the provider's own dependency"
+    );
+    assert second.refreshed[0].artifact.js == "palette,spacing";
+    assert second.refreshed[1].artifact.js == "base,gap";
+}

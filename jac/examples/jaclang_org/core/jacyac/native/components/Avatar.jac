@@ -1,6 +1,8 @@
 import from "@jac/mobui" { Image, View, Text }
 
-def:pub Avatar(username: str, size: int, avatars: dict[str, str]) -> JsxElement {
+def:pub Avatar(username: str, size: int, avatars: dict[str, str]) -> JsxElement;
+
+impl Avatar(username: str, size: int, avatars: dict[str, str]) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);

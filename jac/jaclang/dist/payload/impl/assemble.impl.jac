@@ -235,7 +235,7 @@ impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOp
 
     delete_file(os.path.join(site_pre, "MANIFEST.json"));
     run_stubcat_stage(py, python_dir, site, opts);
-    precompile(py, python_dir, site, opts.seal, opts.debug_src);
+    precompile(py, python_dir, site, opts.seal, opts.debug_src, opts.kernel_dir);
     if pc is not None {
         delete_tree(pc);
         copy_tree(site_pre, pc, skip_none);
@@ -319,7 +319,14 @@ impl precompile_env(python_dir: str, site: str) -> dict[str, str] {
     return env;
 }
 
-impl precompile(py: str, python_dir: str, site: str, seal: bool, debug_src: bool) {
+impl precompile(
+    py: str,
+    python_dir: str,
+    site: str,
+    seal: bool,
+    debug_src: bool,
+    kernel_dir: (str | None) = None
+) {
     import time;
     compile_start = time.monotonic();
     pc = os.path.join(site, "jaclang", "dist", "precompile_bytecode.jac");
@@ -343,6 +350,10 @@ impl precompile(py: str, python_dir: str, site: str, seal: bool, debug_src: bool
     }
 
     env: dict[str, str] = precompile_env(python_dir, site);
+    if kernel_dir {
+        env["JAC_SEAL_KERNEL_DIR"] = os.path.abspath(kernel_dir);
+        log(f"   the seal adopts the prebuilt kernel in {kernel_dir}");
+    }
     run_child(argv, env, True);
 
     pre_dir = os.path.join(site, "jaclang", "_precompiled");
