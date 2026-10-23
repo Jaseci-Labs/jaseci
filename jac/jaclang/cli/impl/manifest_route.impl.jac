@@ -1,26 +1,20 @@
 import jaclang;
-def _read_version_from_toml(toml_path: Path) -> (str | None);
+def _jaclang_manifest_version(start: Path) -> (str | None);
 
 impl resolve_cli_version -> str {
     dev_source = str(handoff().get('compiler_source') or '');
     if dev_source {
-        toml_path = Path(dev_source) / 'jac.toml';
-        if toml_path.exists() {
-            ver = _read_version_from_toml(toml_path);
-            if ver {
-                return ver;
-            }
+        ver = _jaclang_manifest_version(Path(dev_source));
+        if ver {
+            return ver;
         }
     }
 
     jac_file = jaclang.__file__;
     if jac_file {
-        source_toml = Path(jac_file).parent.parent / 'jac.toml';
-        if source_toml.exists() {
-            ver = _read_version_from_toml(source_toml);
-            if ver {
-                return ver;
-            }
+        ver = _jaclang_manifest_version(Path(jac_file).parent);
+        if ver {
+            return ver;
         }
     }
 
@@ -103,17 +97,25 @@ impl handle_manifest_route(raw_argv: list[str]) -> None {
     run_selected_command(command_name);
 }
 
-impl _read_version_from_toml(toml_path: Path) -> (str | None) {
-    try {
-        data = tomllib.loads(toml_path.read_text(encoding='utf-8'));
+impl _jaclang_manifest_version(start: Path) -> (str | None) {
+    for folder in [start] + list(start.parents) {
+        toml_path = folder / 'jac.toml';
+        if not toml_path.is_file() {
+            continue;
+        }
+        try {
+            data = tomllib.loads(toml_path.read_text(encoding='utf-8'));
+        } except Exception {
+            continue;
+        }
         project = data.get('project', {});
-        if isinstance(project, dict) {
+        if isinstance(project, dict) and project.get('name') == 'jaclang' {
             ver = project.get('version');
             if isinstance(ver, str) and ver {
                 return ver;
             }
         }
-    } except Exception {}
+    }
     return None;
 }
 
