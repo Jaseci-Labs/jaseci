@@ -1109,7 +1109,7 @@ impl conv_confname(
 ) -> (i32 | None) {
     current = NULL;
     if jacpy_is_unicode(value) != 0 {
-        table = PyObject_GetAttrString(module, table_name);
+        table = jacpy_object_getattr_text(module, table_name);
         if not table {
             return None;
         }

@@ -1366,7 +1366,7 @@ impl raise_exception(type: ptr[PyObject], errcode: i32, errmsg: ptr[u8]) {
         jacpy_release(exc);
         return;
     }
-    rc = PyObject_SetAttrString(exc, "sqlite_errorcode", code);
+    rc = PyObject_SetAttrString(exc, ptr[u8]("sqlite_errorcode"), code);
     jacpy_release(code);
     if rc < 0 {
         jacpy_release(exc);
@@ -1380,7 +1380,7 @@ impl raise_exception(type: ptr[PyObject], errcode: i32, errmsg: ptr[u8]) {
         jacpy_release(exc);
         return;
     }
-    rc = PyObject_SetAttrString(exc, "sqlite_errorname", name);
+    rc = PyObject_SetAttrString(exc, ptr[u8]("sqlite_errorname"), name);
     jacpy_release(name);
     if rc < 0 {
         jacpy_release(exc);

@@ -172,7 +172,7 @@ impl execute(module: ptr[PyObject]) -> i32 {
         return i32(-1);
     }
     if PROBE_BROKEN_POLL and have_broken_poll() {
-        if PyObject_DelAttrString(module, "poll") == -1 {
+        if PyObject_DelAttrString(module, ptr[u8]("poll")) == -1 {
             PyErr_Clear();
         }
     } elif not add_type(module, POLL_TYPE, "poll", poll_type, False)

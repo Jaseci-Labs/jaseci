@@ -2424,7 +2424,7 @@ impl struct_get_unpacker(fmt: ptr[u8], itemsize: i64) -> StructUnpacker {
         structobj = PyObject_CallOneArg(struct_type, fmt_bytes);
     }
     if structobj {
-        x.unpack_from = PyObject_GetAttrString(structobj, "unpack_from");
+        x.unpack_from = PyObject_GetAttrString(structobj, ptr[u8]("unpack_from"));
     }
     if x.unpack_from {
         x.item = ptr[u8](PyMem_Malloc(u64(itemsize)));

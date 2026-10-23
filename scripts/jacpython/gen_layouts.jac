@@ -991,6 +991,23 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_RTFLAGS_USE_MAIN_OBMALLOC", "Py_RTFLAGS_USE_MAIN_OBMALLOC", "u64"),
          ("Py_mod_multiple_interpreters", "Py_mod_multiple_interpreters", "i32"),
          ("Py_mod_gil", "Py_mod_gil", "i32"),
+         ("_Py_freelists_CONTEXTS", "offsetof(struct _Py_freelists, contexts)", "i64"),
+         (
+             "_Py_freelists_ASYNC_GENS",
+             "offsetof(struct _Py_freelists, async_gens)",
+             "i64"
+         ),
+         (
+             "_Py_freelists_ASYNC_GEN_ASENDS",
+             "offsetof(struct _Py_freelists, async_gen_asends)",
+             "i64"
+         ),
+         (
+             "_Py_freelists_OBJECT_STACK_CHUNKS",
+             "offsetof(struct _Py_freelists, object_stack_chunks)",
+             "i64"
+         ),
+         ("PyCodeObject_NLOCALSPLUS", "offsetof(PyCodeObject, co_nlocalsplus)", "i64"),
          ("_Py_MANAGED_BUFFER_RELEASED", "_Py_MANAGED_BUFFER_RELEASED", "i32"),
          ("_Py_MANAGED_BUFFER_FREE_FORMAT", "_Py_MANAGED_BUFFER_FREE_FORMAT", "i32"),
          ("_Py_MEMORYVIEW_RELEASED", "_Py_MEMORYVIEW_RELEASED", "i32"),
@@ -1405,6 +1422,27 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "i64"
          ),
          ("_Py_FORCE_UTF8_FS_ENCODING", "JAC_FORCE_UTF8_FS_ENCODING", "i64"),
+         ("PyThreadState_DELETE_LATER", "offsetof(PyThreadState, delete_later)", "i64"),
+         (
+             "PyInterpreterState_CACHED_OBJREDUCE",
+             "offsetof(PyInterpreterState, cached_objects.objreduce)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_F_EXECUTABLE",
+             "offsetof(_PyInterpreterFrame, f_executable)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_STACKPOINTER",
+             "offsetof(_PyInterpreterFrame, stackpointer)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_LOCALSPLUS",
+             "offsetof(_PyInterpreterFrame, localsplus)",
+             "i64"
+         ),
          (
              "_PyRuntimeState_REF_TRACER_FUNC",
              "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",

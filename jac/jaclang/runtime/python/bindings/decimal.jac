@@ -2020,7 +2020,7 @@ impl register_numbers(module: ptr[PyObject]) -> bool {
     if not numbers {
         return False;
     }
-    number = PyObject_GetAttrString(numbers, "Number");
+    number = PyObject_GetAttrString(numbers, ptr[u8]("Number"));
     ok = bool(number);
     if ok {
         registered = PyObject_CallMethod(
@@ -2032,7 +2032,7 @@ impl register_numbers(module: ptr[PyObject]) -> bool {
     }
     ok = ok
         and set_state(
-            module, STATE_RATIONAL, PyObject_GetAttrString(numbers, "Rational")
+            module, STATE_RATIONAL, PyObject_GetAttrString(numbers, ptr[u8]("Rational"))
         );
     jacpy_release(numbers);
     return ok;
@@ -2064,7 +2064,9 @@ impl create_signal_dict(module: ptr[PyObject]) -> bool {
     if not collections_abc {
         return False;
     }
-    mutable_mapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+    mutable_mapping = PyObject_GetAttrString(
+        collections_abc, ptr[u8]("MutableMapping")
+    );
     jacpy_release(collections_abc);
     if not mutable_mapping {
         return False;

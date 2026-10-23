@@ -740,6 +740,15 @@ consume a `va_list`, and the wrapper for the generated static-strings
 initializer stay C in object_api.c. Jac `str` values reach the C-string
 API through `jacpy_unicode_from_text`/`_intern_text`/`_equal_text`.
 
+`object.c` (`object_model/object.jac`) holds attribute lookup, rich
+comparison, hashing, truth, repr/str and the None and NotImplemented
+singletons as C data. `_Py_Dealloc` stays C (in object_api.c): its trashcan
+test reads the machine stack pointer, and it runs on every deallocation.
+The attribute C API takes `ptr[u8]` names; Jac `str` names go through
+`jacpy_object_getattr_text` / `_setattr_text` / `_getoptionalattr_text`.
+compiler-bridge.patch no longer patches object.c: the port's static-type
+table leaves out the symtable and instruction-sequence types itself.
+
 Order after these: `typeobject.c` (12,312 lines) last. The allocator (`obmalloc.c` and the mimalloc copy under
 `Objects/mimalloc/`) follows the object model.
 

@@ -427,7 +427,7 @@ impl meth_get__qualname__(op: ptr[PyObject], _closure: ptr) -> ptr[PyObject] {
     type = self
         if type_has_feature(object_type(self), Py_TPFLAGS_TYPE_SUBCLASS)
         else ptr[PyObject](object_type(self));
-    type_qualname = PyObject_GetAttrString(type, "__qualname__");
+    type_qualname = PyObject_GetAttrString(type, ptr[u8]("__qualname__"));
     if not type_qualname {
         return NULL;
     }

@@ -20093,7 +20093,7 @@ impl config_get_codec_name(config_encoding: ptr[ptr[i32]]) -> i32 {
     if not codec {
         return i32(-1);
     }
-    name_obj = PyObject_GetAttrString(codec, "name");
+    name_obj = PyObject_GetAttrString(codec, ptr[u8]("name"));
     object_decref(codec);
     if not name_obj {
         return i32(-1);

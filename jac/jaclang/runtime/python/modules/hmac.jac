@@ -256,7 +256,7 @@ impl find_hash_info(module: ptr[PyObject], ref: ptr[PyObject]) -> HashInfo | Non
         if found is not None {
             return found;
         }
-        lower = PyObject_GetAttrString(ref, "lower");
+        lower = PyObject_GetAttrString(ref, ptr[u8]("lower"));
         if not lower {
             return None;
         }

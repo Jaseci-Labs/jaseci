@@ -1341,7 +1341,7 @@ impl _multibytecodec_MultibyteIncrementalEncoder_reset_impl(
 }
 
 impl type_codec(type: ptr[PyObject], definition: ptr) -> ptr[PyObject] {
-    codec = PyObject_GetAttrString(type, "codec");
+    codec = PyObject_GetAttrString(type, ptr[u8]("codec"));
     if not codec {
         return NULL;
     }

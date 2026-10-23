@@ -156,7 +156,7 @@ import from c {
             PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
             return i32(-1);
         }
-        writer = PyObject_GetAttrString(f, "write");
+        writer = PyObject_GetAttrString(f, ptr[u8]("write"));
         if not writer {
             return i32(-1);
         }
@@ -203,7 +203,7 @@ import from c {
             fd = PyLong_AsInt(o);
         } else {
             meth = NULL;
-            if PyObject_GetOptionalAttrString(o, "fileno", &mut meth) < 0 {
+            if PyObject_GetOptionalAttrString(o, ptr[u8]("fileno"), &mut meth) < 0 {
                 return i32(-1);
             }
             if not meth {

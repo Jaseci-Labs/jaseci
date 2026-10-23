@@ -400,7 +400,7 @@ import from c {
     ) -> ptr[PyObject];  def PyObject_CheckBuffer(obj_: ptr[PyObject]) -> i32;  def PyObject_ClearManagedDict(
         obj_: ptr[PyObject]
     );  def PyObject_ClearWeakRefs(arg0: ptr[PyObject]);  def PyObject_DelAttrString(
-        v: ptr[PyObject], name: str
+        v: ptr[PyObject], name: ptr[u8]
     ) -> i32;  def PyObject_DelItem(o: ptr[PyObject], key: ptr[PyObject]) -> i32;  def PyObject_Dir(
         arg0: ptr[PyObject]
     ) -> ptr[PyObject];  def PyObject_Free(ptr_: ptr);  def PyObject_GC_Del(
@@ -418,7 +418,7 @@ import from c {
     ) -> i32;  def PyObject_GetAttr(
         arg0: ptr[PyObject], arg1: ptr[PyObject]
     ) -> ptr[PyObject];  def PyObject_GetAttrString(
-        arg0: ptr[PyObject], arg1: str
+        arg0: ptr[PyObject], arg1: ptr[u8]
     ) -> ptr[PyObject];  def PyObject_GetBuffer(
         obj_: ptr[PyObject], view: ptr[Py_buffer], flags: i32
     ) -> i32;  def PyObject_GetItem(
@@ -426,7 +426,7 @@ import from c {
     ) -> ptr[PyObject];  def PyObject_GetIter(arg0: ptr[PyObject]) -> ptr[PyObject];  def PyObject_GetOptionalAttr(
         arg0: ptr[PyObject], arg1: ptr[PyObject], arg2: &mut ptr[PyObject]
     ) -> i32;  def PyObject_GetOptionalAttrString(
-        arg0: ptr[PyObject], arg1: str, arg2: &mut ptr[PyObject]
+        arg0: ptr[PyObject], arg1: ptr[u8], arg2: &mut ptr[PyObject]
     ) -> i32;  def PyObject_HasAttrWithError(
         arg0: ptr[PyObject], arg1: ptr[PyObject]
     ) -> i32;  def PyObject_Hash(arg0: ptr[PyObject]) -> i64;  def PyObject_HashNotImplemented(
@@ -448,7 +448,7 @@ import from c {
     ) -> i32;  def PyObject_SelfIter(arg0: ptr[PyObject]) -> ptr[PyObject];  def PyObject_SetAttr(
         arg0: ptr[PyObject], arg1: ptr[PyObject], arg2: ptr[PyObject]
     ) -> i32;  def PyObject_SetAttrString(
-        arg0: ptr[PyObject], arg1: str, arg2: ptr[PyObject]
+        arg0: ptr[PyObject], arg1: ptr[u8], arg2: ptr[PyObject]
     ) -> i32;  def PyObject_SetItem(
         o: ptr[PyObject], key: ptr[PyObject], v: ptr[PyObject]
     ) -> i32;  def PyObject_Str(arg0: ptr[PyObject]) -> ptr[PyObject];  def PyObject_Vectorcall(
@@ -936,9 +936,13 @@ import from c {
         data: bytes, size: i64
     ) -> ptr[PyObject];  def jacpy_unicode_from_text(text: str) -> ptr[PyObject];  def jacpy_unicode_intern_text(
         text: str
-    ) -> ptr[PyObject];  def jacpy_unicode_equal_text(
-        op: ptr[PyObject], text: str
-    ) -> i32;  def jacpy_unicode_writer_write_text(
+    ) -> ptr[PyObject];  def jacpy_object_getattr_text(
+        op: ptr[PyObject], name: str
+    ) -> ptr[PyObject];  def jacpy_object_setattr_text(
+        op: ptr[PyObject], name: str, value: ptr[PyObject]
+    ) -> i32;  def jacpy_object_getoptionalattr_text(
+        op: ptr[PyObject], name: str, result: &mut ptr[PyObject]
+    ) -> i32;  def jacpy_unicode_equal_text(op: ptr[PyObject], text: str) -> i32;  def jacpy_unicode_writer_write_text(
         writer: ptr[PyUnicodeWriter], text: str, size: i64
     ) -> i32;  def jacpy_bytes_length(value: ptr[PyObject]) -> i64;  def jacpy_bytes_unescape(
         value: ptr[PyObject]

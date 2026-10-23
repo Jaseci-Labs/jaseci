@@ -65,7 +65,7 @@ impl call_method(
     if not packed {
         return NULL;
     }
-    method = PyObject_GetAttrString(target, name);
+    method = jacpy_object_getattr_text(target, name);
     if not method {
         jacpy_release(packed);
         return NULL;

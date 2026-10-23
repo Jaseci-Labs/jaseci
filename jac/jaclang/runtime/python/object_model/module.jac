@@ -247,7 +247,7 @@ import from c {
     ) -> ptr[PyObject] {
         interp = ptr(current_interp());
         PyModuleDef_Init(mdef);
-        nameobj = PyObject_GetAttrString(spec, "name");
+        nameobj = PyObject_GetAttrString(spec, ptr[u8]("name"));
         if not nameobj {
             return NULL;
         }
@@ -644,7 +644,7 @@ impl dict_get(dict: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
 
 impl optional_attr(op: ptr[PyObject], name: str) -> tuple[i32, ptr[PyObject]] {
     value: ptr[PyObject] = NULL;
-    status = PyObject_GetOptionalAttrString(op, name, &mut value);
+    status = jacpy_object_getoptionalattr_text(op, name, &mut value);
     return (status, value);
 }
 
@@ -1238,7 +1238,7 @@ impl module_clear(op: ptr[PyObject]) -> i32 {
 
 impl module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
     result = NULL;
-    dict = PyObject_GetAttrString(op, "__dict__");
+    dict = PyObject_GetAttrString(op, ptr[u8]("__dict__"));
     if dict {
         if dict_check(dict) {
             key = PyUnicode_InternFromString(ptr[u8]("__dir__"));
@@ -1258,7 +1258,7 @@ impl module_dir(op: ptr[PyObject], _unused: ptr[PyObject]) -> ptr[PyObject] {
 }
 
 impl module_get_dict(op: ptr[PyObject]) -> ptr[PyObject] {
-    dict = PyObject_GetAttrString(op, "__dict__");
+    dict = PyObject_GetAttrString(op, ptr[u8]("__dict__"));
     if not dict {
         return NULL;
     }

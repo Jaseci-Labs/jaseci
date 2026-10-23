@@ -651,7 +651,7 @@ impl set_xml_error(
 impl set_error_attribute(
     error: ptr[PyObject], name: str, value: ptr[PyObject]
 ) -> bool {
-    ok = value != NULL and PyObject_SetAttrString(error, name, value) != -1;
+    ok = value != NULL and jacpy_object_setattr_text(error, name, value) != -1;
     jacpy_release(value);
     return ok;
 }

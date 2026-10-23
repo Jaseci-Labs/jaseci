@@ -1632,3 +1632,46 @@ PyObject *jacpy_unicode_from_text(const char *text) { return PyUnicode_FromStrin
 PyObject *jacpy_unicode_intern_text(const char *text) { return PyUnicode_InternFromString(text); }
 int jacpy_unicode_equal_text(PyObject *op, const char *text) { return PyUnicode_EqualToUTF8(op, text); }
 int jacpy_unicode_writer_write_text(PyUnicodeWriter *writer, const char *text, Py_ssize_t size) { return PyUnicodeWriter_WriteASCII(writer, text, size); }
+
+
+
+
+/* _Py_Dealloc, as Objects/object.c defines it for the release build. The
+ * rest of object.c is object_model/object.jac; this function stays C because
+ * its trashcan test reads the machine stack pointer against the thread's C
+ * stack limit (_Py_RecursionLimit_GetMargin), which Jac cannot express, and
+ * it runs on every deallocation, so the thread state comes from the
+ * thread-local slot rather than a call. When the stack is nearly exhausted a
+ * GC object is parked on the thread's delete_later list instead of being
+ * deallocated (_PyTrash_thread_deposit_object, in Jac), and the list is
+ * drained (_PyTrash_thread_destroy_chain) once the stack is shallower. */
+#include "internal/pycore_object.h"
+#include "internal/pycore_pystate.h"
+
+void
+_Py_Dealloc(PyObject *op)
+{
+    PyTypeObject *type = Py_TYPE(op);
+    unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
+    destructor dealloc = type->tp_dealloc;
+    PyThreadState *tstate = _PyThreadState_GET();
+    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
+    if (margin < 2 && gc_flag) {
+        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+        return;
+    }
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
+    (*dealloc)(op);
+    if (tstate->delete_later && margin >= 4 && gc_flag) {
+        _PyTrash_thread_destroy_chain(tstate);
+    }
+}
+
+/* The stdio stream stdin (0), stdout (1) or stderr (2), for the object
+ * dumps of object_model/object.jac: the streams are macros or differently
+ * named globals across C libraries. */
+FILE *jacpy_stdio_stream(int32_t stream) { return stream == 2 ? stderr : stream == 1 ? stdout : stdin; }
+/* The attribute C API for a Jac str name, which arrives as its UTF-8 address. */
+PyObject *jacpy_object_getattr_text(PyObject *op, const char *name) { return PyObject_GetAttrString(op, name); }
+int jacpy_object_setattr_text(PyObject *op, const char *name, PyObject *value) { return PyObject_SetAttrString(op, name, value); }
+int jacpy_object_getoptionalattr_text(PyObject *op, const char *name, PyObject **result) { return PyObject_GetOptionalAttrString(op, name, result); }

@@ -1470,7 +1470,7 @@ impl call_typing_func_object(name: str, args: list[ptr[PyObject]]) -> ptr[PyObje
     if not typing {
         return NULL;
     }
-    func = PyObject_GetAttrString(typing, name);
+    func = jacpy_object_getattr_text(typing, name);
     if not func {
         object_decref(typing);
         return NULL;
@@ -1538,7 +1538,7 @@ impl unpack(self: ptr[PyObject]) -> ptr[PyObject] {
     if not typing {
         return NULL;
     }
-    unpack_form = PyObject_GetAttrString(typing, "Unpack");
+    unpack_form = PyObject_GetAttrString(typing, ptr[u8]("Unpack"));
     if not unpack_form {
         object_decref(typing);
         return NULL;
@@ -1644,7 +1644,7 @@ impl mro_entries_error(name: str) -> ptr[PyObject] {
 }
 
 impl with_module(op: ptr[PyObject], module: ptr[PyObject]) -> ptr[PyObject] {
-    if module and PyObject_SetAttrString(op, "__module__", module) < 0 {
+    if module and PyObject_SetAttrString(op, ptr[u8]("__module__"), module) < 0 {
         object_decref(op);
         return NULL;
     }
@@ -1911,7 +1911,7 @@ impl typevar_typing_prepare_subst(
     }
     alias = args.view(1)[0];
     subst_args = (args + 1).view(1)[0];
-    params = PyObject_GetAttrString(alias, "__parameters__");
+    params = PyObject_GetAttrString(alias, ptr[u8]("__parameters__"));
     if not params {
         return NULL;
     }
@@ -2628,7 +2628,7 @@ impl call_typing_args_kwargs(
     if not typing {
         return NULL;
     }
-    func = PyObject_GetAttrString(typing, name);
+    func = jacpy_object_getattr_text(typing, name);
     if not func {
         object_decref(typing);
         return NULL;

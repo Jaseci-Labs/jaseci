@@ -512,7 +512,7 @@ impl call_typing_type_check(
     if not typing {
         return NULL;
     }
-    func = PyObject_GetAttrString(typing, "_type_check");
+    func = PyObject_GetAttrString(typing, ptr[u8]("_type_check"));
     if not func {
         jacpy_release(typing);
         return NULL;

@@ -699,7 +699,7 @@ impl pickle_state.reduce_value(value: ptr[PyObject], reduced: ptr[PyObject]) {
                             + type_name(cls, True)
                     );
                 }
-                actual = required(PyObject_GetAttrString(value, "__class__"));
+                actual = required(PyObject_GetAttrString(value, ptr[u8]("__class__")));
                 if cls != actual {
                     self.fail(
                         "first argument to __newobj__() must be "
@@ -737,7 +737,7 @@ impl pickle_state.reduce_value(value: ptr[PyObject], reduced: ptr[PyObject]) {
                             + type_name(cls, True)
                     );
                 }
-                actual = required(PyObject_GetAttrString(value, "__class__"));
+                actual = required(PyObject_GetAttrString(value, ptr[u8]("__class__")));
                 if cls != actual {
                     self.fail(
                         "first argument to __newobj_ex__() must be "
@@ -775,7 +775,9 @@ impl pickle_state.reduce_value(value: ptr[PyObject], reduced: ptr[PyObject]) {
                     partial: ptr[PyObject] = NULL;
                     empty: ptr[PyObject] = NULL;
                     try {
-                        new_method = required(PyObject_GetAttrString(cls, "__new__"));
+                        new_method = required(
+                            PyObject_GetAttrString(cls, ptr[u8]("__new__"))
+                        );
                         prefix = object_tuple([new_method, cls]);
                         combined = required(PyNumber_Add(prefix, positional));
                         partial = required(
@@ -937,7 +939,9 @@ impl pickle_state.other(value: ptr[PyObject], kind: int) {
                     jacpy_release(protocol);
                 }
             } else {
-                reducer = required(PyObject_GetAttrString(value, "__reduce__"));
+                reducer = required(
+                    PyObject_GetAttrString(value, ptr[u8]("__reduce__"))
+                );
                 args = object_tuple([]);
                 try {
                     reduced = required(PyObject_Call(reducer, args, NULL));
@@ -958,7 +962,7 @@ impl pickle_state.pickle_buffer(value: ptr[PyObject]) {
     if self.protocol < 5 {
         self.fail("PickleBuffer can only be pickled with protocol >= 5");
     }
-    method = required(PyObject_GetAttrString(value, "raw"));
+    method = required(PyObject_GetAttrString(value, ptr[u8]("raw")));
     arguments: ptr[PyObject] = NULL;
     view: ptr[PyObject] = NULL;
     readonly: ptr[PyObject] = NULL;
@@ -967,7 +971,7 @@ impl pickle_state.pickle_buffer(value: ptr[PyObject]) {
     try {
         arguments = object_tuple([]);
         view = required(PyObject_Call(method, arguments, NULL));
-        readonly = required(PyObject_GetAttrString(view, "readonly"));
+        readonly = required(PyObject_GetAttrString(view, ptr[u8]("readonly")));
         truth = PyObject_IsTrue(readonly);
         checked(truth);
         in_band: i64 = 1;
@@ -986,7 +990,7 @@ impl pickle_state.pickle_buffer(value: ptr[PyObject]) {
                 self.emit(opcode.READONLY_BUFFER);
             }
         } else {
-            bytes_method = required(PyObject_GetAttrString(view, "tobytes"));
+            bytes_method = required(PyObject_GetAttrString(view, ptr[u8]("tobytes")));
             raw = required(PyObject_Call(bytes_method, arguments, NULL));
             self.blob(
                 raw, builtin_kind.BYTES if truth != 0 else builtin_kind.BYTEARRAY

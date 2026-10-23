@@ -995,7 +995,7 @@ impl _sre_SRE_Pattern_finditer_impl(
     if not scanner {
         return NULL;
     }
-    search = PyObject_GetAttrString(scanner, "search");
+    search = PyObject_GetAttrString(scanner, ptr[u8]("search"));
     jacpy_release(scanner);
     if not search {
         return NULL;

@@ -922,7 +922,7 @@ impl register_callbacks(
     jacpy_release(check);
     all_events = 0;
     for (event, name) in CALLBACK_TABLE {
-        callback = PyObject_GetAttrString(receiver, name);
+        callback = jacpy_object_getattr_text(receiver, name);
         if not callback {
             return False;
         }
@@ -1073,7 +1073,7 @@ impl profiler_init_impl(
     if not monitoring {
         return i32(-1);
     }
-    missing = PyObject_GetAttrString(monitoring, "MISSING");
+    missing = PyObject_GetAttrString(monitoring, ptr[u8]("MISSING"));
     jacpy_release(monitoring);
     if not missing {
         return i32(-1);

@@ -222,7 +222,9 @@ import from c {
                 continue;
             }
             subparams = NULL;
-            if PyObject_GetOptionalAttrString(t, "__parameters__", &mut subparams)
+            if PyObject_GetOptionalAttrString(
+                t, ptr[u8]("__parameters__"), &mut subparams
+            )
                 < 0 {
                 jacpy_release(parameters);
                 jacpy_release(tuple_args);
@@ -283,7 +285,7 @@ import from c {
             param = tuple_get_item(parameters, i64(i));
             prepare = NULL;
             if PyObject_GetOptionalAttrString(
-                param, "__typing_prepare_subst__", &mut prepare
+                param, ptr[u8]("__typing_prepare_subst__"), &mut prepare
             )
                 < 0 {
                 jacpy_release(item);
@@ -366,7 +368,9 @@ import from c {
                 return NULL;
             }
             subst = NULL;
-            if PyObject_GetOptionalAttrString(arg, "__typing_subst__", &mut subst)
+            if PyObject_GetOptionalAttrString(
+                arg, ptr[u8]("__typing_subst__"), &mut subst
+            )
                 < 0 {
                 jacpy_release(newargs);
                 jacpy_release(item);
@@ -643,7 +647,10 @@ impl subs_tvars(
     obj_arg: ptr[PyObject], params: ptr[PyObject], item: ptr[PyObject]
 ) -> ptr[PyObject] {
     subparams = NULL;
-    if PyObject_GetOptionalAttrString(obj_arg, "__parameters__", &mut subparams) < 0 {
+    if PyObject_GetOptionalAttrString(
+        obj_arg, ptr[u8]("__parameters__"), &mut subparams
+    )
+        < 0 {
         return NULL;
     }
     if not subparams or jacpy_is_tuple(subparams) == 0 or object_size(subparams) == 0 {
@@ -689,7 +696,7 @@ impl is_unpacked_typevartuple(arg: ptr[PyObject]) -> i32 {
     }
     tmp = NULL;
     result = PyObject_GetOptionalAttrString(
-        arg, "__typing_is_unpacked_typevartuple__", &mut tmp
+        arg, ptr[u8]("__typing_is_unpacked_typevartuple__"), &mut tmp
     );
     if result > 0 {
         result = PyObject_IsTrue(tmp);
@@ -706,7 +713,7 @@ impl unpacked_tuple_args(arg: ptr[PyObject]) -> ptr[PyObject] {
     }
     result = NULL;
     if PyObject_GetOptionalAttrString(
-        arg, "__typing_unpacked_tuple_args__", &mut result
+        arg, ptr[u8]("__typing_unpacked_tuple_args__"), &mut result
     )
         > 0 {
         if result == Py_None {
@@ -804,7 +811,7 @@ impl ga_hash(op: ptr[PyObject]) -> i64 {
 }
 
 impl set_orig_class(result: ptr[PyObject], op: ptr[PyObject]) -> ptr[PyObject] {
-    if result and PyObject_SetAttrString(result, "__orig_class__", op) < 0 {
+    if result and PyObject_SetAttrString(result, ptr[u8]("__orig_class__"), op) < 0 {
         if PyErr_ExceptionMatches(PyExc_AttributeError) == 0
             and PyErr_ExceptionMatches(PyExc_TypeError) == 0 {
             jacpy_release(result);

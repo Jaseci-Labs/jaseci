@@ -3125,7 +3125,7 @@ impl expat_set_error(
         jacpy_release(error);
         return;
     }
-    if PyObject_SetAttrString(error, "code", number) == -1 {
+    if PyObject_SetAttrString(error, ptr[u8]("code"), number) == -1 {
         jacpy_release(error);
         jacpy_release(number);
         return;
@@ -3148,7 +3148,7 @@ impl expat_set_error(
         jacpy_release(error);
         return;
     }
-    if PyObject_SetAttrString(error, "position", position) == -1 {
+    if PyObject_SetAttrString(error, ptr[u8]("position"), position) == -1 {
         jacpy_release(error);
         jacpy_release(position);
         return;
@@ -3601,7 +3601,7 @@ impl _elementtree_XMLParser___init___impl(
     }
     replace_field(parser_field(receiver, XP_TARGET), target);
     for (offset, name) in XP_HANDLERS {
-        handler = PyObject_GetAttrString(target, name);
+        handler = jacpy_object_getattr_text(target, name);
         replace_field(parser_field(receiver, offset), handler);
         if ignore_attribute_error(handler) {
             return i32(-1);
@@ -3814,7 +3814,7 @@ impl _elementtree_XMLParser__parse_whole_impl(
     if not check_xmlparser(receiver) {
         return NULL;
     }
-    reader = PyObject_GetAttrString(file, "read");
+    reader = PyObject_GetAttrString(file, ptr[u8]("read"));
     if not reader {
         return NULL;
     }
@@ -3896,7 +3896,7 @@ impl _elementtree_XMLParser__setevents_impl(
         );
         return NULL;
     }
-    events_append = PyObject_GetAttrString(events_queue, "append");
+    events_append = PyObject_GetAttrString(events_queue, ptr[u8]("append"));
     if not events_append {
         return NULL;
     }

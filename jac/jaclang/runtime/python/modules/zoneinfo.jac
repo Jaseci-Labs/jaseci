@@ -583,7 +583,7 @@ impl get_weak_cache(state: ZoneInfoModuleState, type: ptr[PyObject]) -> ptr[PyOb
     if type == state.zoneinfo_type {
         return Py_NewRef(state.weak_cache);
     }
-    return PyObject_GetAttrString(type, "_weak_cache");
+    return PyObject_GetAttrString(type, ptr[u8]("_weak_cache"));
 }
 
 impl zoneinfo_ZoneInfo_impl(type: ptr[PyObject], key: ptr[PyObject]) -> ptr[PyObject] {
@@ -842,7 +842,7 @@ impl zoneinfo_fromutc(receiver: ptr[PyObject], dt: ptr[PyObject]) -> ptr[PyObjec
         ptr[PyDateTime_DateTime](shifted).view(1)[0].fold = 1;
         return shifted;
     }
-    replace = PyObject_GetAttrString(shifted, "replace");
+    replace = PyObject_GetAttrString(shifted, ptr[u8]("replace"));
     jacpy_release(shifted);
     if not replace {
         return NULL;
@@ -907,7 +907,7 @@ impl zoneinfo_reduce(receiver: ptr[PyObject], unused: ptr[PyObject]) -> ptr[PyOb
         return NULL;
     }
     from_cache = 1 if zone.source == SOURCE_CACHE else 0;
-    constructor = PyObject_GetAttrString(receiver, "_unpickle");
+    constructor = PyObject_GetAttrString(receiver, ptr[u8]("_unpickle"));
     if not constructor {
         return NULL;
     }
@@ -936,7 +936,7 @@ impl zoneinfo_init_subclass(
     if not weak_cache {
         return NULL;
     }
-    status = PyObject_SetAttrString(cls, "_weak_cache", weak_cache);
+    status = PyObject_SetAttrString(cls, ptr[u8]("_weak_cache"), weak_cache);
     jacpy_release(weak_cache);
     if status < 0 {
         return NULL;
@@ -1690,7 +1690,7 @@ impl ymd_to_ord(y: i64, m: i64, d: i64) -> i64 {
 }
 
 impl int_attribute(dt: ptr[PyObject], name: str) -> (i64 | None) {
-    num = PyObject_GetAttrString(dt, name);
+    num = jacpy_object_getattr_text(dt, name);
     if not num {
         return None;
     }

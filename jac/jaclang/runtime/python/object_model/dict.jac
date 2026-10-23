@@ -410,9 +410,9 @@ import from c {
             }
         }
         return i32(1);
-    }  def _PyDict_EnablePerThreadRefcounting(op: ptr[PyObject]) {}  def _PyDict_NewPresized(
-        minused: i64
-    ) -> ptr[PyObject] {
+    }  def _PyDict_EnablePerThreadRefcounting(op: ptr[PyObject]) -> None {
+        return;
+    }  def _PyDict_NewPresized(minused: i64) -> ptr[PyObject] {
         return dict_new_presized(minused, False);
     }  def _PyDict_FromItems(
         keys: ptr[ptr[PyObject]],

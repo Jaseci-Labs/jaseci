@@ -1442,7 +1442,7 @@ impl hashlib_init_constructors(
             jacpy_release(constructs);
             return NULL;
         }
-        func = PyObject_GetAttrString(module, method.name);
+        func = jacpy_object_getattr_text(module, method.name);
         if not func {
             jacpy_release(name_obj);
             jacpy_release(constructs);

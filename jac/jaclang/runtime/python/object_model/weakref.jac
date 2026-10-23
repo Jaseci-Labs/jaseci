@@ -1444,7 +1444,7 @@ impl proxy_call_method(proxy: ptr[PyObject], name: str) -> ptr[PyObject] {
         return NULL;
     }
 
-    method = PyObject_GetAttrString(ob, name);
+    method = jacpy_object_getattr_text(ob, name);
     object_decref(ob);
     if not method {
         return NULL;
