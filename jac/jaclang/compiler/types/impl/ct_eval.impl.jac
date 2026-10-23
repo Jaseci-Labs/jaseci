@@ -95,7 +95,7 @@ impl CtEvaluator._note_definition(nd: UniNode) {
     }
     owner: (UniNode | None) = nd;
     while owner is not None and not isinstance(owner, (Ability, Archetype, Enum)) {
-        owner = owner.parent;
+        owner = owner.decl_parent;
     }
     qualname = definition_qualname(owner) if owner is not None else "";
     try {
@@ -1057,13 +1057,7 @@ impl CtEvaluator._enum_members(nd: Enum) -> list[CtEnumMember] {
 }
 
 impl CtEvaluator._enum_member_of(asn: Assignment) -> CtEnumMember {
-    enum_nd = asn.find_parent_of_type(Enum);
-    if enum_nd is None {
-        impl_nd = asn.find_parent_of_type(ImplDef);
-        if impl_nd is not None and isinstance(impl_nd.decl_link, Enum) {
-            enum_nd = impl_nd.decl_link;
-        }
-    }
+    enum_nd = asn.enclosing_decl(Enum);
     if enum_nd is None {
         raise CtNotComptime();
     }
@@ -2079,7 +2073,7 @@ impl CtEvaluator._self_type_of(
     if isinstance(self_val, CtRecord) {
         return self.ct_type_of_value(self_val);
     }
-    owner = ability.find_parent_of_type(Archetype);
+    owner = ability.enclosing_decl(Archetype);
     if owner is not None {
         return self._type_of_arch(owner);
     }

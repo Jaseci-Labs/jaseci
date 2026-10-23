@@ -42,7 +42,6 @@ def native_closure_blocker(
 
 def _endpoint_veto_applies(module: uni.Module) -> bool;
 
-def _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None);
 
 def _is_client_top(elem: uni.UniNode) -> bool;
 
