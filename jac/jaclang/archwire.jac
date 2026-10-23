@@ -6049,6 +6049,7 @@ graph import compiler {
             scope_path_of,
             wiring_for_path
         },
+        types.stubcat.writer.CatalogWriter.encode_symbol { is_arch_file },
     ]
     driver.wiring --> frontend.parser.frontend.annex_sources { wiring_annex_for }
     erased_imports ++> [
