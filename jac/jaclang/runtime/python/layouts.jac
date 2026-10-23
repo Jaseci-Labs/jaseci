@@ -342,6 +342,14 @@ import from c {
             it_seq: ptr[PyMemoryViewObject],
             it_length: i64,
             it_fmt: ptr[u8];
+    }  obj PyBytesObject {
+        has ob_base: PyVarObject,
+            ob_shash: i64,
+            ob_sval: i8;
+    }  obj striterobject {
+        has ob_base: _object,
+            it_index: i64,
+            it_seq: ptr[PyBytesObject];
     }  obj PyDescrObject {
         has ob_base: _object,
             d_type: ptr[PyTypeObject],
@@ -1074,6 +1082,11 @@ glob _Py_STATIC_IMMORTAL_INITIAL_REFCNT: Final[i64] = 1407378104778752,
      PyMemoryViewObject_OB_ARRAY: Final[i64] = 144,
      PyMemoryViewObject_WEAKREFLIST: Final[i64] = 136,
      memoryiterobject_SIZE: Final[i64] = 48,
+     PyBytesObject_OB_SVAL: Final[i64] = 32,
+     striterobject_SIZE: Final[i64] = 32,
+     _Py_TYPE_VERSION_BYTES: Final[u32] = 10,
+     _PyBytesWriter_SMALL_BUFFER: Final[i64] = 36,
+     _PyBytesWriter_SIZE: Final[i64] = 552,
      _Py_MANAGED_BUFFER_RELEASED: Final[i32] = 1,
      _Py_MANAGED_BUFFER_FREE_FORMAT: Final[i32] = 2,
      _Py_MEMORYVIEW_RELEASED: Final[i32] = 1,

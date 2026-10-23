@@ -70,6 +70,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Include/cpython/longintrepr.h",
          "Include/cpython/tupleobject.h",
          "Include/cpython/listobject.h",
+         "Include/cpython/bytesobject.h",
          "Include/cpython/initconfig.h",
          "Include/pycapsule.h",
          "Include/descrobject.h",
@@ -118,6 +119,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Objects/funcobject.c",
          "Objects/typevarobject.c",
          "Objects/memoryobject.c",
+         "Objects/bytesobject.c",
          # The socket object and the _socket.CAPI record: the _socket and
          # _ssl ports define and read them; the header has no C user left.
          "Modules/socketmodule.h"
@@ -185,6 +187,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("_PyManagedBufferObject", "_PyManagedBufferObject"),
          ("PyMemoryViewObject", "PyMemoryViewObject"),
          ("memoryiterobject", "memoryiterobject"),
+         ("PyBytesObject", "PyBytesObject"),
+         ("striterobject", "striterobject"),
          ("PyDescrObject", "PyDescrObject"),
          ("wrapperbase", "struct wrapperbase"),
          ("mappingproxyobject", "mappingproxyobject"),
@@ -916,10 +920,31 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyMemoryViewObject_VIEW", "offsetof(PyMemoryViewObject, view)", "i64"),
          ("PyMemoryViewObject_FLAGS", "offsetof(PyMemoryViewObject, flags)", "i64"),
          ("_PyManagedBufferObject_SIZE", "sizeof(_PyManagedBufferObject)", "i64"),
-         ("_PyManagedBufferObject_MASTER", "offsetof(_PyManagedBufferObject, master)", "i64"),
-         ("PyMemoryViewObject_OB_ARRAY", "offsetof(PyMemoryViewObject, ob_array)", "i64"),
-         ("PyMemoryViewObject_WEAKREFLIST", "offsetof(PyMemoryViewObject, weakreflist)", "i64"),
+         (
+             "_PyManagedBufferObject_MASTER",
+             "offsetof(_PyManagedBufferObject, master)",
+             "i64"
+         ),
+         (
+             "PyMemoryViewObject_OB_ARRAY",
+             "offsetof(PyMemoryViewObject, ob_array)",
+             "i64"
+         ),
+         (
+             "PyMemoryViewObject_WEAKREFLIST",
+             "offsetof(PyMemoryViewObject, weakreflist)",
+             "i64"
+         ),
          ("memoryiterobject_SIZE", "sizeof(memoryiterobject)", "i64"),
+         ("PyBytesObject_OB_SVAL", "offsetof(PyBytesObject, ob_sval)", "i64"),
+         ("striterobject_SIZE", "sizeof(striterobject)", "i64"),
+         ("_Py_TYPE_VERSION_BYTES", "_Py_TYPE_VERSION_BYTES", "u32"),
+         (
+             "_PyBytesWriter_SMALL_BUFFER",
+             "offsetof(_PyBytesWriter, small_buffer)",
+             "i64"
+         ),
+         ("_PyBytesWriter_SIZE", "sizeof(_PyBytesWriter)", "i64"),
          ("_Py_MANAGED_BUFFER_RELEASED", "_Py_MANAGED_BUFFER_RELEASED", "i32"),
          ("_Py_MANAGED_BUFFER_FREE_FORMAT", "_Py_MANAGED_BUFFER_FREE_FORMAT", "i32"),
          ("_Py_MEMORYVIEW_RELEASED", "_Py_MEMORYVIEW_RELEASED", "i32"),
@@ -1095,6 +1120,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
      # form of CONSTANTS.
      PLATFORM_CONSTANTS: list[tuple[str, str, str]] = [
          ("PyConfig_VERBOSE", "offsetof(PyConfig, verbose)", "i64"),
+         ("PyConfig_BYTES_WARNING", "offsetof(PyConfig, bytes_warning)", "i64"),
          ("PyConfig_SAFE_PATH", "offsetof(PyConfig, safe_path)", "i64"),
          ("PyConfig_SYS_PATH_0", "offsetof(PyConfig, sys_path_0)", "i64"),
          (
@@ -1216,6 +1242,21 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          (
              "PyInterpreterState_LONG_MAX_STR_DIGITS",
              "offsetof(PyInterpreterState, long_state.max_str_digits)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_BYTES_EMPTY",
+             "offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_BYTES_CHARACTERS",
+             "offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_BYTES_CHARACTER_SIZE",
+             "sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0])",
              "i64"
          ),
          (
@@ -1371,6 +1412,8 @@ obj Headers {
 def strip_comments(text: str) -> str {
     text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S);
     text = re.sub(r"//[^\n]*", "", text);
+    # An attribute (PyBytesObject's ob_shash); it does not change the layout.
+    text = re.sub(r"\bPy_DEPRECATED\([^)]*\)", "", text);
     return text.replace("\\\n", " ");
 }
 

@@ -711,7 +711,16 @@ replace, join, the padding methods). bytes and bytearray share it; the
 stringlib headers stay until `unicodeobject.c`, which includes them, is
 ported.
 
-Order after these: text (`bytesobject.c`, `bytearrayobject.c`,
+`bytesobject.c` (`object_model/bytes.jac`) reads the empty and one-byte
+bytes objects in place in `_PyRuntime`, like the small ints, and defines the
+`_PyBytesWriter` API that unicodeobject.c, `_pickle`, `_struct` and the int
+port write through. `PyBytes_FromFormatV` stays C (in object_api.c): a Jac
+definition cannot receive a `va_list`. `PyBytes_FromFormat`, which is
+variadic, is Jac. A Jac `bytes` value reaches `PyBytes_FromStringAndSize`'s
+callers through `jacpy_bytes_from_payload`, since the C definition takes a
+pointer.
+
+Order after these: text (`bytearrayobject.c`,
 `unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
 (`obmalloc.c` and the mimalloc copy under `Objects/mimalloc/`) follows the
 object model.

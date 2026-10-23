@@ -7,6 +7,7 @@ its platform.
 
 glob LAYOUTS_PLATFORM: str = "linux.x86_64",
      PyConfig_VERBOSE: Final[i64] = 208,
+     PyConfig_BYTES_WARNING: Final[i64] = 180,
      PyConfig_SAFE_PATH: Final[i64] = 260,
      PyConfig_SYS_PATH_0: Final[i64] = 432,
      PyInterpreterState_CEVAL_OWN_GIL: Final[i64] = 24,
@@ -34,6 +35,9 @@ glob LAYOUTS_PLATFORM: str = "linux.x86_64",
      PyInterpreterState_DICT_WATCHERS: Final[i64] = 79824,
      _PyRuntimeState_SMALL_INTS: Final[i64] = 13968,
      PyInterpreterState_LONG_MAX_STR_DIGITS: Final[i64] = 11808,
+     _PyRuntimeState_BYTES_EMPTY: Final[i64] = 22352,
+     _PyRuntimeState_BYTES_CHARACTERS: Final[i64] = 22392,
+     _PyRuntimeState_BYTES_CHARACTER_SIZE: Final[i64] = 48,
      _PyRuntimeState_REF_TRACER_FUNC: Final[i64] = 10432,
      _PyRuntimeState_REF_TRACER_DATA: Final[i64] = 10440,
      _PyRuntimeState_TUPLE_EMPTY: Final[i64] = 90544;

@@ -15777,6 +15777,13 @@ graph import runtime.python {
             keywords_of_dict
         },
         modules.math { vector_tuple },
+        object_model.bytes | object_model.long | object_model.memory {
+            BoundArguments,
+            CallSignature,
+            PARSE_KEYWORDS,
+            invoke,
+            invoke_vector
+        },
         object_model.bytes_methods | object_model.list | object_model.odict {
             BoundArguments,
             CallSignature,
@@ -15796,13 +15803,6 @@ graph import runtime.python {
             CallSignature,
             PARSE_KEYWORDS,
             invoke_tuple
-        },
-        object_model.long | object_model.memory {
-            BoundArguments,
-            CallSignature,
-            PARSE_KEYWORDS,
-            invoke,
-            invoke_vector
         },
     ]
     bindings.array ++> inittab { PyInit_array }
@@ -15991,6 +15991,7 @@ graph import runtime.python {
         modules.datetime_date
             | modules.decimal_context
             | modules.socket_object
+            | object_model.bytes
             | object_model.cell
             | object_model.cfunction
             | object_model.descr
@@ -20084,7 +20085,6 @@ graph import runtime.python {
         modules.posixsubprocess {
             NULL,
             PyBytes_AsString,
-            PyBytes_FromStringAndSize,
             PyBytes_Size,
             PyErr_NoMemory,
             PyErr_Occurred,
@@ -20121,6 +20121,7 @@ graph import runtime.python {
             _Py_RestoreSignals,
             _Py_set_inheritable_async_safe,
             _Py_write_noraise,
+            jacpy_bytes_from_payload,
             jacpy_errno,
             jacpy_fast_item,
             jacpy_fast_size,
@@ -21412,6 +21413,84 @@ graph import runtime.python {
             _PyArg_NoKeywords,
             _PyArg_NoKwnames,
             _Py_SetImmortal
+        },
+        object_model.bytes {
+            NULL,
+            PyBool_FromLong,
+            PyBuffer_Release,
+            PyByteArray_AsString,
+            PyByteArray_Resize,
+            PyByteArray_Type,
+            PyErr_BadArgument,
+            PyErr_BadInternalCall,
+            PyErr_Clear,
+            PyErr_ExceptionMatches,
+            PyErr_Format,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetString,
+            PyErr_WarnEx,
+            PyErr_WarnFormat,
+            PyExc_DeprecationWarning,
+            PyExc_IndexError,
+            PyExc_OverflowError,
+            PyExc_SystemError,
+            PyExc_TypeError,
+            PyExc_ValueError,
+            PyFloat_AsDouble,
+            PyIndex_Check,
+            PyIter_Next,
+            PyList_GetItemRef,
+            PyList_Type,
+            PyLong_AsInt,
+            PyLong_AsLongAndOverflow,
+            PyLong_AsSsize_t,
+            PyLong_FromSsize_t,
+            PyLong_Type,
+            PyMem_Calloc,
+            PyMem_Free,
+            PyMem_Malloc,
+            PyMethodDef,
+            PyNumber_AsSsize_t,
+            PyNumber_Check,
+            PyNumber_Long,
+            PyOS_double_to_string,
+            PyObject,
+            PyObject_CallNoArgs,
+            PyObject_CallOneArg,
+            PyObject_CheckBuffer,
+            PyObject_Free,
+            PyObject_GC_Del,
+            PyObject_GenericGetAttr,
+            PyObject_GetBuffer,
+            PyObject_GetItem,
+            PyObject_GetIter,
+            PyObject_IsTrue,
+            PyObject_LengthHint,
+            PyObject_Malloc,
+            PyObject_SelfIter,
+            PySlice_Type,
+            PyTuple_GetItem,
+            PyTuple_Type,
+            PyType_GenericAlloc,
+            PyUnicode_AsUTF8AndSize,
+            PyUnicode_GetLength,
+            PyUnicode_InternFromString,
+            PyUnicode_New,
+            Py_BuildValue,
+            Py_HashBuffer,
+            Py_None,
+            Py_NotImplemented,
+            Py_buffer,
+            _PyArg_BadArgument,
+            _PyArg_CheckPositional,
+            _PyEval_SliceIndex,
+            _PyNumber_Index,
+            _PyObject_GC_New,
+            _PyObject_LookupSpecial,
+            _PyRuntime,
+            jacpy_unicode_data,
+            jacpy_unicode_kind
         },
         object_model.bytes_methods {
             NULL,
@@ -23067,7 +23146,6 @@ graph import runtime.python {
         capi {
             PyBool_Type,
             PyByteArray_Type,
-            PyBytes_FromStringAndSize,
             PyBytes_Type,
             PyDict_GetItemRef,
             PyDict_SetItem,
@@ -23098,6 +23176,7 @@ graph import runtime.python {
             _PyNone_Type,
             jacpy_bytes_copy_to,
             jacpy_bytes_from_memory,
+            jacpy_bytes_from_payload,
             jacpy_bytes_length,
             jacpy_qualified_type_name,
             jacpy_release,
@@ -23408,6 +23487,45 @@ graph import runtime.python {
             _PyLong_TRUE_TAG,
             _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
             _object
+        },
+        object_model.bytes {
+            METH_CLASS,
+            METH_FASTCALL,
+            METH_KEYWORDS,
+            METH_NOARGS,
+            METH_O,
+            METH_STATIC,
+            PyBUF_FULL_RO,
+            PyBUF_SIMPLE,
+            PyBufferProcs,
+            PyBytesObject,
+            PyBytesObject_OB_SVAL,
+            PyMappingMethods,
+            PyNumberMethods,
+            PySequenceMethods,
+            PyTypeObject,
+            PyVarObject,
+            Py_EQ,
+            Py_GE,
+            Py_GT,
+            Py_LE,
+            Py_LT,
+            Py_NE,
+            Py_TPFLAGS_BASETYPE,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_DEFAULT,
+            Py_TPFLAGS_HAVE_GC,
+            Py_TPFLAGS_LONG_SUBCLASS,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_TPFLAGS_UNICODE_SUBCLASS,
+            _PyBytesWriter_SIZE,
+            _PyBytesWriter_SMALL_BUFFER,
+            _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+            _Py_TPFLAGS_MATCH_SELF,
+            _Py_TYPE_VERSION_BYTES,
+            _object,
+            striterobject,
+            striterobject_SIZE
         },
         object_model.bytes_methods {
             PyBUF_SIMPLE,
@@ -24493,6 +24611,12 @@ graph import runtime.python {
         },
     ]
     layouts_platform ++> [
+        object_model.bytes {
+            PyConfig_BYTES_WARNING,
+            _PyRuntimeState_BYTES_CHARACTERS,
+            _PyRuntimeState_BYTES_CHARACTER_SIZE,
+            _PyRuntimeState_BYTES_EMPTY
+        },
         object_model.dict {
             PyInterpreterState_DICT_NEXT_KEYS_VERSION,
             PyInterpreterState_DICT_WATCHERS
@@ -31958,6 +32082,50 @@ graph import runtime.python.object_model {
         file { PyBool_FromLong, bool_check },
         range { bool_check },
     ]
+    bytes_methods ++> bytes {
+        _Py_bytes_contains,
+        _Py_bytes_count,
+        _Py_bytes_endswith,
+        _Py_bytes_find,
+        _Py_bytes_index,
+        _Py_bytes_maketrans,
+        _Py_bytes_rfind,
+        _Py_bytes_rindex,
+        _Py_bytes_startswith,
+        bl_bytes_join,
+        bl_capitalize,
+        bl_center,
+        bl_expandtabs,
+        bl_find,
+        bl_isalnum,
+        bl_isalpha,
+        bl_isascii,
+        bl_isdigit,
+        bl_islower,
+        bl_isspace,
+        bl_istitle,
+        bl_isupper,
+        bl_ljust,
+        bl_lower,
+        bl_partition,
+        bl_replace,
+        bl_rfind,
+        bl_rjust,
+        bl_rpartition,
+        bl_rsplit,
+        bl_rsplit_whitespace,
+        bl_split,
+        bl_split_whitespace,
+        bl_splitlines,
+        bl_swapcase,
+        bl_title,
+        bl_upper,
+        bl_zfill,
+        py_isalpha,
+        py_isdigit,
+        py_isspace,
+        py_isxdigit
+    }
     capsule ++> cfunction | module { strlen }
     cfunction ++> [
         descr { PyCMethod_New },
@@ -31999,6 +32167,22 @@ graph import runtime.python.object_model {
         | weakref { Py_GenericAlias }
     header ++> [
         bool { object_is_type },
+        bytes {
+            eval_builtin,
+            object_decref,
+            object_gc_track,
+            object_gc_untrack,
+            object_is_type,
+            object_new_ref,
+            object_refcount,
+            object_size,
+            object_type,
+            object_type_check,
+            object_xdecref,
+            rich_compare_values,
+            tuple_get_item,
+            type_has_feature
+        },
         bytes_methods {
             fast_items,
             object_decref,
@@ -32411,14 +32595,15 @@ graph import runtime.python.object_model {
         interpolation_check_exact
     }
     list ++> dict { memcmp }
+    long ++> bytes { get_small_int }
     method ++> func { PyMethod_New }
     set ++> exceptions { Py_FatalError }
     slice ++> [
-        list | memory | tuple { PySlice_AdjustIndices, PySlice_Unpack },
+        bytes | list | memory | tuple { PySlice_AdjustIndices, PySlice_Unpack },
         range { slice_check, slice_get_long_indices },
     ]
     structseq ++> float | long { PyStructSequence_New }
-    tuple ++> float | long { reftracer_track }
+    tuple ++> bytes | float | long { reftracer_track }
     union ++> genericalias { _Py_union_type_or }
 }
 

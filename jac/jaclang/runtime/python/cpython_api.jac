@@ -117,11 +117,11 @@ import from c {
     ) -> i32;  def PyBytes_Concat(arg0: &mut ptr[PyObject], arg1: ptr[PyObject]);  def PyBytes_DecodeEscape(
         arg0: ptr, arg1: i64, arg2: ptr[u8], arg3: i64, arg4: ptr[u8]
     ) -> ptr[PyObject];  def PyBytes_FromFormat(
-        arg0: str, *args: any
+        arg0: ptr[u8], *args: any
     ) -> ptr[PyObject];  def PyBytes_FromObject(arg0: ptr[PyObject]) -> ptr[PyObject];  def PyBytes_FromString(
         arg0: ptr
     ) -> ptr[PyObject];  def PyBytes_FromStringAndSize(
-        arg0: bytes, arg1: i64
+        arg0: ptr[u8], arg1: i64
     ) -> ptr[PyObject];  def PyBytes_Join(
         sep: ptr[PyObject], iterable: ptr[PyObject]
     ) -> ptr[PyObject];  def PyBytes_Size(arg0: ptr[PyObject]) -> i64;  def PyCFunction_NewEx(
@@ -938,7 +938,7 @@ import from c {
         source: str, size: i64
     ) -> ptr[PyObject];  def jacpy_bytes_from_memory(
         address: ptr, size: i64
-    ) -> ptr[PyObject];  def jacpy_bytes_length(value: ptr[PyObject]) -> i64;  def jacpy_bytes_unescape(
+    ) -> ptr[PyObject];  def jacpy_bytes_from_payload(data: bytes, size: i64) -> ptr[PyObject];  def jacpy_bytes_length(value: ptr[PyObject]) -> i64;  def jacpy_bytes_unescape(
         value: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_call_two(
         callable_: ptr[PyObject], a: ptr[PyObject], b: ptr[PyObject]

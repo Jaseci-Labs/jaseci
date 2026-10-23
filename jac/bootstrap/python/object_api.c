@@ -263,6 +263,8 @@ PyObject *jacpy_bytearray_new(int64_t size) { return PyByteArray_FromStringAndSi
 int64_t jacpy_bytearray_memory(PyObject *value) { return PyByteArray_Type.tp_basicsize + ((PyByteArrayObject *)value)->ob_alloc; }
 uint64_t jacpy_float32_bits(double value) { float number = (float)value; uint32_t bits; memcpy(&bits, &number, sizeof(bits)); return bits; }
 PyObject *jacpy_bytes_from_memory(const void *address, int64_t size) { return PyBytes_FromStringAndSize(address, size); }
+/* The same for a Jac bytes argument, which arrives as its payload address. */
+PyObject *jacpy_bytes_from_payload(const char *data, int64_t size) { return PyBytes_FromStringAndSize(data, size); }
 int64_t jacpy_is_bytes(PyObject *value) { return PyBytes_Check(value); }
 int64_t jacpy_is_bytearray(PyObject *value) { return PyByteArray_Check(value); }
 void *jacpy_bytes_address(PyObject *value) { return (PyBytes_Check(value) ? PyBytes_AS_STRING(value) : PyByteArray_AS_STRING(value)); }
@@ -754,4 +756,201 @@ int64_t jacpy_hacl_simd_features(void) {
 #endif
 #endif
     return features;
+}
+
+/* PyBytes_FromFormatV, as Objects/bytesobject.c defines it. The rest of
+ * bytes is object_model/bytes.jac; a Jac definition cannot receive a
+ * va_list, so this one function stays C and writes through the Jac
+ * _PyBytesWriter API. */
+#include "internal/pycore_bytesobject.h"
+
+PyObject *
+PyBytes_FromFormatV(const char *format, va_list vargs)
+{
+    char *s;
+    const char *f;
+    const char *p;
+    Py_ssize_t prec;
+    int longflag;
+    int size_tflag;
+    /* Longest 64-bit formatted numbers:
+       - "18446744073709551615\0" (21 bytes)
+       - "-9223372036854775808\0" (21 bytes)
+       Decimal takes the most space (it isn't enough for octal.)
+
+       Longest 64-bit pointer representation:
+       "0xffffffffffffffff\0" (19 bytes). */
+    char buffer[21];
+    _PyBytesWriter writer;
+
+    _PyBytesWriter_Init(&writer);
+
+    s = _PyBytesWriter_Alloc(&writer, strlen(format));
+    if (s == NULL)
+        return NULL;
+    writer.overallocate = 1;
+
+#define WRITE_BYTES(str) \
+    do { \
+        s = _PyBytesWriter_WriteBytes(&writer, s, (str), strlen(str)); \
+        if (s == NULL) \
+            goto error; \
+    } while (0)
+
+    for (f = format; *f; f++) {
+        if (*f != '%') {
+            *s++ = *f;
+            continue;
+        }
+
+        p = f++;
+
+        /* ignore the width (ex: 10 in "%10s") */
+        while (Py_ISDIGIT(*f))
+            f++;
+
+        /* parse the precision (ex: 10 in "%.10s") */
+        prec = 0;
+        if (*f == '.') {
+            f++;
+            for (; Py_ISDIGIT(*f); f++) {
+                prec = (prec * 10) + (*f - '0');
+            }
+        }
+
+        while (*f && *f != '%' && !Py_ISALPHA(*f))
+            f++;
+
+        /* handle the long flag ('l'), but only for %ld and %lu.
+           others can be added when necessary. */
+        longflag = 0;
+        if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
+            longflag = 1;
+            ++f;
+        }
+
+        /* handle the size_t flag ('z'). */
+        size_tflag = 0;
+        if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
+            size_tflag = 1;
+            ++f;
+        }
+
+        /* subtract bytes preallocated for the format string
+           (ex: 2 for "%s") */
+        writer.min_size -= (f - p + 1);
+
+        switch (*f) {
+        case 'c':
+        {
+            int c = va_arg(vargs, int);
+            if (c < 0 || c > 255) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "PyBytes_FromFormatV(): %c format "
+                                "expects an integer in range [0; 255]");
+                goto error;
+            }
+            writer.min_size++;
+            *s++ = (unsigned char)c;
+            break;
+        }
+
+        case 'd':
+            if (longflag) {
+                sprintf(buffer, "%ld", va_arg(vargs, long));
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+            }
+            else {
+                sprintf(buffer, "%d", va_arg(vargs, int));
+            }
+            assert(strlen(buffer) < sizeof(buffer));
+            WRITE_BYTES(buffer);
+            break;
+
+        case 'u':
+            if (longflag) {
+                sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+            }
+            else {
+                sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+            }
+            assert(strlen(buffer) < sizeof(buffer));
+            WRITE_BYTES(buffer);
+            break;
+
+        case 'i':
+            sprintf(buffer, "%i", va_arg(vargs, int));
+            assert(strlen(buffer) < sizeof(buffer));
+            WRITE_BYTES(buffer);
+            break;
+
+        case 'x':
+            sprintf(buffer, "%x", va_arg(vargs, int));
+            assert(strlen(buffer) < sizeof(buffer));
+            WRITE_BYTES(buffer);
+            break;
+
+        case 's':
+        {
+            Py_ssize_t i;
+
+            p = va_arg(vargs, const char*);
+            if (prec <= 0) {
+                i = strlen(p);
+            }
+            else {
+                i = 0;
+                while (i < prec && p[i]) {
+                    i++;
+                }
+            }
+            s = _PyBytesWriter_WriteBytes(&writer, s, p, i);
+            if (s == NULL)
+                goto error;
+            break;
+        }
+
+        case 'p':
+            sprintf(buffer, "%p", va_arg(vargs, void*));
+            assert(strlen(buffer) < sizeof(buffer));
+            /* %p is ill-defined:  ensure leading 0x. */
+            if (buffer[1] == 'X')
+                buffer[1] = 'x';
+            else if (buffer[1] != 'x') {
+                memmove(buffer+2, buffer, strlen(buffer)+1);
+                buffer[0] = '0';
+                buffer[1] = 'x';
+            }
+            WRITE_BYTES(buffer);
+            break;
+
+        case '%':
+            writer.min_size++;
+            *s++ = '%';
+            break;
+
+        default:
+            if (*f == 0) {
+                /* fix min_size if we reached the end of the format string */
+                writer.min_size++;
+            }
+
+            /* invalid format string: copy unformatted string and exit */
+            WRITE_BYTES(p);
+            return _PyBytesWriter_Finish(&writer, s);
+        }
+    }
+
+#undef WRITE_BYTES
+
+    return _PyBytesWriter_Finish(&writer, s);
+
+ error:
+    _PyBytesWriter_Dealloc(&writer);
+    return NULL;
 }

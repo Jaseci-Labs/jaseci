@@ -263,9 +263,9 @@ def get_rate_bits(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
 }
 
 def get_suffix(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    return PyBytes_FromStringAndSize(b"\x06", 1);
+    return PyBytes_FromStringAndSize(ptr[u8]("\x06"), 1);
 }
 
 def get_shake_suffix(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    return PyBytes_FromStringAndSize(b"\x1f", 1);
+    return PyBytes_FromStringAndSize(ptr[u8]("\x1f"), 1);
 }

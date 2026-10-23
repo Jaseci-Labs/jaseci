@@ -35,6 +35,7 @@ struct _odictobject { PyDictObject od_dict; _ODictNode *od_first; _ODictNode *od
 struct _odictnode { PyObject *key; Py_hash_t hash; _ODictNode *next; _ODictNode *prev; };
 typedef struct { PyObject_HEAD int kind; PyODictObject *di_odict; Py_ssize_t di_size; size_t di_state; PyObject *di_current; PyObject *di_result; } odictiterobject;
 typedef struct { PyObject_HEAD Py_ssize_t it_index; PyMemoryViewObject *it_seq; Py_ssize_t it_length; const char *it_fmt; } memoryiterobject;
+typedef struct { PyObject_HEAD Py_ssize_t it_index; PyBytesObject *it_seq; } striterobject;
 typedef struct { PyObject_HEAD PyObject *mapping; } mappingproxyobject;
 typedef struct { PyObject_HEAD PyWrapperDescrObject *descr; PyObject *self; } wrapperobject;
 typedef struct { PyObject_HEAD PyObject *cm_callable; PyObject *cm_dict; } classmethod;
@@ -770,6 +771,26 @@ SIGNED(memoryiterobject, it_length, 1);
 FIELD(memoryiterobject, it_fmt, 40, 8);
 KIND(memoryiterobject, it_fmt, 5);
 LAYOUT(memoryiterobject, 48, 8);
+
+/* PyBytesObject */
+FIELD(PyBytesObject, ob_base, 0, 24);
+KIND(PyBytesObject, ob_base, 12);
+FIELD(PyBytesObject, ob_shash, 24, 8);
+KIND(PyBytesObject, ob_shash, 1);
+SIGNED(PyBytesObject, ob_shash, 1);
+FIELD(PyBytesObject, ob_sval, 32, 1);
+KIND(PyBytesObject, ob_sval[0], 1);
+LAYOUT(PyBytesObject, 40, 8);
+
+/* striterobject */
+FIELD(striterobject, ob_base, 0, 16);
+KIND(striterobject, ob_base, 12);
+FIELD(striterobject, it_index, 16, 8);
+KIND(striterobject, it_index, 1);
+SIGNED(striterobject, it_index, 1);
+FIELD(striterobject, it_seq, 24, 8);
+KIND(striterobject, it_seq, 5);
+LAYOUT(striterobject, 32, 8);
 
 /* PyDescrObject */
 FIELD(PyDescrObject, ob_base, 0, 16);
@@ -1931,6 +1952,11 @@ CONSTANT(offsetof(_PyManagedBufferObject, master), 32LL);
 CONSTANT(offsetof(PyMemoryViewObject, ob_array), 144LL);
 CONSTANT(offsetof(PyMemoryViewObject, weakreflist), 136LL);
 CONSTANT(sizeof(memoryiterobject), 48LL);
+CONSTANT(offsetof(PyBytesObject, ob_sval), 32LL);
+CONSTANT(sizeof(striterobject), 32LL);
+CONSTANT(_Py_TYPE_VERSION_BYTES, 10LL);
+CONSTANT(offsetof(_PyBytesWriter, small_buffer), 36LL);
+CONSTANT(sizeof(_PyBytesWriter), 552LL);
 CONSTANT(_Py_MANAGED_BUFFER_RELEASED, 1LL);
 CONSTANT(_Py_MANAGED_BUFFER_FREE_FORMAT, 2LL);
 CONSTANT(_Py_MEMORYVIEW_RELEASED, 1LL);
@@ -2065,6 +2091,7 @@ CONSTANT(Py_CLEANUP_SUPPORTED, 131072LL);
 /* The platform constants of layouts_platform.<os>.<arch>.jac. */
 #if defined(__linux__) && defined(__x86_64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
 CONSTANT(offsetof(PyInterpreterState, ceval.own_gil), 24LL);
@@ -2092,11 +2119,15 @@ CONSTANT(offsetof(PyInterpreterState, dict_state.next_keys_version), 79816LL);
 CONSTANT(offsetof(PyInterpreterState, dict_state.watchers), 79824LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.small_ints), 13968LL);
 CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11808LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 22352LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 22392LL);
+CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__linux__) && defined(__aarch64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
 CONSTANT(offsetof(PyInterpreterState, ceval.own_gil), 24LL);
@@ -2124,11 +2155,15 @@ CONSTANT(offsetof(PyInterpreterState, dict_state.next_keys_version), 79832LL);
 CONSTANT(offsetof(PyInterpreterState, dict_state.watchers), 79840LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.small_ints), 13968LL);
 CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11824LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 22352LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 22392LL);
+CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__APPLE__) && defined(__x86_64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
 CONSTANT(offsetof(PyInterpreterState, ceval.own_gil), 24LL);
@@ -2156,11 +2191,15 @@ CONSTANT(offsetof(PyInterpreterState, dict_state.next_keys_version), 79864LL);
 CONSTANT(offsetof(PyInterpreterState, dict_state.watchers), 79872LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.small_ints), 13472LL);
 CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11856LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 21856LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 21896LL);
+CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
 #elif defined(__APPLE__) && defined(__aarch64__)
 CONSTANT(offsetof(PyConfig, verbose), 208LL);
+CONSTANT(offsetof(PyConfig, bytes_warning), 180LL);
 CONSTANT(offsetof(PyConfig, safe_path), 260LL);
 CONSTANT(offsetof(PyConfig, sys_path_0), 432LL);
 CONSTANT(offsetof(PyInterpreterState, ceval.own_gil), 24LL);
@@ -2188,6 +2227,9 @@ CONSTANT(offsetof(PyInterpreterState, dict_state.next_keys_version), 79864LL);
 CONSTANT(offsetof(PyInterpreterState, dict_state.watchers), 79872LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.small_ints), 13472LL);
 CONSTANT(offsetof(PyInterpreterState, long_state.max_str_digits), 11856LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_empty), 21856LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.bytes_characters), 21896LL);
+CONSTANT(sizeof(((_PyRuntimeState *)0)->static_objects.singletons.bytes_characters[0]), 48LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);

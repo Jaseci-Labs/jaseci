@@ -29,6 +29,7 @@ import from jaclang.runtime.python.cpython_api {
     PyUnicode_InternFromString,
     jacpy_bytes_copy_to,
     jacpy_bytes_from_memory,
+    jacpy_bytes_from_payload,
     jacpy_bytes_length,
     jacpy_qualified_type_name,
     jacpy_release,
@@ -43,7 +44,6 @@ import from jaclang.runtime.python.cpython_api {
     Py_TYPE,
     PyBool_Type,
     PyByteArray_Type,
-    PyBytes_FromStringAndSize,
     PyBytes_Type,
     PyDict_GetItemRef,
     PyDict_SetItem,
@@ -155,7 +155,7 @@ def read_buffer(handle: ptr[PyObject]) -> bytes {
 }
 
 def write_buffer(data: bytes) -> ptr[PyObject] {
-    return PyBytes_FromStringAndSize(data, i64(len(data)));
+    return jacpy_bytes_from_payload(data, i64(len(data)));
 }
 
 obj module_failure(Exception) {

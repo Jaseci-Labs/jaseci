@@ -240,7 +240,7 @@ def parse_envlist(env: ptr[PyObject]) -> tuple[ptr[ptr[u8]], i64] {
                 break;
             }
             keyval = PyBytes_FromFormat(
-                "%s=%s", PyBytes_AsString(key2), PyBytes_AsString(val2)
+                ptr[u8]("%s=%s"), PyBytes_AsString(key2), PyBytes_AsString(val2)
             );
             if not keyval {
                 entry_failed = True;

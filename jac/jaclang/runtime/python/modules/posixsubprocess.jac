@@ -549,7 +549,7 @@ def:priv child_text(state: ForkState, context: ptr[child_context]) -> bool {
         FD_DIR
     ];
     data = ("\x00".join(messages) + "\x00").encode("utf-8");
-    state.text = PyBytes_FromStringAndSize(data, i64(len(data)));
+    state.text = jacpy_bytes_from_payload(data, i64(len(data)));
     if not state.text {
         return False;
     }
