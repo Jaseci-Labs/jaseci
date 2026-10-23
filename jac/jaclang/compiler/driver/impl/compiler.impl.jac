@@ -193,13 +193,14 @@ impl JacCompiler._graphmend_hit_matches(
     mod: uni.Module, gm_active: bool, gm_disable: list[str]
 ) -> bool {
     facts = mod.gen.graphmend_facts;
-    if facts is None {
+    built = None if facts is None else facts.disabled;
+    if built is None {
         return not gm_active;
     }
     if facts.noop {
         return True;
     }
-    return gm_active and (facts.disabled == gm_disable);
+    return gm_active and (built == gm_disable);
 }
 
 impl JacCompiler._get_bytecode(

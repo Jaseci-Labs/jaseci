@@ -216,12 +216,21 @@ test "a module compiled under other graphmend settings is not reused from memory
         shutil.copy(os.path.join(GRAPHMEND_FIXTURES, "val_guard_all.jac"), path);
         prog = JacProgram();
         compiler = prog._get_compiler();
+        plain = compiler.get_bytecode(
+            full_target=path,
+            target_program=prog,
+            options=CompileOptions(graphmend=False)
+        );
+        assert (plain is not None) and not code_mentions_symbol(plain, "_assert_async");
         lowered = compiler.get_bytecode(
             full_target=path,
             target_program=prog,
             options=CompileOptions(graphmend=True, graphmend_disable=[])
         );
-        assert (lowered is not None) and code_mentions_symbol(lowered, "_assert_async");
+        assert (lowered is not None)
+            and code_mentions_symbol(lowered, "_assert_async") , (
+            "the untransformed compile was reused with graphmend on"
+        );
         for opts in [
             CompileOptions(graphmend=True, graphmend_disable=["trap"]),
             CompileOptions(graphmend=False)
