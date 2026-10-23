@@ -2375,6 +2375,7 @@ graph import {
             | dist.precompile_bytecode._application_sources
             | server.session.project_database { workspace_for_path },
         compiler.driver.application._warn_private_declarations { app_for_path },
+        dist.precompile_bytecode.sealable_sources { workspace_for_path },
     ]
     project.workspace --> lsp.server.engine.JacLangServer.type_check_file {
         workspace_for_path
