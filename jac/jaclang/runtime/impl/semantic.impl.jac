@@ -72,9 +72,7 @@ impl InfoGraphWriter.ref(item: (Info | TypeForm | str | None)) -> any {
     return {"n": slot};
 }
 
-impl InfoGraphWriter.refs(
-    items: Sequence[(Info | TypeForm | str | None)]
-) -> list[any] {
+impl InfoGraphWriter.refs(items: Sequence[Info]) -> list[any] {
     return [self.ref(item) for item in items];
 }
 
@@ -82,7 +80,7 @@ impl InfoGraphWriter.fill(record: dict[str, any], item: (Info | TypeForm)) {
     if isinstance(item, TypeForm) {
         record["k"] = "form";
         record["head"] = item.head;
-        record["args"] = self.refs(item.args);
+        record["args"] = [self.ref(arg) for arg in item.args];
         return;
     }
     record["name"] = item.name;
@@ -277,6 +275,21 @@ impl info_graph_to_json(entries: dict[str, Info]) -> str {
     );
 }
 
+impl node_lists_hold_refs(record: dict[str, any]) -> bool {
+    for slot in INFO_NODE_LISTS {
+        items = record.get(slot, []);
+        if not isinstance(items, list) {
+            return False;
+        }
+        for item in items {
+            if not isinstance(item, dict) or not isinstance(item.get("n"), int) {
+                return False;
+            }
+        }
+    }
+    return True;
+}
+
 impl info_graph_from_json(text: str) -> dict[str, Info] {
     import json;
     raw = json.loads(text);
@@ -289,6 +302,9 @@ impl info_graph_from_json(text: str) -> dict[str, Info] {
     if isinstance(raw_nodes, list) {
         for record in raw_nodes {
             if isinstance(record, dict) {
+                if not node_lists_hold_refs(record) {
+                    return out;
+                }
                 records.append(record);
             }
         }

@@ -54,14 +54,22 @@ def mk_dict(
 
 def type_to_str(t: (Info | TypeForm | str | None)) -> str;
 
-glob INFO_GRAPH_VERSION: int = 1;
+glob INFO_GRAPH_VERSION: int = 1,
+     INFO_NODE_LISTS: tuple[str, ...] = (
+         "fields",
+         "bases",
+         "methods",
+         "members",
+         "params",
+         "tools"
+     );
 
 obj InfoGraphWriter {
     has nodes: list[dict[str, any]] = [],
         index: dict[int, int] = {};
 
     def ref(item: (Info | TypeForm | str | None)) -> any;
-    def refs(items: Sequence[(Info | TypeForm | str | None)]) -> list[any];
+    def refs(items: Sequence[Info]) -> list[any];
     def fill(record: dict[str, any], item: (Info | TypeForm));
 }
 
@@ -83,5 +91,7 @@ obj InfoGraphReader {
 }
 
 def info_graph_to_json(entries: dict[str, Info]) -> str;
+
+def node_lists_hold_refs(record: dict[str, any]) -> bool;
 
 def info_graph_from_json(text: str) -> dict[str, Info];
