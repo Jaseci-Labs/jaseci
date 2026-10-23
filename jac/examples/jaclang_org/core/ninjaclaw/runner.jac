@@ -60,7 +60,7 @@ obj Runner {
 glob MIN_CONFIDENCE: float = 0.6,
      MAX_REPAIRS: int = 2,
      JOB_LEASE_S: float = 7200.0,
-     LEASE_MARGIN_S: float = 300.0,
+     LEASE_MARGIN_S: float = 1200.0,
      CANDIDATES: int = 12,
      REPLY_LIMIT: int = 280,
      RUNNER: Runner = Runner(),
@@ -85,6 +85,10 @@ def generated_reply(job_id: str) -> str;
 def step_fits(deadline: float, step_s: float) -> bool;
 
 def write_verified(
+    spec: JobSpec, note: Callable, deadline: float
+) -> tuple[TutorialDraft | None, list[BlockView], str];
+
+def _write_verified(
     spec: JobSpec, note: Callable, deadline: float
 ) -> tuple[TutorialDraft | None, list[BlockView], str];
 
@@ -133,9 +137,20 @@ impl step_fits(deadline: float, step_s: float) -> bool {
 impl write_verified(
     spec: JobSpec, note: Callable, deadline: float
 ) -> tuple[TutorialDraft | None, list[BlockView], str] {
-    if not step_fits(deadline, WRITE_STEPS * MODEL_TRIES * MODEL_TIMEOUT_S) {
+    if not step_fits(deadline, 4 * CALL_MAX_S) {
         return (None, [], "not enough time left in this job to write a tutorial");
     }
+    DEADLINE["at"] = deadline;
+    try {
+        return _write_verified(spec, note, deadline);
+    } finally {
+        DEADLINE.pop("at", None);
+    }
+}
+
+impl _write_verified(
+    spec: JobSpec, note: Callable, deadline: float
+) -> tuple[TutorialDraft | None, list[BlockView], str] {
     repo_root = Path(spec.repo_root);
     open_toolbox(repo_root, agent_catalog(repo_root), note);
     note("write", "no existing answer: researching and drafting a short tutorial");
@@ -171,7 +186,7 @@ impl write_verified(
         if attempt == MAX_REPAIRS {
             break;
         }
-        if not step_fits(deadline, REPAIR_STEPS * MODEL_TRIES * MODEL_TIMEOUT_S) {
+        if not step_fits(deadline, 3 * CALL_MAX_S) {
             note("repair", "out of time for this question; logging it as a docs gap");
             break;
         }

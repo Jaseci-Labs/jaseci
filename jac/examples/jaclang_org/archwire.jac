@@ -413,11 +413,9 @@ graph import core.jacyac.native.components {
 graph import core.ninjaclaw {
     brain ++> runner {
         AskKind,
+        CALL_MAX_S,
         Candidate,
-        MODEL_TIMEOUT_S,
-        MODEL_TRIES,
-        REPAIR_STEPS,
-        WRITE_STEPS,
+        DEADLINE,
         classify_ask,
         pick_answer,
         repair_tutorial,

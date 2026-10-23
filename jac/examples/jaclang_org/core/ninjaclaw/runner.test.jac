@@ -1,6 +1,6 @@
 import from unittest.mock { patch }
 import from core.ninjaclaw.index { index_doc }
-import from core.ninjaclaw.brain { Pick }
+import from core.ninjaclaw.brain { Pick, respect_deadline }
 
 def _catalog -> list[IndexDoc];
 
@@ -126,4 +126,19 @@ test "a step starts only if its worst case fits before the lease runs out" {
         );
     }
     assert tutorial is None and blocks == [] and "not enough time" in why;
+}
+
+test "the model loop wraps up when the job's deadline is near" {
+    import time;
+    import from jaclang.byllm.types { IterationAction, IterationContext }
+    ctx = IterationContext(
+        iteration=2, messages=[], last_tool="", last_result="", total_tokens=0
+    );
+    DEADLINE.pop("at", None);
+    assert respect_deadline(ctx) == IterationAction.CONTINUE;
+    DEADLINE["at"] = time.monotonic() + 10 * CALL_MAX_S;
+    assert respect_deadline(ctx) == IterationAction.CONTINUE;
+    DEADLINE["at"] = time.monotonic() + CALL_MAX_S;
+    assert respect_deadline(ctx) == IterationAction.ABORT_WITH_SUMMARY;
+    DEADLINE.pop("at", None);
 }
