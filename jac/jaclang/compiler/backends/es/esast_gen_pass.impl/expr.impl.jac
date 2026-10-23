@@ -943,13 +943,23 @@ impl EsastGenPass._open_null_safe_chain(target: uni.Expr) -> list[NullSafeLink] 
     return links;
 }
 
-impl EsastGenPass._null_safe_unguarded(expr: es.Node) -> es.Node {
+impl EsastGenPass._null_safe_unguarded(
+    expr: es.Node, jac_node: uni.UniNode
+) -> es.Node {
     link = self._null_safe_link_of(expr);
-    while link is not None {
-        expr = link.lowered;
-        link = self._null_safe_link_of(expr);
+    if link is None {
+        return expr;
     }
-    return expr;
+    inner = self._null_safe_unguarded(link.lowered, jac_node);
+    if link.ref is link.recv or not isinstance(link.ref, es.Identifier) {
+        return inner;
+    }
+    recv = cast(es.Expression, self._null_safe_unguarded(link.recv, jac_node));
+    if isinstance(inner, es.MemberExpression) and inner.object is not None {
+        inner.object = self._bind_once(link.ref, inner.object, recv, jac_node);
+        return inner;
+    }
+    return self._bind_once(link.ref, cast(es.Expression, inner), recv, jac_node);
 }
 
 impl EsastGenPass._close_null_safe_chain(

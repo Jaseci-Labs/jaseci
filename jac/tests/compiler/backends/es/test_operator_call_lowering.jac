@@ -120,3 +120,58 @@ console.log(JSON.stringify([
             [{"c": 1}]
         ] , js;
 }
+
+glob AUG_ONCE_SRC = """
+glob seen: list[str] = [];
+obj Cell { has v: i32 = 0; }
+def make_cell(v: i32) -> Cell { return Cell(v=v); }
+def idx(i: int) -> int { seen.append("i"); return i; }
+def get(x: any) -> any { seen.append("r"); return x; }
+def cell(c: Cell) -> Cell { seen.append("c"); return c; }
+async def key(i: int) -> int { seen.append("k"); return i; }
+def floor_index(a: any) -> any { get(a)[idx(1)] //= 2; return a; }
+def floor_attr(a: any) -> any { get(a).v //= 3; return a; }
+def floor_typed(a: list[int]) -> any { a[idx(0)] //= 2; return a; }
+def fixed_attr(c: Cell) -> Cell { cell(c).v += 5; return c; }
+def fixed_floor(c: Cell) -> Cell { cell(c).v //= 2; return c; }
+def fixed_index(a: list[i32]) -> any { a[idx(1)] -= 1; return a; }
+async def floor_awaited(a: any) -> any { get(a)[await key(0)] //= 4; return a; }
+def plain(a: list[int], b: int) -> any { a[0] //= b; return a; }
+""";
+
+test "an augmented store lowered through a helper evaluates its receiver and key once" {
+    js = compile_client(AUG_ONCE_SRC);
+    assert "a[0] = Math.floor((a[0] / b));" in js , js;
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    probe = """
+const log = () => seen.splice(0).join("");
+const out = [];
+out.push(floor_index([0, 9, 4]), log());
+out.push(floor_attr({v: 10}).v, log());
+out.push(floor_typed([-7, 1]), log());
+out.push(fixed_attr(make_cell(1)).v, log());
+out.push(fixed_floor(make_cell(-9)).v, log());
+out.push(fixed_index([3, 3]), log());
+out.push(await floor_awaited([9, 1]), log());
+console.log(JSON.stringify(out));
+""";
+    assert run_probe(js, probe)
+        == [
+            [0, 4, 4],
+            "ri",
+            3,
+            "r",
+            [-4, 1],
+            "i",
+            6,
+            "c",
+            -5,
+            "c",
+            [3, 2],
+            "i",
+            [2, 1],
+            "rk"
+        ] , js;
+}

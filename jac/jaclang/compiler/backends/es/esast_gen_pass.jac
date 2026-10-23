@@ -620,7 +620,7 @@ walker EsastGenPass(TreePass) {
     def _null_safe_link_of(expr: (es.Node | None)) -> (NullSafeLink | None);
     def _open_null_safe_chain(target: uni.Expr) -> list[NullSafeLink];
     def _close_null_safe_chain(links: list[NullSafeLink], nd: uni.Expr) -> None;
-    def _null_safe_unguarded(expr: es.Node) -> es.Node;
+    def _null_safe_unguarded(expr: es.Node, jac_node: uni.UniNode) -> es.Node;
     def _bind_once(
         param: es.Identifier,
         body: es.Expression,
@@ -635,6 +635,18 @@ walker EsastGenPass(TreePass) {
     can exit_bool_expr with uni.BoolExpr exit;
     can exit_compare_expr with uni.CompareExpr exit;
     can exit_unary_expr with uni.UnaryExpr exit;
+    def _aug_target_once(
+        target: es.Expression, jac_node: uni.UniNode
+    ) -> tuple[es.Expression, list[tuple[es.Identifier, es.Expression]]];
+
+    def _rereads_safely(expr: es.Expression) -> bool;
+    def _assign_once(
+        target: es.Expression,
+        value: es.Expression,
+        binds: list[tuple[es.Identifier, es.Expression]],
+        jac_node: uni.UniNode
+    ) -> es.Expression;
+
     def _convert_assignment_target(
         target: uni.UniNode
     ) -> tuple[(es.Pattern | es.Expression), (es.Expression | None), (str | None)];

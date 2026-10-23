@@ -280,3 +280,53 @@ console.log(JSON.stringify([
             1
         ] , result.stdout + "\n" + js;
 }
+
+glob STORE_SRC = """
+glob seen: list[int] = [];
+def recv(x: any) -> any { seen.append(1); return x; }
+async def key(k: int) -> int { return k; }
+def index_attr(x: any, k: any) { recv(x)?[k].a = 1; }
+def attr_attr(x: any) { recv(x)?.b.c = 2; }
+def nested(x: any, k: any, j: any) { recv(x)?[k]?[j].a = 3; }
+def named_nested(x: any, k: any, j: any) { x?[k]?[j].a = 4; }
+def aug_through(x: any, k: any) { recv(x)?[k].a += 5; }
+def floor_through(x: any, k: any) { recv(x)?[k].a //= 2; }
+async def awaited_key(x: any) { recv(x)?[await key(0)].a = 6; }
+""";
+
+test "a store through a null-safe chain binds its receiver once" {
+    js = compile_client(STORE_SRC);
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
+    probe = """
+const count = () => seen.splice(0).length;
+const out = [];
+const a = [{a: 0}];
+index_attr(a, 0);
+out.push(a[0].a, count());
+const b = {b: {c: 0}};
+attr_attr(b);
+out.push(b.b.c, count());
+const n = [[{a: 0}, {a: 0}]];
+nested(n, 0, 1);
+out.push(n[0][1].a, n[0][0].a, count());
+const m = [[{a: 0}]];
+named_nested(m, 0, 0);
+out.push(m[0][0].a);
+const g = [{a: 1}];
+aug_through(g, 0);
+out.push(g[0].a, count());
+const f = [{a: 9}];
+floor_through(f, 0);
+out.push(f[0].a, count());
+const w = [{a: 0}];
+await awaited_key(w);
+out.push(w[0].a, count());
+console.log(JSON.stringify(out));
+""";
+    result = run_js_module(js + "\n" + probe, timeout=10.0);
+    assert result.returncode == 0 , result.stderr + "\n" + js;
+    assert json.loads(result.stdout.strip())
+        == [1, 1, 2, 1, 3, 0, 1, 4, 6, 1, 4, 1, 6, 1] , result.stdout + "\n" + js;
+}
