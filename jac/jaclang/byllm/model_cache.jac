@@ -7,7 +7,6 @@ import from pathlib { Path }
 
 glob _logger: logging.Logger = logging.getLogger("byllm.model_cache");
 
-"""Byte size of each fixed-size GGUF metadata value type."""
 glob _GGUF_SCALAR_SIZES: dict[int, int] = {
          0: 1,
          1: 1,
@@ -22,8 +21,6 @@ glob _GGUF_SCALAR_SIZES: dict[int, int] = {
          12: 8
      };
 
-"""ggml tensor type -> (elements per block, bytes per block), as gguf-py's
-GGML_QUANT_SIZES gives them."""
 glob _GGML_BLOCKS: dict[int, tuple[int, int]] = {
          0: (1, 4),
          1: (1, 2),
@@ -79,8 +76,6 @@ def _read_le(f: any, fmt: str) -> int;
 
 def _skip_gguf_value(f: any, vtype: int);
 
-"""Bytes a GGUF file needs to hold every tensor its header lists, read from the
-header after the magic. 0 for a GGUF version this does not read."""
 def _gguf_size_needed(f: any) -> int;
 
 def _fmt_size(mb: int) -> str;

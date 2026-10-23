@@ -65,7 +65,6 @@ impl _skip_gguf_value(f: any, vtype: int) {
                 f.seek(_read_le(f, "Q"), 1);
             }
         } else {
-            # llama.cpp refuses arrays of arrays too, so such a file can't load.
             raise ValueError(f"GGUF array of type {etype}");
         }
     } else {
@@ -102,7 +101,7 @@ impl _gguf_size_needed(f: any) -> int {
         }
         ttype = _read_le(f, "I");
         offset = _read_le(f, "Q");
-        # A type this table does not know still has to start inside the file.
+
         (block, block_bytes) = _GGML_BLOCKS.get(ttype, (1, 0));
         data_end = max(data_end, offset + elements // block * block_bytes);
     }
@@ -199,8 +198,7 @@ impl ensure_model(
             f"in this context (no TTY). Run: jac model pull {alias}"
         );
     }
-    # huggingface_hub keeps a file already at the path unless forced. A forced download
-    # is renamed over the bad file, so a concurrent pull's finished weight is never deleted.
+
     _download(alias, spec, force=gguf_path(alias, spec).exists());
     if not is_downloaded(alias, spec) {
         raise RuntimeError(
