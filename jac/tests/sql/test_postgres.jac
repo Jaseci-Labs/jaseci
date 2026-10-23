@@ -72,8 +72,8 @@ class PostgresTests(SQLTests) {
 }
 
 
-test "PostgreSQL: module is portable as one file" {
-    run_case(PostgresTests("test_module_is_portable_as_one_file"));
+test "PostgreSQL: module is portable with implementation" {
+    run_case(PostgresTests("test_module_is_portable_with_implementation"));
 }
 
 test "PostgreSQL: select parameters and order" {

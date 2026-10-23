@@ -1,7 +1,7 @@
 import from .sql_cases { SQLTests, run_case }
 
-test "SQLite: module is portable as one file" {
-    run_case(SQLTests("test_module_is_portable_as_one_file"));
+test "SQLite: module is portable with implementation" {
+    run_case(SQLTests("test_module_is_portable_with_implementation"));
 }
 
 test "SQLite: select parameters and order" {

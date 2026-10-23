@@ -6,11 +6,12 @@ Development branch: `feat/typed-sql`. Implementation:
 
 The module builds SQL as structured values and validates it before rendering.
 Implementation and tests use Jac; the test entry point is `jac test`.
-It has one source file, one standard-library import (`uuid`) and no dependencies
+It has a declaration file (`sql.jac`), its implementation annex
+(`impl/sql.impl.jac`), one standard-library import (`uuid`) and no dependencies
 on graph types, TTG, storage tables, drivers or project configuration. Forks can
-copy the file and its tests, or cherry-pick the scoped commit. A portability test
-copies the module to a temporary directory under a different module name and
-executes a generated query. Jac itself remains the required language runtime.
+copy both files and the tests, or cherry-pick the scoped commit. A portability test
+copies both files to a temporary directory under a different module name
+and executes a generated query. Jac itself remains the required language runtime.
 
 ## Semantic categories
 
@@ -203,6 +204,8 @@ Run the Jac test files from the repository root:
 ```sh
 jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac -j 1 -v
 jac check jac/jaclang/sql.jac jac/examples/sql/typed_sql.jac
+jac fmt --check --lintfix jac/jaclang/sql.jac \
+  jac/jaclang/impl/sql.impl.jac jac/tests/sql/*.jac jac/examples/sql/*.jac
 jac run jac/examples/sql/typed_sql.jac
 ```
 

@@ -27,10 +27,16 @@ class SQLTests(unittest.TestCase) {
         return self.db.execute(c.sql, c.params).fetchall();
     }
 
-    def test_module_is_portable_as_one_file(self: SQLTests) -> object {
+    def test_module_is_portable_with_implementation(self: SQLTests) -> object {
         with TemporaryDirectory(prefix='jac-sql-portable-') as folder {
             module = Path(folder) / 'portable_sql.jac';
-            module.write_text(Path(s.__file__).read_text());
+            original = Path(s.__file__);
+            module.write_text(original.read_text());
+            implementation = Path(folder) / 'impl';
+            implementation.mkdir();
+            (implementation / 'portable_sql.impl.jac').write_text(
+                (original.parent / 'impl' / 'sql.impl.jac').read_text()
+            );
             sys.path.insert(0, folder);
             try {
                 independent = importlib.import_module('portable_sql');
@@ -759,7 +765,7 @@ class SQLTests(unittest.TestCase) {
 }
 
 
-def run_case(check: unittest.TestCase) -> None {
+def run_case(check: unittest.TestCase) {
     result = unittest.TestResult();
     check.run(result);
     if result.skipped {
