@@ -447,9 +447,11 @@ impl Session.get(id: UUID) -> (Anchor | None) {
     if id in self._deleted {
         return None;
     }
-    hit = self.__mem__.get(id);
-    if (hit is not None and not self._expired(hit)) or self.store is None {
+    if (hit := self.__mem__.get(id)) is not None and not self._expired(hit) {
         return hit;
+    }
+    if self.store is None {
+        return None;
     }
     return self.batch_get([id]).get(id);
 }
@@ -577,7 +579,10 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
                         self._rollback_txn();
                         if isinstance(e, WriteConflict) and self._active_units == 0 {
                             self._dirty.pop(e.anchor_id, None);
-                            self.batch_get([e.anchor_id]);
+                            self._ensure_txn();
+                            for row in self._store.load_full([e.anchor_id]).values() {
+                                self._materialize(row);
+                            }
                         }
                         raise;
                     }
@@ -705,10 +710,25 @@ impl Session._drop_snapshot_reads -> None {
 
 
 impl Session._expired(anchor: Anchor) -> bool {
-    return anchor.persistent
-        and anchor.__dict__.get('_txn_gen') != self._txn_gen
-        and anchor.id not in self._dirty
-        and anchor.is_populated();
+    id = anchor.id;
+    if self._store is None
+        or id is None
+        or not anchor.persistent
+        or anchor.__dict__.get('_txn_gen') == self._txn_gen
+        or id in self._dirty
+        or not anchor.is_populated() {
+        return False;
+    }
+    known = self._rows.current(id);
+    if known is None or frozen_fields(anchor) {
+        return True;
+    }
+    try {
+        h = Serializer.stored_hash(anchor, Serializer.stored_form(anchor));
+    } except Exception {
+        return False;
+    }
+    return h != 0 and h == known.hash;
 }
 
 

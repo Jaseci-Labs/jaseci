@@ -1494,8 +1494,9 @@ graph import {
             | runtime.builtin._get_archetype_alias.factory.decorator
             | server.endpoints.walkers
             | server.server
-            | server.session.Session._load_edges { Serializer },
+            | server.session.Session._expired { Serializer },
         server.session { frozen_fields },
+        server.session.Session._load_edges { Serializer },
         server.session.Session._materialize { Serializer },
         server.session.Session._serialize { Serializer },
         server.session.Session._unflushed { Serializer },

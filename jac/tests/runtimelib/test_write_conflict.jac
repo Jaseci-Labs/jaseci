@@ -22,9 +22,11 @@ import from uuid { UUID }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.runtime.context { ExecutionContext }
 import from jaclang.runtime.exceptions { WriteConflict }
+import from jaclang.server.session { Session }
 
 node WCounter {
-    has n: int = 0;
+    has n: int = 0,
+        tags: list[str] = [];
 }
 
 
@@ -75,75 +77,11 @@ test "a stored anchor carries a version that advances on write" {
 }
 
 
-test "a write over a stale read reports instead of vanishing" {
-    with TemporaryDirectory() as td {
-        old = JacRuntime.exec_ctx;
-        ctx1 = _ctx(td);
-        JacRuntime.exec_ctx = ctx1;
-        cid: UUID;
-        try {
-            c = WCounter(n=1);
-            root ++> c;
-            ctx1.mem.commit();
-            cid = c.__jac__.id;
-        } finally {
-            JacRuntime.exec_ctx = old;
-            ctx1.close();
-        }
-        # Reader A loads the counter and holds its version.
-        ctxa = _ctx(td);
-        JacRuntime.exec_ctx = ctxa;
-        try {
-            a = ctxa.mem.get(cid);
-            assert a is not None;
-            seen = _as_any(a).archetype.n;
-
-            # Writer B advances it out of band and commits first.
-            JacRuntime.exec_ctx = old;
-            ctxb = _ctx(td);
-            JacRuntime.exec_ctx = ctxb;
-            try {
-                b = ctxb.mem.get(cid);
-                assert b is not None;
-                _as_any(b).archetype.n = 99;
-                ctxb.mem.mark_dirty(b);
-                ctxb.mem.commit();
-            } finally {
-                ctxb.close();
-            }
-
-            # A now writes on top of a version that has moved.
-            JacRuntime.exec_ctx = ctxa;
-            _as_any(a).archetype.n = seen + 1;
-            ctxa.mem.mark_dirty(a);
-            raised = False;
-            try {
-                ctxa.mem.commit();
-            } except WriteConflict {
-                raised = True;
-            }
-            assert raised , (
-                "a write over a version that moved must report a conflict, "
-                "not silently overwrite the winner"
-            );
-            # Reported once, then gone: the next read must not flush the lost
-            # write again, A sees the winner, and A can write on top of it.
-            ctxa.mem.read_barrier();
-            assert ctxa.mem.get(cid) is a and _as_any(a).archetype.n == 99;
-            _as_any(a).archetype.n = 100;
-            ctxa.mem.mark_dirty(a);
-            ctxa.mem.commit();
-        } finally {
-            JacRuntime.exec_ctx = old;
-            ctxa.close();
-        }
-    }
-}
-
-
-"""Session A reads the counter in one transaction and ends it with `end`, B
-commits n=99, and A reads it again. Returns what A's held object shows."""
-def _read_after_other_commit(td: str, end: str) -> int {
+"""A reads the counter and ends its transaction, B commits n=99, and A goes on
+by `mode`: "commit" or "rollback" name how A's transaction ended; "assign" and
+"in place" also have A write over its stale copy, which must report a conflict.
+Either way A then holds B's value and can write on top of it."""
+def _after_other_commit(td: str, mode: str) {
     old = JacRuntime.exec_ctx;
     ctx1 = _ctx(td);
     JacRuntime.exec_ctx = ctx1;
@@ -162,14 +100,15 @@ def _read_after_other_commit(td: str, end: str) -> int {
     try {
         a = ctxa.mem.get(cid);
         assert a is not None;
+        seen = _as_any(a).archetype.n;
         fetched = ctxa.mem.get_fetch_count();
         assert ctxa.mem.get(cid) is a and ctxa.mem.get_fetch_count() == fetched , (
-            "a second read in the same transaction must come from memory"
+            f"{mode}: a second read in the same transaction must come from memory"
         );
-        if end == "commit" {
-            ctxa.mem.commit();
-        } else {
+        if mode == "rollback" {
             _as_any(ctxa.mem)._rollback_txn();
+        } else {
+            ctxa.mem.commit();
         }
 
         JacRuntime.exec_ctx = old;
@@ -185,15 +124,33 @@ def _read_after_other_commit(td: str, end: str) -> int {
             ctxb.close();
         }
 
-        # A's next transaction reads B's write into the object it already holds,
-        # and a write through that object lands without a conflict.
         JacRuntime.exec_ctx = ctxa;
-        assert ctxa.mem.get(cid) is a , "a held node was replaced by a second object";
-        seen = _as_any(a).archetype.n;
+        if mode in ["assign", "in place"] {
+            if mode == "assign" {
+                _as_any(a).archetype.n = seen + 1;
+                ctxa.mem.mark_dirty(a);
+            } else {
+                _as_any(a).archetype.tags.append("a");
+            }
+            ctxa.mem.get(cid);
+            raised = False;
+            try {
+                ctxa.mem.commit();
+            } except WriteConflict {
+                raised = True;
+            }
+            assert raised , (
+                f"{mode}: a write over a version that moved must report a "
+                "conflict, not silently overwrite the winner or vanish"
+            );
+            # Reported once, then gone: the next read must not flush it again.
+            ctxa.mem.read_barrier();
+        }
+        assert ctxa.mem.get(cid) is a , f"{mode}: a held node was replaced";
+        assert _as_any(a).archetype.n == 99 , f"{mode}: A still sees its stale copy";
         _as_any(a).archetype.n = 100;
         ctxa.mem.mark_dirty(a);
         ctxa.mem.commit();
-        return seen;
     } finally {
         JacRuntime.exec_ctx = old;
         ctxa.close();
@@ -201,11 +158,21 @@ def _read_after_other_commit(td: str, end: str) -> int {
 }
 
 
-test "a session sees what others committed once its own transaction ends" {
-    for end in ["commit", "rollback"] {
+test "a write over a stale read reports instead of vanishing" {
+    for mode in ["commit", "rollback", "assign", "in place"] {
         with TemporaryDirectory() as td {
-            seen = _read_after_other_commit(td, end);
-            assert seen == 99 , f"after a {end}, the session still reads its own copy: n={seen}";
+            _after_other_commit(td, mode);
         }
     }
+}
+
+
+test "a session with no store keeps what it holds across a commit" {
+    sess = Session();
+    held = _as_any(WCounter(n=5).__jac__);
+    held.persistent = True;
+    hid = held.ensure_id();
+    sess.__mem__[hid] = held;
+    sess.commit();
+    assert sess.batch_get([hid]) == {hid: held};
 }
