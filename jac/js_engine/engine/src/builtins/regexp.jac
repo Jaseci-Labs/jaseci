@@ -34,7 +34,14 @@ import from engine.src.ffi.libpcre2 {
     pcre2_pattern_info_8,
     pcre2_code_free_8
 }
-import from engine.src.runtime.mem { io_alloc, io_free, write_byte, read_u64, read_u32, byte_chr }
+import from engine.src.runtime.mem {
+    io_alloc,
+    io_free,
+    write_byte,
+    read_u64,
+    read_u32,
+    byte_chr
+}
 import from engine.src.runtime.jsvalue {
     JSValue,
     js_undefined,
@@ -1550,8 +1557,9 @@ def _pcre2_compile(pattern: str, flags: str) -> JSRegExpState {
         }
     }
 
+    compile_pat_bytes: bytes = compile_pat.encode();
     code_ptr: int = pcre2_compile_8(
-        compile_pat, len(compile_pat), options, err_code_buf, err_off_buf, cctx
+        compile_pat, len(compile_pat_bytes), options, err_code_buf, err_off_buf, cctx
     );
 
     if cctx != 0 {
@@ -1682,7 +1690,9 @@ def _normalize_unicode_pattern(
         # (_dm_converted), so every NUL form compiles to PCRE2's `\\x00` — a
         # literal NUL in the pattern (sentinel bytes) included. Inside a class
         # `\\0` / `\\x00` are already PCRE2's NUL.
-        if ord(pattern[i]) == 192 and i + 1 < len(pattern) and ord(pattern[i + 1]) == 128 {
+        if ord(pattern[i]) == 192
+            and i + 1 < len(pattern)
+            and ord(pattern[i + 1]) == 128 {
             out = out + "\\x00";
             i = i + 2;
             continue;
@@ -2101,7 +2111,8 @@ lone half stays as it is. Every rewrite shrinks the copy, so _DM_CV_END[k] (the
 copy's offset just past rewrite k) and _DM_CV_CUM[k] (original minus copy offset
 from there on) map offsets both ways. Cached per subject (see _DM_SUBJ_ID)."""
 def _dm_converted(s: str, pairs: bool) -> bool {
-    n: int = len(s);
+    raw: bytes = s.encode();
+    n: int = len(raw);
     if _DM_SUBJ_ID >= 0
         and _DM_SUBJ_ID == _DM_CV_ID
         and n == _DM_CV_LEN
@@ -2121,7 +2132,8 @@ def _dm_converted(s: str, pairs: bool) -> bool {
     _DM_CV_LEN = n;
     _DM_CV_PAIRS = pairs;
     _DM_CV_EPOCH = _RE_REALM.gc_epoch;
-    _DM_CV_ON = s.find(_DM_NUL) >= 0 or (pairs and s.find(_DM_ED) >= 0);
+    _DM_CV_ON = raw.find(_DM_NUL.encode()) >= 0
+        or (pairs and raw.find(_DM_ED.encode()) >= 0);
     if not _DM_CV_ON {
         return False;
     }
@@ -2132,8 +2144,8 @@ def _dm_converted(s: str, pairs: bool) -> bool {
     i: int = 0;
     o: int = 0;
     while i < n {
-        b: int = ord(s[i]);
-        if b == 192 and i + 1 < n and ord(s[i + 1]) == 128 {
+        b: int = raw[i];
+        if b == 192 and i + 1 < n and raw[i + 1] == 128 {
             write_byte(buf, o, 0);
             i = i + 2;
             o = o + 1;
@@ -2143,11 +2155,15 @@ def _dm_converted(s: str, pairs: bool) -> bool {
             continue;
         }
         if pairs and b == 237 and i + 5 < n {
-            b1: int = ord(s[i + 1]);
-            b4: int = ord(s[i + 4]);
-            if b1 >= 160 and b1 <= 175 and ord(s[i + 3]) == 237 and b4 >= 176 and b4 <= 191 {
-                hs: int = 53248 | ((b1 & 63) << 6) | (ord(s[i + 2]) & 63);
-                ls: int = 53248 | ((b4 & 63) << 6) | (ord(s[i + 5]) & 63);
+            b1: int = raw[i + 1];
+            b4: int = raw[i + 4];
+            if b1 >= 160
+                and b1 <= 175
+                and raw[i + 3] == 237
+                and b4 >= 176
+                and b4 <= 191 {
+                hs: int = 53248 | ((b1 & 63) << 6) | (raw[i + 2] & 63);
+                ls: int = 53248 | ((b4 & 63) << 6) | (raw[i + 5] & 63);
                 sc: int = 65536 + ((hs - 55296) << 10) + (ls - 56320);
                 write_byte(buf, o, 240 | (sc >> 18));
                 write_byte(buf, o + 1, 128 | ((sc >> 12) & 63));
@@ -2223,7 +2239,8 @@ def _do_match_buf(re: JSRegExpState, p: int, n: int, start: int) -> list[int] {
 }
 
 def _do_match_raw(re: JSRegExpState, subj: str, start: int) -> list[int] {
-    return _do_match_on(re, subj, len(subj), start);
+    subj_bytes: bytes = subj.encode();
+    return _do_match_on(re, subj, len(subj_bytes), start);
 }
 
 def _do_match_on(re: JSRegExpState, subj: str, slen: int, start: int) -> list[int] {
