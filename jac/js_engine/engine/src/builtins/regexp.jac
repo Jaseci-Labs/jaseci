@@ -144,6 +144,7 @@ import from engine.src.runtime.jssymbol {
     SYMBOL_SPLIT,
     SYMBOL_SPECIES
 }
+import from engine.src.runtime.gc { gc_total_cycles }
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 1.  PCRE2 option constants (must match /usr/include/pcre2.h)
@@ -2068,14 +2069,13 @@ Offsets map back to the subject's own bytes.
 glob _DM_ASCII: bool = False;
 # The string cell the public entry point is matching (_dm_subject_ascii), and a
 # cache of the last subject checked: whether it needs the rewritten copy and, if
-# so, the copy plus its offset breakpoints. Keyed by immutable cell id, GC epoch
-# (an id is only reused after collection), and whether pairs are joined, so a /g
-# loop rewrites its subject once.
+# so, the copy plus its offset breakpoints. Keyed by immutable cell id, the
+# collection counter (which advances on minor collections too), and pair mode.
 glob _DM_SUBJ_ID: int = -1,
      _DM_NUL: str = "",
      _DM_ED: str = "",
      _DM_CV_ID: int = -2,
-     _DM_CV_EPOCH: int = -1,
+     _DM_CV_GC_CYCLE: int = -1,
      _DM_CV_PAIRS: bool = False,
      _DM_CV_ON: bool = False,
      _DM_CV_BUF: int = 0,
@@ -2113,7 +2113,7 @@ def _dm_converted(s: str, pairs: bool) -> bool {
     if _DM_SUBJ_ID >= 0
         and _DM_SUBJ_ID == _DM_CV_ID
         and pairs == _DM_CV_PAIRS
-        and _DM_CV_EPOCH == _RE_REALM.gc_epoch {
+        and _DM_CV_GC_CYCLE == gc_total_cycles {
         return _DM_CV_ON;
     }
     raw: bytes = s.encode();
@@ -2128,7 +2128,7 @@ def _dm_converted(s: str, pairs: bool) -> bool {
     }
     _DM_CV_ID = _DM_SUBJ_ID;
     _DM_CV_PAIRS = pairs;
-    _DM_CV_EPOCH = _RE_REALM.gc_epoch;
+    _DM_CV_GC_CYCLE = gc_total_cycles;
     _DM_CV_ON = raw.find(_DM_NUL.encode()) >= 0
         or (pairs and raw.find(_DM_ED.encode()) >= 0);
     if not _DM_CV_ON {
