@@ -71,6 +71,8 @@ def invalidate_path(ls: StudioLangServer, path: str) -> list[str];
 
 def shutdown_server(ls: StudioLangServer);
 
+def type_hints(ls: StudioLangServer, path: str) -> list[tuple[int, int, str]];
+
 impl new_server(root_dir: str) -> StudioLangServer {
     ls = StudioLangServer();
     ls.lsp._workspace = Workspace(root_uri=uris.from_fs_path(root_dir));
@@ -253,11 +255,32 @@ impl check_head(
                 for w in warnings
                 if w.loc.mod_path == f
             ];
+        inlays: list[tuple[int, int, str]] = [];
+        if ok {
+            try {
+                inlays += type_hints(ls, f);
+            } except Exception {}
+            try {
+                whole = lspt.Range(
+                    start=lspt.Position(line=0, character=0),
+                    end=lspt.Position(line=len(texts[f]) + 1, character=0)
+                );
+                for h in ls.get_inlay_hints(uri_of(f), whole) {
+                    lbl = h.label
+                        if isinstance(h.label, str)
+                        else "".join([str(getattr(p, "value", p)) for p in h.label]);
+                    inlays.append(
+                        (int(h.position.line), int(h.position.character), lbl)
+                    );
+                }
+            } except Exception {}
+        }
         result["files"][f] = {
             "lines": texts[f],
             "sem": sem_rows,
             "syms": syms,
-            "diags": diags
+            "diags": diags,
+            "inlays": inlays
         };
     }
     return result;
@@ -325,4 +348,34 @@ impl shutdown_server(ls: StudioLangServer) {
     try {
         ls.shutdown();
     } except Exception {}
+}
+
+impl type_hints(ls: StudioLangServer, path: str) -> list[tuple[int, int, str]] {
+    mod = ls.program.mod.hub.get(path);
+    out: list[tuple[int, int, str]] = [];
+    if mod is None {
+        return out;
+    }
+    seen: set[int] = set();
+    for asg in mod.get_all_sub_nodes(uni.Assignment) {
+        if asg.type_tag is not None
+            or len(asg.target) != 1
+            or not isinstance(asg.target[0], uni.Name) {
+            continue;
+        }
+        tgt = asg.target[0];
+        sym = tgt.sym;
+        if sym is None or id(sym) in seen {
+            continue;
+        }
+        seen.add(id(sym));
+        ty = tgt?.type;
+        txt = str(ty) if ty is not None else "";
+        if not txt or "Unknown" in txt or len(txt) > 48 {
+            continue;
+        }
+        loc = tgt.loc;
+        out.append((loc.first_line - 1, loc.col_end - 1, f": {txt}"));
+    }
+    return out;
 }

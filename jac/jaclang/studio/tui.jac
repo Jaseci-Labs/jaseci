@@ -190,7 +190,8 @@ obj Studio {
         baselines: dict[str, str] = {},
         line_marks: dict[str, dict[int, str]] = {},
         nav_w: int = 34,
-        side_w: int = 0;
+        side_w: int = 0,
+        show_inlays: bool = True;
 
     def postinit;
     def install_layout;
@@ -349,6 +350,7 @@ glob HELP_TEXT: list[tuple[str, str]] = [
          ("r", "find references"),
          ("i", "jump between a declaration and its impl"),
          ("e", "next diagnostic"),
+         ("t", "show or hide inferred types (inlay hints)"),
          ("", "Wiring view"),
          ("← →", "providers | module | consumers"),
          ("Enter", "follow a wire to that module, or open a symbol"),
@@ -1257,6 +1259,9 @@ impl code_key(app: Studio, key: str) -> None {
         goto_definition(app);
     } elif key in ["r", "ctrl+r"] {
         find_references(app);
+    } elif key == "t" {
+        app.show_inlays = not app.show_inlays;
+        app.say("inferred types " + ("shown" if app.show_inlays else "hidden"));
     } elif key == "e" {
         jump_diagnostic(app);
     }
@@ -2449,6 +2454,12 @@ impl paint_code(app: Studio) -> None {
         }
     }
     marks = app.line_marks.get(os.path.realpath(app.code_path), {});
+    hints: dict[int, list[tuple[int, str]]] = {};
+    if app.intel is not None and app.show_inlays {
+        try {
+            hints = app.intel.inlays(app.code_path);
+        } except Exception {}
+    }
     sym_lo = 0;
     sym_hi = -1;
     if sym is not None {
@@ -2482,7 +2493,11 @@ impl paint_code(app: Studio) -> None {
             sp(num, THEME.gutter_cur if cur else THEME.gutter),
             sp(" " + mark + " ", mark_a)
         ];
-        body = slice_spans(code_line_spans(app, i, text, styles), app.code_left);
+        line_spans = code_line_spans(app, i, text, styles);
+        if app.show_inlays and (i + 1) in hints {
+            line_spans = with_inlays(line_spans, hints[i + 1]);
+        }
+        body = slice_spans(line_spans, app.code_left);
         dmsg = diag_text.get(i + 1, "");
         if dmsg {
             sev_a = THEME.err if diag_lines.get(i + 1, "") == "error" else THEME.warn;
@@ -2844,7 +2859,7 @@ impl paint_status(app: Studio) -> None {
     } else {
         hints = {
             "nav": "↑↓ move  →← open/close  Enter open  Space add to context  w wiring",
-            "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  w wiring",
+            "code": "Space add  Enter definition  r references  i decl/impl  e next diagnostic  t types  w wiring",
             "chat": "↑↓ select  Enter expand / plan links  o open tool file  End follow",
             "tray": "↑↓ select  x remove  Enter open  C clear",
             "prompt": "Enter send  Alt+Enter newline  @ add  ↑ history"
@@ -4312,4 +4327,39 @@ impl open_changed(app: Studio) -> None {
         return;
     }
     open_locations(app, refs, "Changed this session");
+}
+
+def with_inlays(spans: list[TextSpan], hints: list[tuple[int, str]]) -> list[TextSpan];
+
+impl with_inlays(
+    spans: list[TextSpan], hints: list[tuple[int, str]]
+) -> list[TextSpan] {
+    out: list[TextSpan] = [];
+    pending = sorted(hints, key=lambda (h: tuple[int, str]) -> int { h[0] });
+    hint_a = StyleAttrs(fg=244, italic=True);
+    pos = 0;
+    k = 0;
+    for s in spans {
+        t = s.text;
+        start = pos;
+        cut = 0;
+        while k < len(pending) and pending[k][0] <= start + len(t) {
+            at = max(pending[k][0] - start, 0);
+            if at > cut {
+                out.append(TextSpan(text=t[cut:at], attrs=s.attrs));
+            }
+            out.append(TextSpan(text=pending[k][1], attrs=hint_a));
+            cut = max(cut, at);
+            k += 1;
+        }
+        if cut < len(t) {
+            out.append(TextSpan(text=t[cut:], attrs=s.attrs));
+        }
+        pos += len(t);
+    }
+    while k < len(pending) {
+        out.append(TextSpan(text=pending[k][1], attrs=hint_a));
+        k += 1;
+    }
+    return out;
 }

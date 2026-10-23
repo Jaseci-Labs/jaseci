@@ -1271,6 +1271,7 @@ graph import {
             | project.compiler_host.ProjectHost.parse_python
             | project.kernel_snapshot
             | studio.gate
+            | studio.intel_server
             | studio.model,
         cli.commands.fix._imported_names,
         cli.commands.fix._module_has_jsx,

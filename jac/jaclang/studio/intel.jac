@@ -118,6 +118,7 @@ obj CodeIntel {
         _sem_lines: dict[str, list[str]] = {},
         _sem_version: dict[str, int] = {},
         _diags: dict[str, list[Diag]] = {},
+        _inlays: dict[str, dict[int, list[tuple[int, str]]]] = {},
         _syms: dict[str, dict[int, list[tuple[int, int, dict[str, any]]]]] = {},
         _check_secs: dict[str, float] = {},
         _real: dict[str, str] = {},
@@ -133,6 +134,7 @@ obj CodeIntel {
     def request_check(path: str) -> None;
     def semantic(path: str) -> (list[list[Span]] | None);
     def diagnostics(path: str) -> list[Diag];
+    def inlays(path: str) -> dict[int, list[tuple[int, str]]];
     def status(path: str) -> str;
     def check_secs(path: str) -> float;
     def request_hover(path: str, line: int, col: int) -> int;
@@ -617,6 +619,12 @@ impl CodeIntel.diagnostics(path: str) -> list[Diag] {
     }
 }
 
+impl CodeIntel.inlays(path: str) -> dict[int, list[tuple[int, str]]] {
+    with self._lock {
+        return dict(self._inlays.get(self.realpath(path), {}));
+    }
+}
+
 impl CodeIntel.status(path: str) -> str {
     with self._lock {
         return self._status.get(self.head(path), "idle");
@@ -825,6 +833,7 @@ impl CodeIntel._store(head: str, out: dict[str, any], secs: float) -> None {
                 dict[int, list[tuple[int, int, dict[str, any]]]]
             ]
         ] = {};
+    hinted: dict[str, dict[int, list[tuple[int, str]]]] = {};
     for (f, data) in out["files"].items() {
         lines: list[str] = data["lines"];
         sem_rows: list[list[Span]] = [[] for _ in lines];
@@ -854,10 +863,16 @@ impl CodeIntel._store(head: str, out: dict[str, any], secs: float) -> None {
         ];
         diags.sort(key=lambda (dg: Diag) { (dg.line, dg.col); });
         staged[f] = (sem_rows, lines, diags, syms);
+        hints: dict[int, list[tuple[int, str]]] = {};
+        for (ln, col, label) in (data.get("inlays") or []) {
+            hints.setdefault(ln + 1, []).append((col, label));
+        }
+        hinted[f] = hints;
     }
     with self._lock {
         for (f, (sem_rows, lines, diags, syms)) in staged.items() {
             if out["ok"] {
+                self._inlays[f] = hinted.get(f, {});
                 self._sem[f] = sem_rows;
                 self._sem_lines[f] = lines;
                 self._sem_version[f] = self._sem_version.get(f, 0) + 1;
