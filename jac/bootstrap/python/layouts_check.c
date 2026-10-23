@@ -12,6 +12,8 @@
 #include "internal/pycore_abstract.h"
 #include "internal/pycore_freelist_state.h"
 #include "internal/pycore_range.h"
+#include "internal/pycore_tuple.h"
+#include "internal/pycore_runtime.h"
 #include "internal/pycore_typeobject.h"
 #include "internal/pycore_interp_structs.h"
 #include "internal/pycore_gc.h"
@@ -405,6 +407,16 @@ FIELD(_PyRangeIterObject, len, 32, 8);
 KIND(_PyRangeIterObject, len, 1);
 SIGNED(_PyRangeIterObject, len, 1);
 LAYOUT(_PyRangeIterObject, 40, 8);
+
+/* _PyTupleIterObject */
+FIELD(_PyTupleIterObject, ob_base, 0, 16);
+KIND(_PyTupleIterObject, ob_base, 12);
+FIELD(_PyTupleIterObject, it_index, 16, 8);
+KIND(_PyTupleIterObject, it_index, 1);
+SIGNED(_PyTupleIterObject, it_index, 1);
+FIELD(_PyTupleIterObject, it_seq, 24, 8);
+KIND(_PyTupleIterObject, it_seq, 5);
+LAYOUT(_PyTupleIterObject, 32, 8);
 
 /* _Py_freelist */
 FIELD(struct _Py_freelist, freelist, 0, 8);
@@ -1069,6 +1081,7 @@ CONSTANT(offsetof(PySliceObject, start), 16LL);
 CONSTANT(offsetof(PySliceObject, stop), 24LL);
 CONSTANT(offsetof(PySliceObject, step), 32LL);
 CONSTANT(sizeof(_PyRangeIterObject), 40LL);
+CONSTANT(sizeof(_PyTupleIterObject), 32LL);
 CONSTANT(sizeof(_PyNamespaceObject), 24LL);
 CONSTANT(offsetof(_PyNamespaceObject, ns_dict), 16LL);
 CONSTANT(sizeof(PyCapsule), 64LL);
@@ -1089,6 +1102,12 @@ CONSTANT(sizeof(PyGC_Head), 16LL);
 CONSTANT(_PyGC_PREV_MASK_FINALIZED, 1LL);
 CONSTANT((Py_ssize_t)_PyGC_PREV_MASK, -4LL);
 CONSTANT((Py_ssize_t)~_PyGC_PREV_MASK, 3LL);
+CONSTANT(offsetof(struct _Py_freelists, tuples), 32LL);
+CONSTANT(offsetof(struct _Py_freelists, tuple_iters), 384LL);
+CONSTANT(sizeof(struct _Py_freelist), 16LL);
+CONSTANT(PyTuple_MAXSAVESIZE, 20LL);
+CONSTANT(Py_tuple_MAXFREELIST, 2000LL);
+CONSTANT(Py_tuple_iters_MAXFREELIST, 10LL);
 CONSTANT(offsetof(struct _Py_freelists, slices), 432LL);
 CONSTANT(offsetof(struct _Py_freelists, ranges), 448LL);
 CONSTANT(offsetof(struct _Py_freelists, range_iters), 464LL);
@@ -1104,6 +1123,8 @@ CONSTANT(Py_TPFLAGS_HEAPTYPE, 512LL);
 CONSTANT(Py_TPFLAGS_READY, 4096LL);
 CONSTANT(_Py_TPFLAGS_STATIC_BUILTIN, 2LL);
 CONSTANT(_Py_TYPE_VERSION_COMPLEX, 11LL);
+CONSTANT(_Py_TYPE_VERSION_TUPLE, 4LL);
+CONSTANT(_Py_TPFLAGS_MATCH_SELF, 4194304LL);
 CONSTANT(Py_T_DOUBLE, 4LL);
 CONSTANT(Py_T_BOOL, 14LL);
 CONSTANT(Py_tp_members, 72LL);
@@ -1235,15 +1256,27 @@ CONSTANT(Py_CLEANUP_SUPPORTED, 131072LL);
 #if defined(__linux__) && defined(__x86_64__)
 CONSTANT(offsetof(PyInterpreterState, object_state.freelists), 11120LL);
 CONSTANT(offsetof(PyInterpreterState, gc), 7408LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__linux__) && defined(__aarch64__)
 CONSTANT(offsetof(PyInterpreterState, object_state.freelists), 11136LL);
 CONSTANT(offsetof(PyInterpreterState, gc), 7408LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
 #elif defined(__APPLE__) && defined(__x86_64__)
 CONSTANT(offsetof(PyInterpreterState, object_state.freelists), 11168LL);
 CONSTANT(offsetof(PyInterpreterState, gc), 7408LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
 #elif defined(__APPLE__) && defined(__aarch64__)
 CONSTANT(offsetof(PyInterpreterState, object_state.freelists), 11168LL);
 CONSTANT(offsetof(PyInterpreterState, gc), 7408LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
+CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
+CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
 #else
 #error "no generated layouts_platform table for this platform"
 #endif

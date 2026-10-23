@@ -337,7 +337,7 @@ impl NaIRGenPass._clib_abi_signature(decl: uni.Ability) -> str {
             continue;
         }
         if p.type_tag is not None and is_borrow_kind(p.type_tag.ownership) {
-            params.append("ptr");
+            params.append(str(ir.IntType(64)));
         } else {
             params.append(str(self._clib_param_type(p)));
         }
@@ -373,6 +373,16 @@ impl NaIRGenPass._declare_clib_definitions -> None {
     }
     for (name, decl) in self._clib_definitions.items() {
         if c_variadic_param(decl.signature) is not None {
+            self.clib_extern_fns.pop(name, None);
+            self.extern_funcs.pop(name, None);
+            existing = self.llvm_module.globals.get(name);
+            if isinstance(existing, ir.Function) and not existing.blocks {
+                self.scope.unbind_function(name);
+                self.llvm_module.globals.pop(name, None);
+                self.llvm_module.scope.release(name);
+            }
+            self.clib_extern_names.discard(name);
+            self._clib_symbol_lib.pop(name, None);
             self._maybe_declare_ability(decl, symbol=name);
             self._record_export(name, name, "function", True);
             if self.module?.gen and name not in self.module.gen._exported_symbols {

@@ -7,4 +7,7 @@ its platform.
 
 glob LAYOUTS_PLATFORM: str = "linux.aarch64",
      PyInterpreterState_FREELISTS: Final[i64] = 11136,
-     PyInterpreterState_GC: Final[i64] = 7408;
+     PyInterpreterState_GC: Final[i64] = 7408,
+     _PyRuntimeState_REF_TRACER_FUNC: Final[i64] = 10432,
+     _PyRuntimeState_REF_TRACER_DATA: Final[i64] = 10440,
+     _PyRuntimeState_TUPLE_EMPTY: Final[i64] = 90544;

@@ -616,6 +616,19 @@ so a call into C costs a call ThinLTO cannot remove; emitting it as bitcode
 for the ThinLTO link removes that boundary if Jac's LLVM and Zig's LLVM agree
 on the bitcode version.
 
+The containers start with `tupleobject.c` (`object_model/tuple.jac`). The
+empty tuple is the runtime's static singleton: its address is `_PyRuntime`
+plus `_PyRuntimeState_TUPLE_EMPTY`, a gen_layouts PLATFORM_CONSTANT, and
+`_PyTuple_Resize` reads the reference tracer at two more such offsets.
+Tuples of up to PyTuple_MAXSAVESIZE items and tuple iterators recycle through
+the interpreter's freelists (`_Py_freelists_TUPLES`, one `_Py_freelist` per
+size). `PyTuple_Pack` is a C variadic definition (`*args: VaList`) whose
+symbol cpython_api.jac also declares; the definition takes the declaration's
+place in the module. A declaration's borrowed parameter (`&mut T`) and a
+definition's pointer parameter are one pointer-sized argument, so the two
+signatures match, and `_PyTuple_Resize(pv: ptr[ptr[PyObject]], ...)` serves
+callers that pass `&mut tuple`.
+
 Order after the leaf types: containers (`tupleobject.c`, `listobject.c`,
 `setobject.c`, `dictobject.c`), then numbers and text (`floatobject.c`,
 `complexobject.c`, `longobject.c`, `bytesobject.c`, `unicodeobject.c`), and

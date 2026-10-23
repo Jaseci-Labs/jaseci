@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 139 C files / 238,977 lines; 127 headers / 118,217 lines.
-#   Total: 266 files / 357,194 source lines.
+#   Excluded: 140 C files / 240,197 lines; 128 headers / 118,347 lines.
+#   Total: 268 files / 358,544 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -243,7 +243,7 @@ Objects/clinic/moduleobject.c.h
 Objects/clinic/odictobject.c.h
 Objects/clinic/setobject.c.h
 # Objects/clinic/structseq.c.h  # removed: 68 source lines
-Objects/clinic/tupleobject.c.h
+# Objects/clinic/tupleobject.c.h  # removed: 130 source lines
 Objects/clinic/typeobject.c.h
 Objects/clinic/typevarobject.c.h
 Objects/clinic/unicodeobject.c.h
@@ -300,7 +300,7 @@ Objects/setobject.c
 Objects/stringlib/
 # Objects/structseq.c  # removed: 795 source lines
 # Objects/templateobject.c  # removed: 416 source lines
-Objects/tupleobject.c
+# Objects/tupleobject.c  # removed: 1,220 source lines
 Objects/typeobject.c
 Objects/typeslots.inc
 Objects/typevarobject.c

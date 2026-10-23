@@ -7,4 +7,7 @@ its platform.
 
 glob LAYOUTS_PLATFORM: str = "darwin.aarch64",
      PyInterpreterState_FREELISTS: Final[i64] = 11168,
-     PyInterpreterState_GC: Final[i64] = 7408;
+     PyInterpreterState_GC: Final[i64] = 7408,
+     _PyRuntimeState_REF_TRACER_FUNC: Final[i64] = 9928,
+     _PyRuntimeState_REF_TRACER_DATA: Final[i64] = 9936,
+     _PyRuntimeState_TUPLE_EMPTY: Final[i64] = 90048;

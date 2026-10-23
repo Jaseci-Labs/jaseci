@@ -77,6 +77,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Include/sliceobject.h",
          "Include/cpython/pyerrors.h",
          "Include/internal/pycore_range.h",
+         "Include/internal/pycore_tuple.h",
          "Include/internal/pycore_freelist_state.h",
          "Include/datetime.h",
          "Include/pybuffer.h",
@@ -113,6 +114,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "internal/pycore_abstract.h",
          "internal/pycore_freelist_state.h",
          "internal/pycore_range.h",
+         "internal/pycore_tuple.h",
+         "internal/pycore_runtime.h",
          "internal/pycore_typeobject.h",
          "internal/pycore_interp_structs.h",
          "internal/pycore_gc.h"
@@ -138,6 +141,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyCellObject", "PyCellObject"),
          ("PySliceObject", "PySliceObject"),
          ("_PyRangeIterObject", "_PyRangeIterObject"),
+         ("_PyTupleIterObject", "_PyTupleIterObject"),
          ("_Py_freelist", "struct _Py_freelist"),
          ("_PyNamespaceObject", "_PyNamespaceObject"),
          ("PyCapsule", "PyCapsule"),
@@ -245,6 +249,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PySliceObject_STOP", "offsetof(PySliceObject, stop)", "i64"),
          ("PySliceObject_STEP", "offsetof(PySliceObject, step)", "i64"),
          ("_PyRangeIterObject_SIZE", "sizeof(_PyRangeIterObject)", "i64"),
+         ("_PyTupleIterObject_SIZE", "sizeof(_PyTupleIterObject)", "i64"),
          ("_PyNamespaceObject_SIZE", "sizeof(_PyNamespaceObject)", "i64"),
          ("_PyNamespaceObject_NS_DICT", "offsetof(_PyNamespaceObject, ns_dict)", "i64"),
          ("PyCapsule_SIZE", "sizeof(PyCapsule)", "i64"),
@@ -278,6 +283,16 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("_PyGC_PREV_MASK_FINALIZED", "_PyGC_PREV_MASK_FINALIZED", "i64"),
          ("_PyGC_PREV_MASK", "(Py_ssize_t)_PyGC_PREV_MASK", "i64"),
          ("_PyGC_PREV_FLAGS", "(Py_ssize_t)~_PyGC_PREV_MASK", "i64"),
+         ("_Py_freelists_TUPLES", "offsetof(struct _Py_freelists, tuples)", "i64"),
+         (
+             "_Py_freelists_TUPLE_ITERS",
+             "offsetof(struct _Py_freelists, tuple_iters)",
+             "i64"
+         ),
+         ("_Py_freelist_SIZE", "sizeof(struct _Py_freelist)", "i64"),
+         ("PyTuple_MAXSAVESIZE", "PyTuple_MAXSAVESIZE", "i64"),
+         ("Py_tuple_MAXFREELIST", "Py_tuple_MAXFREELIST", "i64"),
+         ("Py_tuple_iters_MAXFREELIST", "Py_tuple_iters_MAXFREELIST", "i64"),
          ("_Py_freelists_SLICES", "offsetof(struct _Py_freelists, slices)", "i64"),
          ("_Py_freelists_RANGES", "offsetof(struct _Py_freelists, ranges)", "i64"),
          (
@@ -308,6 +323,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_TPFLAGS_READY", "Py_TPFLAGS_READY", "u64"),
          ("_Py_TPFLAGS_STATIC_BUILTIN", "_Py_TPFLAGS_STATIC_BUILTIN", "u64"),
          ("_Py_TYPE_VERSION_COMPLEX", "_Py_TYPE_VERSION_COMPLEX", "u32"),
+         ("_Py_TYPE_VERSION_TUPLE", "_Py_TYPE_VERSION_TUPLE", "u32"),
+         ("_Py_TPFLAGS_MATCH_SELF", "_Py_TPFLAGS_MATCH_SELF", "u64"),
          ("Py_T_DOUBLE", "Py_T_DOUBLE", "i32"),
          ("Py_T_BOOL", "Py_T_BOOL", "i32"),
          ("Py_tp_members", "Py_tp_members", "i32"),
@@ -349,11 +366,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PY_MEMBER_DEF_SIZE", "sizeof(PyMemberDef)", "i64"),
          ("PY_TYPE_SLOT_SIZE", "sizeof(PyType_Slot)", "i64"),
          ("PY_TYPE_SPEC_SIZE", "sizeof(PyType_Spec)", "i64"),
-         (
-             "PY_STRUCT_SEQUENCE_FIELD_SIZE",
-             "sizeof(PyStructSequence_Field)",
-             "i64"
-         ),
+         ("PY_STRUCT_SEQUENCE_FIELD_SIZE", "sizeof(PyStructSequence_Field)", "i64"),
          ("PY_STRUCT_SEQUENCE_DESC_SIZE", "sizeof(PyStructSequence_Desc)", "i64"),
          (
              "PyPickleBufferObject_WEAKREFLIST",
@@ -487,7 +500,22 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "offsetof(PyInterpreterState, object_state.freelists)",
              "i64"
          ),
-         ("PyInterpreterState_GC", "offsetof(PyInterpreterState, gc)", "i64")
+         ("PyInterpreterState_GC", "offsetof(PyInterpreterState, gc)", "i64"),
+         (
+             "_PyRuntimeState_REF_TRACER_FUNC",
+             "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_REF_TRACER_DATA",
+             "offsetof(_PyRuntimeState, ref_tracer.tracer_data)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_TUPLE_EMPTY",
+             "offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty)",
+             "i64"
+         )
      ],
      # The supported platforms: variant module suffix, zig target and the C
      # condition that selects the platform in layouts_check.c.
@@ -1104,7 +1132,7 @@ def capi_records -> set[str] {
 # same type the C API functions take. Its fields must match the header's
 # layout position by position (the record may rename a field C names after a
 # Jac keyword); the asserts check the header's side.
-def check_capi_record(layout: Layout) -> None {
+def check_capi_record(layout: Layout) {
     body = re.search(
         r"\bobj " + layout.name + r"\s*\{\s*has\s+(.*?);\s*\}", CAPI.read_text(), re.S
     );
@@ -1164,7 +1192,6 @@ def render_jac(values: dict[str, int]) -> str {
         "fields, `name` for element 0 and `name_1` to `name_<N-1>` for the rest.",
         "Pointers to records no port reads yet are opaque.",
         '"""',
-        f"import from jaclang.runtime.python.cpython_api {{ {', '.join(from_capi)} }}",
         "",
         "import from c {"
     ];

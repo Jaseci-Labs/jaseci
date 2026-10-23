@@ -15977,6 +15977,7 @@ graph import runtime.python {
             | object_model.slice
             | object_model.structseq
             | object_model.template
+            | object_model.tuple
             | object_model.union { visit_reference },
         modules.decimal_number { jacpy_binding_state_set, visit_reference },
         modules.elementtree | modules.pyexpat {
@@ -21990,6 +21991,51 @@ graph import runtime.python {
             jacpy_release,
             jacpy_unicode_size
         },
+        object_model.tuple {
+            NULL,
+            PyErr_BadInternalCall,
+            PyErr_Format,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetString,
+            PyExc_IndexError,
+            PyExc_TypeError,
+            PyExc_ValueError,
+            PyIndex_Check,
+            PyLong_AsSsize_t,
+            PyLong_FromSsize_t,
+            PyMethodDef,
+            PyNumber_AsSsize_t,
+            PyObject,
+            PyObject_GC_Del,
+            PyObject_GC_UnTrack,
+            PyObject_GenericGetAttr,
+            PyObject_Hash,
+            PyObject_RichCompare,
+            PyObject_RichCompareBool,
+            PyObject_SelfIter,
+            PySequence_Tuple,
+            PySlice_Type,
+            PyUnicodeWriter_Create,
+            PyUnicodeWriter_Discard,
+            PyUnicodeWriter_Finish,
+            PyUnicodeWriter_WriteChar,
+            PyUnicodeWriter_WriteRepr,
+            PyUnicode_FromString,
+            PyVectorcall_NARGS,
+            Py_BuildValue,
+            Py_None,
+            Py_NotImplemented,
+            Py_ReprEnter,
+            Py_ReprLeave,
+            _PyArg_CheckPositional,
+            _PyArg_NoKeywords,
+            _PyArg_NoKwnames,
+            _PyObject_GC_New,
+            _PyObject_GC_NewVar,
+            _PyRuntime,
+            jacpy_memory_copy
+        },
         object_model.union {
             NULL,
             PyErr_Clear,
@@ -22760,6 +22806,39 @@ graph import runtime.python {
             templateobject_SIZE,
             templateobject_STRINGS
         },
+        object_model.tuple {
+            METH_CLASS,
+            METH_FASTCALL,
+            METH_NOARGS,
+            METH_O,
+            PY_TUPLE_OBJECT_SIZE,
+            PyMappingMethods,
+            PySequenceMethods,
+            PyTupleObject,
+            PyTupleObject_ITEMS,
+            PyTuple_MAXSAVESIZE,
+            PyTypeObject,
+            PyVarObject,
+            Py_EQ,
+            Py_NE,
+            Py_TPFLAGS_BASETYPE,
+            Py_TPFLAGS_DEFAULT,
+            Py_TPFLAGS_HAVE_GC,
+            Py_TPFLAGS_SEQUENCE,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_tuple_MAXFREELIST,
+            Py_tuple_iters_MAXFREELIST,
+            _PyTupleIterObject,
+            _PyTupleIterObject_SIZE,
+            _Py_IMMORTAL_INITIAL_REFCNT,
+            _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+            _Py_TPFLAGS_MATCH_SELF,
+            _Py_TYPE_VERSION_TUPLE,
+            _Py_freelist_SIZE,
+            _Py_freelists_TUPLES,
+            _Py_freelists_TUPLE_ITERS,
+            _object
+        },
         object_model.union {
             METH_CLASS,
             METH_O,
@@ -22791,10 +22870,14 @@ graph import runtime.python {
             PyStructSequence_Field
         },
     ]
-    layouts_platform ++> object_model.header {
-        PyInterpreterState_FREELISTS,
-        PyInterpreterState_GC
-    }
+    layouts_platform ++> [
+        object_model.header { PyInterpreterState_FREELISTS, PyInterpreterState_GC },
+        object_model.tuple {
+            _PyRuntimeState_REF_TRACER_DATA,
+            _PyRuntimeState_REF_TRACER_FUNC,
+            _PyRuntimeState_TUPLE_EMPTY
+        },
+    ]
     modules.abc ++> [
         bindings.abc {
             AbcModuleState,
@@ -30175,8 +30258,9 @@ graph import runtime.python.object_model {
     bool ++> [
         file { PyBool_FromLong, bool_check },
         range { bool_check },
+        tuple { py_false, py_true },
     ]
-    genericalias ++> enumerate | interpolation | template { Py_GenericAlias }
+    genericalias ++> enumerate | interpolation | template | tuple { Py_GenericAlias }
     header ++> [
         bool { object_is_type },
         capsule { PyType_Type, object_gc_track, object_gc_untrack, object_is_type },
@@ -30305,6 +30389,28 @@ graph import runtime.python.object_model {
             tuple_get_item,
             tuple_set_item
         },
+        tuple {
+            eval_builtin,
+            freelist,
+            freelist_pop,
+            freelist_push,
+            object_decref,
+            object_gc_is_tracked,
+            object_gc_track,
+            object_gc_untrack,
+            object_incref,
+            object_is_type,
+            object_new_ref,
+            object_refcount,
+            object_size,
+            object_type,
+            object_xdecref,
+            rich_compare_values,
+            tuple_get_item,
+            tuple_items,
+            tuple_set_item,
+            type_has_feature
+        },
         union {
             PyType_Type,
             _Py_FalseStruct,
@@ -30322,7 +30428,10 @@ graph import runtime.python.object_model {
         _PyInterpolation_GetValueRef,
         interpolation_check_exact
     }
-    slice ++> range { slice_check, slice_get_long_indices }
+    slice ++> [
+        range { slice_check, slice_get_long_indices },
+        tuple { PySlice_AdjustIndices, PySlice_Unpack },
+    ]
     union ++> genericalias { _Py_union_type_or }
 }
 

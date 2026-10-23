@@ -7,4 +7,7 @@ its platform.
 
 glob LAYOUTS_PLATFORM: str = "",
      PyInterpreterState_FREELISTS: Final[i64] = 0,
-     PyInterpreterState_GC: Final[i64] = 0;
+     PyInterpreterState_GC: Final[i64] = 0,
+     _PyRuntimeState_REF_TRACER_FUNC: Final[i64] = 0,
+     _PyRuntimeState_REF_TRACER_DATA: Final[i64] = 0,
+     _PyRuntimeState_TUPLE_EMPTY: Final[i64] = 0;
