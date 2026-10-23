@@ -3,9 +3,11 @@
 The MTIR graph shares nodes and closes cycles (a method points back at its
 class), so its record keys nodes by position; a client manifest's global
 values may be bytes or nested containers, so its record tags them."""
+import json;
 import from jaclang.runtime.semantic {
     ClassInfo,
     FieldInfo,
+    INFO_GRAPH_VERSION,
     Info,
     MethodInfo,
     ParamInfo,
@@ -53,6 +55,24 @@ test "the MTIR graph keeps shared nodes and cycles through its record" {
 
 test "an unknown graph version restores nothing" {
     assert info_graph_from_json('{"version": 0, "entries": {}, "nodes": []}') == {};
+}
+
+test "a graph whose node list holds a non-reference restores nothing" {
+    plain_record = {
+        "k": "func",
+        "name": "plain",
+        "semstr": None,
+        "params": ["@\x14\x01"],
+        "returns": "str",
+        "tools": [],
+        "by_call": False
+    };
+    payload = {
+        "version": INFO_GRAPH_VERSION,
+        "entries": {"m.plain": {"n": 0}},
+        "nodes": [plain_record]
+    };
+    assert info_graph_from_json(json.dumps(payload)) == {};
 }
 
 test "a client artifact record keeps tagged global values and its source map" {
