@@ -138,7 +138,7 @@ impl WebTarget.build(
         copied = _copy_public_dirs(
             bundler.config_loader.get_public_dirs(str(entry_file.resolve())), dist_dir
         );
-        # sw.js was listed before the copy; relist it so public files work offline.
+
         if pwa and copied {
             import from jaclang.client.targets.pwa_build { refresh_pwa_precache }
             refresh_pwa_precache(dist_dir);
