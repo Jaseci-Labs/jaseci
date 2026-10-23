@@ -1,6 +1,5 @@
 import sys;
 import os;
-import codecs;
 import signal;
 import select;
 import termios;
@@ -77,21 +76,15 @@ obj ProcessTerminal(Terminal) {
         _old_sigint: any = None,
         _old_sigterm: any = None,
         _old_sighup: any = None,
-        _utf8: any = None,
+        _utf8: Utf8StreamDecoder postinit,
         _stdin_buf: str = "",
         eof: bool = False,
-        on_resize: any = None,
-        on_input: any = None,
-        on_interrupt: any = None,
-        on_terminate: any = None;
+        on_resize: Callable[[int, int], None] | None = None,
+        on_input: Callable[[str], None] | None = None,
+        on_interrupt: Callable[[], None] | None = None,
+        on_terminate: Callable[[], None] | None = None;
 
-    def init(
-        on_input: any = None,
-        on_resize: any = None,
-        on_interrupt: any = None,
-        on_terminate: any = None,
-    );
-
+    def postinit;
     def write(data: str) -> None;
     def _refresh_size;
     def _on_sigwinch(signum: int, frame: any);
@@ -301,12 +294,7 @@ impl Utf8StreamDecoder.feed(data: bytes) -> str {
 impl read_terminal_size(
     fallback_cols: int = 80, fallback_rows: int = 24
 ) -> tuple[int, int] {
-    for stream in [sys.stdout, sys.stdin, sys.stderr] {
-        try {
-            fd = stream.fileno() as int;
-        } except Exception {
-            continue;
-        }
+    for fd in [1, 0, 2] {
         got = _ioctl_winsize(fd);
         if got is not None {
             return got;
@@ -326,27 +314,8 @@ impl read_terminal_size(
 }
 
 
-impl ProcessTerminal.init(
-    on_input: any = None,
-    on_resize: any = None,
-    on_interrupt: any = None,
-    on_terminate: any = None,
-) {
-    super.init();
-    self.on_input = on_input;
-    self.on_resize = on_resize;
-    self.on_interrupt = on_interrupt;
-    self.on_terminate = on_terminate;
-    self._fd = -1;
-    self._old_attrs = None;
-    self._old_handler = None;
-    self._old_sigint = None;
-    self._old_sigterm = None;
-    self._old_sighup = None;
+impl ProcessTerminal.postinit {
     self._utf8 = Utf8StreamDecoder();
-    self._stdin_buf = "";
-    self.eof = False;
-    self.restored = True;
 }
 
 impl ProcessTerminal.write(data: str) -> None {
@@ -362,8 +331,9 @@ impl ProcessTerminal._refresh_size {
     changed = cols != self.columns or rows != self.rows;
     self.columns = cols;
     self.rows = rows;
-    if changed and self.on_resize is not None {
-        self.on_resize(cols, rows);
+    resized = self.on_resize;
+    if changed and resized is not None {
+        resized(cols, rows);
     }
 }
 
@@ -373,8 +343,9 @@ impl ProcessTerminal._on_sigwinch(signum: int, frame: any) {
 
 impl ProcessTerminal._on_terminate_signal(signum: int, frame: any) {
     self.restore();
-    if self.on_terminate is not None {
-        self.on_terminate();
+    terminated = self.on_terminate;
+    if terminated is not None {
+        terminated();
     } else {
         raise SystemExit(128 + signum);
     }
@@ -382,8 +353,9 @@ impl ProcessTerminal._on_terminate_signal(signum: int, frame: any) {
 
 impl ProcessTerminal._on_sigint(signum: int, frame: any) {
     self.restore();
-    if self.on_interrupt is not None {
-        self.on_interrupt();
+    interrupted = self.on_interrupt;
+    if interrupted is not None {
+        interrupted();
     } else {
         raise KeyboardInterrupt();
     }
@@ -393,10 +365,10 @@ impl ProcessTerminal.start -> None {
     if self.started {
         return;
     }
-    if not sys.stdin.isatty() {
+    if not os.isatty(0) {
         raise RuntimeError("ProcessTerminal requires a TTY stdin");
     }
-    self._fd = sys.stdin.fileno() as int;
+    self._fd = 0;
     self._old_attrs = termios.tcgetattr(self._fd);
     tty.setraw(self._fd);
 
@@ -499,8 +471,9 @@ impl ProcessTerminal.poll_input(timeout_s: float = 0.0) -> str {
         return "";
     }
     text = self._utf8.feed(data);
-    if self.on_input is not None {
-        self.on_input(text);
+    received = self.on_input;
+    if received is not None {
+        received(text);
     }
     return text;
 }

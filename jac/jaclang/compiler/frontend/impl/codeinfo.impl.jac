@@ -926,7 +926,8 @@ impl resolve_native_module(
             _native_variant_path(candidate[:-len('.jac')]) or candidate
         );
         if (native_unit_compile_active() and in_native_scope_path(candidate))
-            or clean in SHARED_RUNTIME_MODULES {
+            or clean in SHARED_RUNTIME_MODULES
+            or clean.startswith("jaclang.osprey.") {
             return (candidate, candidate);
         }
         if allow_inferred {

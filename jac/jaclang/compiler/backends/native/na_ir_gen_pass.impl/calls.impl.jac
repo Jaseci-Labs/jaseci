@@ -4385,6 +4385,14 @@ impl NaIRGenPass._emit_swap(nd: uni.FuncCall) -> (ir.Value | None) {
 impl NaIRGenPass._codegen_callable_value(
     nd: uni.FuncCall, value: ir.Value, captures: list[tuple[str, ir.Value]]
 ) -> (ir.Value | None) {
+    if self._opt_payload_of(value.type) is not None {
+        _callee = self._opt_unwrap_guarded(
+            value, "call", "'NoneType' object is not callable"
+        );
+        if _callee is not None {
+            return self._codegen_callable_value(nd, _callee, captures);
+        }
+    }
     closure_name = self._closure_struct_of(value.type);
     if closure_name is not None {
         return self._codegen_closure_call(nd, value, closure_name);
