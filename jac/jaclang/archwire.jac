@@ -13978,6 +13978,7 @@ graph import compiler.passes.graphmend {
         },
         predicate_ctrl_flow_pass {
             cond_materializes_scalar,
+            defining_assignment,
             is_torch_attr_target,
             symbol_is_builtin
         },

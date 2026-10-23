@@ -88,6 +88,9 @@ test "a flag-gated branch returns the eager result for both flag values" {
     gate = torch.compile(ns["flag_gate"], backend="eager");
     assert torch.equal(gate(x, True), x * 2);
     assert torch.equal(gate(x, False), x * 3);
+    traced = torch.compile(ns["traced_flag"], backend="eager");
+    assert torch.equal(traced(x, True), x * 2);
+    assert torch.equal(traced(x, False), x * 3);
 }
 
 test "nested guard in a branch defragments via trap + predication" {

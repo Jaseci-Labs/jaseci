@@ -315,7 +315,56 @@ impl PredicateCtrlFlowPass._python_bool_cond(cond: uni.Expr) -> bool {
             }
         }
     }
-    return False;
+    return self._python_valued(cond, set(), 0);
+}
+
+impl PredicateCtrlFlowPass._python_valued(
+    e: uni.Expr, seen: set[str], depth: int
+) -> bool {
+    if depth > 10 {
+        return False;
+    }
+    if isinstance(e, uni.AtomUnit) {
+        inner = e.value;
+        return isinstance(inner, uni.Expr)
+            and self._python_valued(inner, seen, depth + 1);
+    }
+    if isinstance(e, (uni.Literal, uni.BoolExpr)) {
+        return True;
+    }
+    if isinstance(e, uni.UnaryExpr) {
+        return (e.op.name == Tok.NOT)
+            or self._python_valued(e.operand, seen, depth + 1);
+    }
+    if isinstance(e, uni.CompareExpr) {
+        for side in [e.left] + list(e.rights) {
+            if not self._python_valued(side, seen, depth + 1) {
+                return False;
+            }
+        }
+        return True;
+    }
+    if isinstance(e, uni.BinaryExpr) {
+        return self._python_valued(e.left, seen, depth + 1)
+            and self._python_valued(e.right, seen, depth + 1);
+    }
+    if isinstance(e, uni.FuncCall) {
+        return isinstance(e.target, uni.Name)
+            and (e.target.value in _PY_VALUE_BUILTINS);
+    }
+    if (not isinstance(e, uni.Name)) or (e.value in seen) {
+        return False;
+    }
+    st = e.sym_tab;
+    sym = st.lookup(e.value, deep=True) if st else None;
+    if (sym is None) or symbol_is_builtin(sym) or (len(sym.defn) != 1) {
+        return False;
+    }
+    seen.add(e.value);
+    assign = defining_assignment(sym);
+    return (assign is not None)
+        and isinstance(assign.value, uni.Expr)
+        and self._python_valued(assign.value, seen, depth + 1);
 }
 
 impl PredicateCtrlFlowPass._assign(

@@ -195,7 +195,9 @@ test "a condition Python can evaluate to a bool is declined" {
     for cond in [
         "if flag and x.sum() > 0:",
         "if not x.sum() > 0:",
-        "if 0 < x.sum() < 5:"
+        "if 0 < x.sum() < 5:",
+        "if ok:",
+        "if bool(x.sum() > 0):"
     ] {
         assert cond in src , cond;
     }
