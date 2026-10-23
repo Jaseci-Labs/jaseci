@@ -5,7 +5,7 @@ graph import {
     edge Cache: cache.* --> byllm.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | scale.* | server.* | toolchains.*;
     edge Cli: cli.* --> byllm.* | client.* | compiler.* | dist.* | jac0core.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
-    edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.*;
+    edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | studio.* | testing.*;
     edge Comptime: comptime --> byllm.* | cli.* | client.* | scale.* | server.*;
     edge Data: data.* --> cli.* | client.* | compiler.* | runtime.* | scale.* | server.*;
     edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
@@ -18,6 +18,7 @@ graph import {
     edge Runtime: runtime.* --> byllm.* | cli.* | client.* | compiler.* | comptime | data.* | dist.* | lib.* | project.* | scale.* | server.* | testing.*;
     edge Scale: scale.* --> cli.* | client.* | runtime.* | server.*;
     edge Server: server.* --> cli.* | client.* | compiler.* | data.* | dist.* | runtime.* | scale.* | testing.*;
+    edge Studio: studio.* --> cli.*;
     edge Testing: testing.* --> cli.* | compiler.* | runtime.* | scale.*;
     edge Toolchains: toolchains.* --> client.* | compiler.* | data.* | dist.* | packages.* | scale.*;
 
@@ -901,6 +902,7 @@ graph import {
             | project.kernel_compile
             | project.kernel_snapshot
             | server.hmr.HotReloader._classify_declarations
+            | studio.model
             | testing.cl_test_runner.compile_cl_module
             | testing.test_runner._fresh_jac_state { JacProgram },
         cli.commands.analysis._format_single_file_worker
@@ -995,6 +997,7 @@ graph import {
         project.compiler_host.ProjectHost.place_wired_imports { place_wired_imports },
         project.compiler_host.ProjectHost.session { wiring_scope },
         project.compiler_host.ProjectHost.wiring_file { arch_file_for, is_arch_file },
+        studio.model { ARCH_FILE_NAME, WiringSpec, wiring_for_path },
     ]
     compiler.frontend.codeinfo ++> [
         cli.check_report.print_native_coverage { effective_default_codespace },
@@ -1055,7 +1058,7 @@ graph import {
     compiler.frontend.diagnostics ++> client.client_diagnostics._diag
         | project.kernel_check.alert_of { DIAGNOSTICS }
     compiler.frontend.host ++> [
-        cli.commands.architecture | project.kernel_check { active_host },
+        cli.commands.architecture | project.kernel_check | studio.model { active_host },
         project.compiler_host {
             CheckSettings,
             HostPlatform,
@@ -1245,7 +1248,8 @@ graph import {
             | lsp.server.sem_manager
             | lsp.server.utils
             | project.compiler_host.ProjectHost.parse_python
-            | project.kernel_snapshot,
+            | project.kernel_snapshot
+            | studio.model,
         cli.commands.fix._imported_names,
         cli.commands.fix._module_has_jsx,
         cli.commands.fix._plain_top_decls,
@@ -1256,7 +1260,8 @@ graph import {
         | project.compiler_host { Module }
     compiler.frontend.unparse ++> dist.publish.dts
         | dist.publish.jsdoc
-        | lsp.server.engine { unparse_node }
+        | lsp.server.engine
+        | studio.model { unparse_node }
     compiler.native_compiler ++> project.kernel_check.analysis_kernel
         | project.kernel_compile.kernel_route
         | project.kernel_snapshot.loaded_kernel { ensure_loaded }
@@ -1400,6 +1405,7 @@ graph import {
             | cli.commands.native
             | cli.commands.precompile
             | cli.commands.project
+            | cli.commands.studio
             | cli.commands.tools
             | cli.shadcn.cli
             | client.cli
@@ -4215,6 +4221,7 @@ graph import {
         client.targets.mobile_target.MobileTarget.dev
             | client.targets.web_target.WebTarget.dev { JacFileWatcher },
     ]
+    studio.app ++> cli.commands.studio { run_studio }
     testing.cl_test_runner ++> scale.tests.server.test_cl_test_runner {
         run_cl_test_file
     }
@@ -4578,6 +4585,7 @@ graph import cli {
             | commands.native
             | commands.precompile
             | commands.project
+            | commands.studio
             | commands.tools { Arg, ArgKind, CommandSpec },
         commands.mcp | shadcn.cli { Arg, CommandSpec },
         commands.tools._extract_commands { ArgKind },
@@ -4624,6 +4632,7 @@ graph import cli {
         SPEC_REMOVE,
         SPEC_UPDATE
     }
+    comptime commands.studio ++> manifest { SPEC_STUDIO }
     comptime commands.tools ++> manifest {
         SPEC_COMPLETIONS,
         SPEC_DOT,
@@ -32773,6 +32782,10 @@ graph import server.serving {
         client { parse_sse },
     ]
     ws ++> client | server { WebSocket, compute_accept_key }
+}
+
+graph import studio {
+    model ++> app { ProjectModel, find_project_root }
 }
 
 graph import testing {
