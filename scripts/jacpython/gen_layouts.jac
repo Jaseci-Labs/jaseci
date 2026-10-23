@@ -838,6 +838,16 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("Py_list_iters_MAXFREELIST", "Py_list_iters_MAXFREELIST", "i64"),
          ("_Py_freelists_FLOATS", "offsetof(struct _Py_freelists, floats)", "i64"),
          ("Py_floats_MAXFREELIST", "Py_floats_MAXFREELIST", "i64"),
+         ("PyLongObject_SIZE", "sizeof(PyLongObject)", "i64"),
+         ("_Py_freelists_INTS", "offsetof(struct _Py_freelists, ints)", "i64"),
+         ("Py_ints_MAXFREELIST", "Py_ints_MAXFREELIST", "i64"),
+         ("_Py_TYPE_VERSION_INT", "_Py_TYPE_VERSION_INT", "u32"),
+         ("PyLongExport_SIZE", "sizeof(PyLongExport)", "i64"),
+         ("_PyUnicodeWriter_BUFFER", "offsetof(_PyUnicodeWriter, buffer)", "i64"),
+         ("_PyUnicodeWriter_KIND", "offsetof(_PyUnicodeWriter, kind)", "i64"),
+         ("_PyUnicodeWriter_MAXCHAR", "offsetof(_PyUnicodeWriter, maxchar)", "i64"),
+         ("_PyUnicodeWriter_SIZE_FIELD", "offsetof(_PyUnicodeWriter, size)", "i64"),
+         ("_PyUnicodeWriter_POS", "offsetof(_PyUnicodeWriter, pos)", "i64"),
          (
              "_Py_freelists_PYCFUNCTIONOBJECT",
              "offsetof(struct _Py_freelists, pycfunctionobject)",
@@ -1196,6 +1206,16 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          (
              "PyInterpreterState_DICT_WATCHERS",
              "offsetof(PyInterpreterState, dict_state.watchers)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_SMALL_INTS",
+             "offsetof(_PyRuntimeState, static_objects.singletons.small_ints)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_LONG_MAX_STR_DIGITS",
+             "offsetof(PyInterpreterState, long_state.max_str_digits)",
              "i64"
          ),
          (

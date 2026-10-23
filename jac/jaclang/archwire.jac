@@ -15793,7 +15793,7 @@ graph import runtime.python {
             PARSE_KEYWORDS,
             invoke_vector
         },
-        object_model.memory {
+        object_model.long | object_model.memory {
             BoundArguments,
             CallSignature,
             PARSE_KEYWORDS,
@@ -22181,6 +22181,67 @@ graph import runtime.python {
             jacpy_unicode_data,
             jacpy_unicode_kind
         },
+        object_model.long {
+            NULL,
+            PyBool_FromLong,
+            PyByteArray_AsString,
+            PyByteArray_Type,
+            PyBytes_AsString,
+            PyBytes_FromStringAndSize,
+            PyErr_BadInternalCall,
+            PyErr_CheckSignals,
+            PyErr_Format,
+            PyErr_NoMemory,
+            PyErr_Occurred,
+            PyErr_SetString,
+            PyExc_OverflowError,
+            PyExc_TypeError,
+            PyExc_ValueError,
+            PyExc_ZeroDivisionError,
+            PyFloat_FromDouble,
+            PyFloat_Type,
+            PyImport_ImportModule,
+            PyLongExport,
+            PyLongLayout,
+            PyLongWriter,
+            PyMem_Calloc,
+            PyMem_Free,
+            PyMethodDef,
+            PyNumber_AsSsize_t,
+            PyNumber_Long,
+            PyObject,
+            PyObject_CallMethod,
+            PyObject_CallOneArg,
+            PyObject_Free,
+            PyObject_GenericGetAttr,
+            PyObject_Init,
+            PyObject_IsTrue,
+            PyObject_Malloc,
+            PyThreadState,
+            PyThreadState_GetUnchecked,
+            PyTuple_New,
+            PyTuple_Pack,
+            PyUnicodeWriter_Create,
+            PyUnicodeWriter_Discard,
+            PyUnicodeWriter_Finish,
+            PyUnicode_AsUTF8AndSize,
+            PyUnicode_GetLength,
+            PyUnicode_New,
+            PyVectorcall_NARGS,
+            Py_BuildValue,
+            Py_None,
+            Py_NotImplemented,
+            _PyArg_BadArgument,
+            _PyArg_CheckPositional,
+            _PyNumber_Index,
+            _PyRuntime,
+            _PyUnicodeWriter,
+            _PyUnicode_EqualToASCIIString,
+            _PyUnicode_TransformDecimalAndSpaceToASCII,
+            _Py_SetImmortal,
+            jacpy_unicode_data,
+            jacpy_unicode_kind
+        },
         object_model.memory {
             NULL,
             PyBool_FromLong,
@@ -23851,6 +23912,44 @@ graph import runtime.python {
             _Py_freelists_LIST_ITERS,
             _object
         },
+        object_model.long {
+            METH_CLASS,
+            METH_FASTCALL,
+            METH_KEYWORDS,
+            METH_NOARGS,
+            METH_O,
+            PyGetSetDef,
+            PyLongExport_SIZE,
+            PyLongObject,
+            PyLongObject_DIGIT,
+            PyLongObject_SIZE,
+            PyLong_DIGIT_SIZE,
+            PyNumberMethods,
+            PyStatus,
+            PyStructSequence_Desc,
+            PyStructSequence_Field,
+            PyTypeObject,
+            PyVarObject,
+            Py_TPFLAGS_BASETYPE,
+            Py_TPFLAGS_BYTES_SUBCLASS,
+            Py_TPFLAGS_DEFAULT,
+            Py_TPFLAGS_LONG_SUBCLASS,
+            Py_TPFLAGS_TUPLE_SUBCLASS,
+            Py_TPFLAGS_UNICODE_SUBCLASS,
+            Py_ints_MAXFREELIST,
+            _PyStatus_TYPE_ERROR,
+            _PyStatus_TYPE_OK,
+            _PyUnicodeWriter_BUFFER,
+            _PyUnicodeWriter_KIND,
+            _PyUnicodeWriter_MAXCHAR,
+            _PyUnicodeWriter_POS,
+            _PyUnicodeWriter_SIZE_FIELD,
+            _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+            _Py_TPFLAGS_MATCH_SELF,
+            _Py_TYPE_VERSION_INT,
+            _Py_freelists_INTS,
+            _object
+        },
         object_model.memory {
             METH_CLASS,
             METH_FASTCALL,
@@ -24358,6 +24457,10 @@ graph import runtime.python {
             PyInterpreterState_RARE_FUNC_MODIFICATION
         },
         object_model.header { PyInterpreterState_FREELISTS, PyInterpreterState_GC },
+        object_model.long {
+            PyInterpreterState_LONG_MAX_STR_DIGITS,
+            _PyRuntimeState_SMALL_INTS
+        },
         object_model.module {
             PyConfig_SAFE_PATH,
             PyConfig_SYS_PATH_0,
@@ -25777,6 +25880,7 @@ graph import runtime.python {
             pow,
             round
         },
+        object_model.long { frexp, ldexp },
     ]
     modules.opcode ++> [
         bindings.clinic.opcode {
@@ -32016,6 +32120,24 @@ graph import runtime.python.object_model {
             tuple_items,
             type_has_feature
         },
+        long {
+            current_interp,
+            freelist_pop,
+            freelist_push,
+            object_decref,
+            object_incref,
+            object_is_type,
+            object_new_ref,
+            object_refcount,
+            object_size,
+            object_type,
+            object_type_check,
+            object_xdecref,
+            rich_compare_values,
+            tuple_get_item,
+            tuple_set_item,
+            type_has_feature
+        },
         memory {
             fast_items,
             object_decref,
@@ -32228,8 +32350,8 @@ graph import runtime.python.object_model {
         list | memory | tuple { PySlice_AdjustIndices, PySlice_Unpack },
         range { slice_check, slice_get_long_indices },
     ]
-    structseq ++> float { PyStructSequence_New }
-    tuple ++> float { reftracer_track }
+    structseq ++> float | long { PyStructSequence_New }
+    tuple ++> float | long { reftracer_track }
     union ++> genericalias { _Py_union_type_or }
 }
 

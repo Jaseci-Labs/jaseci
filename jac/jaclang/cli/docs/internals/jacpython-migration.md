@@ -695,10 +695,18 @@ object's trailing array. Items in native formats are packed and unpacked in
 Jac; other formats go through the `struct` module, as in C. The `Py_buffer`
 values C keeps on the stack are heap allocations freed on every path.
 
-Order after these: numbers and text (`complexobject.c`, `longobject.c`,
-`bytesobject.c`, `unicodeobject.c`), and `typeobject.c` (12,312 lines)
-last. The allocator (`obmalloc.c` and the
-mimalloc copy under `Objects/mimalloc/`) follows the object model.
+`longobject.c` (`object_model/long.jac`) keeps 30-bit digits and the
+`lv_tag` sign and size word. The small ints stay in `_PyRuntime`, read in
+place at the offset gen_layouts records, so the evaluator's header inlines
+(`_PyLong_GetZero`, `LOAD_SMALL_INT`) still see the same objects.
+Multiplication switches to Karatsuba and conversions of very long ints call
+into `_pylong` at the same thresholds as C. Where C uses stack arrays (the
+`pow` window table, `_PyLong_Frexp`'s digits), the port allocates.
+
+Order after these: text (`bytesobject.c`, `bytearrayobject.c`,
+`unicodeobject.c`), and `typeobject.c` (12,312 lines) last. The allocator
+(`obmalloc.c` and the mimalloc copy under `Objects/mimalloc/`) follows the
+object model.
 
 ## Evaluator (`Python/`, 132k lines)
 
