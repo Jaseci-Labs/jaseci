@@ -28,7 +28,19 @@ impl NaIRGenPass._emit_region_tls_slot -> None {
     if REGION_GBL_GET in self.extern_funcs {
         return;
     }
-    self._emit_tls_slot(REGION_TLS_GLOBAL, REGION_TLS_GET, REGION_TLS_SET);
+    (_get_fn, set_fn) = self._emit_tls_slot(
+        REGION_TLS_GLOBAL, REGION_TLS_GET, REGION_TLS_SET
+    );
+    # (a thread sets its block only when it first enters a region: the flag
+    # tells a `try` that no thread has one, so its depth is 0 without a call)
+    used_gv = ir.GlobalVariable(
+        self.llvm_module, ir.IntType(8), name=f"{REGION_TLS_GLOBAL}_used"
+    );
+    used_gv.linkage = "weak";
+    used_gv.initializer = ir.Constant(ir.IntType(8), 0);
+    ub = ir.IRBuilder(set_fn.entry_basic_block);
+    ub.position_at_start(set_fn.entry_basic_block);
+    ub.store_atomic(ir.Constant(ir.IntType(8), 1), used_gv, "monotonic", 1);
     i64 = ir.IntType(64);
     gbl_gv = ir.GlobalVariable(
         self.llvm_module, ir.ArrayType(i64, 8), name=f"{REGION_TLS_GLOBAL}_gbl"
@@ -116,6 +128,40 @@ impl NaIRGenPass._region_depth -> ir.Value {
     return self.builder.call(
         self._region_kernel_fn("__jac_region_depth"), [], name="region.depth"
     );
+}
+
+impl NaIRGenPass._region_depth_if_used -> ir.Value {
+    """The thread's region depth, read only once some thread entered a region.
+
+    A thread's region block exists only after it entered a region, and making
+    it sets `__jac_region_tls_used` first. While the flag is clear this thread
+    has no block, so its depth is 0: a `try` arming in a program that never
+    opens a region then pays one load instead of the depth call, the TLS
+    lookup and `pthread_getspecific`.
+    """;
+    self._register_region_kernel();
+    b = self.builder;
+    i64 = ir.IntType(64);
+    fn = b.function;
+    used_gv = self.llvm_module.get_global(f"{REGION_TLS_GLOBAL}_used");
+    start = b.block;
+    read_bb = fn.append_basic_block("region.depth.read");
+    done_bb = fn.append_basic_block("region.depth.done");
+    used = b.load_atomic(used_gv, "monotonic", 1, name="region.used");
+    br = b.cbranch(
+        b.icmp_unsigned("!=", used, ir.Constant(ir.IntType(8), 0), name="region.used.on"),
+        read_bb,
+        done_bb
+    );
+    br.set_weights([1, 2000]);
+    b.position_at_end(read_bb);
+    read = self._region_depth();
+    b.branch(done_bb);
+    b.position_at_end(done_bb);
+    depth = b.phi(i64, name="region.depth.at");
+    depth.add_incoming(ir.Constant(i64, 0), start);
+    depth.add_incoming(read, read_bb);
+    return depth;
 }
 
 impl NaIRGenPass._region_unwind(depth: ir.Value) -> None {
