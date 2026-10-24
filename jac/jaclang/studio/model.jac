@@ -102,7 +102,11 @@ obj WireInfo {
         form: str = "",
         archwire: str = "",
         line: int = 0,
-        violation: str = "";
+        violation: str = "",
+        rules: list[str] = [],
+        crosses: bool = False,
+        local_provider: str = "",
+        local_consumer: str = "";
 
     def to_dict -> dict[str, any];
 }
@@ -122,7 +126,8 @@ obj ProjectModel {
         build_secs: float = 0.0,
         index_secs: float = 0.0,
         uses_done: set[str] = set(),
-        arch_mtimes: dict[str, float] = {};
+        arch_mtimes: dict[str, float] = {},
+        rule_recs: dict[str, any] = {};
 
     def postinit;
     def build(on_progress: any = None, index: bool = True);
@@ -199,7 +204,9 @@ impl WireInfo.to_dict -> dict[str, any] {
         "form": self.form,
         "archwire": self.archwire,
         "line": self.line,
-        "violation": self.violation
+        "violation": self.violation,
+        "rules": self.rules,
+        "crosses": self.crosses
     };
 }
 
@@ -421,6 +428,15 @@ impl ProjectModel._add_wiring(arch: str, spec: WiringSpec) {
             if cnode is None {
                 cnode = self._add_module(ckey, "", arch, cmod);
             }
+            admitting: list[str] = [];
+            crosses = False;
+            try {
+                crosses = spec.top_package(w.provider) != spec.top_package(cmod);
+                admitting = [
+                    f"{arch}#{r.name}"
+                    for r in spec.rules_admitting(w.provider, cmod, True)
+                ];
+            } except Exception {}
             info = WireInfo(
                 provider=prov_key,
                 consumer=ckey,
@@ -432,7 +448,11 @@ impl ProjectModel._add_wiring(arch: str, spec: WiringSpec) {
                 line=w.line,
                 violation=wire_violation(
                     spec, w.provider, cmod, [n for (n, a) in w.items], w.is_module_form
-                )
+                ),
+                rules=admitting,
+                crosses=crosses,
+                local_provider=w.provider,
+                local_consumer=cmod
             );
             self.wires.append(info);
             prov +>:Wire(
@@ -455,6 +475,7 @@ impl ProjectModel._add_wiring(arch: str, spec: WiringSpec) {
             names=sorted(r.item_names) if r.item_names else []
         );
         self.rules.append(rule);
+        self.rule_recs[rule.key] = r;
         self.top +>:Contains():+> rule;
         for (key, mod) in self.modules.items() {
             if mod.archwire != arch or not mod.local_name {
@@ -1302,6 +1323,7 @@ impl ProjectModel.rewire -> None {
         }
         self.wires = [];
         self.rules = [];
+        self.rule_recs = {};
         self.archwires = [];
         specs: list[tuple[str, WiringSpec]] = [];
         for arch in self._arch_files() {

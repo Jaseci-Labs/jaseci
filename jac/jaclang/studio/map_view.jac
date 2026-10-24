@@ -1,7 +1,31 @@
 import from jaclang.osprey.ui.cells { StyleAttrs, TextSpan }
 import from jaclang.osprey.ui.width { display_width }
 
-glob MAP_VIEWS: list[str] = ["matrix", "layers", "issues"],
+glob MAP_VIEWS: list[str] = [
+         "matrix",
+         "layers",
+         "issues",
+         "roles",
+         "iface",
+         "rules",
+         "clusters"
+     ],
+     LIST_VIEWS: list[str] = ["issues", "roles", "iface", "rules", "clusters"],
+     ITEM_HINTS: dict[str, str] = {
+         "violation": " Enter lists the wires · Space adds them to the context",
+         "back": " Enter lists the wires · Space adds them to the context",
+         "cycle": " Enter shows the cycle in the layers view · Space adds this level to the context",
+         "module": " Enter shows its wiring · s slice · b blast radius · Space adds it to the context",
+         "export": " Enter shows the blast radius of this name · Space adds its module to the context",
+         "import": " Enter shows the provider's wiring · Space adds it to the context",
+         "group": " Enter opens that package in the map",
+         "rule": " Enter lists the wires the rule admits",
+         "arm": " Enter lists the wires that use this permission",
+         "wire": " Enter shows the wire in the wiring view · Space adds it to the context",
+         "cluster": " Enter maps just this cluster's modules (x clears)",
+         "split": " Enter opens the package in the map",
+         "hint": ""
+     },
      DETAIL_LINES: int = 4,
      GUTTER: int = 4,
      C_FEEDS_IT: int = 179,
@@ -16,7 +40,9 @@ obj MapItem {
         label: str,
         detail: str = "",
         src: str = "",
-        dst: str = "";
+        dst: str = "",
+        key: str = "",
+        section: str = "";
 }
 
 obj MapState {
@@ -31,9 +57,14 @@ obj MapState {
         sel: int = 0,
         item: int = 0,
         scroll: int = 0,
-        width: int = 80;
+        width: int = 80,
+        only: (set[str] | None) = None,
+        only_label: str = "",
+        data: dict[str, any] = {};
 
     def selected_node -> (GraphNode | None);
+    def selected_item -> (MapItem | None);
+    def group_key -> str;
     def selected_edge -> (GraphEdge | None);
     def select_key(key: str) -> None;
     def set_view(view: str) -> None;
@@ -46,6 +77,20 @@ def view_tabs(view: str) -> str;
 def node_token(nd: GraphNode) -> str;
 
 def issue_items(level: GraphLevel) -> list[MapItem];
+
+def view_items(state: MapState, lvl: GraphLevel) -> list[MapItem];
+
+def roles_items(
+    rep: RolesReport, scope: str, only: (set[str] | None)
+) -> list[MapItem];
+
+def iface_items(rep: InterfaceReport) -> list[MapItem];
+
+def rules_items(rep: IntentReport) -> list[MapItem];
+
+def clusters_items(rep: ClusterReport) -> list[MapItem];
+
+def short_key(key: str, scope: str) -> str;
 
 def map_move(state: MapState, key: str) -> bool;
 
@@ -63,7 +108,7 @@ def layers_lines(
     state: MapState, lvl: GraphLevel, w: int, h: int, focused: bool
 ) -> list[list[TextSpan]];
 
-def issues_lines(
+def list_lines(
     state: MapState, lvl: GraphLevel, w: int, h: int, focused: bool
 ) -> list[list[TextSpan]];
 
@@ -89,6 +134,24 @@ impl MapState.selected_node -> (GraphNode | None) {
         return lvl.nodes[min(self.sel, len(lvl.nodes) - 1)];
     }
     return None;
+}
+
+impl MapState.selected_item -> (MapItem | None) {
+    lvl = self.level;
+    if lvl is None or self.view not in LIST_VIEWS {
+        return None;
+    }
+    items = view_items(self, lvl);
+    return items[self.item] if 0 <= self.item < len(items) else None;
+}
+
+impl MapState.group_key -> str {
+    lvl = self.level;
+    if lvl is None or not lvl.nodes {
+        return self.scope;
+    }
+    i = self.r if self.view == "matrix" else self.sel;
+    return lvl.nodes[min(max(i, 0), len(lvl.nodes) - 1)].key;
 }
 
 impl MapState.selected_edge -> (GraphEdge | None) {
@@ -131,6 +194,7 @@ impl MapState.set_view(view: str) -> None {
     }
     self.view = view;
     self.scroll = 0;
+    self.item = 0;
 }
 
 impl crumbs(scope: str) -> str {
@@ -138,8 +202,7 @@ impl crumbs(scope: str) -> str {
 }
 
 impl view_tabs(view: str) -> str {
-    return "  ".join([(f"[{v}]" if v == view else v) for v in MAP_VIEWS])
-        + "   v switches";
+    return " ".join([(f"[{v}]" if v == view else v) for v in MAP_VIEWS]) + "  v";
 }
 
 impl node_token(nd: GraphNode) -> str {
@@ -278,7 +341,13 @@ impl map_move(state: MapState, key: str) -> bool {
         state.sel = boxes[pos][0];
         return True;
     }
-    total = len(issue_items(lvl));
+    if state.view == "iface" and key in ["left", "h", "right", "l"] {
+        step = -1 if key in ["left", "h"] else 1;
+        state.sel = (state.sel + step) % n;
+        (state.r, state.c, state.item, state.scroll) = (state.sel, state.sel, 0, 0);
+        return True;
+    }
+    total = len(view_items(state, lvl));
     if key in ["up", "k"] {
         state.item = max(0, state.item - 1);
     } elif key in ["down", "j"] {
@@ -316,8 +385,8 @@ impl map_lines(state: MapState, w: int, h: int, focused: bool) -> list[list[Text
     if state.view == "layers" {
         return layers_lines(state, lvl, w, h, focused);
     }
-    if state.view == "issues" {
-        return issues_lines(state, lvl, w, h, focused);
+    if state.view in LIST_VIEWS {
+        return list_lines(state, lvl, w, h, focused);
     }
     return matrix_lines(state, lvl, w, h, focused);
 }
@@ -555,46 +624,349 @@ impl layers_lines(
     return out[:h];
 }
 
-impl issues_lines(
+impl short_key(key: str, scope: str) -> str {
+    return key[len(scope) + 1:] if scope and key.startswith(scope + ".") else key;
+}
+
+impl view_items(state: MapState, lvl: GraphLevel) -> list[MapItem] {
+    if state.view == "issues" {
+        heads = {
+            "violation": "Rule violations: wires an archwire rule does not admit",
+            "back": f"Backward wires: {lvl.back_wires} of {lvl.wires} run from a later group to an earlier one",
+            "cycle": "Cycles: groups that reach each other through wires"
+        };
+        items = issue_items(lvl);
+        for it in items {
+            it.section = heads[it.kind];
+        }
+        return items;
+    }
+    held = state.data.get(state.view);
+    if held is None {
+        return [];
+    }
+    found = held[1];
+    if state.view == "roles" {
+        return roles_items(found, lvl.scope, state.only);
+    }
+    if state.view == "iface" {
+        return iface_items(found);
+    }
+    if state.view == "rules" {
+        return rules_items(found);
+    }
+    if state.view == "clusters" {
+        return clusters_items(found);
+    }
+    return [];
+}
+
+impl roles_items(
+    rep: RolesReport, scope: str, only: (set[str] | None)
+) -> list[MapItem] {
+    items: list[MapItem] = [];
+    for role in ROLE_ORDER {
+        group = [
+            r
+            for r in rep.by_role(role)
+            if only is None or r.key in only
+        ];
+        if not group {
+            continue;
+        }
+        for r in group {
+            items.append(
+                MapItem(
+                    kind="module",
+                    label=short_key(r.key, scope),
+                    detail=f"feeds {r.consumers} · fed by {r.providers} · {r.names_out} name(s) out",
+                    key=r.key,
+                    section=f"{role} ({len(group)}): {ROLE_TEXT[role]}"
+                )
+            );
+        }
+    }
+    return items;
+}
+
+impl iface_items(rep: InterfaceReport) -> list[MapItem] {
+    items: list[MapItem] = [];
+    about = f"Interface of {rep.key}   ← → another group";
+    for h in rep.hints {
+        items.append(MapItem(kind="hint", label=h, section=about));
+    }
+    if not rep.hints {
+        items.append(
+            MapItem(
+                kind="hint",
+                label=f"{len(rep.exports)} name(s) leave over {rep.out_wires} wire(s); {len(
+                    rep.imports
+                )} enter over {rep.in_wires}",
+                section=about
+            )
+        );
+    }
+    head = f"Exports: {len(rep.exports)} name(s) leave over {rep.out_wires} wire(s)";
+    for c in rep.exports {
+        users = ", ".join([u.rsplit(".", 1)[-1] for u in c.others[:4]]);
+        more = f" +{len(c.others) - 4}" if len(c.others) > 4 else "";
+        items.append(
+            MapItem(
+                kind="export",
+                label=f"{short_key(c.provider, rep.key)}.{c.name}",
+                detail=f"{len(c.others)} user(s): {users}{more}",
+                key=c.provider if c.name == WHOLE else f"{c.provider}.{c.name}",
+                section=head
+            )
+        );
+    }
+    for (g, n) in sorted(
+        rep.out_by_group.items(), key=lambda (kv: tuple[str, int]) -> int { -kv[1] }
+    ) {
+        items.append(
+            MapItem(
+                kind="group",
+                label=g,
+                detail=f"{n} wire(s)",
+                key=g,
+                section="Exported to"
+            )
+        );
+    }
+    head = f"Imports: {len(rep.imports)} name(s) enter over {rep.in_wires} wire(s)";
+    for c in rep.imports {
+        items.append(
+            MapItem(
+                kind="import",
+                label=f"{c.provider}.{c.name}",
+                detail=f"used by {len(c.others)} inside",
+                key=c.provider,
+                section=head
+            )
+        );
+    }
+    for (g, n) in sorted(
+        rep.in_by_group.items(), key=lambda (kv: tuple[str, int]) -> int { -kv[1] }
+    ) {
+        items.append(
+            MapItem(
+                kind="group",
+                label=g,
+                detail=f"{n} wire(s)",
+                key=g,
+                section="Imported from"
+            )
+        );
+    }
+    return items;
+}
+
+impl rules_items(rep: IntentReport) -> list[MapItem] {
+    items: list[MapItem] = [];
+    nviol = sum([len(v) for v in rep.violations.values()]);
+    pct = int(100 * rep.admitted / rep.crossing) if rep.crossing else 100;
+    about = "Intent vs reality (every archwire in the project)";
+    items.append(
+        MapItem(
+            kind="hint",
+            label=f"{rep.crossing} wire(s) cross a package boundary; {rep.admitted} ({pct}%) admitted by a rule; {nviol} violate one",
+            section=about
+        )
+    );
+    if not rep.unused_arms() and sum([len(r.arms) for r in rep.rules]) >= 10 {
+        items.append(
+            MapItem(
+                kind="hint",
+                label="Every permission is used: the rules mirror the wiring, so they record dependencies rather than limit them",
+                section=about
+            )
+        );
+    }
+    for r in rep.rules {
+        tg = " | ".join(r.targets[:5]) + (" …" if len(r.targets) > 5 else "");
+        items.append(
+            MapItem(
+                kind="rule",
+                label=f"{r.name}: {' | '.join(r.sources)} --> {tg}",
+                detail=f"{r.wires} wire(s) · governs {r.governs}",
+                key=r.key,
+                section="Rules by use"
+            )
+        );
+    }
+    for (r, a) in rep.thin_arms() {
+        items.append(
+            MapItem(
+                kind="arm",
+                label=f"{a.source} --> {a.target}",
+                detail=r.name,
+                key=r.key,
+                src=a.source,
+                dst=a.target,
+                section="Permissions only one wire uses (the easiest to tighten)"
+            )
+        );
+    }
+    for (r, a) in rep.unused_arms() {
+        items.append(
+            MapItem(
+                kind="hint",
+                label=f"{a.source} --> {a.target}",
+                detail=r.name,
+                section="Permissions no wire uses"
+            )
+        );
+    }
+    for r in rep.dead_rules() {
+        items.append(
+            MapItem(
+                kind="hint",
+                label=r.name,
+                detail=f"{' | '.join(r.sources)} --> {' | '.join(r.targets)}",
+                section="Rules no wire uses"
+            )
+        );
+    }
+    for (code, ws) in sorted(rep.violations.items()) {
+        for w in ws {
+            items.append(
+                MapItem(
+                    kind="wire",
+                    label=f"{w.provider} ++> {w.consumer}",
+                    detail=w.violation,
+                    src=w.provider,
+                    dst=w.consumer,
+                    key=w.consumer,
+                    section=f"Violations {code}"
+                )
+            );
+        }
+    }
+    return items;
+}
+
+impl clusters_items(rep: ClusterReport) -> list[MapItem] {
+    items: list[MapItem] = [];
+    def short(g: str) -> str {
+        return short_key(g, rep.scope);
+    }
+    items.append(
+        MapItem(
+            kind="hint",
+            label=f"{rep.modules} wired module(s) in {len(
+                rep.clusters
+            )} cluster(s), modularity {rep.modularity:.2f}; {int(
+                rep.purity * 100
+            )}% sit in a cluster their own package leads",
+            section=f"Natural clusters of {rep.scope or 'the project'}"
+        )
+    );
+    tiny = [
+        cl
+        for cl in rep.clusters
+        if len(cl.members) <= 2
+    ];
+    if tiny {
+        items.append(
+            MapItem(
+                kind="hint",
+                label=f"plus {len(tiny)} pair(s) of modules wired only to each other",
+                section=f"Natural clusters of {rep.scope or 'the project'}"
+            )
+        );
+    }
+    for cl in rep.clusters {
+        if len(cl.members) <= 2 {
+            continue;
+        }
+        comp = sorted(
+            cl.by_group.items(), key=lambda (kv: tuple[str, int]) -> int { -kv[1] }
+        );
+        items.append(
+            MapItem(
+                kind="cluster",
+                label=f"#{cl.id}  {len(cl.members)} modules, {int(cl.share * 100)}% {short(
+                    cl.label
+                )}",
+                detail=", ".join([f"{short(g)} {n}" for (g, n) in comp[:5]]),
+                key=str(cl.id),
+                section="Clusters, largest first"
+            )
+        );
+    }
+    for (g, parts) in rep.split {
+        items.append(
+            MapItem(
+                kind="split",
+                label=short(g),
+                detail=", ".join([f"#{c} {n}" for (c, n) in parts]),
+                key=g,
+                section="Packages the wiring splits"
+            )
+        );
+    }
+    for m in rep.misplaced {
+        items.append(
+            MapItem(
+                kind="module",
+                label=short(m.key),
+                detail=f"{int(m.best_share * 100)}% of its consumers in {short(
+                    m.best
+                )}; {int(m.own_share * 100)}% of its wiring stays in {short(m.home)}",
+                key=m.key,
+                section="Modules that look misplaced"
+            )
+        );
+    }
+    return items;
+}
+
+impl list_lines(
     state: MapState, lvl: GraphLevel, w: int, h: int, focused: bool
 ) -> list[list[TextSpan]] {
-    items = issue_items(lvl);
+    items = view_items(state, lvl);
     if not items {
-        out = [
-            plain(
-                "  Cleanly layered: no backward wires, cycles or rule violations at this level.",
-                w,
-                THEME.ok
-            )
-        ];
+        msg = "  Cleanly layered: no backward wires, cycles or rule violations at this level."
+            if state.view == "issues"
+            else "  Working it out…";
+        out = [plain(msg, w, THEME.ok if state.view == "issues" else THEME.dim)];
         while len(out) < h {
             out.append(blank(w));
         }
         return out;
     }
     state.item = min(state.item, len(items) - 1);
-    heads = {
-        "violation": "Rule violations: wires an archwire rule does not admit",
-        "back": f"Backward wires: {lvl.back_wires} of {lvl.wires} run from a later group to an earlier one",
-        "cycle": "Cycles: groups that reach each other through wires"
+    colors = {
+        "violation": THEME.err,
+        "wire": THEME.err,
+        "back": THEME.warn,
+        "cycle": StyleAttrs(fg=C_CYCLE),
+        "export": StyleAttrs(fg=C_IT_FEEDS),
+        "import": StyleAttrs(fg=C_FEEDS_IT),
+        "rule": THEME.accent2,
+        "arm": THEME.warn,
+        "cluster": StyleAttrs(fg=C_CYCLE),
+        "split": THEME.warn,
+        "hint": THEME.text,
+        "group": THEME.dim
     };
     lines: list[list[TextSpan]] = [];
     sel_line = 0;
     last = "";
     for (i, it) in enumerate(items) {
-        if it.kind != last {
+        if it.section != last {
             if lines {
                 lines.append(blank(w));
             }
-            lines.append(fit([sp(" " + heads[it.kind], THEME.accent2)], w, None));
-            last = it.kind;
+            lines.append(fit([sp(" " + it.section, THEME.accent2)], w, None));
+            last = it.section;
         }
-        a = THEME.err
-            if it.kind == "violation"
-            else (THEME.warn if it.kind == "back" else StyleAttrs(fg=C_CYCLE));
-        line = fit(
-            [sp("   " + it.label, a), sp("   " + it.detail, THEME.dim)], w, None
-        );
+        a = colors.get(it.kind, THEME.text);
+        spans = [sp("   " + it.label, a)];
+        if it.detail {
+            spans.append(sp("   " + it.detail, THEME.dim));
+        }
+        line = fit(spans, w, None);
         if i == state.item {
             line = restyle(line, C_SEL_FOCUS if focused else C_SEL);
             sel_line = len(lines);
@@ -612,11 +984,7 @@ impl issues_lines(
     while len(out) < h - 1 {
         out.append(blank(w));
     }
-    it = items[state.item];
-    hint = " Enter lists the wires · Space adds them to the context"
-        if it.kind != "cycle"
-        else " Enter shows the cycle in the layers view · Space adds this level to the context";
-    out.append(plain(hint, w, THEME.faint));
+    out.append(plain(ITEM_HINTS.get(items[state.item].kind, ""), w, THEME.faint));
     return out[:h];
 }
 

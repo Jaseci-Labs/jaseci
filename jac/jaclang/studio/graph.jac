@@ -54,13 +54,19 @@ def in_scope(key: str, scope: str) -> bool;
 
 def group_of(key: str, scope: str) -> str;
 
-def effective_scope(model: ProjectModel, scope: str) -> str;
+def effective_scope(
+    model: ProjectModel, scope: str, only: (set[str] | None) = None
+) -> str;
 
-def parent_scope(model: ProjectModel, scope: str) -> (str | None);
+def parent_scope(
+    model: ProjectModel, scope: str, only: (set[str] | None) = None
+) -> (str | None);
 
 def scope_for(model: ProjectModel, key: str) -> str;
 
-def graph_level(model: ProjectModel, scope: str = "") -> GraphLevel;
+def graph_level(
+    model: ProjectModel, scope: str = "", only: (set[str] | None) = None
+) -> GraphLevel;
 
 def order_groups(names: list[str], weights: dict[tuple[str, str], int]) -> list[str];
 
@@ -162,11 +168,15 @@ impl group_of(key: str, scope: str) -> str {
     return "";
 }
 
-impl effective_scope(model: ProjectModel, scope: str) -> str {
+impl effective_scope(
+    model: ProjectModel, scope: str, only: (set[str] | None) = None
+) -> str {
     while True {
         groups: dict[str, bool] = {};
         for (k, m) in model.modules.items() {
-            if m.kind != "module" or not in_scope(k, scope) {
+            if m.kind != "module"
+                or not in_scope(k, scope)
+                or (only is not None and k not in only) {
                 continue;
             }
             g = group_of(k, scope);
@@ -175,23 +185,25 @@ impl effective_scope(model: ProjectModel, scope: str) -> str {
         if len(groups) != 1 {
             return scope;
         }
-        (only, is_pkg) = list(groups.items())[0];
-        if not is_pkg or only == scope {
+        (single, is_pkg) = list(groups.items())[0];
+        if not is_pkg or single == scope {
             return scope;
         }
-        scope = only;
+        scope = single;
     }
 }
 
-impl parent_scope(model: ProjectModel, scope: str) -> (str | None) {
+impl parent_scope(
+    model: ProjectModel, scope: str, only: (set[str] | None) = None
+) -> (str | None) {
     if not scope {
         return None;
     }
-    current = effective_scope(model, scope);
+    current = effective_scope(model, scope, only);
     up = scope;
     while up {
         up = up.rsplit(".", 1)[0] if "." in up else "";
-        if effective_scope(model, up) != current {
+        if effective_scope(model, up, only) != current {
             return up;
         }
     }
@@ -218,13 +230,17 @@ impl scope_for(model: ProjectModel, key: str) -> str {
     return mod_key.rsplit(".", 1)[0] if "." in mod_key else "";
 }
 
-impl graph_level(model: ProjectModel, scope: str = "") -> GraphLevel {
+impl graph_level(
+    model: ProjectModel, scope: str = "", only: (set[str] | None) = None
+) -> GraphLevel {
     with model.lock {
-        scope = effective_scope(model, scope);
+        scope = effective_scope(model, scope, only);
         level = GraphLevel(scope=scope);
         groups: dict[str, GraphNode] = {};
         for (k, m) in model.modules.items() {
-            if m.kind != "module" or not in_scope(k, scope) {
+            if m.kind != "module"
+                or not in_scope(k, scope)
+                or (only is not None and k not in only) {
                 continue;
             }
             g = group_of(k, scope);
@@ -243,6 +259,10 @@ impl graph_level(model: ProjectModel, scope: str = "") -> GraphLevel {
             pm = model.modules.get(w.provider);
             cm = model.modules.get(w.consumer);
             if pm is None or cm is None or pm.kind != "module" or cm.kind != "module" {
+                continue;
+            }
+            if only is not None
+                and (w.provider not in only or w.consumer not in only) {
                 continue;
             }
             a = group_of(w.provider, scope);

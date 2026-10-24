@@ -6,7 +6,32 @@ import shutil;
 import difflib;
 import time;
 
-glob ACTIONS: list[str] = ["model", "graph", "ask", "agents", "sessions", "mcp"];
+glob ACTIONS: list[str] = [
+         "model",
+         "graph",
+         "roles",
+         "interface",
+         "rules",
+         "slice",
+         "blast",
+         "clusters",
+         "tour",
+         "diff",
+         "ask",
+         "agents",
+         "sessions",
+         "mcp"
+     ],
+     INSIGHT_ACTIONS: list[str] = [
+         "roles",
+         "interface",
+         "rules",
+         "slice",
+         "blast",
+         "clusters",
+         "tour",
+         "diff"
+     ];
 
 def out(text: str);
 
@@ -24,6 +49,10 @@ def run_studio(
 def cmd_model(root_dir: str, args: list[str], as_json: bool) -> int;
 
 def cmd_graph(root_dir: str, args: list[str], as_json: bool) -> int;
+
+def cmd_insight(root_dir: str, action: str, args: list[str], as_json: bool) -> int;
+
+def resolve_scope_arg(model: ProjectModel, target: str) -> (str | None);
 
 def cmd_gate(directory: str, args: list[str], as_json: bool) -> int;
 def cmd_mcp(root_dir: str, args: list[str]) -> int;
@@ -156,6 +185,9 @@ impl run_studio(
     if action == "graph" {
         return cmd_graph(root_dir, args, as_json);
     }
+    if action in INSIGHT_ACTIONS {
+        return cmd_insight(root_dir, action, args, as_json);
+    }
     if action == "agents" {
         return cmd_agents(root_dir, as_json);
     }
@@ -220,26 +252,81 @@ impl cmd_model(root_dir: str, args: list[str], as_json: bool) -> int {
     return 0;
 }
 
+impl resolve_scope_arg(model: ProjectModel, target: str) -> (str | None) {
+    if not target {
+        return "";
+    }
+    for k in model.modules.keys() {
+        if in_scope(k, target) or target.startswith(k + ".") {
+            return target;
+        }
+    }
+    hits = model.search(target, limit=1, kinds=["module"]);
+    if hits and target.lower().split(".")[-1] in hits[0].key.lower() {
+        return hits[0].key;
+    }
+    return None;
+}
+
+impl cmd_insight(root_dir: str, action: str, args: list[str], as_json: bool) -> int {
+    model = ProjectModel(root_dir=root_dir);
+    model.build(index=action == "tour");
+    target = args[0] if args else "";
+    if action == "diff" {
+        d = arch_diff(model, target or default_base(root_dir));
+        out(json.dumps(diff_dict(d), indent=2) if as_json else diff_text(d));
+        return 1 if d.error else 0;
+    }
+    key = resolve_scope_arg(model, target);
+    if key is None {
+        err(f"jac studio {action}: no package or module matches '{target}'");
+        return 1;
+    }
+    if action in ["interface", "slice", "blast"] and not key {
+        err(f"jac studio {action}: name a package, module or symbol");
+        return 2;
+    }
+    if action == "roles" {
+        roles = module_roles(model, key);
+        out(json.dumps(roles_dict(roles), indent=2) if as_json else roles_text(roles));
+    } elif action == "interface" {
+        iface = interface_of(model, key);
+        out(
+            json.dumps(interface_dict(iface), indent=2)
+                if as_json
+                else interface_text(iface)
+        );
+    } elif action == "rules" {
+        intent = intent_report(model);
+        out(
+            json.dumps(intent_dict(intent), indent=2)
+                if as_json
+                else intent_text(intent, model)
+        );
+    } elif action in ["slice", "blast"] {
+        depth = int(args[1]) if len(args) > 1 and args[1].isdigit() else 0;
+        found = reach(model, key, "up" if action == "slice" else "down", depth);
+        out(
+            json.dumps(reach_dict(found), indent=2)
+                if as_json
+                else reach_text(found, model)
+        );
+    } elif action == "clusters" {
+        cl = cluster_report(model, key);
+        out(json.dumps(clusters_dict(cl), indent=2) if as_json else clusters_text(cl));
+    } elif action == "tour" {
+        out(tour_text(model, key));
+    }
+    return 0;
+}
+
 impl cmd_graph(root_dir: str, args: list[str], as_json: bool) -> int {
     model = ProjectModel(root_dir=root_dir);
     model.build(index=False);
-    target = args[0] if args else "";
-    if target {
-        known = False;
-        for k in model.modules.keys() {
-            if in_scope(k, target) or target.startswith(k + ".") {
-                known = True;
-                break;
-            }
-        }
-        if not known {
-            hits = model.search(target, limit=1, kinds=["module"]);
-            if not hits {
-                err(f"jac studio graph: no package or module matches '{target}'");
-                return 1;
-            }
-            target = hits[0].key;
-        }
+    target = resolve_scope_arg(model, args[0] if args else "");
+    if target is None {
+        err(f"jac studio graph: no package or module matches '{args[0]}'");
+        return 1;
     }
     level = graph_level(model, scope_for(model, target));
     if as_json {

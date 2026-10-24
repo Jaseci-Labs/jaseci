@@ -32881,6 +32881,14 @@ graph import studio {
             level_text,
             parse_deps_key
         },
+        insight {
+            GraphEdge,
+            GraphLevel,
+            effective_scope,
+            graph_level,
+            group_of,
+            in_scope
+        },
         map_view { GraphEdge, GraphLevel, GraphNode },
         native_agent { graph_level, level_text, scope_for },
         tui {
@@ -32892,6 +32900,51 @@ graph import studio {
             parent_scope,
             parse_deps_key,
             scope_for
+        },
+    ]
+    insight ++> [
+        app {
+            arch_diff,
+            cluster_report,
+            clusters_dict,
+            clusters_text,
+            default_base,
+            diff_dict,
+            diff_text,
+            intent_dict,
+            intent_report,
+            intent_text,
+            interface_dict,
+            interface_of,
+            interface_text,
+            module_roles,
+            reach,
+            reach_dict,
+            reach_text,
+            roles_dict,
+            roles_text,
+            tour_text
+        },
+        bridge | native_agent { insight_run },
+        map_view {
+            ClusterReport,
+            IntentReport,
+            InterfaceReport,
+            ROLE_ORDER,
+            ROLE_TEXT,
+            RolesReport,
+            WHOLE
+        },
+        tui {
+            arch_diff,
+            cluster_report,
+            default_base,
+            diff_text,
+            intent_report,
+            interface_of,
+            module_roles,
+            reach,
+            tour_text
         },
     ]
     intel ++> [
@@ -32907,6 +32960,7 @@ graph import studio {
     ]
     map_view ++> tui {
         MAP_VIEWS,
+        MapItem,
         MapState,
         crumbs,
         issue_items,
@@ -32936,8 +32990,9 @@ graph import studio {
             sym_uri
         },
         graph { Governs, ProjectModel, WireInfo },
+        insight { Governs, ProjectModel, StRule, WireInfo },
         native_agent { ProjectModel, SKIP_DIRS },
-        tui { ProjectModel, StAbility, StImpl, StModule, StNode },
+        tui { ProjectModel, StAbility, StImpl, StModule, StNode, WireInfo },
     ]
     native_agent ++> agents { NativeAgentSession }
     session ++> [

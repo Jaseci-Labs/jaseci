@@ -521,6 +521,15 @@ impl StudioQueries.handle(method: str, params: dict[str, any]) -> any {
         if method == "rules" {
             return self.rule_coverage();
         }
+        if method == "insight" {
+            return {
+                "view": params.get("view", ""),
+                "key": key,
+                "text": insight_run(
+                    self.model, str(params.get("view", "") or ""), key, True
+                )
+            };
+        }
         if method == "graph" {
             scope = scope_for(self.model, str(params.get("scope", "") or key));
             return level_dict(graph_level(self.model, scope), self.model);

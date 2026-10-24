@@ -6,7 +6,7 @@ glob STUDIO_MCP_VERSION: str = "0.1.0",
      MCP_PROTOCOL: str = "2025-06-18",
      MCP_PROTOCOLS: list[str] = ["2025-06-18", "2025-03-26", "2024-11-05"],
      KEY_HELP: str = "A studio model key: a module (`core.jobs`), a symbol (`core.jobs.Runner`, `core.jobs.Runner.start`), a `jac://sym/<key>` URI, or a file path with an optional `:line` (resolves to the innermost symbol at that line).",
-     STUDIO_INSTRUCTIONS: str = "These tools connect you to jac studio, the terminal workspace the user is driving you from. The studio keeps a live, compiler-built model of this Jac project: every module, archetype, ability and field, and the archwire graph (in this codebase imports are wires declared in archwire.jac files, not import statements in the code). Use studio_selection to see what the user is pointing at, studio_wiring / studio_rules before changing dependencies, studio_graph to see the architecture a package level at a time, studio_symbol to read a declaration together with its impl, studio_focus to show the user code you are discussing, and studio_link_plan to tie your plan steps to the code they touch.";
+     STUDIO_INSTRUCTIONS: str = "These tools connect you to jac studio, the terminal workspace the user is driving you from. The studio keeps a live, compiler-built model of this Jac project: every module, archetype, ability and field, and the archwire graph (in this codebase imports are wires declared in archwire.jac files, not import statements in the code). Use studio_selection to see what the user is pointing at, studio_wiring / studio_rules before changing dependencies, studio_graph to see the architecture a package level at a time, studio_insight for roles, interfaces, rule use, slices, blast radius, clusters, a tour or the architecture diff since main, studio_symbol to read a declaration together with its impl, studio_focus to show the user code you are discussing, and studio_link_plan to tie your plan steps to the code they touch.";
 
 obj StudioTool {
     has name: str,
@@ -99,6 +99,34 @@ impl studio_tools -> list[StudioTool] {
                         "description": "A package such as `jaclang.compiler`, a module or symbol key, or empty for the whole project."
                     }
                 }
+            }
+        ),
+        StudioTool(
+            name="studio_insight",
+            method="insight",
+            description="Higher-level readings of the archwire graph. `view` is one of: `roles` (sorts the modules under `key` into foundations, hubs, integrators, entry points, relays and leaves by how they are wired; read foundations first), `interface` (the names that cross the boundary of the package or module `key`, each with its outside users, plus hints such as single-user names), `rules` (each archwire rule against the wires it admits: unused rules, permissions used by one wire, violations), `slice` (what the module `key` rests on, step by step, split into what loads at import time and what loads only inside functions), `blast` (what depends on a module or a single name `key`, with the exact direct users), `clusters` (natural clusters of the modules under `key` versus the declared packages, and modules that look misplaced), `tour` (an onboarding tour of `key` in markdown), `diff` (how the architecture changed since the git revision `key`, default the upstream main: wires, rules, new backward dependencies and cycles).",
+            schema={
+                "type": "object",
+                "properties": {
+                    "view": {
+                        "type": "string",
+                        "enum": [
+                            "roles",
+                            "interface",
+                            "rules",
+                            "slice",
+                            "blast",
+                            "clusters",
+                            "tour",
+                            "diff"
+                        ]
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "A package, module or symbol key (for diff, a git revision); empty means the whole project."
+                    }
+                },
+                "required": ["view"]
             }
         ),
         StudioTool(

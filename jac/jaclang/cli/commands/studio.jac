@@ -6,7 +6,7 @@ comptime SPEC_STUDIO: CommandSpec = CommandSpec(
                  "action",
                  kind=ArgKind.POSITIONAL,
                  `default="",
-                 help="(none) open the workspace | model | graph | ask | agents | sessions | mcp"
+                 help="(none) open the workspace | model | graph | roles | interface | rules | slice | blast | clusters | tour | diff | ask | agents | sessions | mcp"
              ),
              Arg.create(
                  "args",
@@ -53,6 +53,38 @@ comptime SPEC_STUDIO: CommandSpec = CommandSpec(
              (
                  "jac studio graph core",
                  "Show the wiring between a package's parts: layers, matrix, backward wires and cycles"
+             ),
+             (
+                 "jac studio roles",
+                 "Sort modules into foundations, hubs, integrators and entry points"
+             ),
+             (
+                 "jac studio interface core",
+                 "List the names that cross a package's boundary, and who uses each"
+             ),
+             (
+                 "jac studio rules",
+                 "Compare the archwire rules with the wires: unused permissions and violations"
+             ),
+             (
+                 "jac studio slice app.main",
+                 "Show everything an entry point rests on, step by step"
+             ),
+             (
+                 "jac studio blast core.jobs.Runner",
+                 "Show what depends on a module or a name"
+             ),
+             (
+                 "jac studio clusters core",
+                 "Compare the declared packages with the clusters the wiring implies"
+             ),
+             (
+                 "jac studio tour",
+                 "Write an onboarding tour of the codebase from its wiring"
+             ),
+             (
+                 "jac studio diff main",
+                 "Show how the architecture changed since a git revision"
              ),
              (
                  "jac studio ask core.jobs.Runner.start \"add retry with backoff\"",

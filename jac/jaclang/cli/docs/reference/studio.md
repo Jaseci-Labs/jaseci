@@ -47,13 +47,17 @@ In the transcript, `↑` and `↓` select an entry. `Enter` expands a tool call,
 
 `m` in the navigator or code view opens the map on the package that holds the selected item, with the item selected. Each level groups the modules under one package by their next name segment, so a level shows sub-packages and modules side by side, and adds up the wires between them. Groups are ordered providers first: a group comes before the groups it feeds wherever the wiring allows it.
 
-The map has three views of the same level; `v` cycles them and `1`, `2`, `3` pick one.
+The map has seven views of the same level; `v` cycles them and `1` to `7` pick one.
 
 | View | Shows |
 |------|-------|
 | Matrix | Every pair of groups. The row feeds the column, and each number is a count of wires. Numbers right of the diagonal follow the provider order; a number left of it is a backward wire, where a later group feeds an earlier one. Backward counts are yellow and counts that include a rule violation are red. `↻` marks groups that sit in a cycle. |
 | Layers | Groups stacked by depth: layer 0 is fed by nothing at this level, and every forward wire goes to a higher layer. Selecting a group lights up what feeds it, what it feeds, and the rest of its cycle. |
 | Issues | What keeps the level from being cleanly layered: wires that break a rule, backward wires (largest first), and cycles. |
+| Roles | Every module under the level by role (see [Reading the architecture](#reading-the-architecture)), foundations first. |
+| Iface | The interface of the selected group: the names that leave it, each with its outside users, what enters it, and hints. `←` and `→` move to the next group. |
+| Rules | Each archwire rule against the wires it admits, the permissions only one wire uses, unused rules and permissions, and violations. |
+| Clusters | The clusters the wiring forms under the level, compared with the declared packages: packages it splits, clusters that span packages, and modules that look misplaced. Enter on a cluster maps just its modules. |
 
 Under each view, the selected group shows its module count, layer, cycle, governing rules, and the groups it feeds and is fed by with wire counts (`↺` marks a backward one). A selected matrix cell shows the dependency: its wire count, a sample wire, and whether the two groups depend on each other.
 
@@ -65,8 +69,25 @@ Under each view, the selected group shows its module count, layer, cycle, govern
 | `Space` | Add the selection to the context: a module, a package's map, or the wires behind a dependency |
 | `A` | Add the whole level to the context |
 | `w` | Show the selected module in the wiring view |
+| `s` / `b` | Narrow the map to the slice (what the selection rests on) or the blast radius (what depends on it), as loaded at import time; press again for everything reachable through any wire |
+| `x` | Clear the slice, blast radius or cluster filter |
 
 A package's map in the context reaches the agent as the level in text: its groups by layer, the matrix, the backward wires and the cycles. A dependency reaches it as the list of wires with the names each carries. The map follows `archwire.jac`: change a wire and the level is recomputed.
+
+## Reading the architecture
+
+Because every dependency is a declared wire that names what it carries, the studio can answer higher-level questions about how a codebase is organized. Each answer is a map view, a command, and part of the `studio_insight` tool, so you and an agent see the same thing.
+
+| Question | Where | What it tells you |
+|----------|-------|-------------------|
+| What is each module for? | Roles view, `jac studio roles [package]` | Sorts modules by how they are wired. *Foundations* feed many modules and depend on few: read these first. *Hubs* feed many and depend on many: central and risky to change. *Integrators* pull from many and feed few. *Entry points* are wired to by nothing (commands, tests, code loaded by name). *Many* means the top tenth of the project. |
+| What does a package expose? | Iface view, `jac studio interface <package>` | The names that cross its boundary with their users: its real API. A name with a single outside user could live next to that user; a name used by many is a core abstraction; a package whose exports mostly go to one place may belong there. |
+| Do the rules match the code? | Rules view, `jac studio rules` | How many wires cross packages and how many a rule admits, which rules and permissions nothing uses (they could be removed), which permissions a single wire uses (the easiest to tighten), and every violation. When every permission is used, the rules mirror the wiring rather than limit it. |
+| What does this rest on? | `s`, `jac studio slice <module>` | Everything a module depends on, step by step: what importing it loads (wires at module level) and what it can reach once functions that import inside them run. |
+| What breaks if this changes? | `b`, `jac studio blast <module or name>` | The modules that use a module or a single name directly (exact, from the wires that carry the name), those that load it at import time, and the upper bound reachable through any wire. |
+| Do the packages match the code? | Clusters view, `jac studio clusters [package]` | Groups modules by how tightly they are wired (Louvain communities) and compares the groups with the packages: modularity, how many modules sit in a cluster their own package leads, packages the wiring splits, and modules most of whose consumers live in another package. |
+| How should I learn this codebase? | Command palette, `jac studio tour [package]` | A tour in markdown: the foundations and hubs to read first, each layer's groups with what they feed and their most used names, where the layering breaks, and the rules. It is generated from the wiring, so it does not go stale. |
+| What did this change do to the architecture? | Command palette, `jac studio diff [revision]` | Compares the wiring now with a git revision, by default the nearest `main`, against its merge base like a code review: wires added and removed, names a wire gained or lost, rules added or changed, and per package level any new backward dependency, a grown cycle, a new violation, or a wider interface. |
 
 ## Telling an agent what to do
 
@@ -123,6 +144,7 @@ The studio drives any agent that speaks the [Agent Client Protocol](https://agen
 | `studio_wiring` | A module's providers, consumers and governing rules |
 | `studio_rules` | Every rule and the modules it covers |
 | `studio_graph` | One level of the architecture map: groups by layer, wire counts between them, backward wires and cycles |
+| `studio_insight` | Roles, an interface, rule use, a slice, a blast radius, clusters, a tour or the architecture diff (see [Reading the architecture](#reading-the-architecture)) |
 | `studio_symbol` | A declaration with its impl, users, uses and the walkers that visit it |
 | `studio_search` | Fuzzy search over modules and symbols |
 | `studio_link_plan` | Links each step of the agent's plan to the code it touches |
@@ -137,6 +159,14 @@ jac studio model geo.shape --json      # one module, as JSON
 jac studio model geo.shape.Circle      # a symbol: members, impls, users, uses, walkers
 jac studio graph                       # the architecture map of the project, as text
 jac studio graph core --json           # one package's level, as JSON
+jac studio roles                       # foundations, hubs, integrators and entry points
+jac studio interface core              # the names that cross a package's boundary
+jac studio rules                       # the rules against the wires they admit
+jac studio slice app.main              # what a module rests on
+jac studio blast core.jobs.Runner      # what depends on a module or a name
+jac studio clusters core               # natural clusters against the declared packages
+jac studio tour > TOUR.md              # an onboarding tour, in markdown
+jac studio diff main                   # how the architecture changed since a revision
 jac studio ask geo.shape.Circle "add a perimeter method" -a claude --yes
 jac studio sessions                    # saved sessions
 jac studio sessions fork <id>          # copy a session to take it in another direction

@@ -18,7 +18,8 @@ glob TOOL_KINDS: dict[str, str] = {
          "symbol_context": "read",
          "symbol_uses": "search",
          "archwire": "search",
-         "architecture": "search"
+         "architecture": "search",
+         "insight": "search"
      },
      NOISY_LOGGERS: list[str] = ["LiteLLM", "litellm", "byllm", "httpx", "openai"],
      MAX_TOOL_OUTPUT: int = 20000,
@@ -29,7 +30,8 @@ glob TOOL_KINDS: dict[str, str] = {
 Read code with the tools before you answer; do not guess. Paths are relative to the project root.
 Prefer the compiler-aware tools: find_symbol to locate a symbol, symbol_context for its declaration,
 impl body and wiring, symbol_uses for its uses, archwire for a module's providers, consumers and rules,
-architecture for a package's sub-packages, the wires between them and the cycles among them.
+architecture for a package's sub-packages, the wires between them and the cycles among them,
+insight for roles, interfaces, rule use, slices, blast radius, clusters, a tour, or the diff since main.
 In Jac, imports between project modules are wires in archwire.jac, not import lines in the file.
 To change a file, call write_file with the complete new content; the user approves every write and may
 reject it with a reason. Keep answers short and concrete.""";
@@ -75,6 +77,7 @@ obj NativeAgentSession(AgentSession) {
     def t_symbol_uses(name: str) -> str;
     def t_archwire(module: str) -> str;
     def t_architecture(scope: str) -> str;
+    def t_insight(view: str, key: str) -> str;
 }
 
 def friendly_error(e: Exception, model_name: str) -> str;
@@ -375,6 +378,10 @@ impl NativeAgentSession.make_tools -> list[any] {
         return self.t_architecture(scope);
     }
     architecture.__doc__ = "Show the architecture one package level at a time: the groups under scope (a package such as pkg.sub, a module shown among its siblings, or empty for the whole project) in provider-first layers, a matrix of wire counts between them, the backward wires that break the layering, and cycles.";
+    def insight(view: str, key: str = "") -> str {
+        return self.t_insight(view, key);
+    }
+    insight.__doc__ = "Higher-level views of the wiring. view: roles (foundations, hubs, entry points under key), interface (names crossing the boundary of key), rules (rule use, unused permissions, violations), slice (what module key rests on), blast (what depends on a module or name key), clusters (natural clusters vs packages under key), tour (an onboarding tour of key), diff (architecture changes since git revision key).";
     return [
         read_file,
         list_dir,
@@ -385,7 +392,8 @@ impl NativeAgentSession.make_tools -> list[any] {
         symbol_context,
         symbol_uses,
         archwire,
-        architecture
+        architecture,
+        insight
     ];
 }
 
@@ -723,6 +731,14 @@ impl NativeAgentSession.t_symbol_uses(name: str) -> str {
         out.append(f"... ({len(refs) - 80} more)");
     }
     return "\n".join(out);
+}
+
+impl NativeAgentSession.t_insight(view: str, key: str) -> str {
+    try {
+        return insight_run(self.model(), view, key, True);
+    } except ValueError as e {
+        return f"error: {e}";
+    }
 }
 
 impl NativeAgentSession.t_architecture(scope: str) -> str {
