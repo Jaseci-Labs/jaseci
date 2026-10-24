@@ -2653,6 +2653,9 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             if sig.return_type is None and clib_import_of(sig) is not None {
                 ret_ir_type = ir.VoidType();
             }
+            if binding.source_context.value == "native" {
+                ret_ir_type = self._byvalue_ret_type(ret_ir_type);
+            }
             _extern_sym = func_name;
             if binding.source_context.value == "native" and _src_ab is not None {
                 _extern_sym = self._symbol_for(

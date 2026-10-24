@@ -11,7 +11,8 @@ glob TailMarkerOptions: frozenset[str] = frozenset(['tail', 'musttail', 'notail'
              'readonly',
              'readnone',
              'noinline',
-             'alwaysinline'
+             'alwaysinline',
+             'returns_twice'
          ]
      ),
      _FAST_MATH_FLAGS: frozenset[str] = frozenset(
