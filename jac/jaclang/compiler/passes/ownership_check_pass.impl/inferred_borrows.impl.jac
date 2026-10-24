@@ -177,12 +177,25 @@ impl OwnershipCheckPass._stamp_inferred_borrows -> None {
 }
 
 impl OwnershipCheckPass._infer_nodes_of(ab: Ability) -> list[UniNode] {
-    scope: UniNode = ab.body if isinstance(ab.body, ImplDef) else ab;
+    # (the declaration's subtree and its impl bodies, as `element_sub_nodes`
+    # walks them, without the nodes of nested functions)
     out: list[UniNode] = [];
-    for nd in scope.flatten() {
-        if nd is not ab and self._owning_ability(nd) is ab {
-            out.append(nd);
+    seen: set[int] = set();
+    pending: list[UniNode] = [ab];
+    while pending {
+        scope = pending.pop();
+        for nd in scope.flatten() {
+            if id(nd) in seen {
+                continue;
+            }
+            seen.add(id(nd));
+            if nd is not ab
+                and type(nd).__name__ != "ImplDef"
+                and nd.enclosing_decl(Ability) is ab {
+                out.append(nd);
+            }
         }
+        pending.extend(scope.linked_impls());
     }
     return out;
 }
@@ -620,8 +633,7 @@ impl OwnershipCheckPass._infer_borrows_in(
     }
     # names used inside nested functions or lambdas are captured
     captured: set[SymId] = set();
-    scope: UniNode = ab.body if isinstance(ab.body, ImplDef) else ab;
-    for lam in scope.get_all_sub_nodes(LambdaExpr) {
+    for lam in ab.element_sub_nodes(LambdaExpr) {
         for nm in lam.get_all_sub_nodes(Name) {
             sid = self._sym_id(nm);
             if sid is not None {
@@ -629,11 +641,11 @@ impl OwnershipCheckPass._infer_borrows_in(
             }
         }
     }
-    for inner in scope.get_all_sub_nodes(Ability) {
+    for inner in ab.element_sub_nodes(Ability) {
         if inner is ab {
             continue;
         }
-        for nm in inner.get_all_sub_nodes(Name) {
+        for nm in inner.element_sub_nodes(Name) {
             sid = self._sym_id(nm);
             if sid is not None {
                 captured.add(sid);
