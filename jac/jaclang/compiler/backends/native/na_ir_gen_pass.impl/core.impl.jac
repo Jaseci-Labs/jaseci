@@ -2413,7 +2413,21 @@ impl NaIRGenPass._ensure_clib_struct(t: any) -> (str | None) {
 impl NaIRGenPass._declare_pending_clib_abilities -> None {
     pending = self._pending_clib_abilities;
     self._pending_clib_abilities = [];
-    for ability in pending {
+    own_ids = {
+        id(a)
+        for a in pending
+        if a.find_parent_of_type(uni.Module) is self.module
+    };
+    for ability in [
+        a
+        for a in pending
+        if id(a) not in own_ids
+    ]
+        + [
+            a
+            for a in pending
+            if id(a) in own_ids
+        ] {
         self._declare_clib_ability(ability);
     }
 }
