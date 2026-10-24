@@ -430,8 +430,11 @@ the Jac form, not a C helper:
    defines (`PyBool_FromLong`) are written this way. Its entry (and a
    callback trampoline's) never runs the Jac body inside the caller's open
    region: an inline test of the thread's current region picks between one
-   `musttail` jump into the body (no region open, the common case) and a
-   call bracketed by `__jac_region_escape` / `__jac_region_restore`. A C
+   `musttail` jump into the body (no region open, the common case) and one
+   into a cold `<entry>.escape` function whose call is bracketed by
+   `__jac_region_escape` / `__jac_region_restore`. Under native TLS (JacPython's
+   build) the entry itself makes no call that returns to it, so it saves no
+   registers and has no frame. A C
    symbol has one signature program-wide, so a definition whose name
    another linked module declares differently is `E1158`. C blocks are
    order-independent: a function above a block reads and writes the C data

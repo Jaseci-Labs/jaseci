@@ -94,7 +94,7 @@ impl NaIRGenPass._emit_clib_c_trampoline(
     for (i, arg) in enumerate(tramp.args) {
         arg.name = f"c.arg{i}";
     }
-    if self._c_entry_tail_or_escape(tramp, jac_fn) and self._is_kernel_unit() {
+    if self._c_entry_tail_or_escape(tramp, jac_fn) {
         self._builder = saved_builder;
         self.clib_trampoline_funcs[key] = tramp;
         return tramp;

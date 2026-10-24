@@ -442,9 +442,7 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
         b = self.builder;
         i32 = ir.IntType(32);
 
-        if _scalar_only
-            and self._c_entry_tail_or_escape(cfunc, jac_fn)
-            and self._is_kernel_unit() {
+        if _scalar_only and self._c_entry_tail_or_escape(cfunc, jac_fn) {
             return;
         }
         saved = self._region_c_entry_escape();
@@ -596,11 +594,48 @@ impl NaIRGenPass._c_entry_tail_or_escape(
     opened = self._region_open_test();
     escape_bb = c_entry.append_basic_block("centry.region.open");
     tail_bb = c_entry.append_basic_block("centry.tail");
-    b.cbranch(opened, escape_bb, tail_bb);
+    b.cbranch(opened, escape_bb, tail_bb).set_weights([1, 2000]);
     b.position_at_end(tail_bb);
     self._thunk_tail_call(c_entry, jac_fn);
     b.position_at_end(escape_bb);
+    self._thunk_tail_call(c_entry, self._c_entry_escape_fn(c_entry, jac_fn));
     return True;
+}
+
+impl NaIRGenPass._c_entry_escape_fn(
+    c_entry: ir.Function, jac_fn: ir.Function
+) -> ir.Function {
+    cty = c_entry.function_type;
+    esc = ir.Function(
+        self.llvm_module,
+        cty,
+        name=self.llvm_module.scope.deduplicate(f"{c_entry.name}.escape")
+    );
+    esc.linkage = "internal";
+    esc.calling_convention = c_entry.calling_convention;
+    esc.attributes.add("noinline");
+    esc.attributes.add("cold");
+    saved_builder = self._builder;
+    self._builder = ir.IRBuilder(esc.append_basic_block("entry"));
+    try {
+        b = self.builder;
+        depth = b.call(
+            self._region_kernel_fn("__jac_region_escape"), [], name="region.escape"
+        );
+        target = jac_fn
+            if cty == jac_fn.function_type
+            else b.bitcast(jac_fn, cty.as_pointer(), name="cdef.body");
+        result = b.call(target, list(esc.args), name="cdef.call");
+        b.call(self._region_kernel_fn("__jac_region_restore"), [depth]);
+        if isinstance(cty.return_type, ir.VoidType) {
+            b.ret_void();
+        } else {
+            b.ret(result);
+        }
+    } finally {
+        self._builder = saved_builder;
+    }
+    return esc;
 }
 
 impl NaIRGenPass._thunk_tail_call(cfunc: ir.Function, jac_fn: ir.Function) -> None {
