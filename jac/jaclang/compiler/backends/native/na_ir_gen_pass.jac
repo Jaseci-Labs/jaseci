@@ -1019,6 +1019,10 @@ walker NaIRGenPass(CompilerPass) {
         jac_fn: ir.Function, c_fn_ty: ir.PointerType
     ) -> ir.Function;
 
+    def _emit_clib_trampoline_call(
+        tramp: ir.Function, jac_fn: ir.Function, bracket: bool
+    ) -> None;
+
     def _lower_clib_function_type(arch_name: str, fname: str, t: any) -> ir.Type;
     def _clib_fnptr_arg(val: ir.Value, target: ir.Type) -> ir.Value;
     def _clib_fnptr_ret(arch_name: str, fname: str, result: ir.Value) -> ir.Value;
@@ -2928,6 +2932,7 @@ walker NaIRGenPass(CompilerPass) {
     def _thunk_tail_call(cfunc: ir.Function, jac_fn: ir.Function) -> None;
     def _c_entry_tail_or_escape(c_entry: ir.Function, jac_fn: ir.Function) -> bool;
     def _c_entry_escape_fn(c_entry: ir.Function, jac_fn: ir.Function) -> ir.Function;
+    def _c_entry_escape_shell(c_entry: ir.Function) -> ir.Function;
     def _tail_frame_blocker -> (str | None);
     def _tail_call_mismatch(call: ir.CallInstr, func: ir.Function) -> (str | None);
     def _codegen_delete(nd: uni.DeleteStmt) -> None;

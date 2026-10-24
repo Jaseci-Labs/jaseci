@@ -99,10 +99,33 @@ impl NaIRGenPass._emit_clib_c_trampoline(
         self.clib_trampoline_funcs[key] = tramp;
         return tramp;
     }
+    if self._is_kernel_unit() or not self._thunk_tail_callable(tramp, tramp) {
+        self._emit_clib_trampoline_call(tramp, jac_fn, True);
+    } else {
+        opened = self._region_open_test();
+        escape_bb = tramp.append_basic_block("centry.region.open");
+        call_bb = tramp.append_basic_block("centry.call");
+        self.builder.cbranch(opened, escape_bb, call_bb).set_weights([1, 2000]);
+        self.builder.position_at_end(call_bb);
+        self._emit_clib_trampoline_call(tramp, jac_fn, False);
+        esc = self._c_entry_escape_shell(tramp);
+        self.builder.position_at_end(escape_bb);
+        self._thunk_tail_call(tramp, esc);
+        self._builder = ir.IRBuilder(esc.append_basic_block("entry"));
+        self._emit_clib_trampoline_call(esc, jac_fn, True);
+    }
+    self._builder = saved_builder;
+    self.clib_trampoline_funcs[key] = tramp;
+    return tramp;
+}
+
+impl NaIRGenPass._emit_clib_trampoline_call(
+    tramp: ir.Function, jac_fn: ir.Function, bracket: bool
+) -> None {
+    c_sig = tramp.function_type;
     jac_params = jac_fn.function_type.args;
     call_args: list[ir.Value] = [];
     for (i, arg) in enumerate(tramp.args) {
-        arg.name = f"c.arg{i}";
         if i < len(jac_params) {
             call_args.append(self._clib_cb_coerce_scalar(arg, jac_params[i]));
         }
@@ -115,7 +138,7 @@ impl NaIRGenPass._emit_clib_c_trampoline(
             call_args.append(ir.Constant(pty, 0));
         }
     }
-    saved = self._region_c_entry_escape();
+    saved = self._region_c_entry_escape() if bracket else None;
     result = self.builder.call(jac_fn, call_args, name="clibcb.call");
     self._region_c_entry_restore(saved);
     c_ret = c_sig.return_type;
@@ -130,9 +153,6 @@ impl NaIRGenPass._emit_clib_c_trampoline(
     } else {
         self.builder.ret(self._clib_cb_coerce_scalar(result, c_ret));
     }
-    self._builder = saved_builder;
-    self.clib_trampoline_funcs[key] = tramp;
-    return tramp;
 }
 
 impl NaIRGenPass._lower_clib_function_type(

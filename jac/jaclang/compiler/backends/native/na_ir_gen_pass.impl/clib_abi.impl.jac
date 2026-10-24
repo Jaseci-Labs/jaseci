@@ -611,15 +611,7 @@ impl NaIRGenPass._c_entry_escape_fn(
     c_entry: ir.Function, jac_fn: ir.Function
 ) -> ir.Function {
     cty = c_entry.function_type;
-    esc = ir.Function(
-        self.llvm_module,
-        cty,
-        name=self.llvm_module.scope.deduplicate(f"{c_entry.name}.escape")
-    );
-    esc.linkage = "internal";
-    esc.calling_convention = c_entry.calling_convention;
-    esc.attributes.add("noinline");
-    esc.attributes.add("cold");
+    esc = self._c_entry_escape_shell(c_entry);
     saved_builder = self._builder;
     self._builder = ir.IRBuilder(esc.append_basic_block("entry"));
     try {
@@ -640,6 +632,19 @@ impl NaIRGenPass._c_entry_escape_fn(
     } finally {
         self._builder = saved_builder;
     }
+    return esc;
+}
+
+impl NaIRGenPass._c_entry_escape_shell(c_entry: ir.Function) -> ir.Function {
+    esc = ir.Function(
+        self.llvm_module,
+        c_entry.function_type,
+        name=self.llvm_module.scope.deduplicate(f"{c_entry.name}.escape")
+    );
+    esc.linkage = "internal";
+    esc.calling_convention = c_entry.calling_convention;
+    esc.attributes.add("noinline");
+    esc.attributes.add("cold");
     return esc;
 }
 

@@ -861,6 +861,62 @@ test "a Jac callback's C trampoline leaves an open region out of line" {
     assert_frameless_entry(thunk, escape, trampoline.rsplit(".__clibcb.", 1)[0]);
 }
 
+glob C_CONVERTING_CALLBACK: str = '''import from "CLIB_POINTERS_LIBRARY" {
+    obj CpVec3 { has x: f32, y: f32, z: f32; }
+    def cp_call_drop(fn: Callable[[ptr[CpVec3]], None], p: ptr[CpVec3]);
+}
+obj Kept {
+    has value: i32;
+
+    def drop {}
+}
+def vec_drop(p: ptr[CpVec3]) {
+    item = Kept(value=i32(1));
+    print("drop on heap", region_of(item) is None, int(p) == 0);
+}
+with entry {
+    cp_call_drop(vec_drop, ptr[CpVec3]());
+    r: own Region = Region();
+    in r {
+        opened = Kept(value=i32(1));
+        print("open", region_of(opened) is None);
+        cp_call_drop(vec_drop, ptr[CpVec3]());
+    }
+}
+''';
+
+test "a converting C trampoline runs outside the caller's open region" {
+    with tempfile.TemporaryDirectory() as directory {
+        out = assert_native_identity(
+            stage_source(directory, C_CONVERTING_CALLBACK, "cbconvert.jac")
+        );
+    }
+    assert out.splitlines()
+        == ["drop on heap True True", "open False", "drop on heap True True"] , out;
+}
+
+test "a converting C trampoline calls its body and leaves an open region out of line" {
+    with tempfile.TemporaryDirectory() as directory {
+        stage_source(directory, C_CONVERTING_CALLBACK, "cbconvert.jac");
+        text = str(
+            compile_native_ir("cbconvert.jac", fixture_dir=directory).gen.llvm_ir
+        );
+    }
+    found = re.search(
+        r'define internal void @"?([^"(\s]*vec_drop\.__clibcb\.\d+)"?\(', text
+    );
+    assert found , "no converting C trampoline for vec_drop";
+    trampoline = found.group(1);
+    (thunk, escape) = c_entry_pair(text, trampoline);
+    body = f'@"{trampoline.rsplit(".__clibcb.", 1)[0]}"';
+    assert thunk.count("musttail call") == 1 , thunk;
+    assert f'@"{trampoline}.escape"' in thunk and body in thunk , thunk;
+    assert "__jac_region_escape" not in thunk , thunk;
+    assert escape.index("__jac_region_escape")
+        < escape.index(body)
+        < escape.index("__jac_region_restore") , escape;
+}
+
 """The C entry `name` and the cold function that leaves an open region for it."""
 def c_entry_pair(text: str, name: str) -> tuple[str, str] {
     thunk = re.search(
