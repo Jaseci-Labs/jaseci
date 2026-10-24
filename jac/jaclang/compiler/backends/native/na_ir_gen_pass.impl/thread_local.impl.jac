@@ -46,6 +46,7 @@ impl NaIRGenPass._emit_tls_slot(
         cache = ir.GlobalVariable(self.llvm_module, i8p, name=f"{slot_name}_tl");
         cache.linkage = "weak";
         cache.thread_local = True;
+        cache.tls_model = "initialexec";
         cache.initializer = ir.Constant(i8p, None);
         gb = ir.IRBuilder(get_fn.append_basic_block("entry"));
         gb.ret(gb.ptrtoint(gb.load(cache, name="tls.v"), i64, name="tls.i64"));

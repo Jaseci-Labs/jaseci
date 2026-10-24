@@ -570,14 +570,19 @@ impl NaIRGenPass._thunk_tail_callable(cfunc: ir.Function, jac_fn: ir.Function) -
         if c_arg == j_arg {
             continue;
         }
-        if isinstance(c_arg, ir.PointerType) and j_arg == i64 {
+        if isinstance(c_arg, ir.PointerType)
+            and (j_arg == i64 or isinstance(j_arg, ir.PointerType)) {
             continue;
         }
         return False;
     }
     c_ret = cty.return_type;
     j_ret = jty.return_type;
-    return c_ret == j_ret or (isinstance(c_ret, ir.PointerType) and j_ret == i64);
+    return c_ret == j_ret
+        or (
+            isinstance(c_ret, ir.PointerType)
+            and (j_ret == i64 or isinstance(j_ret, ir.PointerType))
+        );
 }
 
 impl NaIRGenPass._c_entry_tail_or_escape(
