@@ -1,5 +1,5 @@
 impl SqlValue.__setattr__(name: str, value: any) {
-    if name in self.__dict__ {
+    if name == '_schema_cache' or name in self.__dict__ {
         raise SqlError('SQL values are immutable; construct a new value');
     }
     object.__setattr__(self, name, _freeze_sql_value(value));
@@ -564,7 +564,7 @@ impl _schema_equal(a: Schema, b: Schema, names: bool = True) -> bool {
 }
 
 impl validate_union(ast: UnionNode) {
-    _set_schema(ast.left, ast.right, ast.operation);
+    ast.schema;
     if ast.cardinality != 'many' or type(ast.keep_duplicates) is not bool {
         raise SqlError('UNION schema/cardinality mismatch');
     }
@@ -776,6 +776,9 @@ impl QueryValidator.analyze[R, C](query: Relation[R, C]) -> ValidatedQuery {
     if not isinstance(query, Relation) {
         raise SqlError('Expected a relation, not a scalar or command');
     }
+    self.expression_cache = {};
+    self.query_cache = {};
+    self.cte_cache = {};
     self.active_queries = set();
     self.aliases = {};
     self.cte_names = {};
@@ -861,7 +864,7 @@ impl QueryValidator.source(
     raise SqlError('Unknown SQL source ast');
 }
 
-impl QueryValidator.expr(
+impl QueryValidator.expr_uncached(
     ast: ExprNode, scope: list[Source], local: list[Source], ctes: list[Cte]
 ) -> Checked {
     if not isinstance(ast, ExprNode) {
@@ -1026,9 +1029,15 @@ impl QueryValidator.query(
     if id(ast) in self.active_queries {
         raise SqlError('Cyclic AST: use a recursive CTE reference');
     }
+    key = (id(ast), tuple(id(s) for s in outer), tuple(id(c) for c in ctes));
+    if key in self.query_cache {
+        return self.query_cache[key];
+    }
     self.active_queries.add(id(ast));
     try {
-        return self.query_body(ast, outer, ctes);
+        facts = self.query_body(ast, outer, ctes);
+        self.query_cache[key] = facts;
+        return facts;
     } finally {
         self.active_queries.remove(id(ast));
     }
@@ -1037,7 +1046,6 @@ impl QueryValidator.query(
 impl QueryValidator.query_body(
     ast: RelationNode, outer: list[Source], ctes: list[Cte]
 ) -> QueryFacts {
-    Schema(tuple(ast.schema.fields));
     if isinstance(ast, SelectNode) {
         return self.select_sql(ast, outer, ctes);
     }
@@ -1117,8 +1125,7 @@ impl QueryValidator.query_body(
 impl QueryValidator.select_sql(
     ast: SelectNode, outer: list[Source], ctes: list[Cte]
 ) -> QueryFacts {
-    fields = [p.field for p in ast.projections];
-    Schema(tuple(fields));
+    ast.schema;
     for projection in ast.projections {
         if not same_type(projection.field.dtype, projection.expr.dtype) {
             raise SqlError(
@@ -2137,7 +2144,7 @@ impl QueryValidator.local_bindings(
     return result;
 }
 
-impl QueryValidator.validate_cte(
+impl QueryValidator.validate_cte_uncached(
     reference: Cte, outer: list[Source], available: list[Cte]
 ) -> set[str] {
     definition = reference.definition;
@@ -2675,4 +2682,29 @@ impl bool_or(
     return ScalarExpr(
         AggregateNode(dtype=DataType('boolean', True), op='BOOL_OR', term=term.ast)
     );
+}
+
+impl QueryValidator.expr(
+    ast: ExprNode, scope: list[Source], local: list[Source], ctes: list[Cte]
+) -> Checked {
+    key = (
+        id(ast),
+        tuple(id(s) for s in scope),
+        tuple(id(s) for s in local),
+        tuple(id(c) for c in ctes)
+    );
+    if key not in self.expression_cache {
+        self.expression_cache[key] = self.expr_uncached(ast, scope, local, ctes);
+    }
+    return self.expression_cache[key];
+}
+
+impl QueryValidator.validate_cte(
+    reference: Cte, outer: list[Source], available: list[Cte]
+) -> set[str] {
+    key = (id(reference), tuple(id(s) for s in outer), tuple(id(c) for c in available));
+    if key not in self.cte_cache {
+        self.cte_cache[key] = self.validate_cte_uncached(reference, outer, available);
+    }
+    return self.cte_cache[key];
 }

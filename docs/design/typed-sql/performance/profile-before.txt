@@ -1,0 +1,43 @@
+         5152321 function calls (4751541 primitive calls) in 1.479 seconds
+
+   Ordered by: cumulative time
+   List reduced from 220 to 35 due to restriction <35>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       20    0.005    0.000    1.258    0.063 ttg_sql.jac:269(compile_specialized)
+       40    0.001    0.000    1.036    0.026 sql.impl.jac:551(compile_sql)
+       40    0.001    0.000    0.913    0.023 sql.impl.jac:489(analyze)
+  880/640    0.002    0.000    0.689    0.001 sql.impl.jac:497(validate_cte)
+ 1640/740    0.003    0.000    0.682    0.001 sql.impl.jac:510(query)
+ 1640/740    0.006    0.000    0.680    0.001 sql.impl.jac:511(query_body)
+1380/1120    0.025    0.000    0.540    0.000 sql.impl.jac:515(select_sql)
+   409720    0.167    0.000    0.531    0.000 sql.impl.jac:17(__setattr__)
+    22800    0.012    0.000    0.508    0.000 sql.jac:127(schema)
+21000/11340    0.063    0.000    0.455    0.000 sql.impl.jac:506(expr)
+    27440    0.056    0.000    0.387    0.000 sql.jac:248(schema)
+746680/409720    0.200    0.000    0.363    0.000 sql.impl.jac:832(_freeze_sql_value)
+       20    0.003    0.000    0.362    0.018 ttg_sql.jac:1084(compile_layered)
+3820/3400    0.047    0.000    0.330    0.000 sql.impl.jac:847(_set_schema)
+3580/3200    0.002    0.000    0.313    0.000 sql.jac:261(schema)
+    12800    0.020    0.000    0.301    0.000 ttg_sql.jac:5(_c)
+383280/382640    0.074    0.000    0.177    0.000 sql.jac:2528(<genexpr>)
+      920    0.002    0.000    0.177    0.000 ttg_sql.jac:10(_pick)
+3660/1560    0.012    0.000    0.157    0.000 sql.impl.jac:471(visit_query)
+  1437300    0.152    0.000    0.152    0.000 {built-in method builtins.isinstance}
+48780/25240    0.051    0.000    0.136    0.000 sql.impl.jac:470(visit_expr)
+       40    0.000    0.000    0.122    0.003 sql.impl.jac:540(render)
+    36580    0.080    0.000    0.114    0.000 sql.impl.jac:42(__post_init__)
+    60/40    0.005    0.000    0.111    0.003 sql.impl.jac:543(with_sql)
+ 1640/740    0.010    0.000    0.100    0.000 sql.impl.jac:547(query)
+     1360    0.003    0.000    0.083    0.000 ttg_sql.jac:55(_select)
+ 1420/640    0.005    0.000    0.076    0.000 sql.impl.jac:488(order_cte)
+       40    0.001    0.000    0.071    0.002 sql.impl.jac:469(collect)
+       20    0.000    0.000    0.059    0.003 ttg_sql.jac:216(_frontier_spec)
+    29200    0.033    0.000    0.058    0.000 sql.impl.jac:820(_children)
+21200/11420    0.019    0.000    0.056    0.000 sql.impl.jac:546(expr)
+34980/30480    0.023    0.000    0.055    0.000 sql.impl.jac:468(visit_source)
+     9200    0.011    0.000    0.051    0.000 sql.impl.jac:376(named)
+  680/580    0.003    0.000    0.046    0.000 sql.impl.jac:502(extended_expr)
+    70380    0.037    0.000    0.045    0.000 sql.impl.jac:25(__post_init__)
+
+

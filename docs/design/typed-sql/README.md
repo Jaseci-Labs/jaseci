@@ -185,13 +185,13 @@ Low-level AST construction receives the same semantic analysis as public builder
 
 ## Verification
 
-The suite contains 140 native Jac test entries: 49 SQLite base cases, the same
-49 PostgreSQL cases, 38 PostgreSQL feature cases and four static-check tests.
+The suite contains 145 native Jac test entries: 49 SQLite base cases, the same
+49 PostgreSQL cases, 38 PostgreSQL feature cases four static-check tests and five cache regression tests.
 The static fixtures verify all 29 invalid calls at their expected source lines;
 positive checking covers the module and both construction examples.
 
 ```sh
-jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac -j 1 -v
+jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac jac/tests/sql/test_cache.jac -j 1 -v
 JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
   jac test jac/tests/sql/test_postgres.jac jac/tests/sql/test_postgres_features.jac -j 1 -v
 jac fmt --check --lintfix jac/jaclang/sql.jac \
@@ -208,3 +208,10 @@ rejections and module portability under a different name.
 PostgreSQL semantics references: [WITH queries](https://www.postgresql.org/docs/current/queries-with.html),
 [table expressions](https://www.postgresql.org/docs/current/queries-table-expressions.html),
 and [aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html).
+
+## Validation reuse
+
+Immutable SELECT and set-operation nodes retain their derived schemas. Within
+one compilation, validation results are reused only for the same ordered source
+and CTE scopes. Caches reset for each compilation; scope, projection, recursive
+union and parameter checks remain enforced. See [performance measurements](performance/README.md).
