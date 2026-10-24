@@ -44,7 +44,6 @@ jac test jac/tests/runtimelib/bench_ttg_sql.jac --filter "construction profile" 
 
 Run both commands before and after porting the cache changes, preserving the output files from each run. The benchmark writes raw timing samples and EXPLAIN plans under `benchmarks/ttg-sql/`. Source-only compatibility adaptations are described in the TTG migration document.
 
-
 ## Binding without the AST
 
 A separate client-only microbenchmark constructs a one-table comparison query.
