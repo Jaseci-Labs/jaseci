@@ -1400,6 +1400,22 @@ class FunctionAttributes(AttributeSet) {
         super.add(name);
     }
 
+    """Add the string attribute `"key"="value"`, which LLVM keeps verbatim."""
+    def add_string(self: FunctionAttributes, key: str, value: str) {
+        for text in [key, value] {
+            if not text or '"' in text or '\\' in text {
+                raise ValueError(f"bad string attribute {key!r}={value!r}");
+            }
+        }
+        prefix = '"' + key + '"=';
+        for item in list(self._items) {
+            if item.startswith(prefix) {
+                self._items.discard(item);
+            }
+        }
+        self._items.add(prefix + '"' + value + '"');
+    }
+
     has alignstack: int {
         getter {
             return self._alignstack;

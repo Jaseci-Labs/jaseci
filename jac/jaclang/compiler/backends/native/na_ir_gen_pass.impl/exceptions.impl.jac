@@ -1,3 +1,5 @@
+glob RAISE_SITE_INLINE_COST: int = 5;
+
 impl NaIRGenPass._get_exception_state_type -> ir.Type {
     if self._exc_state_type is not None {
         return self._exc_state_type;
@@ -195,6 +197,14 @@ impl NaIRGenPass._emit_exc_pop_helper -> None {
 }
 
 impl NaIRGenPass._emit_exc_raise_helper -> None {
+    """Every checked operation branches to a call of this helper, and LLVM's
+    inliner charges each call site as a full call: its penalty plus one
+    instruction per argument. A small function with a few overflow and null
+    checks then costs more than the inline threshold, so helpers a few loads
+    long stay out of line. A raise site never returns and sits in a block
+    LLVM already treats as cold, so the helper tells the inliner what a site
+    really adds: about one instruction (`call-inline-cost`).
+    """;
     exc_state_type = self._get_exception_state_type();
     exc_state_ptr = exc_state_type.as_pointer();
     i8p = ir.IntType(8).as_pointer();
@@ -202,6 +212,8 @@ impl NaIRGenPass._emit_exc_raise_helper -> None {
     fnty = ir.FunctionType(ir.VoidType(), [i8p, i32, i8p]);
     func = self._define_function("__jac_exc_raise", fnty);
     func.linkage = "private";
+    func.attributes.add("noreturn");
+    func.attributes.add_string("call-inline-cost", str(RAISE_SITE_INLINE_COST));
     func.args[0].name = "obj";
     func.args[1].name = "type_id";
     func.args[2].name = "msg";
