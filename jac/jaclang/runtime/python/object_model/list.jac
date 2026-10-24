@@ -1246,7 +1246,7 @@ impl list_ass_slice_items(
     n: i64 = 0;
     vitem = no_items();
     if v {
-        v_as_sf = PySequence_Fast(v, "can only assign an iterable");
+        v_as_sf = PySequence_Fast(v, ptr[u8]("can only assign an iterable"));
         if not v_as_sf {
             return i32(-1);
         }
@@ -1495,7 +1495,7 @@ impl list_extend_iter(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
 }
 
 impl list_extend_sequence(op: ptr[PyObject], iterable: ptr[PyObject]) -> i32 {
-    seq = PySequence_Fast(iterable, "argument must be iterable");
+    seq = PySequence_Fast(iterable, ptr[u8]("argument must be iterable"));
     if not seq {
         return i32(-1);
     }
@@ -3209,7 +3209,7 @@ impl list_assign_extended(
     if op == value {
         seq = list_slice(value, 0, object_size(value));
     } else {
-        seq = PySequence_Fast(value, "must assign iterable to extended slice");
+        seq = PySequence_Fast(value, ptr[u8]("must assign iterable to extended slice"));
     }
     if not seq {
         return i32(-1);

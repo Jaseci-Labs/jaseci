@@ -4288,7 +4288,7 @@ impl bind_parameters(
             binding_name += 1;
             current_param = NULL;
             found = PyMapping_GetOptionalItemString(
-                parameters, c_text(binding_name), &mut current_param
+                parameters, binding_name, &mut current_param
             );
             if found == -1 {
                 return;

@@ -4322,7 +4322,7 @@ def sl_replace_1char_inplace(
 
 import from c {
     def PyUnicode_Join(separator: ptr[PyObject], seq: ptr[PyObject]) -> ptr[PyObject] {
-        fseq = PySequence_Fast(seq, "can only join an iterable");
+        fseq = PySequence_Fast(seq, ptr[u8]("can only join an iterable"));
         if not fseq {
             return NULL;
         }

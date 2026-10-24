@@ -824,7 +824,9 @@ impl json_output.encode(value: ptr[PyObject], level: int) {
 }
 
 impl json_output.sequence(value: ptr[PyObject], level: int) {
-    sequence = required(PySequence_Fast(value, "_iterencode_list needs a sequence"));
+    sequence = required(
+        PySequence_Fast(value, ptr[u8]("_iterencode_list needs a sequence"))
+    );
     identity: ptr[PyObject] = NULL;
     try {
         if jacpy_fast_size(sequence) == 0 {

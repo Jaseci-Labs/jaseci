@@ -755,7 +755,9 @@ impl spawn_sigset(signals: ptr[PyObject], attrp: ptr, defaults: bool) -> bool {
 impl parse_file_actions(
     file_actions: ptr[PyObject], file_actionsp: ptr, temp_buffer: ptr[PyObject]
 ) -> i32 {
-    seq = PySequence_Fast(file_actions, "file_actions must be a sequence or None");
+    seq = PySequence_Fast(
+        file_actions, ptr[u8]("file_actions must be a sequence or None")
+    );
     if not seq {
         return i32(-1);
     }

@@ -3528,7 +3528,7 @@ impl merge_from_seq2(d: ptr[PyObject], seq2: ptr[PyObject], override_mode: i32) 
             break;
         }
 
-        fast = PySequence_Fast(item, "object is not iterable");
+        fast = PySequence_Fast(item, ptr[u8]("object is not iterable"));
         if not fast {
             if PyErr_ExceptionMatches(PyExc_TypeError) != 0 {
                 _PyErr_FormatNote(

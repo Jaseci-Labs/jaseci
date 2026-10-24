@@ -2228,7 +2228,7 @@ impl bl_bytes_join(sep: ptr[PyObject], iterable: ptr[PyObject]) -> ptr[PyObject]
     mutable = bl_mutable(sep);
     sepstr = bl_str(sep);
     seplen = bl_len(sep);
-    seq = PySequence_Fast(iterable, "can only join an iterable");
+    seq = PySequence_Fast(iterable, ptr[u8]("can only join an iterable"));
     if not seq {
         return NULL;
     }

@@ -156,7 +156,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "internal/pycore_code.h",
          "internal/pycore_interpframe_structs.h",
          "internal/pycore_object.h",
-         "internal/pycore_interp.h"
+         "internal/pycore_interp.h",
+         "internal/pycore_call.h"
      ],
      # Jac name and C type of each layout the object ports use. Structs a
      # layout embeds by value are emitted too; pointers to anything else are
@@ -1008,6 +1009,113 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "i64"
          ),
          ("PyCodeObject_NLOCALSPLUS", "offsetof(PyCodeObject, co_nlocalsplus)", "i64"),
+         ("_PY_FASTCALL_SMALL_STACK", "_PY_FASTCALL_SMALL_STACK", "i64"),
+         ("CO_OPTIMIZED", "CO_OPTIMIZED", "i32"),
+         ("PyBUF_READ", "PyBUF_READ", "i32"),
+         ("PyBUF_FULL", "PyBUF_FULL", "i32"),
+         ("PyNumberMethods_NB_ADD", "offsetof(PyNumberMethods, nb_add)", "i64"),
+         (
+             "PyNumberMethods_NB_SUBTRACT",
+             "offsetof(PyNumberMethods, nb_subtract)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_MULTIPLY",
+             "offsetof(PyNumberMethods, nb_multiply)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_REMAINDER",
+             "offsetof(PyNumberMethods, nb_remainder)",
+             "i64"
+         ),
+         ("PyNumberMethods_NB_DIVMOD", "offsetof(PyNumberMethods, nb_divmod)", "i64"),
+         ("PyNumberMethods_NB_POWER", "offsetof(PyNumberMethods, nb_power)", "i64"),
+         ("PyNumberMethods_NB_LSHIFT", "offsetof(PyNumberMethods, nb_lshift)", "i64"),
+         ("PyNumberMethods_NB_RSHIFT", "offsetof(PyNumberMethods, nb_rshift)", "i64"),
+         ("PyNumberMethods_NB_AND", "offsetof(PyNumberMethods, nb_and)", "i64"),
+         ("PyNumberMethods_NB_XOR", "offsetof(PyNumberMethods, nb_xor)", "i64"),
+         ("PyNumberMethods_NB_OR", "offsetof(PyNumberMethods, nb_or)", "i64"),
+         (
+             "PyNumberMethods_NB_INPLACE_ADD",
+             "offsetof(PyNumberMethods, nb_inplace_add)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_SUBTRACT",
+             "offsetof(PyNumberMethods, nb_inplace_subtract)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_MULTIPLY",
+             "offsetof(PyNumberMethods, nb_inplace_multiply)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_REMAINDER",
+             "offsetof(PyNumberMethods, nb_inplace_remainder)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_POWER",
+             "offsetof(PyNumberMethods, nb_inplace_power)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_LSHIFT",
+             "offsetof(PyNumberMethods, nb_inplace_lshift)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_RSHIFT",
+             "offsetof(PyNumberMethods, nb_inplace_rshift)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_AND",
+             "offsetof(PyNumberMethods, nb_inplace_and)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_XOR",
+             "offsetof(PyNumberMethods, nb_inplace_xor)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_OR",
+             "offsetof(PyNumberMethods, nb_inplace_or)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_FLOOR_DIVIDE",
+             "offsetof(PyNumberMethods, nb_floor_divide)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_TRUE_DIVIDE",
+             "offsetof(PyNumberMethods, nb_true_divide)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_FLOOR_DIVIDE",
+             "offsetof(PyNumberMethods, nb_inplace_floor_divide)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_TRUE_DIVIDE",
+             "offsetof(PyNumberMethods, nb_inplace_true_divide)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_MATRIX_MULTIPLY",
+             "offsetof(PyNumberMethods, nb_matrix_multiply)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_INPLACE_MATRIX_MULTIPLY",
+             "offsetof(PyNumberMethods, nb_inplace_matrix_multiply)",
+             "i64"
+         ),
          ("_Py_MANAGED_BUFFER_RELEASED", "_Py_MANAGED_BUFFER_RELEASED", "i32"),
          ("_Py_MANAGED_BUFFER_FREE_FORMAT", "_Py_MANAGED_BUFFER_FREE_FORMAT", "i32"),
          ("_Py_MEMORYVIEW_RELEASED", "_Py_MEMORYVIEW_RELEASED", "i32"),
@@ -1441,6 +1549,11 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          (
              "_PyInterpreterFrame_LOCALSPLUS",
              "offsetof(_PyInterpreterFrame, localsplus)",
+             "i64"
+         ),
+         (
+             "PyThreadState_CURRENT_EXCEPTION",
+             "offsetof(PyThreadState, current_exception)",
              "i64"
          ),
          (

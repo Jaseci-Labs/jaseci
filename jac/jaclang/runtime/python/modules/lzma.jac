@@ -495,7 +495,7 @@ impl parse_filter_spec_lzma(
     preset: u32 = LZMA_PRESET_DEFAULT;
 
     preset_obj = NULL;
-    if PyMapping_GetOptionalItemString(spec, "preset", &mut preset_obj) < 0 {
+    if PyMapping_GetOptionalItemString(spec, ptr[u8]("preset"), &mut preset_obj) < 0 {
         return ptr();
     }
     if preset_obj {
@@ -648,7 +648,7 @@ impl lzma_filter_converter(
         return False;
     }
     id_obj = NULL;
-    if PyMapping_GetOptionalItemString(spec, "id", &mut id_obj) < 0 {
+    if PyMapping_GetOptionalItemString(spec, ptr[u8]("id"), &mut id_obj) < 0 {
         return False;
     }
     if not id_obj {

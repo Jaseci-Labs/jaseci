@@ -370,7 +370,7 @@ impl structseq_new_impl(
     if n_unnamed_fields < 0 {
         return NULL;
     }
-    fast = PySequence_Fast(arg, "constructor requires a sequence");
+    fast = PySequence_Fast(arg, ptr[u8]("constructor requires a sequence"));
     if not fast {
         return NULL;
     }

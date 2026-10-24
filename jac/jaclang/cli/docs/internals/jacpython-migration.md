@@ -752,6 +752,13 @@ The attribute C API takes `ptr[u8]` names; Jac `str` names go through
 compiler-bridge.patch no longer patches object.c: the port's static-type
 table leaves out the symtable and instruction-sequence types itself.
 
+`call.c` and `abstract.c` (`object_model/call.jac`, `abstract.jac`) keep
+C's dispatch order: vectorcall before `tp_call`, the `nb_*` slots read at
+their `PyNumberMethods` offsets with the subtype-first rule. The functions
+that receive or forward a `va_list` (`PyObject_CallFunction`,
+`PyObject_CallMethod` and their variants) stay C in object_api.c; the
+`...ObjArgs` calls are Jac variadic definitions.
+
 Order after these: `typeobject.c` (12,312 lines) last. The allocator (`obmalloc.c` and the mimalloc copy under
 `Objects/mimalloc/`) follows the object model.
 

@@ -1674,7 +1674,7 @@ impl checkpath(tag: ptr[PyObject]) -> bool {
 impl _elementtree_Element_extend_impl(
     receiver: ptr[PyObject], cls: ptr[PyObject], elements: ptr[PyObject]
 ) -> ptr[PyObject] {
-    sequence = PySequence_Fast(elements, "'elements' must be an iterable");
+    sequence = PySequence_Fast(elements, ptr[u8]("'elements' must be an iterable"));
     if not sequence {
         return NULL;
     }
@@ -2113,7 +2113,7 @@ impl element_ass_subscr(
         return delete_slice(instance, start, stop, step);
     }
 
-    sequence = PySequence_Fast(value, "assignment expects an iterable");
+    sequence = PySequence_Fast(value, ptr[u8]("assignment expects an iterable"));
     if not sequence {
         return i32(-1);
     }
@@ -3918,7 +3918,7 @@ impl _elementtree_XMLParser__setevents_impl(
         );
         return Py_NewRef(Py_None);
     }
-    sequence = PySequence_Fast(events_to_report, "events must be a sequence");
+    sequence = PySequence_Fast(events_to_report, ptr[u8]("events must be a sequence"));
     if not sequence {
         return NULL;
     }

@@ -486,7 +486,7 @@ impl ForkState.release {
 }
 
 impl convert_args(state: ForkState, process_args: ptr[PyObject]) -> bool {
-    state.fast_args = PySequence_Fast(process_args, "argv must be a tuple");
+    state.fast_args = PySequence_Fast(process_args, ptr[u8]("argv must be a tuple"));
     if not state.fast_args {
         return False;
     }

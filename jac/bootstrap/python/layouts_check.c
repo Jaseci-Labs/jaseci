@@ -25,6 +25,7 @@
 #include "internal/pycore_interpframe_structs.h"
 #include "internal/pycore_object.h"
 #include "internal/pycore_interp.h"
+#include "internal/pycore_call.h"
 #include <stddef.h>
 #ifdef _Py_FORCE_UTF8_FS_ENCODING
 #define JAC_FORCE_UTF8_FS_ENCODING 1
@@ -2014,6 +2015,37 @@ CONSTANT(offsetof(struct _Py_freelists, async_gens), 496LL);
 CONSTANT(offsetof(struct _Py_freelists, async_gen_asends), 512LL);
 CONSTANT(offsetof(struct _Py_freelists, object_stack_chunks), 544LL);
 CONSTANT(offsetof(PyCodeObject, co_nlocalsplus), 72LL);
+CONSTANT(_PY_FASTCALL_SMALL_STACK, 5LL);
+CONSTANT(CO_OPTIMIZED, 1LL);
+CONSTANT(PyBUF_READ, 256LL);
+CONSTANT(PyBUF_FULL, 285LL);
+CONSTANT(offsetof(PyNumberMethods, nb_add), 0LL);
+CONSTANT(offsetof(PyNumberMethods, nb_subtract), 8LL);
+CONSTANT(offsetof(PyNumberMethods, nb_multiply), 16LL);
+CONSTANT(offsetof(PyNumberMethods, nb_remainder), 24LL);
+CONSTANT(offsetof(PyNumberMethods, nb_divmod), 32LL);
+CONSTANT(offsetof(PyNumberMethods, nb_power), 40LL);
+CONSTANT(offsetof(PyNumberMethods, nb_lshift), 88LL);
+CONSTANT(offsetof(PyNumberMethods, nb_rshift), 96LL);
+CONSTANT(offsetof(PyNumberMethods, nb_and), 104LL);
+CONSTANT(offsetof(PyNumberMethods, nb_xor), 112LL);
+CONSTANT(offsetof(PyNumberMethods, nb_or), 120LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_add), 152LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_subtract), 160LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_multiply), 168LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_remainder), 176LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_power), 184LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_lshift), 192LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_rshift), 200LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_and), 208LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_xor), 216LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_or), 224LL);
+CONSTANT(offsetof(PyNumberMethods, nb_floor_divide), 232LL);
+CONSTANT(offsetof(PyNumberMethods, nb_true_divide), 240LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_floor_divide), 248LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_true_divide), 256LL);
+CONSTANT(offsetof(PyNumberMethods, nb_matrix_multiply), 272LL);
+CONSTANT(offsetof(PyNumberMethods, nb_inplace_matrix_multiply), 280LL);
 CONSTANT(_Py_MANAGED_BUFFER_RELEASED, 1LL);
 CONSTANT(_Py_MANAGED_BUFFER_FREE_FORMAT, 2LL);
 CONSTANT(_Py_MEMORYVIEW_RELEASED, 1LL);
@@ -2208,6 +2240,7 @@ CONSTANT(offsetof(PyInterpreterState, cached_objects.objreduce), 224632LL);
 CONSTANT(offsetof(_PyInterpreterFrame, f_executable), 0LL);
 CONSTANT(offsetof(_PyInterpreterFrame, stackpointer), 64LL);
 CONSTANT(offsetof(_PyInterpreterFrame, localsplus), 80LL);
+CONSTANT(offsetof(PyThreadState, current_exception), 112LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
@@ -2273,6 +2306,7 @@ CONSTANT(offsetof(PyInterpreterState, cached_objects.objreduce), 224648LL);
 CONSTANT(offsetof(_PyInterpreterFrame, f_executable), 0LL);
 CONSTANT(offsetof(_PyInterpreterFrame, stackpointer), 64LL);
 CONSTANT(offsetof(_PyInterpreterFrame, localsplus), 80LL);
+CONSTANT(offsetof(PyThreadState, current_exception), 112LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 10432LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 10440LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90544LL);
@@ -2338,6 +2372,7 @@ CONSTANT(offsetof(PyInterpreterState, cached_objects.objreduce), 224680LL);
 CONSTANT(offsetof(_PyInterpreterFrame, f_executable), 0LL);
 CONSTANT(offsetof(_PyInterpreterFrame, stackpointer), 64LL);
 CONSTANT(offsetof(_PyInterpreterFrame, localsplus), 80LL);
+CONSTANT(offsetof(PyThreadState, current_exception), 112LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);
@@ -2403,6 +2438,7 @@ CONSTANT(offsetof(PyInterpreterState, cached_objects.objreduce), 224680LL);
 CONSTANT(offsetof(_PyInterpreterFrame, f_executable), 0LL);
 CONSTANT(offsetof(_PyInterpreterFrame, stackpointer), 64LL);
 CONSTANT(offsetof(_PyInterpreterFrame, localsplus), 80LL);
+CONSTANT(offsetof(PyThreadState, current_exception), 112LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_func), 9928LL);
 CONSTANT(offsetof(_PyRuntimeState, ref_tracer.tracer_data), 9936LL);
 CONSTANT(offsetof(_PyRuntimeState, static_objects.singletons.tuple_empty), 90048LL);

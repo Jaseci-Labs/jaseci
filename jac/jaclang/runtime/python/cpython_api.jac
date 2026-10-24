@@ -288,7 +288,7 @@ import from c {
     ];  def PyLong_GetSign(v: ptr[PyObject], sign: &mut i32) -> i32;  def PyLong_IsNegative(
         obj_: ptr[PyObject]
     ) -> i32;  def PyMapping_Check(o: ptr[PyObject]) -> i32;  def PyMapping_GetOptionalItemString(
-        arg0: ptr[PyObject], arg1: str, arg2: &mut ptr[PyObject]
+        arg0: ptr[PyObject], arg1: ptr[u8], arg2: &mut ptr[PyObject]
     ) -> i32;  def PyMapping_Items(o: ptr[PyObject]) -> ptr[PyObject];  def PyMapping_Keys(
         o: ptr[PyObject]
     ) -> ptr[PyObject];  def PyMapping_Length(o: ptr[PyObject]) -> i64;  def PyMapping_Size(
@@ -468,7 +468,7 @@ import from c {
     ) -> ptr[PyObject];  def PySequence_Contains(
         seq: ptr[PyObject], ob: ptr[PyObject]
     ) -> i32;  def PySequence_Count(o: ptr[PyObject], value: ptr[PyObject]) -> i64;  def PySequence_Fast(
-        o: ptr[PyObject], m: str
+        o: ptr[PyObject], m: ptr[u8]
     ) -> ptr[PyObject];  def PySequence_GetItem(
         o: ptr[PyObject], i: i64
     ) -> ptr[PyObject];  def PySequence_InPlaceConcat(

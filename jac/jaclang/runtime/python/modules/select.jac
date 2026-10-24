@@ -299,7 +299,7 @@ impl DescriptorList.drop {
 }
 
 impl seq2set(seq: ptr[PyObject], bits: ptr[u8], entries: DescriptorList) -> int {
-    fast = PySequence_Fast(seq, "arguments 1-3 must be sequences");
+    fast = PySequence_Fast(seq, ptr[u8]("arguments 1-3 must be sequences"));
     if not fast {
         return -1;
     }
@@ -1522,7 +1522,7 @@ impl select_kqueue_control_impl(
     nchanges = 0;
     changes = ptr[kevent_record]();
     if changelist != Py_None {
-        seq = PySequence_Fast(changelist, "changelist is not iterable");
+        seq = PySequence_Fast(changelist, ptr[u8]("changelist is not iterable"));
         if not seq {
             return NULL;
         }

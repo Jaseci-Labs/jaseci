@@ -60,6 +60,7 @@ glob LAYOUTS_PLATFORM: str = "",
      _PyInterpreterFrame_F_EXECUTABLE: Final[i64] = 0,
      _PyInterpreterFrame_STACKPOINTER: Final[i64] = 0,
      _PyInterpreterFrame_LOCALSPLUS: Final[i64] = 0,
+     PyThreadState_CURRENT_EXCEPTION: Final[i64] = 0,
      _PyRuntimeState_REF_TRACER_FUNC: Final[i64] = 0,
      _PyRuntimeState_REF_TRACER_DATA: Final[i64] = 0,
      _PyRuntimeState_TUPLE_EMPTY: Final[i64] = 0;
