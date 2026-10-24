@@ -856,6 +856,13 @@ impl NaIRGenPass._can_native_move_lower(nd: object) -> bool {
     if rhs.value in self.closure_cell_handles or rhs.value in self.borrowed_vars {
         return False;
     }
+    # (a borrowed target keeps no reference: what it took would never be
+    # released)
+    if len(nd.target) == 1
+        and isinstance(nd.target[0], uni.Name)
+        and nd.target[0].value in self.borrowed_vars {
+        return False;
+    }
     src_alloca = self.local_vars.get(rhs.value);
     if src_alloca is None {
         return False;
@@ -866,11 +873,19 @@ impl NaIRGenPass._can_native_move_lower(nd: object) -> bool {
         and isinstance(src_alloca.type, ir.PointerType)
         and src_alloca.pointee_type == self._str_desc_ty
     );
+    # (an optional slot moves too: the copy takes its payload, the slot
+    # becomes None)
+    _mv_opt_slot = (
+        isinstance(src_alloca.type, ir.PointerType)
+        and self._opt_ptr_payload_of(src_alloca.pointee_type) is not None
+        and not self._nogc_headerless()
+    );
     if not (
         isinstance(src_alloca.type, ir.PointerType)
         and isinstance(src_alloca.pointee_type, ir.PointerType)
     )
-        and not _mv_desc_slot {
+        and not _mv_desc_slot
+        and not _mv_opt_slot {
         return False;
     }
     self.builder.store(ir.Constant(src_alloca.pointee_type, None), src_alloca);
