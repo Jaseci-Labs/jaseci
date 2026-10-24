@@ -1186,6 +1186,7 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
         fields = dict(anchor.archetype.__dict__);
         fields.pop('__jac__', None);
         archetype.__dict__.update(fields);
+        existing.__dict__.pop('_frozen', None);
         existing.__dict__.update(anchor.__dict__);
         existing.__dict__['archetype'] = archetype;
         anchor = existing;

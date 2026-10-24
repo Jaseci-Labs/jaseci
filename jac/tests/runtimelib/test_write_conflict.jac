@@ -26,7 +26,7 @@ import from jaclang.server.session { Session }
 
 node WCounter {
     has n: int = 0,
-        tags: list[str] = [];
+        tags: (list[str] | None) = None;
 }
 
 
@@ -80,14 +80,14 @@ test "a stored anchor carries a version that advances on write" {
 """A reads the counter and ends its transaction, B commits n=99, and A goes on
 by `mode`: "commit" or "rollback" name how A's transaction ended; "assign" and
 "in place" also have A write over its stale copy, which must report a conflict.
-Either way A then holds B's value and can write on top of it."""
+Either way A then holds B's value, and an in-place edit on top of it is stored."""
 def _after_other_commit(td: str, mode: str) {
     old = JacRuntime.exec_ctx;
     ctx1 = _ctx(td);
     JacRuntime.exec_ctx = ctx1;
     cid: UUID;
     try {
-        c = WCounter(n=1);
+        c = WCounter(n=1, tags=([] if mode == "in place" else None));
         root ++> c;
         ctx1.mem.commit();
         cid = c.__jac__.id;
@@ -118,6 +118,7 @@ def _after_other_commit(td: str, mode: str) {
             b = ctxb.mem.get(cid);
             assert b is not None;
             _as_any(b).archetype.n = 99;
+            _as_any(b).archetype.tags = ["b"];
             ctxb.mem.mark_dirty(b);
             ctxb.mem.commit();
         } finally {
@@ -148,12 +149,22 @@ def _after_other_commit(td: str, mode: str) {
         }
         assert ctxa.mem.get(cid) is a , f"{mode}: a held node was replaced";
         assert _as_any(a).archetype.n == 99 , f"{mode}: A still sees its stale copy";
-        _as_any(a).archetype.n = 100;
-        ctxa.mem.mark_dirty(a);
+        _as_any(a).archetype.tags.append("a");
         ctxa.mem.commit();
     } finally {
         JacRuntime.exec_ctx = old;
         ctxa.close();
+    }
+    ctxr = _ctx(td);
+    JacRuntime.exec_ctx = ctxr;
+    try {
+        r = ctxr.mem.get(cid);
+        assert r is not None and _as_any(r).archetype.tags == ["b", "a"] , (
+            f"{mode}: A's in-place write over B's value was not stored"
+        );
+    } finally {
+        JacRuntime.exec_ctx = old;
+        ctxr.close();
     }
 }
 
