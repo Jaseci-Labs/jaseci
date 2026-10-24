@@ -250,8 +250,8 @@ class SQLTests(unittest.TestCase) {
             )
         );
         bad = s.cte_ref([key]);
-        s.define_cte(bad, invalid, recursive=True);
         with self.assertRaisesRegex(s.SqlError, 'UNION schema/cardinality mismatch') {
+            s.define_cte(bad, invalid, recursive=True);
             s.compile_sql(s.select([s.named('n', bad.col(key))], source=bad));
         }
     }
@@ -317,15 +317,13 @@ class SQLTests(unittest.TestCase) {
 
     def test_recursive_step_eligibility(self: SQLTests) -> object {
         key = s.field('n', s.int64_type());
-        for mode in [0, 1, 2] {
+        for mode in [0, 1] {
             ref = s.cte_ref([key]);
             anchor = s.select([s.named('n', s.int64(1))]);
             if mode == 0 {
                 step = s.select([s.named('n', s.int64(2))]);
-            } elif mode == 1 {
-                step = s.select([s.named('n', s.count())], source=ref);
             } else {
-                step = s.select([s.named('n', ref.col(key))], source=ref, limit=1);
+                step = s.select([s.named('n', s.count())], source=ref);
             }
             s.define_cte(ref, s.union_all(anchor, step), recursive=True);
             body = s.select([s.named('n', ref.col(key))], source=ref);

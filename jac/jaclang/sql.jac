@@ -1,4 +1,5 @@
 import from uuid { UUID }
+import from decimal { Decimal }
 
 class SqlError(ValueError) {}
 
@@ -75,7 +76,9 @@ obj Table(Source) {
 }
 
 obj Derived(Source) {
-    has query: RelationNode;
+    has query: RelationNode,
+        lateral: bool = False;
+
     has schema: Schema {
         getter {
             return self.query.schema;
@@ -105,7 +108,8 @@ obj CteBinding(SqlValue) {
 
 obj Cte(Source) {
     has binding: CteBinding,
-        declared_schema: Schema | None = None;
+        declared_schema: Schema | None = None,
+        materialized: bool | None = None;
 
     has definition: RelationNode | None {
         getter {
@@ -151,7 +155,15 @@ obj ColumnNode(ExprNode) {
 }
 
 obj ParamNode(ExprNode) {
-    has value: bool | int | float | str | UUID | None;
+    has value:
+        bool
+            | int
+            | float
+            | str
+            | UUID
+            | Decimal
+            | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+            | None;
 }
 
 obj BinaryNode(ExprNode) {
@@ -176,7 +188,9 @@ obj CastNode(ExprNode) {
 
 obj AggregateNode(ExprNode) {
     has op: str,
-        term: ExprNode | None;
+        term: ExprNode | None,
+        distinct: bool = False,
+        delimiter: ExprNode | None = None;
 }
 
 obj CoalesceNode(ExprNode) {
@@ -208,12 +222,14 @@ obj Projection[T](ProjectionDef) {
 
 obj Order(SqlValue) {
     has expr: ExprNode,
-        descending: bool;
+        descending: bool,
+        nulls: str = '';
 }
 
 obj Join(SqlValue) {
     has source: Source,
-        condition: ExprNode;
+        condition: ExprNode | None,
+        kind: str = 'INNER';
 }
 
 obj SelectNode(RelationNode) {
@@ -224,7 +240,9 @@ obj SelectNode(RelationNode) {
         groups: tuple[ExprNode, ...],
         having: ExprNode | None,
         ordering: tuple[Order, ...],
-        limit: int | None;
+        limit: int | None,
+        distinct: bool = False,
+        distinct_on: tuple[ExprNode, ...] = ();
 
     has schema: Schema {
         getter {
@@ -236,11 +254,12 @@ obj SelectNode(RelationNode) {
 obj UnionNode(RelationNode) {
     has left: RelationNode,
         right: RelationNode,
-        keep_duplicates: bool;
+        keep_duplicates: bool,
+        operation: str = 'UNION';
 
     has schema: Schema {
         getter {
-            return self.left.schema;
+            return _set_schema(self.left, self.right, self.operation);
         }
     }
 }
@@ -248,14 +267,25 @@ obj UnionNode(RelationNode) {
 obj Relation[R, C](SqlValue) {
     has ast: RelationNode;
 
-    def as_source -> Source;
+    def as_source(lateral: bool = False) -> Source;
 }
 
 obj Command {}
 
 obj CompiledSQL {
     has sql: str,
-        params: dict[str, bool | int | float | str | UUID | None];
+        params:
+            dict[
+                str,
+                bool
+                    | int
+                    | float
+                    | str
+                    | UUID
+                    | Decimal
+                    | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+                    | None
+            ];
 }
 
 
@@ -281,7 +311,16 @@ def table(
 ) -> Source;
 
 def param[T](
-    dtype: SqlType[T], value: bool | int | float | str | UUID | None
+    dtype: SqlType[T],
+    value:
+        bool
+            | int
+            | float
+            | str
+            | UUID
+            | Decimal
+            | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+            | None
 ) -> ScalarExpr[T];
 
 def int64(value: int) -> ScalarExpr[SqlInt64];
@@ -293,7 +332,16 @@ def boolean(value: bool) -> ScalarExpr[SqlBool];
 def uuid(value: UUID) -> ScalarExpr[SqlUUID];
 
 def validate_value(
-    dtype: DataType, value: bool | int | float | str | UUID | None
+    dtype: DataType,
+    value:
+        bool
+            | int
+            | float
+            | str
+            | UUID
+            | Decimal
+            | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+            | None
 ) -> None;
 
 def _compare[T](
@@ -328,9 +376,9 @@ def coalesce[T](
 
 def named[T](name: str, expr: ScalarExpr[T]) -> Projection[T];
 
-def asc[T](expr: ScalarExpr[T]) -> Order;
+def asc[T](expr: ScalarExpr[T], nulls: str = '') -> Order;
 
-def desc[T](expr: ScalarExpr[T]) -> Order;
+def desc[T](expr: ScalarExpr[T], nulls: str = '') -> Order;
 
 def inner_join(
     source: Source, on: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]
@@ -344,7 +392,9 @@ def select(
     group_by: list[ExprNode] = [],
     having: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]] | None = None,
     order_by: list[Order] = [],
-    limit: int | None = None
+    limit: int | None = None,
+    distinct: bool = False,
+    distinct_on: list[ExprNode] = []
 ) -> Relation[Schema, Many];
 
 def limit_one[R, C](query: Relation[R, C]) -> Relation[R, AtMostOne];
@@ -367,7 +417,7 @@ def union_all[R, C, D](
     left: Relation[R, C], right: Relation[R, D]
 ) -> Relation[R, Many];
 
-def cte[R, C](query: Relation[R, C]) -> Cte;
+def cte[R, C](query: Relation[R, C], materialized: bool | None = None) -> Cte;
 
 def cte_ref(fields: list[FieldDef]) -> Cte;
 
@@ -378,7 +428,8 @@ def define_cte[R, C](
 
 obj Checked {
     has free: set[str],
-        aggregate: bool = False;
+        aggregate: bool = False,
+        window: bool = False;
 }
 
 obj QueryFacts {
@@ -389,7 +440,8 @@ obj ValidatedQuery {
     has query: RelationNode,
         ctes: tuple[Cte, ...],
         aliases: dict[int, str],
-        cte_names: dict[int, str];
+        cte_names: dict[int, str],
+        local_orders: dict[int, tuple[Cte, ...]];
 }
 
 
@@ -406,6 +458,7 @@ def validate_union(ast: UnionNode);
 
 obj QueryGraph {
     has ctes: list[Cte] = [],
+        bound_ctes: set[int] = set(),
         physical_names: set[str] = set(),
         explicit_aliases: set[str] = set(),
         seen_sources: set[int] = set(),
@@ -427,6 +480,7 @@ obj QueryValidator {
         used_names: set[str] = set(),
         ordered_ctes: list[Cte] = [],
         cte_states: dict[int, int] = {},
+        local_orders: dict[int, tuple[Cte, ...]] = {},
         alias_counter: int = 0,
         cte_counter: int = 0;
 
@@ -434,7 +488,22 @@ obj QueryValidator {
     def alias_for(src: Source) -> str;
     def order_cte(reference: Cte) -> None;
     def analyze[R, C](query: Relation[R, C]) -> ValidatedQuery;
-    def source(src: Source, ctes: list[Cte]) -> None;
+    def source(
+        src: Source,
+        ctes: list[Cte],
+        outer: list[Source] = [],
+        lateral_scope: list[Source] = []
+    ) -> set[str];
+
+    def validate_cte(
+        reference: Cte, outer: list[Source], available: list[Cte]
+    ) -> set[str];
+
+    def local_bindings(bindings: tuple[Cte, ...], available: list[Cte]) -> list[Cte];
+    def extended_expr(
+        ast: ExprNode, scope: list[Source], local: list[Source], ctes: list[Cte]
+    ) -> Checked;
+
     def expr(
         ast: ExprNode, scope: list[Source], local: list[Source], ctes: list[Cte]
     ) -> Checked;
@@ -451,14 +520,30 @@ obj QueryValidator {
 
 
 obj PostgresRenderer {
-    has params: dict[str, bool | int | float | str | UUID | None] = {},
+    has params:
+        dict[
+            str,
+            bool
+                | int
+                | float
+                | str
+                | UUID
+                | Decimal
+                | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+                | None
+        ] = {},
         parameter_ids: dict[int, str] = {},
         aliases: dict[int, str] = {},
-        cte_names: dict[int, str] = {};
+        cte_names: dict[int, str] = {},
+        local_orders: dict[int, tuple[Cte, ...]] = {};
 
     def alias_for(src: Source) -> str;
     def render(plan: ValidatedQuery) -> CompiledSQL;
     def source(src: Source) -> str;
+    def source_body(src: Source) -> str;
+    def with_sql(bindings: tuple[Cte, ...], body: str) -> str;
+    def ordering(items: tuple[Order, ...]) -> str;
+    def extended_expr(ast: ExprNode) -> str;
     def expr(ast: ExprNode) -> str;
     def query(ast: RelationNode) -> str;
 }
@@ -467,4 +552,307 @@ obj PostgresRenderer {
 def compile_sql[R, C](query: Relation[R, C]) -> CompiledSQL;
 
 
-def validate_recursive_step(ref: Cte, step: SelectNode);
+def validate_recursive_step(ref: Cte, step: RelationNode);
+
+obj SqlInt32 {}
+obj SqlNumeric {}
+obj SqlArray[T] {}
+
+obj CallNode(ExprNode) {
+    has op: str,
+        args: tuple[ExprNode, ...];
+}
+
+obj CaseNode(ExprNode) {
+    has branches: tuple[tuple[ExprNode, ExprNode], ...],
+        fallback: ExprNode;
+}
+
+obj ArrayNode(ExprNode) {
+    has items: tuple[ExprNode, ...];
+}
+
+obj MembershipNode(ExprNode) {
+    has term: ExprNode,
+        items: tuple[ExprNode, ...];
+}
+
+obj AnyNode(ExprNode) {
+    has term: ExprNode,
+        array: ExprNode;
+}
+
+obj OutputNode(ExprNode) {
+    has name: str;
+}
+
+obj FrameBound(SqlValue) {
+    has kind: str,
+        offset: int = 0;
+}
+
+obj WindowFrame(SqlValue) {
+    has start: FrameBound,
+        end: FrameBound,
+        mode: str = 'ROWS';
+}
+
+obj WindowNode(ExprNode) {
+    has op: str,
+        term: ExprNode | None,
+        partition: tuple[ExprNode, ...],
+        ordering: tuple[Order, ...],
+        frame: WindowFrame | None;
+}
+
+obj NullableSource(Source) {
+    has target: Source;
+    has schema: Schema {
+        getter {
+            return Schema(
+                tuple(
+                    FieldDef(f.name, DataType(f.dtype.name, True))
+                    for f in self.target.schema.fields
+                )
+            );
+        }
+    }
+}
+
+obj FunctionSource(Source) {
+    has argument: ExprNode,
+        element: FieldDef,
+        ordinality: FieldDef | None;
+
+    has schema: Schema {
+        getter {
+            return Schema(
+                (self.element, )
+                    + ((self.ordinality, ) if self.ordinality is not None else ())
+            );
+        }
+    }
+}
+
+obj ValuesNode(RelationNode) {
+    has declared_schema: Schema,
+        rows: tuple[tuple[ExprNode, ...], ...];
+
+    has schema: Schema {
+        getter {
+            return self.declared_schema;
+        }
+    }
+}
+
+obj WithNode(RelationNode) {
+    has body: RelationNode,
+        bindings: tuple[Cte, ...];
+
+    has schema: Schema {
+        getter {
+            return self.body.schema;
+        }
+    }
+}
+
+obj OrderedNode(RelationNode) {
+    has body: RelationNode,
+        ordering: tuple[Order, ...],
+        limit: int | None;
+
+    has schema: Schema {
+        getter {
+            return self.body.schema;
+        }
+    }
+}
+
+def int32_type -> SqlType[SqlInt32];
+def numeric_type -> SqlType[SqlNumeric];
+def array_type[T](element: SqlType[T]) -> SqlType[SqlArray[T]];
+def int32(value: int) -> ScalarExpr[SqlInt32];
+def numeric(value: Decimal | int) -> ScalarExpr[SqlNumeric];
+def array_param[T](
+    element: SqlType[T], values: list[bool | int | float | str | UUID | Decimal | None]
+) -> ScalarExpr[SqlArray[T]];
+
+def array[T](
+    element: SqlType[T], items: list[ScalarExpr[T]]
+) -> ScalarExpr[SqlArray[T]];
+
+def array_concat[T](
+    left: ScalarExpr[SqlArray[T]], right: ScalarExpr[SqlArray[T]]
+) -> ScalarExpr[SqlArray[T]];
+
+def array_append[T](
+    left: ScalarExpr[SqlArray[T]], right: ScalarExpr[T]
+) -> ScalarExpr[SqlArray[T]];
+
+def any_eq[T](
+    term: ScalarExpr[T], values: ScalarExpr[SqlArray[T]]
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def ne[T](left: ScalarExpr[T], right: ScalarExpr[T]) -> ScalarExpr[SqlBool];
+def lt[T](left: ScalarExpr[T], right: ScalarExpr[T]) -> ScalarExpr[SqlBool];
+def le[T](left: ScalarExpr[T], right: ScalarExpr[T]) -> ScalarExpr[SqlBool];
+def ge[T](left: ScalarExpr[T], right: ScalarExpr[T]) -> ScalarExpr[SqlBool];
+def compare_nullable[T](
+    left: ScalarExpr[T] | ScalarExpr[Nullable[T]],
+    right: ScalarExpr[T] | ScalarExpr[Nullable[T]],
+    op: str = '='
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def or_(terms: list[ScalarExpr[SqlBool]]) -> ScalarExpr[SqlBool];
+def and_nullable(
+    terms: list[ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]]
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def or_nullable(
+    terms: list[ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]]
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def not_(term: ScalarExpr[SqlBool]) -> ScalarExpr[SqlBool];
+def not_nullable(term: ScalarExpr[Nullable[SqlBool]]) -> ScalarExpr[Nullable[SqlBool]];
+def is_not_null[T](term: ScalarExpr[Nullable[T]]) -> ScalarExpr[SqlBool];
+def in_[T](term: ScalarExpr[T], items: list[ScalarExpr[T]]) -> ScalarExpr[SqlBool];
+def sub(
+    left: ScalarExpr[SqlInt64], right: ScalarExpr[SqlInt64]
+) -> ScalarExpr[SqlInt64];
+
+def numeric_add(
+    left: ScalarExpr[SqlNumeric], right: ScalarExpr[SqlNumeric]
+) -> ScalarExpr[SqlNumeric];
+
+def numeric_sub(
+    left: ScalarExpr[SqlNumeric], right: ScalarExpr[SqlNumeric]
+) -> ScalarExpr[SqlNumeric];
+
+def case_[T](
+    branches:
+        list[tuple[ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]], ScalarExpr[T]]],
+    fallback: ScalarExpr[T]
+) -> ScalarExpr[T];
+
+def concat(
+    terms: list[ScalarExpr[SqlText] | ScalarExpr[Nullable[SqlText]]]
+) -> ScalarExpr[SqlText];
+
+def text_concat(
+    left: ScalarExpr[SqlText], right: ScalarExpr[SqlText]
+) -> ScalarExpr[SqlText];
+
+def lpad(
+    term: ScalarExpr[SqlText], length: ScalarExpr[SqlInt32], fill: ScalarExpr[SqlText]
+) -> ScalarExpr[SqlText];
+
+def sum_int32(term: ScalarExpr[SqlInt32]) -> ScalarExpr[Nullable[SqlInt64]];
+def sum_int64(term: ScalarExpr[SqlInt64]) -> ScalarExpr[Nullable[SqlNumeric]];
+def sum_numeric(term: ScalarExpr[SqlNumeric]) -> ScalarExpr[Nullable[SqlNumeric]];
+def bool_and(
+    term: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def string_agg(
+    term: ScalarExpr[SqlText] | ScalarExpr[Nullable[SqlText]],
+    delimiter: ScalarExpr[SqlText],
+    distinct: bool = False
+) -> ScalarExpr[Nullable[SqlText]];
+
+def optional_source(source: Source) -> NullableSource;
+def left_join(
+    source: NullableSource, on: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]
+) -> Join;
+
+def cross_join(source: Source) -> Join;
+def unnest[T](
+    argument: ScalarExpr[SqlArray[T]],
+    element: Field[T],
+    ordinality: Field[SqlInt64] | None = None
+) -> Source;
+
+def values(
+    fields: list[FieldDef], rows: list[list[ScalarExpr]]
+) -> Relation[Schema, Many];
+
+def union[R, C, D](left: Relation[R, C], right: Relation[R, D]) -> Relation[R, Many];
+def except_[R, C, D](
+    left: Relation[R, C], right: Relation[R, D], all_: bool = False
+) -> Relation[R, Many];
+
+def intersect[R, C, D](
+    left: Relation[R, C], right: Relation[R, D], all_: bool = False
+) -> Relation[R, Many];
+
+def output[T](key: Field[T]) -> ScalarExpr[T];
+def ordered[R, C](
+    query: Relation[R, C], order_by: list[Order], limit: int | None = None
+) -> Relation[R, Many];
+
+def with_ctes[R, C](query: Relation[R, C], bindings: list[Cte]) -> Relation[R, C];
+def preceding(offset: int) -> FrameBound;
+def following(offset: int) -> FrameBound;
+def current_row -> FrameBound;
+def unbounded_preceding -> FrameBound;
+def unbounded_following -> FrameBound;
+def rows_between(start: FrameBound, end: FrameBound) -> WindowFrame;
+def row_number(
+    partition_by: list[ExprNode] = [], order_by: list[Order] = []
+) -> ScalarExpr[SqlInt64];
+
+def dense_rank(
+    partition_by: list[ExprNode] = [], order_by: list[Order] = []
+) -> ScalarExpr[SqlInt64];
+
+def over[T](
+    term: ScalarExpr[T],
+    partition_by: list[ExprNode] = [],
+    order_by: list[Order] = [],
+    frame: WindowFrame | None = None
+) -> ScalarExpr[T];
+
+def _call(op: str, args: tuple[ExprNode, ...]) -> ExprNode;
+def _call_type(op: str, args: tuple[ExprNode, ...]) -> DataType;
+def _nullable_boolean(
+    op: str, terms: list[ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]]
+) -> ScalarExpr[Nullable[SqlBool]];
+
+def _validate_frame(frame: WindowFrame);
+def _children(expr: ExprNode) -> tuple[ExprNode, ...];
+def _merge_checked(items: list[Checked]) -> Checked;
+def _sum(term: ExprNode) -> ExprNode;
+def _aggregate_type(ast: AggregateNode) -> DataType;
+def _validate_order(order: Order);
+
+def _recursive_count(query: RelationNode, ref: Cte) -> int;
+def _source_recursive_count(source: Source, ref: Cte) -> int;
+def _scan_recursive_expr(expr: ExprNode, ref: Cte);
+def _contains_aggregate(expr: ExprNode) -> bool;
+
+def _expr_key(expr: ExprNode) -> tuple[any, ...];
+def _freeze_sql_value(value: any) -> any;
+
+def case_nullable[T](
+    branches:
+        list[
+            tuple[
+                ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]],
+                ScalarExpr[T] | ScalarExpr[Nullable[T]]
+            ]
+        ],
+    fallback: ScalarExpr[T] | ScalarExpr[Nullable[T]]
+) -> ScalarExpr[Nullable[T]];
+
+def null[T](dtype: SqlType[T]) -> ScalarExpr[Nullable[T]];
+def project_all(source: Source) -> list[ProjectionDef];
+def _set_schema(left: RelationNode, right: RelationNode, operation: str) -> Schema;
+
+def _cast_allowed(source: DataType, target: DataType) -> bool;
+
+def add_int32(
+    left: ScalarExpr[SqlInt32], right: ScalarExpr[SqlInt32]
+) -> ScalarExpr[SqlInt32];
+
+def sub_int32(
+    left: ScalarExpr[SqlInt32], right: ScalarExpr[SqlInt32]
+) -> ScalarExpr[SqlInt32];

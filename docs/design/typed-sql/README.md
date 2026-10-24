@@ -1,41 +1,31 @@
-# Typed SQL prototype
+# Typed SQL module
 
-Based on Jaseci-Labs/jaseci main `2a462fa254582478b14958f609ce218fc33a17e4`.
-Development branch: `feat/typed-sql`. Implementation:
-[`jac/jaclang/sql.jac`](../../../jac/jaclang/sql.jac).
+`jaclang.sql` represents PostgreSQL queries as immutable, typed structural values.
+`compile_sql(query)` analyzes a query and returns SQL plus named parameter bindings.
+The portable module consists of [`sql.jac`](../../../jac/jaclang/sql.jac) and
+[`impl/sql.impl.jac`](../../../jac/jaclang/impl/sql.impl.jac). Its imports are the
+standard-library UUID and Decimal types. Forks can copy both files and the tests.
 
-The module builds SQL as structured values and validates it before rendering.
-Implementation and tests use Jac; the test entry point is `jac test`.
-It has a declaration file (`sql.jac`), its implementation annex
-(`impl/sql.impl.jac`), one standard-library import (`uuid`) and no dependencies
-on graph types, TTG, storage tables, drivers or project configuration. Forks can
-copy both files and the tests, or cherry-pick the scoped commit. A portability test
-copies both files to a temporary directory under a different module name
-and executes a generated query. Jac itself remains the required language runtime.
+## Query categories
 
-## Semantic categories
+| Category | Meaning |
+| --- | --- |
+| `ScalarExpr[T]` | One SQL value |
+| `Relation[R, C]` | Rows with a schema and cardinality proof |
+| `Source` | A table, derived query, CTE or table-function binding |
+| `Command` | Category reserved for data-changing statements |
 
-| Category | Meaning | Implementation |
-| --- | --- | --- |
-| `ScalarExpr[T]` | One SQL value of type T | Typed wrapper over expression AST |
-| `Relation[R, C]` | Rows with schema R and cardinality proof C | SELECT, UNION ALL; reachable CTE definitions |
-| `Source` | A bound table, derived relation or CTE reference | Reads its target schema; identifies a source binding |
-| `Command` | Separate category for future data-changing statements | Category marker |
+SELECT is a relational expression. Scalar-subquery conversion is explicit:
+`scalar` accepts an at-most-one or exactly-one, single-column relation and returns
+a nullable value; `scalar_one` preserves the type of a proven exactly-one result.
+`limit_one` constructs the first proof and `aggregate` constructs the second.
+The analyzer verifies these proofs against query structure.
 
-**SELECT is a relational expression.** `compile_sql` consumes a relation;
-`named` projects scalar expressions. Conversion to a scalar subquery is explicit.
-Current row shape is carried as a checked `Schema`; typed `Field[T]` keys carry
-column types. The prototype does not synthesize a static record type from runtime
-field names. Field existence and whole-query constraints are validated before SQL.
-
-SQL types: Bool, Int64, Float64, Text, UUID and Nullable[T]. Type tokens and field
-keys use generic marker types; data types are checked during query analysis.
-The marker parameters are intentionally phantom, which the current all-rules
-Jac lint configuration reports as unused-type-parameter warnings.
+Typed `Field[T]` keys identify columns. Row shape is a checked `Schema` value;
+column lookup checks names, SQL types and nullability. Jac checks expression
+categories and typed arguments; query analysis checks dynamic row shape and scope.
 
 ## Construction example
-
-See [the runnable Jac example](../../../jac/examples/sql/typed_sql.jac).
 
 ```jac
 import from jaclang.sql {
@@ -56,7 +46,7 @@ with entry {
 }
 ```
 
-Representative PostgreSQL output:
+Representative output:
 
 ```sql
 SELECT "_t0"."name" AS "name"
@@ -64,162 +54,150 @@ FROM "people" AS "_t0"
 WHERE ("_t0"."age" > CAST(:p0 AS bigint))
 ```
 
-Parameters: `{"p0": 30}`. Identifiers are quoted independently from data binding.
-Repeated use of the same parameter node reuses its binding; independent nodes
-with equal values retain independent bindings. Named placeholders match the
-existing Jac PG wire adapter. Explicit parameter casts preserve SQL types even
-where PostgreSQL has no contextual type inference, including recursive anchors.
+Parameters: `{"p0": 30}`. Identifiers are quoted and values have separate bindings.
+Reusing a parameter expression reuses its binding. Casts retain declared SQL types
+in standalone values, VALUES rows and recursive anchors.
 
-## What is statically checked
+Runnable examples:
 
-Actual negative Jac fixtures test rejection of:
+- [`typed_sql.jac`](../../../jac/examples/sql/typed_sql.jac): selection, joins,
+  scalar aggregates and automatically collected CTEs.
+- [`advanced_queries.jac`](../../../jac/examples/sql/advanced_queries.jac): nullable
+  LEFT JOIN, array expansion, cumulative window budgets and recursive local CTEs.
+- [`cte_name_collision.jac`](../../../jac/examples/sql/cte_name_collision.jac):
+  physical and temporary reads executed on PostgreSQL.
 
-- Text/Bool passed to Int64 addition, including a typed text-column lookup.
-- Relation passed as a scalar projection, or scalar/command passed as a relation.
-- Int64 used as WHERE's predicate.
-- A Many relation passed to `scalar` or `scalar_one`.
-- Incompatible types passed to equality.
-- Scalar expressions passed directly in a projection list.
+## Supported structures
 
-`test_types.jac` checks the positive module/example and asserts E1053 diagnostics
-at all 11 expected invalid-call lines. A second fixture rejects all three
-legacy calls that supply temporary SQL names or pass non-relations to `cte`. Runtime/AST validation covers dynamic
-schema information and callers from Python or gradual typing.
+| Area | Constructors and behavior |
+| --- | --- |
+| Types | Bool, Int32, Int64, Numeric, Float64, Text, UUID, `Nullable[T]`, one-dimensional `SqlArray[T]` |
+| Predicates | Equality/order comparisons, IN, AND/OR/NOT, null tests and explicitly nullable boolean operations |
+| Arithmetic | Int32/Int64 addition/subtraction; Numeric addition/subtraction; typed casts |
+| Conditional/string expressions | `case_`, `case_nullable`, `concat`, `text_concat`, `lpad`, `coalesce` |
+| Arrays | Typed literals, validated array parameters, concatenation, append and `any_eq` |
+| Sources | Tables, derived queries, VALUES, `unnest` with optional ordinality |
+| Joins | INNER, LEFT, CROSS; LATERAL derived sources and implicitly lateral table functions |
+| Selection | Projection, column GROUP BY, HAVING, ordering, NULLS FIRST/LAST and limits |
+| Sets | DISTINCT, DISTINCT ON, UNION/UNION ALL, EXCEPT/EXCEPT ALL, INTERSECT/INTERSECT ALL |
+| Aggregates | COUNT(*), SUM for supported numeric types, BOOL_AND and distinct/non-distinct STRING_AGG |
+| Windows | ROW_NUMBER, DENSE_RANK, aggregate OVER, PARTITION BY, ORDER BY and ROWS BETWEEN frames |
+| CTEs | Automatic dependency collection, explicit lexical scopes, MATERIALIZED/NOT MATERIALIZED and recursion |
 
-## Immutable query model and compilation
+Numeric values use Decimal or integers. SUM follows PostgreSQL result types:
+`sum_int32` returns nullable Int64; `sum_int64` and `sum_numeric` return nullable
+Numeric; `sum_` returns nullable Float64. Array constructors validate a non-null
+scalar element contract and snapshot parameter sequences as tuples. Physical table
+schemas are contracts supplied by the integrating application.
 
-Query values, expression nodes, field definitions and schemas are immutable.
-Their sequence fields use tuples; constructors copy caller-supplied lists. Build
-another query to change a projection, predicate or limit. Existing queries and
-queries that share their expressions retain their meaning. For example,
-`limit_one(query)` constructs a separate SELECT with LIMIT 1.
+`case_` requires identical branch types; `case_nullable` joins nullable and
+non-null branches of one SQL type. Set outputs derive names from the left arm:
+UNION combines nullability, EXCEPT retains the left contract, and INTERSECT
+can produce NULL only when both inputs permit it. VALUES accepts a non-null
+expression in a declared nullable column.
 
-SELECT obtains its schema from its projections. UNION obtains its output schema
-from its left arm. A derived source reads its query's schema; a CTE use reads its
-target's schema. These objects have no independent schema snapshot to synchronize.
-Physical tables have an explicit schema contract. A recursive forward reference
-has a declared output schema and a single-assignment definition binding;
-`define_cte` checks that contract when closing the reference. Once bound, the
-CTE's definition and recursive flag cannot change.
+## Joins and source bindings
 
-`compile_sql` has separate analysis and rendering phases:
+`source.ref()` creates an independent binding for self-joins. `project_all(source)`
+constructs explicit typed projections for all fields in that binding.
 
-1. `QueryGraph` traverses structural containment and queues CTE references.
-   Definitions are collected after the active containment traversal finishes.
-   Dependency ordering distinguishes recursive self-reference from mutual cycles.
-2. `QueryValidator` checks types, scope, grouping and cardinality and resolves SQL
-   names. It returns a `ValidatedQuery` containing the immutable AST and bindings.
-   This phase builds no SQL strings and allocates no SQL parameter placeholders.
-3. `PostgresRenderer` serializes that plan, quotes identifiers and assigns named
-   parameter bindings. SQL semantic validation resides in the analyzer.
-
-Analysis checks each projection field against its expression type, including
-nullability. It validates bound columns, sequential JOIN visibility, alias scope,
-CTE visibility, compatible UNION/CTE schemas, aggregate placement, nested
-aggregates, GROUP BY coverage and scalar-subquery cardinality. Low-level AST
-constructors are also checked through `compile_sql`; immutable construction does
-not substitute for semantic validation.
-
-GROUP BY coverage uses local columns. Correlated outer columns remain free
-variables for checking the enclosing query, while acting as constants within an
-inner aggregate. Tests cover both valid correlated aggregates and invalid local
-or enclosing-query grouping.
-
-The initial grouping fragment accepts column expressions as group keys. Aggregates
-are COUNT(*) returning non-null Int64 and SUM(Float64) returning nullable Float64.
-SQL SUM(Int64) returns numeric in PostgreSQL and needs a future SqlNumeric type.
-Addition currently operates on non-null Int64; SQL overflow retains database error
-semantics. Schema descriptions are contracts supplied by the caller; matching them
-to the physical database schema is the integrating application's responsibility.
-
-`scalar(query, field)` accepts a proven AtMostOne or ExactlyOne single-column
-relation and returns Nullable[T], because zero rows yields NULL. `limit_one`
-constructs the AtMostOne proof with an actual LIMIT 1. `aggregate` constructs an
-ExactlyOne proof, verified as an ungrouped aggregate without HAVING/LIMIT.
-`scalar_one` preserves the output type of that proven one-row result. Plain
-SELECT carries the conservative Many marker even for a literal projection.
-
-NULL equality has a separate `eq_nullable` constructor returning Nullable[Bool].
-WHERE accepts Bool or Nullable[Bool], retaining SQL's three-valued semantics.
-COALESCE removes nullability with a checked non-null fallback; CAST retains source
-nullability. Generic `param(type_token, value)` checks host value types and signed
-Int64 range at construction; convenience factories have narrower Jac signatures.
-
-## CTEs and recursion
-
-`cte(query)` creates a reference whose output schema comes from the query. The
-compiler collects references, orders dependencies and emits each definition once.
-SQL names and temporary-source aliases are generated per compilation and avoid
-all referenced physical table names and explicit table aliases. Physical table
-names remain supplied by the caller. Generated names do not mutate the AST.
+A LEFT JOIN uses `optional_source(source)`. Its schema marks every output column
+nullable, so callers read it using nullable field keys:
 
 ```jac
-kids = cte(kids_query);
-result = select([named("name", kids.col(person_name))], source=kids);
-compiled = compile_sql(result);
+pets = optional_source(pets_table);
+maybe_owner = field("owner_id", nullable(int64_type()));
+joined = select(
+    [named("owner", pets.col(maybe_owner))],
+    source=people,
+    joins=[left_join(pets, compare_nullable(people.col(person_id), pets.col(maybe_owner)))]
+);
 ```
 
-`result` is a relation. `cte(result)` creates a reusable CTE reference to it.
-`query.as_source()` creates an unnamed derived source. `source.ref()` creates a
-fresh binding for self-joins while reusing the same table or CTE definition.
-The executable `jac/examples/sql/cte_name_collision.jac` demonstrates physical
-and temporary reads together on PostgreSQL.
+`query.as_source(lateral=True)` can reference preceding sources in its enclosing
+FROM/JOIN sequence. An ordinary derived source can refer to ancestor query scopes.
+Table functions receive the preceding-source scope implicitly. Analysis checks
+JOIN visibility sequentially and propagates outer dependencies to enclosing
+queries. GROUP BY coverage checks local columns while retaining those outer
+references for the enclosing query's checks.
 
-For recursion, declare an unnamed forward reference with `cte_ref(fields)`, build
-the step using that reference, then bind it once with
-`define_cte(reference, union_all(anchor, step), recursive=True)`. Dependencies
-may be defined after their references are constructed; compilation orders them.
-Undefined references and mutually recursive definitions raise SqlError.
+`ordered(query, [asc(output(key))])` orders a set result by its typed output columns.
+DISTINCT ON checks leading ORDER BY keys, including permitted permutations.
 
-Recursive form is a SELECT anchor UNION ALL SELECT step, with exactly one direct
-self-reference in the step. The step supports direct sources, predicates and
-scalar arithmetic. Aggregates, subqueries, grouping and step-local ORDER/LIMIT
-raise SqlError. Recursive termination follows the query predicate.
+## CTE scopes and recursion
 
-The anchor renders as `SELECT * FROM (anchor) AS "_recursive_anchor"` before
-UNION ALL. This subquery keeps anchor-local ORDER BY and LIMIT inside the anchor.
-Tests execute LIMIT, ORDER BY and their combination on PostgreSQL and SQLite.
-Ordinary and recursive UNION paths share schema/cardinality validation. Both
-arm schemas must agree, and the UNION output must match the recursive CTE
-contract. Reusing the recursive step as a standalone query or derived source
-collects the completed CTE definition and executes normally.
-CTE definitions are independently scoped and cannot capture outer query columns.
+`cte(query)` creates a reusable reference. Compilation collects reachable definitions,
+orders dependencies and assigns SQL names. Generated names avoid physical table
+names and explicit table aliases throughout the query. Sources read the schema
+of their defining query or CTE target.
 
-## Extension path
+Use `with_ctes(body, [references...])` to bind definitions at a specific query scope.
+This retains local CTEs inside a recursive step or correlated subquery. Local
+bindings can reference enclosing CTEs and visible outer columns. `cte(query,
+materialized=True)` and `materialized=False` select PostgreSQL materialization
+attributes. Consecutive local WITH wrappers are normalized at rendering.
 
-1. Add structural nodes and validation for LEFT/LATERAL joins, CASE, arrays,
-   table functions/ordinality and window expressions needed by TTG.
-2. Add richer numeric/coercion rules and typed DML commands.
-3. Migrate one existing sqlcompile or TTG hop emitter without changing its behavior.
-4. Expand to recursive/budget query fragments while comparing results and plans.
+Recursion has an explicit single-assignment forward reference:
 
-A new construct should define its input/output SQL types, scope behavior and
-rendering; include positive execution and rejection tests. The SQL AST is separate
-from future graph analysis, logical optimization and cost-based planning.
+```jac
+walk = cte_ref([key]);
+frontier = cte(
+    select([named("n", walk.col(key))], source=walk,
+        where=lt(walk.col(key), int64(4))),
+    materialized=True
+);
+step = with_ctes(
+    select([named("n", add(frontier.col(key), int64(1)))], source=frontier),
+    [frontier]
+);
+define_cte(walk, union_all(anchor, step), recursive=True);
+```
+
+Recursive definitions use UNION or UNION ALL. The analyzer checks the anchor,
+compatible output schemas and exactly one structural self-reference in the step.
+That reference can occur through derived queries or a local CTE definition.
+Windows and local deduplication/budget stages retain their own query regions.
+Direct recursive aggregation, scalar-subquery self-reference and references on
+an outer join's nullable side are rejected. Recursive termination follows the
+query predicate. Parenthesized wrappers preserve arm-local ordering and limits.
+
+## Compilation and immutability
+
+1. `QueryGraph` traverses structural containment and queues automatic CTE references.
+   Explicit local bindings stay inside their lexical query scope.
+2. `QueryValidator` checks expression signatures, types, scope, grouping, windows,
+   cardinality and recursive-reference placement. It resolves generated names and
+   returns a `ValidatedQuery` plan.
+3. `PostgresRenderer` serializes that plan and assigns parameter bindings.
+
+Query values, expressions, schemas and field definitions reject reassignment and
+deletion. Nested sequence inputs are copied into tuples. Rebuild a query to change
+it. SELECT schema derives from projections; set schemas derive from their arms;
+source bindings read their targets. Recursive CTEs close through one-time binding.
+Low-level AST construction receives the same semantic analysis as public builders.
 
 ## Verification
 
-Run the Jac test files from the repository root:
+The suite contains 128 native Jac test entries: 45 SQLite base cases, the same
+45 PostgreSQL cases, 34 PostgreSQL feature cases and four static-check tests.
+The static fixtures verify all 29 invalid calls at their expected source lines;
+positive checking covers the module and both construction examples.
 
 ```sh
 jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac -j 1 -v
-jac check jac/jaclang/sql.jac jac/examples/sql/typed_sql.jac
+JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
+  jac test jac/tests/sql/test_postgres.jac jac/tests/sql/test_postgres_features.jac -j 1 -v
 jac fmt --check --lintfix jac/jaclang/sql.jac \
   jac/jaclang/impl/sql.impl.jac jac/tests/sql/*.jac jac/examples/sql/*.jac
-jac run jac/examples/sql/typed_sql.jac
+jac run jac/examples/sql/advanced_queries.jac
 ```
 
-PostgreSQL tests use the same behavioral cases and an explicitly supplied disposable
-cluster socket. They create transaction-local test tables and roll back each case:
+PostgreSQL fixtures use a disposable cluster, account `sql_test`, database
+`postgres`, and transaction-local tables rolled back after each test. Coverage
+includes combined recursive frontier/dedup/window queries, nullable parent columns,
+multiple recursive CTEs, standalone step reuse, parameter quoting, scope/type
+rejections and module portability under a different name.
 
-```sh
-JAC_SQL_PG_SOCKET=/path/to/.s.PGSQL.PORT \
-  jac test jac/tests/sql/test_postgres.jac -j 1 -v
-```
-
-There are 93 native Jac test entries: 45 SQLite, the same 45 PostgreSQL cases,
-and three static-check tests. Shared fixtures live in `sql_cases.jac` and use
-standard-library assertion helpers.
-
-The test account is `sql_test`, database `postgres`. Set up a dedicated cluster
-with trust auth for local tests. SQL construction itself opens no connections.
+PostgreSQL semantics references: [WITH queries](https://www.postgresql.org/docs/current/queries-with.html),
+[table expressions](https://www.postgresql.org/docs/current/queries-table-expressions.html),
+and [aggregate functions](https://www.postgresql.org/docs/current/functions-aggregate.html).

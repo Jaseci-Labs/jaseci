@@ -16,14 +16,15 @@ class StaticTypes(unittest.TestCase) {
                 'jaclang',
                 'check',
                 'jac/jaclang/sql.jac',
-                'jac/examples/sql/typed_sql.jac'
+                'jac/examples/sql/typed_sql.jac',
+                'jac/examples/sql/advanced_queries.jac'
             ],
             cwd=ROOT,
             capture_output=True,
             text=True
         );
         self.assertEqual(result.returncode, 0, (result.stdout + result.stderr));
-        self.assertIn('2 passed', (result.stdout + result.stderr));
+        self.assertIn('3 passed', (result.stdout + result.stderr));
     }
 
     def test_all_bad_calls_are_rejected_at_their_lines(self: StaticTypes) -> object {
@@ -55,8 +56,28 @@ class StaticTypes(unittest.TestCase) {
             int(x) for x in re.findall(r'invalid_cte_calls\.jac:(\d+):\d+', output)
         };
         self.assertEqual(lines, {4, 5, 7}, output);
-        self.assertEqual(output.count('error[E1053]'), 2, output);
-        self.assertEqual(output.count('error[E1051]'), 1, output);
+        self.assertEqual(output.count('error[E1053]'), 3, output);
+    }
+
+    def test_advanced_invalid_arguments(self: StaticTypes) -> object {
+        fixture = ROOT / 'jac/tests/sql/fixtures/invalid_advanced_calls.jac';
+        result = subprocess.run(
+            [sys.executable, '-m', 'jaclang', 'check', str(fixture)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True
+        );
+        output = result.stdout + result.stderr;
+        self.assertNotEqual(result.returncode, 0, output);
+        expected = {
+            i
+            for (i, line) in enumerate(fixture.read_text().splitlines(), 1)
+            if '# invalid' in line
+        };
+        actual = {
+            int(x) for x in re.findall(r'invalid_advanced_calls\.jac:(\d+):\d+', output)
+        };
+        self.assertEqual(actual, expected, output);
     }
 }
 
@@ -71,4 +92,8 @@ test "Static types: all bad calls are rejected at their lines" {
 
 test "Static types: temporary names are not API arguments" {
     run_case(StaticTypes("test_temporary_names_are_not_api_arguments"));
+}
+
+test "Static types: advanced SQL arguments" {
+    run_case(StaticTypes("test_advanced_invalid_arguments"));
 }
