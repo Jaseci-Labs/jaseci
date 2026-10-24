@@ -779,6 +779,46 @@ test "a C function definition C calls runs outside the caller's open region" {
         ] , out;
 }
 
+glob C_DEFINITION_REENTRY: str = '''import from "CLIB_POINTERS_LIBRARY" {
+    obj Slots {
+        has s0: ptr[CpVec3] = ptr[CpVec3](), s1: ptr[CpVec3] = ptr[CpVec3]();
+    }
+    obj CpVec3 { has x: f32, y: f32, z: f32; }
+    def cp_record_address(record: &mut Slots) -> int;
+    def cp_address_call(fn: ptr, a: i64) -> i64;
+    def reenter(depth: i64) -> i64 {
+        refs: own Slots = Slots();
+        slot = ptr[i64](cp_record_address(&mut refs));
+        slot.view(1)[0] = depth * 100;
+        inner = 0;
+        if depth > 0 {
+            inner = cp_address_call(ptr(reenter), depth - 1);
+        }
+        print("depth", depth, "kept", slot.view(1)[0] == depth * 100, "inner", inner);
+        return slot.view(1)[0];
+    }
+}
+with entry {
+    print("outer", reenter(3));
+}
+''';
+
+test "a C definition C re-enters keeps each activation's C record" {
+    with tempfile.TemporaryDirectory() as directory {
+        out = assert_native_identity(
+            stage_source(directory, C_DEFINITION_REENTRY, "reentry.jac")
+        );
+    }
+    assert out.splitlines()
+        == [
+            "depth 0 kept True inner 0",
+            "depth 1 kept True inner 0",
+            "depth 2 kept True inner 100",
+            "depth 3 kept True inner 200",
+            "outer 300"
+        ] , out;
+}
+
 test "a scalar C definition's entry jumps into its body unless a region is open" {
     with tempfile.TemporaryDirectory() as directory {
         stage_source(directory, C_DEFINITION_ENTRY, "centry.jac");
@@ -786,6 +826,25 @@ test "a scalar C definition's entry jumps into its body unless a region is open"
     }
     (thunk, escape) = c_entry_pair(text, "c_remember");
     assert_frameless_entry(thunk, escape, "c_remember.jac");
+}
+
+test "under native TLS a C entry reads the region slot with the initial-exec model" {
+    options = native_force_opts();
+    options.native_tls = True;
+    with tempfile.TemporaryDirectory() as directory {
+        stage_source(directory, C_DEFINITION_ENTRY, "centry.jac");
+        text = str(
+            compile_native_ir(
+                "centry.jac", fixture_dir=directory, options=options
+            ).gen.llvm_ir
+        );
+    }
+    assert re.search(
+        r'@"?__jac_region_tls_tl"? = weak thread_local\(initialexec\) global', text
+    ) , "the region slot is not initial-exec";
+    (thunk, escape) = c_entry_pair(text, "c_remember");
+    assert_frameless_entry(thunk, escape, "c_remember.jac");
+    assert "pthread_getspecific" not in thunk , thunk;
 }
 
 test "a Jac callback's C trampoline leaves an open region out of line" {

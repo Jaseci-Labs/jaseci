@@ -8727,6 +8727,7 @@ graph import compiler {
             FuncSignature,
             IfElseExpr,
             IfStmt,
+            Import,
             InForStmt,
             IterForStmt,
             KWPair,
