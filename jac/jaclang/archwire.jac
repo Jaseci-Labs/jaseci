@@ -8275,6 +8275,7 @@ graph import compiler {
             Token,
             TryStmt,
             TupleVal,
+            UnaryExpr,
             UniNode,
             WhileStmt,
             WithStmt,
