@@ -360,6 +360,7 @@ graph import {
     comptime client.cli ++> cli.manifest { SPEC_SETUP }
     client.client_bundle ++> [
         compiler.driver.client_graph.collect_client_graph
+            | dist.publish.npm_sources._link_modules
             | server.hmr.HotReloader._recompile_client_unified { ClientBundleError },
         compiler.tests.test_client_codegen_facts {
             _client_target_module,
@@ -671,9 +672,18 @@ graph import {
         cli.commands.analysis.precommit { discover_annex_files },
         testing.test_runner._suite_source { discover_base_file },
     ]
-    compiler.driver.client_graph ++> client.jac_client_compiler.JacClientCompiler.emit_dependencies {
-        collect_client_graph
-    }
+    compiler.driver.client_graph ++> [
+        client.jac_client_compiler.JacClientCompiler._module_text { append_link },
+        client.jac_client_compiler.JacClientCompiler.emit_dependencies
+            | dist.publish.npm_sources._link_modules { collect_client_graph },
+        dist.publish.npm_sources.collect_npm_sources {
+            ClientLink,
+            append_link,
+            link_tail
+        },
+    ]
+    type compiler.driver.client_graph ++> client.jac_client_compiler
+        | dist.publish.npm_sources { ClientLink }
     compiler.driver.compilation_context ++> [
         dist.precompile_bytecode._application_sources { bind_options },
         dist.precompile_bytecode.precompile_context { bind_options, context_program },
@@ -1020,6 +1030,7 @@ graph import {
             | dist.precompiled._pkg_dir { jaclang_pkg_root },
         client.vite_client_bundle { ClientArtifact },
         dist.precompile_bytecode._compiler_kernel_units { kernel_unit_paths },
+        dist.publish.npm_sources._link_modules { ClientArtifact, ClientManifest },
         dist.publish.runtime_vendor._runtime_module_options {
             is_native_by_location,
             is_shared_runtime_module
@@ -2364,6 +2375,7 @@ graph import {
             | dist.precompile_bytecode._application_sources
             | server.session.project_database { workspace_for_path },
         compiler.driver.application._warn_private_declarations { app_for_path },
+        dist.precompile_bytecode.sealable_sources { workspace_for_path },
     ]
     project.workspace --> lsp.server.engine.JacLangServer.type_check_file {
         workspace_for_path
@@ -6049,6 +6061,7 @@ graph import compiler {
             scope_path_of,
             wiring_for_path
         },
+        types.stubcat.writer.CatalogWriter.encode_symbol { is_arch_file },
     ]
     driver.wiring --> frontend.parser.frontend.annex_sources { wiring_annex_for }
     erased_imports ++> [
@@ -6536,7 +6549,7 @@ graph import compiler {
             | driver.nativecache { CodeGenTarget },
         backends.native.na_ir_gen_pass { NativeModuleLayout },
         driver.boundary_classify { InteropManifest },
-        driver.client_graph { ClientArtifact },
+        driver.client_graph { ClientArtifact, ClientManifest },
         driver.compiler { CodeGenTarget, NativeModuleLayout },
         driver.progstate { ClientArtifact, CodeGenTarget },
     ]
@@ -10213,7 +10226,7 @@ graph import compiler {
         },
     ]
     type_registry --> [
-        backends.es.esast_gen_pass.EsastGenPass.exit_func_call
+        backends.es.esast_gen_pass.EsastGenPass._lower_func_call
             | passes.ownership_check_pass.OwnershipCheckPass._handled_by_enclosing_try
             | types.type_evaluator.TypeEvaluator._assign_class { JAC_TYPE_REGISTRY },
         backends.es.esast_gen_pass.EsastGenPass.exit_try_stmt { JAC_TYPE_REGISTRY },
@@ -10733,7 +10746,7 @@ graph import compiler.backends.es {
         esast_gen_pass.EsastGenPass._try_primitive_op
             | jac_runtime_js._build_types_runtime_js { JSCodeGenerator },
     ]
-    es_unparse --> esast_gen_pass.EsastGenPass.exit_func_call { JSCodeGenerator }
+    es_unparse --> esast_gen_pass.EsastGenPass._lower_func_call { JSCodeGenerator }
     type esast_gen_pass ++> jsx_processor { EsastGenPass }
     estree as es ++> backends.react
         | backends.solid
