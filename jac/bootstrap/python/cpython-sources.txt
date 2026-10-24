@@ -13,8 +13,8 @@
 #   Replaced by the native Jac implementation. A separate build-only CPython
 #   host restores these to produce the native object; no shipped runtime has
 #   them, and compiler-bridge.patch detaches upstream rules that name them.
-#   Excluded: 162 C files / 316,935 lines; 144 headers / 135,081 lines.
-#   Total: 306 files / 452,016 source lines.
+#   Excluded: 165 C files / 325,469 lines; 146 headers / 135,991 lines.
+#   Total: 311 files / 461,460 source lines.
 #
 #   "# path  # pruned: N source lines"
 #   Not needed by any build. Neither the host nor a shipped runtime has them,
@@ -226,14 +226,14 @@ Python/uniqueid.c
 # Objects/clinic/bytearrayobject.c.h  # removed: 1,808 source lines
 # Objects/clinic/bytesobject.c.h  # removed: 1,419 source lines
 # Objects/clinic/classobject.c.h  # removed: 85 source lines
-Objects/clinic/codeobject.c.h
+# Objects/clinic/codeobject.c.h  # removed: 474 source lines
 # Objects/clinic/complexobject.c.h  # removed: 188 source lines
 # Objects/clinic/descrobject.c.h  # removed: 182 source lines
 # Objects/clinic/dictobject.c.h  # removed: 326 source lines
 # Objects/clinic/enumobject.c.h  # removed: 113 source lines
 # Objects/clinic/exceptions.c.h  # removed: 383 source lines
 # Objects/clinic/floatobject.c.h  # removed: 356 source lines
-Objects/clinic/frameobject.c.h
+# Objects/clinic/frameobject.c.h  # removed: 436 source lines
 # Objects/clinic/funcobject.c.h  # removed: 293 source lines
 # Objects/clinic/interpolationobject.c.h  # removed: 94 source lines
 # Objects/clinic/listobject.c.h  # removed: 471 source lines
@@ -247,7 +247,7 @@ Objects/clinic/frameobject.c.h
 Objects/clinic/typeobject.c.h
 # Objects/clinic/typevarobject.c.h  # removed: 760 source lines
 # Objects/clinic/unicodeobject.c.h  # removed: 1,919 source lines
-Objects/codeobject.c
+# Objects/codeobject.c  # removed: 3,667 source lines
 # Objects/complexobject.c  # removed: 1,422 source lines
 # Objects/descrobject.c  # removed: 2,082 source lines
 # Objects/dictobject.c  # removed: 7,845 source lines
@@ -255,10 +255,10 @@ Objects/codeobject.c
 # Objects/exceptions.c  # removed: 4,587 source lines
 # Objects/fileobject.c  # removed: 548 source lines
 # Objects/floatobject.c  # removed: 2,642 source lines
-Objects/frameobject.c
+# Objects/frameobject.c  # removed: 2,446 source lines
 # Objects/funcobject.c  # removed: 1,907 source lines
 # Objects/genericaliasobject.c  # removed: 1,056 source lines
-Objects/genobject.c
+# Objects/genobject.c  # removed: 2,421 source lines
 # Objects/interpolationobject.c  # removed: 231 source lines
 # Objects/iterobject.c  # removed: 541 source lines
 # Objects/listobject.c  # removed: 4,263 source lines

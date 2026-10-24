@@ -70,6 +70,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Include/cpython/longintrepr.h",
          "Include/cpython/tupleobject.h",
          "Include/cpython/listobject.h",
+         "Include/cpython/code.h",
          "Include/cpython/bytesobject.h",
          "Include/cpython/bytearrayobject.h",
          "Include/cpython/initconfig.h",
@@ -122,6 +123,8 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "Objects/memoryobject.c",
          "Objects/bytesobject.c",
          "Objects/bytearrayobject.c",
+         "Objects/genobject.c",
+         "Objects/codeobject.c",
          # The socket object and the _socket.CAPI record: the _socket and
          # _ssl ports define and read them; the header has no C user left.
          "Modules/socketmodule.h"
@@ -157,7 +160,11 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          "internal/pycore_interpframe_structs.h",
          "internal/pycore_object.h",
          "internal/pycore_interp.h",
-         "internal/pycore_call.h"
+         "internal/pycore_call.h",
+         "internal/pycore_frame.h",
+         "frameobject.h",
+         "internal/pycore_opcode_utils.h",
+         "opcode_ids.h"
      ],
      # Jac name and C type of each layout the object ports use. Structs a
      # layout embeds by value are emitted too; pointers to anything else are
@@ -204,6 +211,15 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("striterobject", "striterobject"),
          ("PyByteArrayObject", "PyByteArrayObject"),
          ("bytesiterobject", "bytesiterobject"),
+         ("PyCoroWrapper", "PyCoroWrapper"),
+         ("PyAsyncGenASend", "PyAsyncGenASend"),
+         ("PyAsyncGenAThrow", "PyAsyncGenAThrow"),
+         ("_PyAsyncGenWrappedValue", "_PyAsyncGenWrappedValue"),
+         ("_PyLineTableOpaque", "struct _opaque"),
+         ("PyCodeAddressRange", "PyCodeAddressRange"),
+         ("lineiterator", "lineiterator"),
+         ("positionsiterator", "positionsiterator"),
+         ("_PyCodeObjectExtra", "_PyCodeObjectExtra"),
          ("PyDescrObject", "PyDescrObject"),
          ("wrapperbase", "struct wrapperbase"),
          ("mappingproxyobject", "mappingproxyobject"),
@@ -963,6 +979,478 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyByteArrayObject_SIZE", "sizeof(PyByteArrayObject)", "i64"),
          ("bytesiterobject_SIZE", "sizeof(bytesiterobject)", "i64"),
          ("_Py_TYPE_VERSION_BYTEARRAY", "_Py_TYPE_VERSION_BYTEARRAY", "u32"),
+         ("PyCodeObject_NAMES", "offsetof(PyCodeObject, co_names)", "i64"),
+         ("PyCodeObject_ARGCOUNT", "offsetof(PyCodeObject, co_argcount)", "i64"),
+         (
+             "PyCodeObject_POSONLYARGCOUNT",
+             "offsetof(PyCodeObject, co_posonlyargcount)",
+             "i64"
+         ),
+         (
+             "PyCodeObject_KWONLYARGCOUNT",
+             "offsetof(PyCodeObject, co_kwonlyargcount)",
+             "i64"
+         ),
+         ("PyCodeObject_NLOCALS", "offsetof(PyCodeObject, co_nlocals)", "i64"),
+         ("PyCodeObject_NCELLVARS", "offsetof(PyCodeObject, co_ncellvars)", "i64"),
+         ("PyCodeObject_LINETABLE", "offsetof(PyCodeObject, co_linetable)", "i64"),
+         ("PyCodeObject_WEAKREFLIST", "offsetof(PyCodeObject, co_weakreflist)", "i64"),
+         ("PyCodeObject_EXECUTORS", "offsetof(PyCodeObject, co_executors)", "i64"),
+         ("PyCodeObject_CO_CACHED", "offsetof(PyCodeObject, _co_cached)", "i64"),
+         (
+             "PyCodeObject_INSTRUMENTATION_VERSION",
+             "offsetof(PyCodeObject, _co_instrumentation_version)",
+             "i64"
+         ),
+         ("PyCodeObject_MONITORING", "offsetof(PyCodeObject, _co_monitoring)", "i64"),
+         ("PyCodeObject_EXTRA", "offsetof(PyCodeObject, co_extra)", "i64"),
+         ("_PyCode_var_counts_t_SIZE", "sizeof(_PyCode_var_counts_t)", "i64"),
+         ("_PyCode_var_counts_t_TOTAL", "offsetof(_PyCode_var_counts_t, total)", "i64"),
+         (
+             "_PyCode_var_counts_t_LOCALS_TOTAL",
+             "offsetof(_PyCode_var_counts_t, locals.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_TOTAL",
+             "offsetof(_PyCode_var_counts_t, locals.args.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_NUMPOSONLY",
+             "offsetof(_PyCode_var_counts_t, locals.args.numposonly)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_NUMPOSORKW",
+             "offsetof(_PyCode_var_counts_t, locals.args.numposorkw)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_NUMKWONLY",
+             "offsetof(_PyCode_var_counts_t, locals.args.numkwonly)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_VARARGS",
+             "offsetof(_PyCode_var_counts_t, locals.args.varargs)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_ARGS_VARKWARGS",
+             "offsetof(_PyCode_var_counts_t, locals.args.varkwargs)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_NUMPURE",
+             "offsetof(_PyCode_var_counts_t, locals.numpure)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_CELLS_TOTAL",
+             "offsetof(_PyCode_var_counts_t, locals.cells.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_CELLS_NUMARGS",
+             "offsetof(_PyCode_var_counts_t, locals.cells.numargs)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_CELLS_NUMOTHERS",
+             "offsetof(_PyCode_var_counts_t, locals.cells.numothers)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_HIDDEN_TOTAL",
+             "offsetof(_PyCode_var_counts_t, locals.hidden.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_HIDDEN_NUMPURE",
+             "offsetof(_PyCode_var_counts_t, locals.hidden.numpure)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_LOCALS_HIDDEN_NUMCELLS",
+             "offsetof(_PyCode_var_counts_t, locals.hidden.numcells)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_NUMFREE",
+             "offsetof(_PyCode_var_counts_t, numfree)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_TOTAL",
+             "offsetof(_PyCode_var_counts_t, unbound.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_GLOBALS_TOTAL",
+             "offsetof(_PyCode_var_counts_t, unbound.globals.total)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_GLOBALS_NUMGLOBAL",
+             "offsetof(_PyCode_var_counts_t, unbound.globals.numglobal)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_GLOBALS_NUMBUILTIN",
+             "offsetof(_PyCode_var_counts_t, unbound.globals.numbuiltin)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_GLOBALS_NUMUNKNOWN",
+             "offsetof(_PyCode_var_counts_t, unbound.globals.numunknown)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_NUMATTRS",
+             "offsetof(_PyCode_var_counts_t, unbound.numattrs)",
+             "i64"
+         ),
+         (
+             "_PyCode_var_counts_t_UNBOUND_NUMUNKNOWN",
+             "offsetof(_PyCode_var_counts_t, unbound.numunknown)",
+             "i64"
+         ),
+         ("_PyCoCached_SIZE", "sizeof(_PyCoCached)", "i64"),
+         ("_PyCoCached_CODE", "offsetof(_PyCoCached, _co_code)", "i64"),
+         ("_PyCoCached_VARNAMES", "offsetof(_PyCoCached, _co_varnames)", "i64"),
+         ("_PyCoCached_CELLVARS", "offsetof(_PyCoCached, _co_cellvars)", "i64"),
+         ("_PyCoCached_FREEVARS", "offsetof(_PyCoCached, _co_freevars)", "i64"),
+         ("_PyCoMonitoringData_TOOLS", "offsetof(_PyCoMonitoringData, tools)", "i64"),
+         ("_PyCoMonitoringData_LINES", "offsetof(_PyCoMonitoringData, lines)", "i64"),
+         (
+             "_PyCoMonitoringData_LINE_TOOLS",
+             "offsetof(_PyCoMonitoringData, line_tools)",
+             "i64"
+         ),
+         (
+             "_PyCoMonitoringData_PER_INSTRUCTION_OPCODES",
+             "offsetof(_PyCoMonitoringData, per_instruction_opcodes)",
+             "i64"
+         ),
+         (
+             "_PyCoMonitoringData_PER_INSTRUCTION_TOOLS",
+             "offsetof(_PyCoMonitoringData, per_instruction_tools)",
+             "i64"
+         ),
+         ("PyCodeAddressRange_AR_END", "offsetof(PyCodeAddressRange, ar_end)", "i64"),
+         (
+             "PyCodeAddressRange_COMPUTED_LINE",
+             "offsetof(PyCodeAddressRange, opaque.computed_line)",
+             "i64"
+         ),
+         (
+             "PyCodeAddressRange_LO_NEXT",
+             "offsetof(PyCodeAddressRange, opaque.lo_next)",
+             "i64"
+         ),
+         (
+             "PyCodeAddressRange_LIMIT",
+             "offsetof(PyCodeAddressRange, opaque.limit)",
+             "i64"
+         ),
+         ("_PyCodeConstructor_SIZE", "sizeof(struct _PyCodeConstructor)", "i64"),
+         (
+             "_PyCodeConstructor_FILENAME",
+             "offsetof(struct _PyCodeConstructor, filename)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_NAME",
+             "offsetof(struct _PyCodeConstructor, name)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_QUALNAME",
+             "offsetof(struct _PyCodeConstructor, qualname)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_FLAGS",
+             "offsetof(struct _PyCodeConstructor, flags)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_CODE",
+             "offsetof(struct _PyCodeConstructor, code)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_FIRSTLINENO",
+             "offsetof(struct _PyCodeConstructor, firstlineno)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_LINETABLE",
+             "offsetof(struct _PyCodeConstructor, linetable)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_CONSTS",
+             "offsetof(struct _PyCodeConstructor, consts)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_NAMES",
+             "offsetof(struct _PyCodeConstructor, names)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_LOCALSPLUSNAMES",
+             "offsetof(struct _PyCodeConstructor, localsplusnames)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_LOCALSPLUSKINDS",
+             "offsetof(struct _PyCodeConstructor, localspluskinds)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_ARGCOUNT",
+             "offsetof(struct _PyCodeConstructor, argcount)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_POSONLYARGCOUNT",
+             "offsetof(struct _PyCodeConstructor, posonlyargcount)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_KWONLYARGCOUNT",
+             "offsetof(struct _PyCodeConstructor, kwonlyargcount)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_STACKSIZE",
+             "offsetof(struct _PyCodeConstructor, stacksize)",
+             "i64"
+         ),
+         (
+             "_PyCodeConstructor_EXCEPTIONTABLE",
+             "offsetof(struct _PyCodeConstructor, exceptiontable)",
+             "i64"
+         ),
+         ("lineiterator_SIZE", "sizeof(lineiterator)", "i64"),
+         ("lineiterator_LI_CODE", "offsetof(lineiterator, li_code)", "i64"),
+         ("lineiterator_LI_LINE", "offsetof(lineiterator, li_line)", "i64"),
+         ("positionsiterator_SIZE", "sizeof(positionsiterator)", "i64"),
+         ("positionsiterator_PI_CODE", "offsetof(positionsiterator, pi_code)", "i64"),
+         ("positionsiterator_PI_RANGE", "offsetof(positionsiterator, pi_range)", "i64"),
+         (
+             "positionsiterator_PI_OFFSET",
+             "offsetof(positionsiterator, pi_offset)",
+             "i64"
+         ),
+         (
+             "positionsiterator_PI_ENDLINE",
+             "offsetof(positionsiterator, pi_endline)",
+             "i64"
+         ),
+         (
+             "positionsiterator_PI_COLUMN",
+             "offsetof(positionsiterator, pi_column)",
+             "i64"
+         ),
+         (
+             "positionsiterator_PI_ENDCOLUMN",
+             "offsetof(positionsiterator, pi_endcolumn)",
+             "i64"
+         ),
+         ("_PyCodeObjectExtra_SIZE", "sizeof(_PyCodeObjectExtra)", "i64"),
+         ("_PyCodeObjectExtra_CE_SIZE", "offsetof(_PyCodeObjectExtra, ce_size)", "i64"),
+         (
+             "_PyCodeObjectExtra_CE_EXTRAS",
+             "offsetof(_PyCodeObjectExtra, ce_extras)",
+             "i64"
+         ),
+         ("CO_VARARGS", "CO_VARARGS", "i32"),
+         ("CO_VARKEYWORDS", "CO_VARKEYWORDS", "i32"),
+         ("CO_FAST_ARG_POS", "CO_FAST_ARG_POS", "i64"),
+         ("CO_FAST_ARG_KW", "CO_FAST_ARG_KW", "i64"),
+         ("CO_FAST_ARG_VAR", "CO_FAST_ARG_VAR", "i64"),
+         ("CO_FAST_ARG", "CO_FAST_ARG", "i64"),
+         ("CO_FAST_HIDDEN", "CO_FAST_HIDDEN", "i64"),
+         ("CO_FAST_LOCAL", "CO_FAST_LOCAL", "i64"),
+         ("CO_FAST_CELL", "CO_FAST_CELL", "i64"),
+         ("CO_FAST_FREE", "CO_FAST_FREE", "i64"),
+         ("CODE_MAX_WATCHERS", "CODE_MAX_WATCHERS", "i64"),
+         ("PY_CODE_LOCATION_INFO_ONE_LINE0", "PY_CODE_LOCATION_INFO_ONE_LINE0", "i64"),
+         ("PY_CODE_LOCATION_INFO_ONE_LINE1", "PY_CODE_LOCATION_INFO_ONE_LINE1", "i64"),
+         ("PY_CODE_LOCATION_INFO_ONE_LINE2", "PY_CODE_LOCATION_INFO_ONE_LINE2", "i64"),
+         (
+             "PY_CODE_LOCATION_INFO_NO_COLUMNS",
+             "PY_CODE_LOCATION_INFO_NO_COLUMNS",
+             "i64"
+         ),
+         ("PY_CODE_LOCATION_INFO_LONG", "PY_CODE_LOCATION_INFO_LONG", "i64"),
+         ("PY_CODE_LOCATION_INFO_NONE", "PY_CODE_LOCATION_INFO_NONE", "i64"),
+         ("PY_CODE_EVENT_CREATE", "PY_CODE_EVENT_CREATE", "i32"),
+         ("PY_CODE_EVENT_DESTROY", "PY_CODE_EVENT_DESTROY", "i32"),
+         ("EXTENDED_ARG", "EXTENDED_ARG", "i32"),
+         ("LOAD_ATTR", "LOAD_ATTR", "i32"),
+         ("LOAD_COMMON_CONSTANT", "LOAD_COMMON_CONSTANT", "i32"),
+         ("LOAD_CONST", "LOAD_CONST", "i32"),
+         ("LOAD_FAST_AND_CLEAR", "LOAD_FAST_AND_CLEAR", "i32"),
+         ("LOAD_GLOBAL", "LOAD_GLOBAL", "i32"),
+         ("RAISE_VARARGS", "RAISE_VARARGS", "i32"),
+         ("RETURN_VALUE", "RETURN_VALUE", "i32"),
+         ("CONSTANT_ASSERTIONERROR", "CONSTANT_ASSERTIONERROR", "i32"),
+         ("RESUME_AT_FUNC_START", "RESUME_AT_FUNC_START", "i32"),
+         ("PyHASH_MULTIPLIER", "PyHASH_MULTIPLIER", "u64"),
+         ("PyFrameObject_BACK", "offsetof(PyFrameObject, f_back)", "i64"),
+         ("PyFrameObject_FRAME", "offsetof(PyFrameObject, f_frame)", "i64"),
+         ("PyFrameObject_TRACE", "offsetof(PyFrameObject, f_trace)", "i64"),
+         ("PyFrameObject_LINENO", "offsetof(PyFrameObject, f_lineno)", "i64"),
+         ("PyFrameObject_TRACE_LINES", "offsetof(PyFrameObject, f_trace_lines)", "i64"),
+         (
+             "PyFrameObject_TRACE_OPCODES",
+             "offsetof(PyFrameObject, f_trace_opcodes)",
+             "i64"
+         ),
+         (
+             "PyFrameObject_EXTRA_LOCALS",
+             "offsetof(PyFrameObject, f_extra_locals)",
+             "i64"
+         ),
+         (
+             "PyFrameObject_LOCALS_CACHE",
+             "offsetof(PyFrameObject, f_locals_cache)",
+             "i64"
+         ),
+         (
+             "PyFrameObject_OVERWRITTEN_FAST_LOCALS",
+             "offsetof(PyFrameObject, f_overwritten_fast_locals)",
+             "i64"
+         ),
+         ("PyFrameLocalsProxyObject_SIZE", "sizeof(PyFrameLocalsProxyObject)", "i64"),
+         (
+             "PyFrameLocalsProxyObject_FRAME",
+             "offsetof(PyFrameLocalsProxyObject, frame)",
+             "i64"
+         ),
+         (
+             "PyCodeObject_EXCEPTIONTABLE",
+             "offsetof(PyCodeObject, co_exceptiontable)",
+             "i64"
+         ),
+         ("PyCodeObject_FIRSTLINENO", "offsetof(PyCodeObject, co_firstlineno)", "i64"),
+         (
+             "PyCodeObject_LOCALSPLUSNAMES",
+             "offsetof(PyCodeObject, co_localsplusnames)",
+             "i64"
+         ),
+         (
+             "PyCodeObject_LOCALSPLUSKINDS",
+             "offsetof(PyCodeObject, co_localspluskinds)",
+             "i64"
+         ),
+         ("PyCodeAddressRange_SIZE", "sizeof(PyCodeAddressRange)", "i64"),
+         (
+             "PyCodeAddressRange_AR_START",
+             "offsetof(PyCodeAddressRange, ar_start)",
+             "i64"
+         ),
+         ("PyCodeAddressRange_AR_LINE", "offsetof(PyCodeAddressRange, ar_line)", "i64"),
+         ("_PyErr_StackItem_EXC_VALUE", "offsetof(_PyErr_StackItem, exc_value)", "i64"),
+         ("PyFrameConstructor_SIZE", "sizeof(PyFrameConstructor)", "i64"),
+         ("INLINE_CACHE_ENTRIES_SEND", "INLINE_CACHE_ENTRIES_SEND", "i64"),
+         ("INLINE_CACHE_ENTRIES_FOR_ITER", "INLINE_CACHE_ENTRIES_FOR_ITER", "i64"),
+         ("FRAME_OWNED_BY_THREAD", "FRAME_OWNED_BY_THREAD", "i32"),
+         ("FRAME_OWNED_BY_FRAME_OBJECT", "FRAME_OWNED_BY_FRAME_OBJECT", "i32"),
+         ("PyGenObject_SIZE", "offsetof(PyGenObject, gi_iframe.localsplus)", "i64"),
+         ("PyGenObject_WEAKREFLIST", "offsetof(PyGenObject, gi_weakreflist)", "i64"),
+         ("PyGenObject_NAME", "offsetof(PyGenObject, gi_name)", "i64"),
+         ("PyGenObject_QUALNAME", "offsetof(PyGenObject, gi_qualname)", "i64"),
+         ("PyGenObject_EXC_STATE", "offsetof(PyGenObject, gi_exc_state)", "i64"),
+         (
+             "PyGenObject_EXC_VALUE",
+             "offsetof(PyGenObject, gi_exc_state.exc_value)",
+             "i64"
+         ),
+         (
+             "PyGenObject_EXC_PREVIOUS_ITEM",
+             "offsetof(PyGenObject, gi_exc_state.previous_item)",
+             "i64"
+         ),
+         (
+             "PyGenObject_ORIGIN_OR_FINALIZER",
+             "offsetof(PyGenObject, gi_origin_or_finalizer)",
+             "i64"
+         ),
+         ("PyGenObject_HOOKS_INITED", "offsetof(PyGenObject, gi_hooks_inited)", "i64"),
+         ("PyGenObject_CLOSED", "offsetof(PyGenObject, gi_closed)", "i64"),
+         (
+             "PyGenObject_RUNNING_ASYNC",
+             "offsetof(PyGenObject, gi_running_async)",
+             "i64"
+         ),
+         ("PyGenObject_FRAME_STATE", "offsetof(PyGenObject, gi_frame_state)", "i64"),
+         ("PyGenObject_IFRAME", "offsetof(PyGenObject, gi_iframe)", "i64"),
+         ("PyCoroWrapper_SIZE", "sizeof(PyCoroWrapper)", "i64"),
+         ("PyCoroWrapper_CW_COROUTINE", "offsetof(PyCoroWrapper, cw_coroutine)", "i64"),
+         ("PyAsyncGenASend_SIZE", "sizeof(PyAsyncGenASend)", "i64"),
+         ("PyAsyncGenASend_AGS_GEN", "offsetof(PyAsyncGenASend, ags_gen)", "i64"),
+         (
+             "PyAsyncGenASend_AGS_SENDVAL",
+             "offsetof(PyAsyncGenASend, ags_sendval)",
+             "i64"
+         ),
+         ("PyAsyncGenASend_AGS_STATE", "offsetof(PyAsyncGenASend, ags_state)", "i64"),
+         ("PyAsyncGenAThrow_SIZE", "sizeof(PyAsyncGenAThrow)", "i64"),
+         ("PyAsyncGenAThrow_AGT_GEN", "offsetof(PyAsyncGenAThrow, agt_gen)", "i64"),
+         ("PyAsyncGenAThrow_AGT_ARGS", "offsetof(PyAsyncGenAThrow, agt_args)", "i64"),
+         ("PyAsyncGenAThrow_AGT_STATE", "offsetof(PyAsyncGenAThrow, agt_state)", "i64"),
+         ("_PyAsyncGenWrappedValue_SIZE", "sizeof(_PyAsyncGenWrappedValue)", "i64"),
+         (
+             "_PyAsyncGenWrappedValue_AGW_VAL",
+             "offsetof(_PyAsyncGenWrappedValue, agw_val)",
+             "i64"
+         ),
+         ("PyFrameObject_F_FRAME", "offsetof(PyFrameObject, f_frame)", "i64"),
+         ("PyFrameObject_FRAME_DATA", "offsetof(PyFrameObject, _f_frame_data)", "i64"),
+         (
+             "PyFrameObject_SIZE",
+             "offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus)",
+             "i64"
+         ),
+         ("PyCodeObject_STACKSIZE", "offsetof(PyCodeObject, co_stacksize)", "i64"),
+         ("PyCodeObject_FRAMESIZE", "offsetof(PyCodeObject, co_framesize)", "i64"),
+         ("PyCodeObject_FILENAME", "offsetof(PyCodeObject, co_filename)", "i64"),
+         (
+             "PyCodeObject_FIRSTTRACEABLE",
+             "offsetof(PyCodeObject, _co_firsttraceable)",
+             "i64"
+         ),
+         (
+             "PyCodeObject_CODE_ADAPTIVE",
+             "offsetof(PyCodeObject, co_code_adaptive)",
+             "i64"
+         ),
+         (
+             "FRAME_SPECIALS_SIZE",
+             "(int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *))",
+             "i32"
+         ),
+         ("FRAME_CREATED", "FRAME_CREATED", "i32"),
+         ("FRAME_SUSPENDED", "FRAME_SUSPENDED", "i32"),
+         ("FRAME_SUSPENDED_YIELD_FROM", "FRAME_SUSPENDED_YIELD_FROM", "i32"),
+         ("FRAME_EXECUTING", "FRAME_EXECUTING", "i32"),
+         ("FRAME_COMPLETED", "FRAME_COMPLETED", "i32"),
+         ("FRAME_CLEARED", "FRAME_CLEARED", "i32"),
+         ("FRAME_OWNED_BY_GENERATOR", "FRAME_OWNED_BY_GENERATOR", "i32"),
+         ("FRAME_OWNED_BY_INTERPRETER", "FRAME_OWNED_BY_INTERPRETER", "i32"),
+         ("RESUME", "RESUME", "i32"),
+         ("RESUME_CHECK", "RESUME_CHECK", "i32"),
+         ("INSTRUMENTED_RESUME", "INSTRUMENTED_RESUME", "i32"),
+         ("RESUME_OPARG_DEPTH1_MASK", "RESUME_OPARG_DEPTH1_MASK", "i32"),
+         ("CO_ITERABLE_COROUTINE", "CO_ITERABLE_COROUTINE", "i32"),
+         ("Py_async_gens_MAXFREELIST", "Py_async_gens_MAXFREELIST", "i64"),
+         ("Py_async_gen_asends_MAXFREELIST", "Py_async_gen_asends_MAXFREELIST", "i64"),
          ("PyASCIIObject_SIZE", "sizeof(PyASCIIObject)", "i64"),
          ("PyASCIIObject_STATE", "offsetof(PyASCIIObject, state)", "i64"),
          ("PyCompactUnicodeObject_SIZE", "sizeof(PyCompactUnicodeObject)", "i64"),
@@ -1556,6 +2044,100 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "offsetof(PyThreadState, current_exception)",
              "i64"
          ),
+         ("PyThreadState_EXC_INFO", "offsetof(PyThreadState, exc_info)", "i64"),
+         (
+             "PyThreadState_COROUTINE_ORIGIN_TRACKING_DEPTH",
+             "offsetof(PyThreadState, coroutine_origin_tracking_depth)",
+             "i64"
+         ),
+         (
+             "PyThreadState_ASYNC_GEN_FIRSTITER",
+             "offsetof(PyThreadState, async_gen_firstiter)",
+             "i64"
+         ),
+         (
+             "PyThreadState_ASYNC_GEN_FINALIZER",
+             "offsetof(PyThreadState, async_gen_finalizer)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_EVAL_FRAME",
+             "offsetof(PyInterpreterState, eval_frame)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_PREVIOUS",
+             "offsetof(_PyInterpreterFrame, previous)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_F_GLOBALS",
+             "offsetof(_PyInterpreterFrame, f_globals)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_F_BUILTINS",
+             "offsetof(_PyInterpreterFrame, f_builtins)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_F_LOCALS",
+             "offsetof(_PyInterpreterFrame, f_locals)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_FRAME_OBJ",
+             "offsetof(_PyInterpreterFrame, frame_obj)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_INSTR_PTR",
+             "offsetof(_PyInterpreterFrame, instr_ptr)",
+             "i64"
+         ),
+         ("_PyInterpreterFrame_OWNER", "offsetof(_PyInterpreterFrame, owner)", "i64"),
+         (
+             "_PyInterpreterFrame_VISITED",
+             "offsetof(_PyInterpreterFrame, visited)",
+             "i64"
+         ),
+         (
+             "_PyInterpreterFrame_RETURN_OFFSET",
+             "offsetof(_PyInterpreterFrame, return_offset)",
+             "i64"
+         ),
+         ("PyThreadState_WHAT_EVENT", "offsetof(PyThreadState, what_event)", "i64"),
+         ("PyConfig_CODE_DEBUG_RANGES", "offsetof(PyConfig, code_debug_ranges)", "i64"),
+         (
+             "PyInterpreterState_CO_EXTRA_USER_COUNT",
+             "offsetof(PyInterpreterState, co_extra_user_count)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CO_EXTRA_FREEFUNCS",
+             "offsetof(PyInterpreterState, co_extra_freefuncs)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_FUNC_STATE_NEXT_VERSION",
+             "offsetof(PyInterpreterState, func_state.next_version)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CODE_WATCHERS",
+             "offsetof(PyInterpreterState, code_watchers)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_ACTIVE_CODE_WATCHERS",
+             "offsetof(PyInterpreterState, active_code_watchers)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_CODE_OBJECT_GENERATION",
+             "offsetof(PyInterpreterState, _code_object_generation)",
+             "i64"
+         ),
          (
              "_PyRuntimeState_REF_TRACER_FUNC",
              "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",
@@ -1864,12 +2446,27 @@ def read_headers(found: Headers) {
         ) {
             found.private_scalars[hit.group(2)] = hit.group(0);
         }
+        # A source's own enum typedefs (genobject.c's AwaitableState) are ints.
+        for hit in re.finditer(r"\btypedef\s+enum\s*\{", body) {
+            end = closing(body, hit.end() - 1);
+            alias = re.match(r"\s*(\w+)\s*;", body[end:]);
+            if alias {
+                # Unsigned unless an enumerator is negative, as compilers lay
+                # out enum types.
+                negative = re.search(r"=\s*-", body[hit.end():end]) is not None;
+                found.aliases[alias.group(1)] = "int" if negative else "unsigned int";
+                found.private_scalars[alias.group(1)] = body[hit.start():end]
+                    + alias.group(0);
+            }
+        }
         # Forward typedefs of a source's own structs (typedef struct
         # _odictnode _ODictNode).
         for hit in re.finditer(r"\btypedef\s+struct\s+(\w+)\s+(\w+)\s*;", body) {
             found.private_scalars[hit.group(2)] = hit.group(0);
         }
-        for hit in re.finditer(r"\btypedef\s+struct\s*\{", body) {
+        # Typedef'd structs, tagged or not (genobject.c's typedef struct
+        # PyAsyncGenASend {...} PyAsyncGenASend).
+        for hit in re.finditer(r"\btypedef\s+struct\s*(?:\w+\s*)?\{", body) {
             end = closing(body, hit.end() - 1);
             alias = re.match(r"\s*(\w+)\s*;", body[end:]);
             if alias is not None {
