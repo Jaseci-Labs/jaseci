@@ -16139,6 +16139,7 @@ graph import runtime.python {
         modules.functools | modules.itertools | modules.struct { ReferenceState },
         modules.lsprof { call_method },
     ]
+    bindings.remote_debugging ++> inittab { PyInit__remote_debugging }
     bindings.resource ++> inittab { PyInit_resource }
     bindings.select ++> inittab { PyInit_select }
     bindings.sha1 ++> inittab { PyInit__sha1 }
@@ -17338,6 +17339,12 @@ graph import runtime.python {
             jacpy_object_getattr_text,
             jacpy_release,
             jacpy_tuple_set_owned
+        },
+        bindings.remote_debugging {
+            NULL,
+            PyErr_SetString,
+            PyExc_RuntimeError,
+            PyObject
         },
         bindings.resource {
             PyExc_ImportError,
@@ -29422,7 +29429,11 @@ graph import runtime.python.bindings {
             | clinic.zlib
             | clinic.zoneinfo
             | clinic.zstd { MethodCallbacks, MethodDefinition },
-        cmath | heapq | multiprocessing { ModuleDefinition, ModuleHooks, add_owned },
+        cmath | heapq | multiprocessing | remote_debugging {
+            ModuleDefinition,
+            ModuleHooks,
+            add_owned
+        },
         codecs_cn
             | codecs_hk
             | codecs_iso2022
@@ -29878,6 +29889,7 @@ graph import runtime.python.bindings {
             jacpy_binding_allocate,
             jacpy_binding_free
         },
+        remote_debugging { TypeDefinition, TypeHooks },
         struct {
             PropertyCallbacks,
             PropertyDefinition,

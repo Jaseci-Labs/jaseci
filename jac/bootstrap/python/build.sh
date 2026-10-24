@@ -229,13 +229,13 @@ SETUP
     jacpython_configure=
     if [ -n "$host" ]; then
         # JacPython drops remote debugging and perf trampolines instead of
-        # porting them: configure leaves both out, the _remote_debugging
-        # module is not built, and the interpreter objects that held them
+        # porting them: configure leaves both out, _remote_debugging is a Jac
+        # module whose RemoteUnwinder reports the support missing (asyncio
+        # imports it at startup), and the interpreter objects that held them
         # leave the build. interpreter/perf_trampoline.jac and
         # interpreter/remote_debugging.jac define what the rest of the
         # interpreter still calls, as the C files do in that configuration.
         jacpython_configure=--without-remote-debug
-        echo '_remote_debugging' >> Modules/Setup.local
         sed 's/perf_trampoline=yes/perf_trampoline=no/' configure > configure.new
         mv configure.new configure
         chmod +x configure

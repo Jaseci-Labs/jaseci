@@ -20,6 +20,10 @@ import from c {
              _inittab(name=ptr[u8]("_queue"), initfunc=ptr(PyInit__queue)),
              _inittab(name=ptr[u8]("_json"), initfunc=ptr(PyInit__json)),
              _inittab(name=ptr[u8]("_csv"), initfunc=ptr(PyInit__csv)),
+             _inittab(
+                 name=ptr[u8]("_remote_debugging"),
+                 initfunc=ptr(PyInit__remote_debugging)
+             ),
              _inittab(name=ptr[u8]("_struct"), initfunc=ptr(PyInit__struct)),
              _inittab(name=ptr[u8]("cmath"), initfunc=ptr(PyInit_cmath)),
              _inittab(name=ptr[u8]("math"), initfunc=ptr(PyInit_math)),
