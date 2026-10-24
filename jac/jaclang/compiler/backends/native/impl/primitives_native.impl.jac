@@ -6350,7 +6350,31 @@ impl NativeBuiltinEmitter.emit_bytes(
     if _src is not None {
         return p._bytes_from_raw(_src[0], _src[1]);
     }
-    return _emit_bytes_from_int_list(p, val, "bytes must be in range(0, 256)", []);
+    listed = _emit_bytes_from_int_list(p, val, "bytes must be in range(0, 256)", []);
+    if listed is not None or not ctx.arg_nodes {
+        return listed;
+    }
+    return _emit_bytes_drained(self, ctx, args, "bytes must be in range(0, 256)", []);
+}
+
+def _emit_bytes_drained(
+    emitter: NativeBuiltinEmitter,
+    ctx: NativeEmitCtx,
+    args: list[ir.Value],
+    message: str,
+    release_on_error: list[ir.Value]
+) -> (ir.Value | None) {
+    p = ctx.pass_ref;
+    drained = emitter.emit_list(ctx, args);
+    if drained is None {
+        return None;
+    }
+    made = _emit_bytes_from_int_list(p, drained, message, release_on_error);
+    if made is None {
+        return None;
+    }
+    p._release_owned_args([p._mark_owned(drained)]);
+    return made;
 }
 
 def _emit_zeroed_bytes(p: NaIRGenPass, count: ir.Value) -> ir.Value;
@@ -6404,6 +6428,11 @@ impl NativeBuiltinEmitter.emit_bytearray(
     }
 
     _bv = _emit_bytes_from_int_list(p, a0, "byte must be in range(0, 256)", [buf]);
+    if _bv is None and ctx.arg_nodes {
+        _bv = _emit_bytes_drained(
+            self, ctx, args, "byte must be in range(0, 256)", [buf]
+        );
+    }
     if _bv is not None and p._is_bytes_value(_bv) {
         _bsrc = p._bytearray_src_of(_bv);
         if _bsrc is not None {
