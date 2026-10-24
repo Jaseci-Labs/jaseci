@@ -1,7 +1,7 @@
 import from jaclang.sql {
     add_int32, sub, text, int64, int32, array, array_append, array_param, any_eq,
     int64_type, field, table, boolean, left_join, row_number,
-    sum_int64, lpad, numeric_add, numeric, with_ctes, concat, case_, values
+    sum_int64, lpad, numeric_add, numeric, with_ctes, concat, case_, values, slot, gt, text_type
 }
 with entry {
     integers = array_param(int64_type(), [1]);
@@ -21,4 +21,6 @@ with entry {
     int32('1'); # invalid
     values([field('id', int64_type())], [[source]]); # invalid
     add_int32(int64(1), int32(2)); # invalid
+    slot(123, int64_type()); # invalid
+    gt(slot('n', text_type()), int64(1)); # invalid
 }

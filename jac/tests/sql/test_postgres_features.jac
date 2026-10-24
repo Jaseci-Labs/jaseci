@@ -1015,6 +1015,28 @@ class FeatureTests(PostgresTests) {
             s.bool_or(s.int64(1));
         }
     }
+
+    def test_named_slot_array_bind(self: FeatureTests) -> object {
+        ids = s.slot('ids', s.array_type(s.int64_type()));
+        compiled = s.compile_sql(
+            s.select(
+                [s.named('id', self.people.col(self.id))],
+                source=self.people,
+                where=s.any_eq(self.people.col(self.id), ids),
+                order_by=[s.asc(self.people.col(self.id))]
+            )
+        );
+        first = compiled.bind({'ids': (1, 3)});
+        first_rows: any = self.db.execute(first.sql, first.params);
+        self.assertEqual(first_rows.fetchall(), [(1, ), (3, )]);
+        second = compiled.bind({'ids': ()});
+        second_rows: any = self.db.execute(second.sql, second.params);
+        self.assertEqual(second_rows.fetchall(), []);
+        self.assertEqual(first.params, {'ids': (1, 3)});
+        with self.assertRaises(s.SqlError) {
+            compiled.bind({'ids': (1, 'wrong')});
+        }
+    }
 }
 
 test "PostgreSQL features: boolean comparison and case" {
@@ -1167,4 +1189,8 @@ test "PostgreSQL features: recursive window group aggregate rejected" {
 
 test "PostgreSQL features: boolean or aggregate" {
     run_case(FeatureTests("test_boolean_or_aggregate"));
+}
+
+test "PostgreSQL features: named slot array bind" {
+    run_case(FeatureTests("test_named_slot_array_bind"));
 }

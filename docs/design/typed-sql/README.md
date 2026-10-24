@@ -185,10 +185,11 @@ Low-level AST construction receives the same semantic analysis as public builder
 
 ## Verification
 
-The suite contains 145 native Jac test entries: 49 SQLite base cases, the same
-49 PostgreSQL cases, 38 PostgreSQL feature cases four static-check tests and five cache regression tests.
-The static fixtures verify all 29 invalid calls at their expected source lines;
-positive checking covers the module and both construction examples.
+The suite contains 160 native Jac test entries: 56 SQLite cases, the same
+56 PostgreSQL cases, 39 PostgreSQL feature cases, four static-check tests and
+five cache regression tests.
+The static fixtures verify all 31 invalid calls at their expected source lines;
+positive checking covers the module and all three construction examples.
 
 ```sh
 jac test jac/tests/sql/test_sql.jac jac/tests/sql/test_types.jac jac/tests/sql/test_cache.jac -j 1 -v
@@ -215,3 +216,28 @@ Immutable SELECT and set-operation nodes retain their derived schemas. Within
 one compilation, validation results are reused only for the same ordered source
 and CTE scopes. Caches reset for each compilation; scope, projection, recursive
 union and parameter checks remain enforced. See [performance measurements](performance/README.md).
+
+## Compile once and bind values
+
+Use `slot(name, dtype)` for a named parameter without an initial value:
+
+```jac
+min_age = slot('min_age', int64_type());
+compiled = compile_sql(select(
+    [named('name', people.col(name))], source=people,
+    where=gt(people.col(age), min_age)
+));
+first = compiled.bind({'min_age': 18});
+second = compiled.bind({'min_age': 30});
+```
+
+Pass `first.sql` and `first.params` to the database driver. `CompiledSQL` keeps
+SQL text, fixed parameter values and a tuple of slot names/types. It retains no
+AST. `bind` checks exact parameter names and value types, copies the fixed
+parameters and returns a new `CompiledSQL`; the original remains reusable.
+Repeated names share a parameter and must have identical types. Names use ASCII
+letters, digits and underscores, starting with a letter or underscore. Generated
+literal parameter names avoid collisions with slots. Text values are bound by
+the driver, including strings containing SQL syntax.
+
+See the runnable [binding example](../../../jac/examples/sql/bind_parameters.jac).

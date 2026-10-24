@@ -886,6 +886,134 @@ class SQLTests(unittest.TestCase) {
             s.compile_sql(s.select([s.named('n', argument)], source=self.people));
         }
     }
+
+    def test_named_slot_rebind(self: SQLTests) -> object {
+        age = s.slot('min_age', s.int64_type());
+        query = s.select(
+            [s.named('name', self.people.col(self.name))],
+            source=self.people,
+            where=s.gt(self.people.col(self.age), age),
+            order_by=[s.asc(self.people.col(self.id))]
+        );
+        compiled = s.compile_sql(query);
+        first = compiled.bind({'min_age': 18});
+        second = compiled.bind({'min_age': 30});
+        self.assertIs(first.sql, compiled.sql);
+        self.assertEqual(
+            self.db.execute(first.sql, first.params).fetchall(),
+            [('Ann', ), ('Bob', ), ('Cora', )]
+        );
+        self.assertEqual(
+            self.db.execute(second.sql, second.params).fetchall(),
+            [('Bob', ), ('Cora', )]
+        );
+        self.assertEqual(first.params, {'min_age': 18});
+        self.assertEqual(compiled.params, {});
+        self.assertEqual(second.slots, ());
+    }
+
+    def test_named_slot_literal_collision(self: SQLTests) -> object {
+        query = s.select(
+            [
+                s.named(
+                    'n',
+                    s.add(
+                        s.int64(5),
+                        s.add(
+                            s.slot('p0', s.int64_type()), s.slot('p0', s.int64_type())
+                        )
+                    )
+                )
+            ]
+        );
+        compiled = s.compile_sql(query);
+        self.assertEqual(len(compiled.slots), 1);
+        bound = compiled.bind({'p0': 3});
+        self.assertEqual(self.db.execute(bound.sql, bound.params).fetchall(), [(11, )]);
+        self.assertEqual(compiled.params, {'p1': 5});
+    }
+
+    def test_named_slot_names_are_validated(self: SQLTests) -> object {
+        for name in [
+            '',
+            '1age',
+            'x); DROP TABLE people; --',
+            'x:y',
+            'two words',
+            'x\x00y',
+            'é'
+        ] {
+            with self.assertRaises(s.SqlError) {
+                s.slot(name, s.int64_type());
+            }
+        }
+    }
+
+    def test_named_slot_conflicting_types(self: SQLTests) -> object {
+        query = s.select(
+            [
+                s.named('n', s.slot('value', s.int64_type())),
+                s.named('t', s.slot('value', s.text_type()))
+            ]
+        );
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(query);
+        }
+    }
+
+    def test_named_slot_bind_checks(self: SQLTests) -> object {
+        compiled = s.compile_sql(s.select([s.named('n', s.slot('n', s.int64_type()))]));
+        for values in [
+            {},
+            {'n': 1, 'extra': 2},
+            {'n': 'oops'},
+            {'n': True},
+            {'n': None},
+            {'n': 2 ** 63}
+        ] {
+            with self.assertRaises(s.SqlError) {
+                compiled.bind(values);
+            }
+        }
+        nullable = s.compile_sql(
+            s.select([s.named('n', s.slot('n', s.nullable(s.int64_type())))])
+        );
+        bound = nullable.bind({'n': None});
+        self.assertEqual(
+            self.db.execute(bound.sql, bound.params).fetchall(), [(None, )]
+        );
+        fixed = s.compile_sql(s.select([s.named('n', s.int64(7))]));
+        bound = fixed.bind({});
+        self.assertEqual(self.db.execute(bound.sql, bound.params).fetchall(), [(7, )]);
+    }
+
+    def test_named_slot_does_not_retain_ast(self: SQLTests) -> object {
+        import weakref;
+        import gc;
+        query = s.select([s.named('n', s.slot('n', s.int64_type()))]);
+        reference = weakref.ref(query.ast);
+        compiled = s.compile_sql(query);
+        del query;
+        gc.collect();
+        self.assertIsNone(reference());
+        bound = compiled.bind({'n': 42});
+        self.assertEqual(self.db.execute(bound.sql, bound.params).fetchall(), [(42, )]);
+    }
+
+    def test_named_slot_injection_is_bound(self: SQLTests) -> object {
+        compiled = s.compile_sql(
+            s.select([s.named('value', s.slot('value', s.text_type()))])
+        );
+        evil = "x'); DROP TABLE people; --";
+        bound = compiled.bind({'value': evil});
+        self.assertNotIn(evil, bound.sql);
+        self.assertEqual(
+            self.db.execute(bound.sql, bound.params).fetchall(), [(evil, )]
+        );
+        self.assertEqual(
+            self.db.execute('SELECT COUNT(*) FROM people').fetchone(), (3, )
+        );
+    }
 }
 
 

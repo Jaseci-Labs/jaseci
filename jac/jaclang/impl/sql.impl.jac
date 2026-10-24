@@ -625,6 +625,14 @@ impl QueryGraph.visit_expr(expr: ExprNode) -> None {
         return;
     }
     self.seen_expressions.add(id(expr));
+    if isinstance(expr, SlotNode) {
+        _validate_slot_name(expr.name);
+        if expr.name in self.slot_types
+            and not same_type(self.slot_types[expr.name], expr.dtype) {
+            raise SqlError('Conflicting types for parameter slot: ' + expr.name);
+        }
+        self.slot_types[expr.name] = expr.dtype;
+    }
     if isinstance(expr, ColumnNode) {
         self.visit_source(expr.source);
     } elif isinstance(expr, (ScalarNode, ExistsNode)) {
@@ -808,6 +816,7 @@ impl QueryValidator.analyze[R, C](query: Relation[R, C]) -> ValidatedQuery {
     }
     return ValidatedQuery(
         query=query.ast,
+        slots=tuple(scan.slot_types.items()),
         ctes=tuple(self.ordered_ctes),
         aliases=dict(self.aliases),
         cte_names=dict(self.cte_names),
@@ -880,6 +889,10 @@ impl QueryValidator.expr_uncached(
             raise SqlError('Column type differs from source schema');
         }
         return Checked(free={_key(ast.source, ast.name)});
+    }
+    if isinstance(ast, SlotNode) {
+        _validate_slot_name(ast.name);
+        return Checked(free=set());
     }
     if isinstance(ast, ParamNode) {
         validate_value(ast.dtype, ast.value);
@@ -1278,6 +1291,7 @@ impl PostgresRenderer.alias_for(src: Source) -> str {
 impl PostgresRenderer.render(plan: ValidatedQuery) -> CompiledSQL {
     self.params = {};
     self.parameter_ids = {};
+    self.slot_types = dict(plan.slots);
     self.aliases = plan.aliases;
     self.cte_names = plan.cte_names;
     self.local_orders = plan.local_orders;
@@ -1289,7 +1303,9 @@ impl PostgresRenderer.render(plan: ValidatedQuery) -> CompiledSQL {
         body = body.body;
     }
     prefix = self.with_sql(tuple(bindings), '');
-    return CompiledSQL(sql=prefix + self.query(body), params=dict(self.params));
+    return CompiledSQL(
+        sql=prefix + self.query(body), params=dict(self.params), slots=plan.slots
+    );
 }
 
 impl PostgresRenderer.source(src: Source) -> str {
@@ -1309,10 +1325,18 @@ impl PostgresRenderer.expr(ast: ExprNode) -> str {
     if isinstance(ast, ColumnNode) {
         return self.alias_for(ast.source) + '.' + quote_identifier(ast.name);
     }
+    if isinstance(ast, SlotNode) {
+        return 'CAST(:' + ast.name + ' AS ' + ast.dtype.name + ')';
+    }
     if isinstance(ast, ParamNode) {
         identity = id(ast);
         if identity not in self.parameter_ids {
-            key = 'p' + str(len(self.params));
+            index = len(self.params);
+            key = 'p' + str(index);
+            while key in self.slot_types or key in self.params {
+                index += 1;
+                key = 'p' + str(index);
+            }
             self.parameter_ids[identity] = key;
             self.params[key] = ast.value;
         }
@@ -2547,6 +2571,9 @@ impl _expr_key(expr: ExprNode) -> tuple[any, ...] {
     if isinstance(expr, ColumnNode) {
         return ('column', dtype, id(expr.source), expr.name);
     }
+    if isinstance(expr, SlotNode) {
+        return ('slot', dtype, expr.name);
+    }
     if isinstance(expr, ParamNode) {
         return ('parameter', dtype, id(expr));
     }
@@ -2707,4 +2734,45 @@ impl QueryValidator.validate_cte(
         self.cte_cache[key] = self.validate_cte_uncached(reference, outer, available);
     }
     return self.cte_cache[key];
+}
+
+impl _validate_slot_name(name: str) {
+    if not isinstance(name, str)
+        or not name
+        or not name.isascii()
+        or not (name[0].isalpha() or name[0] == '_')
+        or not all([c.isalnum() or c == '_' for c in name]) {
+        raise SqlError('Parameter slot requires an ASCII identifier');
+    }
+}
+
+impl slot[T](name: str, dtype: SqlType[T]) -> ScalarExpr[T] {
+    _validate_slot_name(name);
+    return ScalarExpr(SlotNode(dtype=dtype.data, name=name));
+}
+
+impl CompiledSQL.bind(
+    values:
+        dict[
+            str,
+            bool
+                | int
+                | float
+                | str
+                | UUID
+                | Decimal
+                | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+                | None
+        ]
+) -> CompiledSQL {
+    if set(values) != {name for (name, dtype) in self.slots} {
+        raise SqlError('Parameter names must match the compiled slots');
+    }
+    params = dict(self.params);
+    for (name, dtype) in self.slots {
+        value = values[name];
+        validate_value(dtype, value);
+        params[name] = _freeze_sql_value(value);
+    }
+    return CompiledSQL(sql=self.sql, params=params);
 }

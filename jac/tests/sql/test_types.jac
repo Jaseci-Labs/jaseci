@@ -17,14 +17,15 @@ class StaticTypes(unittest.TestCase) {
                 'check',
                 'jac/jaclang/sql.jac',
                 'jac/examples/sql/typed_sql.jac',
-                'jac/examples/sql/advanced_queries.jac'
+                'jac/examples/sql/advanced_queries.jac',
+                'jac/examples/sql/bind_parameters.jac'
             ],
             cwd=ROOT,
             capture_output=True,
             text=True
         );
         self.assertEqual(result.returncode, 0, (result.stdout + result.stderr));
-        self.assertIn('3 passed', (result.stdout + result.stderr));
+        self.assertIn('4 passed', (result.stdout + result.stderr));
     }
 
     def test_all_bad_calls_are_rejected_at_their_lines(self: StaticTypes) -> object {

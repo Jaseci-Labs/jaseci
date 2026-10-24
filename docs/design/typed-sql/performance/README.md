@@ -43,3 +43,24 @@ jac test jac/tests/runtimelib/bench_ttg_sql.jac --filter "construction profile" 
 ```
 
 Run both commands before and after porting the cache changes, preserving the output files from each run. The benchmark writes raw timing samples and EXPLAIN plans under `benchmarks/ttg-sql/`. Source-only compatibility adaptations are described in the TTG migration document.
+
+
+## Binding without the AST
+
+A separate client-only microbenchmark constructs a one-table comparison query.
+After one warmup round, each of seven rounds times 500 rebuild-and-compile calls
+and 10,000 binds. Median per-call time across rounds:
+
+| Operation | Time |
+|---|---:|
+| Rebuild AST and compile | 56.79 microseconds |
+| Bind one integer to compiled SQL | 0.87 microseconds |
+
+This measures only the client operation on a small query; it excludes database
+calls and is not an application throughput claim. Bound queries retain no AST,
+which is also checked with a weak reference in both database test suites.
+Raw samples are in `bind-samples.json`. From the SQL checkout run:
+
+```sh
+jac run docs/design/typed-sql/performance/bind_benchmark.jac
+```

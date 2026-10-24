@@ -195,3 +195,31 @@ test "SQLite: windows preserve implicit group proof" {
 test "SQLite: grouped windows keep stage checks" {
     run_case(SQLTests("test_grouped_windows_keep_stage_checks"));
 }
+
+test "SQLite: named slot rebind" {
+    run_case(SQLTests("test_named_slot_rebind"));
+}
+
+test "SQLite: named slot literal_collision" {
+    run_case(SQLTests("test_named_slot_literal_collision"));
+}
+
+test "SQLite: named slot names_are_validated" {
+    run_case(SQLTests("test_named_slot_names_are_validated"));
+}
+
+test "SQLite: named slot conflicting_types" {
+    run_case(SQLTests("test_named_slot_conflicting_types"));
+}
+
+test "SQLite: named slot bind_checks" {
+    run_case(SQLTests("test_named_slot_bind_checks"));
+}
+
+test "SQLite: named slot does_not_retain_ast" {
+    run_case(SQLTests("test_named_slot_does_not_retain_ast"));
+}
+
+test "SQLite: named slot injection_is_bound" {
+    run_case(SQLTests("test_named_slot_injection_is_bound"));
+}

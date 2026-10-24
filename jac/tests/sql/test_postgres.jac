@@ -196,3 +196,31 @@ test "PostgreSQL: windows preserve implicit group proof" {
 test "PostgreSQL: grouped windows keep stage checks" {
     run_case(PostgresTests("test_grouped_windows_keep_stage_checks"));
 }
+
+test "PostgreSQL: named slot rebind" {
+    run_case(PostgresTests("test_named_slot_rebind"));
+}
+
+test "PostgreSQL: named slot literal_collision" {
+    run_case(PostgresTests("test_named_slot_literal_collision"));
+}
+
+test "PostgreSQL: named slot names_are_validated" {
+    run_case(PostgresTests("test_named_slot_names_are_validated"));
+}
+
+test "PostgreSQL: named slot conflicting_types" {
+    run_case(PostgresTests("test_named_slot_conflicting_types"));
+}
+
+test "PostgreSQL: named slot bind_checks" {
+    run_case(PostgresTests("test_named_slot_bind_checks"));
+}
+
+test "PostgreSQL: named slot does_not_retain_ast" {
+    run_case(PostgresTests("test_named_slot_does_not_retain_ast"));
+}
+
+test "PostgreSQL: named slot injection_is_bound" {
+    run_case(PostgresTests("test_named_slot_injection_is_bound"));
+}

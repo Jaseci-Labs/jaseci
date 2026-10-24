@@ -166,6 +166,10 @@ obj ParamNode(ExprNode) {
             | None;
 }
 
+obj SlotNode(ExprNode) {
+    has name: str;
+}
+
 obj BinaryNode(ExprNode) {
     has op: str,
         left: ExprNode,
@@ -299,7 +303,23 @@ obj CompiledSQL {
                     | Decimal
                     | tuple[bool | int | float | str | UUID | Decimal | None, ...]
                     | None
-            ];
+            ],
+        slots: tuple[tuple[str, DataType], ...] = ();
+
+    def bind(
+        values:
+            dict[
+                str,
+                bool
+                    | int
+                    | float
+                    | str
+                    | UUID
+                    | Decimal
+                    | tuple[bool | int | float | str | UUID | Decimal | None, ...]
+                    | None
+            ]
+    ) -> CompiledSQL;
 }
 
 
@@ -336,6 +356,10 @@ def param[T](
             | tuple[bool | int | float | str | UUID | Decimal | None, ...]
             | None
 ) -> ScalarExpr[T];
+
+def slot[T](name: str, dtype: SqlType[T]) -> ScalarExpr[T];
+
+def _validate_slot_name(name: str);
 
 def int64(value: int) -> ScalarExpr[SqlInt64];
 
@@ -455,7 +479,8 @@ obj ValidatedQuery {
         ctes: tuple[Cte, ...],
         aliases: dict[int, str],
         cte_names: dict[int, str],
-        local_orders: dict[int, tuple[Cte, ...]];
+        local_orders: dict[int, tuple[Cte, ...]],
+        slots: tuple[tuple[str, DataType], ...] = ();
 }
 
 
@@ -471,7 +496,8 @@ def _schema_equal(a: Schema, b: Schema, names: bool = True) -> bool;
 def validate_union(ast: UnionNode);
 
 obj QueryGraph {
-    has ctes: list[Cte] = [],
+    has slot_types: dict[str, DataType] = {},
+        ctes: list[Cte] = [],
         bound_ctes: set[int] = set(),
         physical_names: set[str] = set(),
         explicit_aliases: set[str] = set(),
@@ -558,6 +584,7 @@ obj PostgresRenderer {
                 | tuple[bool | int | float | str | UUID | Decimal | None, ...]
                 | None
         ] = {},
+        slot_types: dict[str, DataType] = {},
         parameter_ids: dict[int, str] = {},
         aliases: dict[int, str] = {},
         cte_names: dict[int, str] = {},
