@@ -215,6 +215,10 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyAsyncGenASend", "PyAsyncGenASend"),
          ("PyAsyncGenAThrow", "PyAsyncGenAThrow"),
          ("_PyAsyncGenWrappedValue", "_PyAsyncGenWrappedValue"),
+         ("SpecializationCache", "struct _specialization_cache"),
+         ("PyHeapTypeObject", "PyHeapTypeObject"),
+         ("managed_static_type_state", "managed_static_type_state"),
+         ("type_cache_entry", "struct type_cache_entry"),
          ("_PyLineTableOpaque", "struct _opaque"),
          ("PyCodeAddressRange", "PyCodeAddressRange"),
          ("lineiterator", "lineiterator"),
@@ -979,6 +983,1004 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
          ("PyByteArrayObject_SIZE", "sizeof(PyByteArrayObject)", "i64"),
          ("bytesiterobject_SIZE", "sizeof(bytesiterobject)", "i64"),
          ("_Py_TYPE_VERSION_BYTEARRAY", "_Py_TYPE_VERSION_BYTEARRAY", "u32"),
+         ("Py_TPFLAGS_READYING", "Py_TPFLAGS_READYING", "u64"),
+         ("Py_TPFLAGS_IS_ABSTRACT", "Py_TPFLAGS_IS_ABSTRACT", "u64"),
+         ("Py_TPFLAGS_ITEMS_AT_END", "Py_TPFLAGS_ITEMS_AT_END", "u64"),
+         ("MCACHE_SIZE_EXP", "MCACHE_SIZE_EXP", "i64"),
+         ("TYPE_VERSION_CACHE_SIZE", "TYPE_VERSION_CACHE_SIZE", "i64"),
+         ("TYPE_MAX_WATCHERS", "TYPE_MAX_WATCHERS", "i64"),
+         ("_Py_MAX_GLOBAL_TYPE_VERSION_TAG", "_Py_MAX_GLOBAL_TYPE_VERSION_TAG", "u32"),
+         (
+             "_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES",
+             "_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES",
+             "i64"
+         ),
+         (
+             "_Py_MAX_MANAGED_STATIC_EXT_TYPES",
+             "_Py_MAX_MANAGED_STATIC_EXT_TYPES",
+             "i64"
+         ),
+         ("_Py_ATTR_CACHE_UNUSED", "_Py_ATTR_CACHE_UNUSED", "u16"),
+         ("ALIGNOF_MAX_ALIGN_T", "ALIGNOF_MAX_ALIGN_T", "i64"),
+         ("Py_T_ULONG", "Py_T_ULONG", "i32"),
+         ("Py_tp_base", "Py_tp_base", "i32"),
+         ("Py_tp_bases", "Py_tp_bases", "i32"),
+         ("PyTypeObject_SIZE", "sizeof(PyTypeObject)", "i64"),
+         ("PyHeapTypeObject_SIZE", "sizeof(PyHeapTypeObject)", "i64"),
+         ("PyTypeObject_TP_ALLOC", "offsetof(PyTypeObject, tp_alloc)", "i64"),
+         ("PyTypeObject_TP_AS_ASYNC", "offsetof(PyTypeObject, tp_as_async)", "i64"),
+         ("PyTypeObject_TP_AS_BUFFER", "offsetof(PyTypeObject, tp_as_buffer)", "i64"),
+         ("PyTypeObject_TP_AS_MAPPING", "offsetof(PyTypeObject, tp_as_mapping)", "i64"),
+         ("PyTypeObject_TP_AS_NUMBER", "offsetof(PyTypeObject, tp_as_number)", "i64"),
+         (
+             "PyTypeObject_TP_AS_SEQUENCE",
+             "offsetof(PyTypeObject, tp_as_sequence)",
+             "i64"
+         ),
+         ("PyTypeObject_TP_BASE", "offsetof(PyTypeObject, tp_base)", "i64"),
+         ("PyTypeObject_TP_BASES", "offsetof(PyTypeObject, tp_bases)", "i64"),
+         ("PyTypeObject_TP_BASICSIZE", "offsetof(PyTypeObject, tp_basicsize)", "i64"),
+         ("PyTypeObject_TP_CALL", "offsetof(PyTypeObject, tp_call)", "i64"),
+         ("PyTypeObject_TP_CLEAR", "offsetof(PyTypeObject, tp_clear)", "i64"),
+         ("PyTypeObject_TP_DEALLOC", "offsetof(PyTypeObject, tp_dealloc)", "i64"),
+         ("PyTypeObject_TP_DEL", "offsetof(PyTypeObject, tp_del)", "i64"),
+         ("PyTypeObject_TP_DESCR_GET", "offsetof(PyTypeObject, tp_descr_get)", "i64"),
+         ("PyTypeObject_TP_DESCR_SET", "offsetof(PyTypeObject, tp_descr_set)", "i64"),
+         ("PyTypeObject_TP_DICT", "offsetof(PyTypeObject, tp_dict)", "i64"),
+         ("PyTypeObject_TP_DICTOFFSET", "offsetof(PyTypeObject, tp_dictoffset)", "i64"),
+         ("PyTypeObject_TP_DOC", "offsetof(PyTypeObject, tp_doc)", "i64"),
+         ("PyTypeObject_TP_FINALIZE", "offsetof(PyTypeObject, tp_finalize)", "i64"),
+         ("PyTypeObject_TP_FLAGS", "offsetof(PyTypeObject, tp_flags)", "i64"),
+         ("PyTypeObject_TP_FREE", "offsetof(PyTypeObject, tp_free)", "i64"),
+         ("PyTypeObject_TP_GETATTR", "offsetof(PyTypeObject, tp_getattr)", "i64"),
+         ("PyTypeObject_TP_GETATTRO", "offsetof(PyTypeObject, tp_getattro)", "i64"),
+         ("PyTypeObject_TP_GETSET", "offsetof(PyTypeObject, tp_getset)", "i64"),
+         ("PyTypeObject_TP_HASH", "offsetof(PyTypeObject, tp_hash)", "i64"),
+         ("PyTypeObject_TP_INIT", "offsetof(PyTypeObject, tp_init)", "i64"),
+         ("PyTypeObject_TP_IS_GC", "offsetof(PyTypeObject, tp_is_gc)", "i64"),
+         ("PyTypeObject_TP_ITEMSIZE", "offsetof(PyTypeObject, tp_itemsize)", "i64"),
+         ("PyTypeObject_TP_ITER", "offsetof(PyTypeObject, tp_iter)", "i64"),
+         ("PyTypeObject_TP_ITERNEXT", "offsetof(PyTypeObject, tp_iternext)", "i64"),
+         ("PyTypeObject_TP_MEMBERS", "offsetof(PyTypeObject, tp_members)", "i64"),
+         ("PyTypeObject_TP_METHODS", "offsetof(PyTypeObject, tp_methods)", "i64"),
+         ("PyTypeObject_TP_NEW", "offsetof(PyTypeObject, tp_new)", "i64"),
+         ("PyTypeObject_TP_REPR", "offsetof(PyTypeObject, tp_repr)", "i64"),
+         (
+             "PyTypeObject_TP_RICHCOMPARE",
+             "offsetof(PyTypeObject, tp_richcompare)",
+             "i64"
+         ),
+         ("PyTypeObject_TP_SETATTR", "offsetof(PyTypeObject, tp_setattr)", "i64"),
+         ("PyTypeObject_TP_SETATTRO", "offsetof(PyTypeObject, tp_setattro)", "i64"),
+         ("PyTypeObject_TP_STR", "offsetof(PyTypeObject, tp_str)", "i64"),
+         ("PyTypeObject_TP_TRAVERSE", "offsetof(PyTypeObject, tp_traverse)", "i64"),
+         ("PyTypeObject_TP_VECTORCALL", "offsetof(PyTypeObject, tp_vectorcall)", "i64"),
+         ("PyTypeObject_TP_WEAKLIST", "offsetof(PyTypeObject, tp_weaklist)", "i64"),
+         (
+             "PyTypeObject_TP_WEAKLISTOFFSET",
+             "offsetof(PyTypeObject, tp_weaklistoffset)",
+             "i64"
+         ),
+         ("PyAsyncMethods_AM_AITER", "offsetof(PyAsyncMethods, am_aiter)", "i64"),
+         ("PyAsyncMethods_AM_ANEXT", "offsetof(PyAsyncMethods, am_anext)", "i64"),
+         ("PyAsyncMethods_AM_AWAIT", "offsetof(PyAsyncMethods, am_await)", "i64"),
+         ("PyAsyncMethods_AM_SEND", "offsetof(PyAsyncMethods, am_send)", "i64"),
+         ("PyBufferProcs_BF_GETBUFFER", "offsetof(PyBufferProcs, bf_getbuffer)", "i64"),
+         (
+             "PyBufferProcs_BF_RELEASEBUFFER",
+             "offsetof(PyBufferProcs, bf_releasebuffer)",
+             "i64"
+         ),
+         (
+             "PyMappingMethods_MP_ASS_SUBSCRIPT",
+             "offsetof(PyMappingMethods, mp_ass_subscript)",
+             "i64"
+         ),
+         ("PyMappingMethods_MP_LENGTH", "offsetof(PyMappingMethods, mp_length)", "i64"),
+         (
+             "PyMappingMethods_MP_SUBSCRIPT",
+             "offsetof(PyMappingMethods, mp_subscript)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_ABSOLUTE",
+             "offsetof(PyNumberMethods, nb_absolute)",
+             "i64"
+         ),
+         ("PyNumberMethods_NB_BOOL", "offsetof(PyNumberMethods, nb_bool)", "i64"),
+         ("PyNumberMethods_NB_FLOAT", "offsetof(PyNumberMethods, nb_float)", "i64"),
+         ("PyNumberMethods_NB_INDEX", "offsetof(PyNumberMethods, nb_index)", "i64"),
+         ("PyNumberMethods_NB_INT", "offsetof(PyNumberMethods, nb_int)", "i64"),
+         ("PyNumberMethods_NB_INVERT", "offsetof(PyNumberMethods, nb_invert)", "i64"),
+         (
+             "PyNumberMethods_NB_NEGATIVE",
+             "offsetof(PyNumberMethods, nb_negative)",
+             "i64"
+         ),
+         (
+             "PyNumberMethods_NB_POSITIVE",
+             "offsetof(PyNumberMethods, nb_positive)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_ASS_ITEM",
+             "offsetof(PySequenceMethods, sq_ass_item)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_CONCAT",
+             "offsetof(PySequenceMethods, sq_concat)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_CONTAINS",
+             "offsetof(PySequenceMethods, sq_contains)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_INPLACE_CONCAT",
+             "offsetof(PySequenceMethods, sq_inplace_concat)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_INPLACE_REPEAT",
+             "offsetof(PySequenceMethods, sq_inplace_repeat)",
+             "i64"
+         ),
+         ("PySequenceMethods_SQ_ITEM", "offsetof(PySequenceMethods, sq_item)", "i64"),
+         (
+             "PySequenceMethods_SQ_LENGTH",
+             "offsetof(PySequenceMethods, sq_length)",
+             "i64"
+         ),
+         (
+             "PySequenceMethods_SQ_REPEAT",
+             "offsetof(PySequenceMethods, sq_repeat)",
+             "i64"
+         ),
+         ("PyHeapTypeObject_AS_ASYNC", "offsetof(PyHeapTypeObject, as_async)", "i64"),
+         ("PyHeapTypeObject_AS_NUMBER", "offsetof(PyHeapTypeObject, as_number)", "i64"),
+         (
+             "PyHeapTypeObject_AS_MAPPING",
+             "offsetof(PyHeapTypeObject, as_mapping)",
+             "i64"
+         ),
+         (
+             "PyHeapTypeObject_AS_SEQUENCE",
+             "offsetof(PyHeapTypeObject, as_sequence)",
+             "i64"
+         ),
+         ("PyHeapTypeObject_AS_BUFFER", "offsetof(PyHeapTypeObject, as_buffer)", "i64"),
+         ("PyHeapTypeObject_HT_TOKEN", "offsetof(PyHeapTypeObject, ht_token)", "i64"),
+         (
+             "PyHeapTypeObject_SPEC_CACHE_GETITEM",
+             "offsetof(PyHeapTypeObject, _spec_cache.getitem)",
+             "i64"
+         ),
+         (
+             "PyHeapTypeObject_SPEC_CACHE_GETITEM_VERSION",
+             "offsetof(PyHeapTypeObject, _spec_cache.getitem_version)",
+             "i64"
+         ),
+         (
+             "PyHeapTypeObject_SPEC_CACHE_INIT",
+             "offsetof(PyHeapTypeObject, _spec_cache.init)",
+             "i64"
+         ),
+         ("SLOTDEF_AM_AITER", "offsetof(PyHeapTypeObject, as_async.am_aiter)", "i32"),
+         ("SLOTDEF_AM_ANEXT", "offsetof(PyHeapTypeObject, as_async.am_anext)", "i32"),
+         ("SLOTDEF_AM_AWAIT", "offsetof(PyHeapTypeObject, as_async.am_await)", "i32"),
+         (
+             "SLOTDEF_BF_GETBUFFER",
+             "offsetof(PyHeapTypeObject, as_buffer.bf_getbuffer)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_BF_RELEASEBUFFER",
+             "offsetof(PyHeapTypeObject, as_buffer.bf_releasebuffer)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_MP_ASS_SUBSCRIPT",
+             "offsetof(PyHeapTypeObject, as_mapping.mp_ass_subscript)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_MP_LENGTH",
+             "offsetof(PyHeapTypeObject, as_mapping.mp_length)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_MP_SUBSCRIPT",
+             "offsetof(PyHeapTypeObject, as_mapping.mp_subscript)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_ABSOLUTE",
+             "offsetof(PyHeapTypeObject, as_number.nb_absolute)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_ADD", "offsetof(PyHeapTypeObject, as_number.nb_add)", "i32"),
+         ("SLOTDEF_NB_AND", "offsetof(PyHeapTypeObject, as_number.nb_and)", "i32"),
+         ("SLOTDEF_NB_BOOL", "offsetof(PyHeapTypeObject, as_number.nb_bool)", "i32"),
+         (
+             "SLOTDEF_NB_DIVMOD",
+             "offsetof(PyHeapTypeObject, as_number.nb_divmod)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_FLOAT", "offsetof(PyHeapTypeObject, as_number.nb_float)", "i32"),
+         (
+             "SLOTDEF_NB_FLOOR_DIVIDE",
+             "offsetof(PyHeapTypeObject, as_number.nb_floor_divide)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_INDEX", "offsetof(PyHeapTypeObject, as_number.nb_index)", "i32"),
+         (
+             "SLOTDEF_NB_INPLACE_ADD",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_add)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_AND",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_and)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_FLOOR_DIVIDE",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_floor_divide)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_LSHIFT",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_lshift)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_MATRIX_MULTIPLY",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_matrix_multiply)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_MULTIPLY",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_multiply)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_OR",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_or)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_POWER",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_power)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_REMAINDER",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_remainder)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_RSHIFT",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_rshift)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_SUBTRACT",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_subtract)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_TRUE_DIVIDE",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_true_divide)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_INPLACE_XOR",
+             "offsetof(PyHeapTypeObject, as_number.nb_inplace_xor)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_INT", "offsetof(PyHeapTypeObject, as_number.nb_int)", "i32"),
+         (
+             "SLOTDEF_NB_INVERT",
+             "offsetof(PyHeapTypeObject, as_number.nb_invert)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_LSHIFT",
+             "offsetof(PyHeapTypeObject, as_number.nb_lshift)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_MATRIX_MULTIPLY",
+             "offsetof(PyHeapTypeObject, as_number.nb_matrix_multiply)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_MULTIPLY",
+             "offsetof(PyHeapTypeObject, as_number.nb_multiply)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_NEGATIVE",
+             "offsetof(PyHeapTypeObject, as_number.nb_negative)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_OR", "offsetof(PyHeapTypeObject, as_number.nb_or)", "i32"),
+         (
+             "SLOTDEF_NB_POSITIVE",
+             "offsetof(PyHeapTypeObject, as_number.nb_positive)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_POWER", "offsetof(PyHeapTypeObject, as_number.nb_power)", "i32"),
+         (
+             "SLOTDEF_NB_REMAINDER",
+             "offsetof(PyHeapTypeObject, as_number.nb_remainder)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_RSHIFT",
+             "offsetof(PyHeapTypeObject, as_number.nb_rshift)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_SUBTRACT",
+             "offsetof(PyHeapTypeObject, as_number.nb_subtract)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_NB_TRUE_DIVIDE",
+             "offsetof(PyHeapTypeObject, as_number.nb_true_divide)",
+             "i32"
+         ),
+         ("SLOTDEF_NB_XOR", "offsetof(PyHeapTypeObject, as_number.nb_xor)", "i32"),
+         (
+             "SLOTDEF_SQ_ASS_ITEM",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_ass_item)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_SQ_CONCAT",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_concat)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_SQ_CONTAINS",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_contains)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_SQ_INPLACE_CONCAT",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_inplace_concat)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_SQ_INPLACE_REPEAT",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_inplace_repeat)",
+             "i32"
+         ),
+         ("SLOTDEF_SQ_ITEM", "offsetof(PyHeapTypeObject, as_sequence.sq_item)", "i32"),
+         (
+             "SLOTDEF_SQ_LENGTH",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_length)",
+             "i32"
+         ),
+         (
+             "SLOTDEF_SQ_REPEAT",
+             "offsetof(PyHeapTypeObject, as_sequence.sq_repeat)",
+             "i32"
+         ),
+         ("SLOTDEF_TP_CALL", "offsetof(PyTypeObject, tp_call)", "i32"),
+         ("SLOTDEF_TP_DESCR_GET", "offsetof(PyTypeObject, tp_descr_get)", "i32"),
+         ("SLOTDEF_TP_DESCR_SET", "offsetof(PyTypeObject, tp_descr_set)", "i32"),
+         ("SLOTDEF_TP_FINALIZE", "offsetof(PyTypeObject, tp_finalize)", "i32"),
+         ("SLOTDEF_TP_GETATTR", "offsetof(PyTypeObject, tp_getattr)", "i32"),
+         ("SLOTDEF_TP_GETATTRO", "offsetof(PyTypeObject, tp_getattro)", "i32"),
+         ("SLOTDEF_TP_HASH", "offsetof(PyTypeObject, tp_hash)", "i32"),
+         ("SLOTDEF_TP_INIT", "offsetof(PyTypeObject, tp_init)", "i32"),
+         ("SLOTDEF_TP_ITER", "offsetof(PyTypeObject, tp_iter)", "i32"),
+         ("SLOTDEF_TP_ITERNEXT", "offsetof(PyTypeObject, tp_iternext)", "i32"),
+         ("SLOTDEF_TP_NEW", "offsetof(PyTypeObject, tp_new)", "i32"),
+         ("SLOTDEF_TP_REPR", "offsetof(PyTypeObject, tp_repr)", "i32"),
+         ("SLOTDEF_TP_RICHCOMPARE", "offsetof(PyTypeObject, tp_richcompare)", "i32"),
+         ("SLOTDEF_TP_SETATTR", "offsetof(PyTypeObject, tp_setattr)", "i32"),
+         ("SLOTDEF_TP_SETATTRO", "offsetof(PyTypeObject, tp_setattro)", "i32"),
+         ("SLOTDEF_TP_STR", "offsetof(PyTypeObject, tp_str)", "i32"),
+         (
+             "_Py_ID___abs__",
+             "offsetof(struct _Py_global_strings, identifiers._py___abs__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___abstractmethods__",
+             "offsetof(struct _Py_global_strings, identifiers._py___abstractmethods__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___add__",
+             "offsetof(struct _Py_global_strings, identifiers._py___add__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___aiter__",
+             "offsetof(struct _Py_global_strings, identifiers._py___aiter__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___and__",
+             "offsetof(struct _Py_global_strings, identifiers._py___and__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___anext__",
+             "offsetof(struct _Py_global_strings, identifiers._py___anext__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___annotate__",
+             "offsetof(struct _Py_global_strings, identifiers._py___annotate__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___annotate_func__",
+             "offsetof(struct _Py_global_strings, identifiers._py___annotate_func__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___annotations__",
+             "offsetof(struct _Py_global_strings, identifiers._py___annotations__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___annotations_cache__",
+             "offsetof(struct _Py_global_strings, identifiers._py___annotations_cache__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___await__",
+             "offsetof(struct _Py_global_strings, identifiers._py___await__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___bases__",
+             "offsetof(struct _Py_global_strings, identifiers._py___bases__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___bool__",
+             "offsetof(struct _Py_global_strings, identifiers._py___bool__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___buffer__",
+             "offsetof(struct _Py_global_strings, identifiers._py___buffer__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___call__",
+             "offsetof(struct _Py_global_strings, identifiers._py___call__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___class__",
+             "offsetof(struct _Py_global_strings, identifiers._py___class__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___class_getitem__",
+             "offsetof(struct _Py_global_strings, identifiers._py___class_getitem__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___classcell__",
+             "offsetof(struct _Py_global_strings, identifiers._py___classcell__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___classdictcell__",
+             "offsetof(struct _Py_global_strings, identifiers._py___classdictcell__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___contains__",
+             "offsetof(struct _Py_global_strings, identifiers._py___contains__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___del__",
+             "offsetof(struct _Py_global_strings, identifiers._py___del__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___delattr__",
+             "offsetof(struct _Py_global_strings, identifiers._py___delattr__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___delete__",
+             "offsetof(struct _Py_global_strings, identifiers._py___delete__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___delitem__",
+             "offsetof(struct _Py_global_strings, identifiers._py___delitem__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___dict__",
+             "offsetof(struct _Py_global_strings, identifiers._py___dict__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___dictoffset__",
+             "offsetof(struct _Py_global_strings, identifiers._py___dictoffset__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___divmod__",
+             "offsetof(struct _Py_global_strings, identifiers._py___divmod__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___doc__",
+             "offsetof(struct _Py_global_strings, identifiers._py___doc__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___eq__",
+             "offsetof(struct _Py_global_strings, identifiers._py___eq__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___firstlineno__",
+             "offsetof(struct _Py_global_strings, identifiers._py___firstlineno__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___float__",
+             "offsetof(struct _Py_global_strings, identifiers._py___float__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___floordiv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___floordiv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ge__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ge__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___get__",
+             "offsetof(struct _Py_global_strings, identifiers._py___get__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getattr__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getattr__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getattribute__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getattribute__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getitem__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getitem__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getnewargs__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getnewargs__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getnewargs_ex__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getnewargs_ex__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___getstate__",
+             "offsetof(struct _Py_global_strings, identifiers._py___getstate__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___gt__",
+             "offsetof(struct _Py_global_strings, identifiers._py___gt__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___hash__",
+             "offsetof(struct _Py_global_strings, identifiers._py___hash__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___iadd__",
+             "offsetof(struct _Py_global_strings, identifiers._py___iadd__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___iand__",
+             "offsetof(struct _Py_global_strings, identifiers._py___iand__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ifloordiv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ifloordiv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ilshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ilshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___imatmul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___imatmul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___imod__",
+             "offsetof(struct _Py_global_strings, identifiers._py___imod__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___imul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___imul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___index__",
+             "offsetof(struct _Py_global_strings, identifiers._py___index__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___init__",
+             "offsetof(struct _Py_global_strings, identifiers._py___init__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___init_subclass__",
+             "offsetof(struct _Py_global_strings, identifiers._py___init_subclass__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___int__",
+             "offsetof(struct _Py_global_strings, identifiers._py___int__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___invert__",
+             "offsetof(struct _Py_global_strings, identifiers._py___invert__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ior__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ior__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ipow__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ipow__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___irshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___irshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___isub__",
+             "offsetof(struct _Py_global_strings, identifiers._py___isub__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___iter__",
+             "offsetof(struct _Py_global_strings, identifiers._py___iter__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___itruediv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___itruediv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ixor__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ixor__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___le__",
+             "offsetof(struct _Py_global_strings, identifiers._py___le__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___len__",
+             "offsetof(struct _Py_global_strings, identifiers._py___len__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___lshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___lshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___lt__",
+             "offsetof(struct _Py_global_strings, identifiers._py___lt__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___main__",
+             "offsetof(struct _Py_global_strings, identifiers._py___main__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___matmul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___matmul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___mod__",
+             "offsetof(struct _Py_global_strings, identifiers._py___mod__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___module__",
+             "offsetof(struct _Py_global_strings, identifiers._py___module__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___mro_entries__",
+             "offsetof(struct _Py_global_strings, identifiers._py___mro_entries__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___mul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___mul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___name__",
+             "offsetof(struct _Py_global_strings, identifiers._py___name__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ne__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ne__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___neg__",
+             "offsetof(struct _Py_global_strings, identifiers._py___neg__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___new__",
+             "offsetof(struct _Py_global_strings, identifiers._py___new__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___newobj__",
+             "offsetof(struct _Py_global_strings, identifiers._py___newobj__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___newobj_ex__",
+             "offsetof(struct _Py_global_strings, identifiers._py___newobj_ex__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___next__",
+             "offsetof(struct _Py_global_strings, identifiers._py___next__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___or__",
+             "offsetof(struct _Py_global_strings, identifiers._py___or__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___pos__",
+             "offsetof(struct _Py_global_strings, identifiers._py___pos__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___pow__",
+             "offsetof(struct _Py_global_strings, identifiers._py___pow__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___qualname__",
+             "offsetof(struct _Py_global_strings, identifiers._py___qualname__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___radd__",
+             "offsetof(struct _Py_global_strings, identifiers._py___radd__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rand__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rand__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rdivmod__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rdivmod__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___reduce__",
+             "offsetof(struct _Py_global_strings, identifiers._py___reduce__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___release_buffer__",
+             "offsetof(struct _Py_global_strings, identifiers._py___release_buffer__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___repr__",
+             "offsetof(struct _Py_global_strings, identifiers._py___repr__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rfloordiv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rfloordiv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rlshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rlshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rmatmul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rmatmul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rmod__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rmod__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rmul__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rmul__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___ror__",
+             "offsetof(struct _Py_global_strings, identifiers._py___ror__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rpow__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rpow__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rrshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rrshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rshift__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rshift__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rsub__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rsub__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rtruediv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rtruediv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___rxor__",
+             "offsetof(struct _Py_global_strings, identifiers._py___rxor__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___set__",
+             "offsetof(struct _Py_global_strings, identifiers._py___set__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___set_name__",
+             "offsetof(struct _Py_global_strings, identifiers._py___set_name__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___setattr__",
+             "offsetof(struct _Py_global_strings, identifiers._py___setattr__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___setitem__",
+             "offsetof(struct _Py_global_strings, identifiers._py___setitem__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___slotnames__",
+             "offsetof(struct _Py_global_strings, identifiers._py___slotnames__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___slots__",
+             "offsetof(struct _Py_global_strings, identifiers._py___slots__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___str__",
+             "offsetof(struct _Py_global_strings, identifiers._py___str__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___sub__",
+             "offsetof(struct _Py_global_strings, identifiers._py___sub__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___truediv__",
+             "offsetof(struct _Py_global_strings, identifiers._py___truediv__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___type_params__",
+             "offsetof(struct _Py_global_strings, identifiers._py___type_params__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___weaklistoffset__",
+             "offsetof(struct _Py_global_strings, identifiers._py___weaklistoffset__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___weakref__",
+             "offsetof(struct _Py_global_strings, identifiers._py___weakref__)",
+             "i64"
+         ),
+         (
+             "_Py_ID___xor__",
+             "offsetof(struct _Py_global_strings, identifiers._py___xor__)",
+             "i64"
+         ),
+         (
+             "_Py_ID__slotnames",
+             "offsetof(struct _Py_global_strings, identifiers._py__slotnames)",
+             "i64"
+         ),
+         (
+             "_Py_ID_builtins",
+             "offsetof(struct _Py_global_strings, identifiers._py_builtins)",
+             "i64"
+         ),
+         (
+             "_Py_ID_copyreg",
+             "offsetof(struct _Py_global_strings, identifiers._py_copyreg)",
+             "i64"
+         ),
+         (
+             "_Py_ID_items",
+             "offsetof(struct _Py_global_strings, identifiers._py_items)",
+             "i64"
+         ),
+         (
+             "_Py_ID_mro",
+             "offsetof(struct _Py_global_strings, identifiers._py_mro)",
+             "i64"
+         ),
+         (
+             "_Py_ID_release",
+             "offsetof(struct _Py_global_strings, identifiers._py_release)",
+             "i64"
+         ),
          ("PyCodeObject_NAMES", "offsetof(PyCodeObject, co_names)", "i64"),
          ("PyCodeObject_ARGCOUNT", "offsetof(PyCodeObject, co_argcount)", "i64"),
          (
@@ -2139,6 +3141,81 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
              "i64"
          ),
          (
+             "PyInterpreterState_TYPES_NEXT_VERSION_TAG",
+             "offsetof(PyInterpreterState, types.next_version_tag)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_TYPE_CACHE",
+             "offsetof(PyInterpreterState, types.type_cache.hashtable)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_BUILTINS_NUM_INITIALIZED",
+             "offsetof(PyInterpreterState, types.builtins.num_initialized)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_BUILTINS_INITIALIZED",
+             "offsetof(PyInterpreterState, types.builtins.initialized)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_EXT_NUM_INITIALIZED",
+             "offsetof(PyInterpreterState, types.for_extensions.num_initialized)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_EXT_NEXT_INDEX",
+             "offsetof(PyInterpreterState, types.for_extensions.next_index)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_EXT_INITIALIZED",
+             "offsetof(PyInterpreterState, types.for_extensions.initialized)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_MUTEX",
+             "offsetof(PyInterpreterState, types.mutex)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPES_TYPE_VERSION_CACHE",
+             "offsetof(PyInterpreterState, types.type_version_cache)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_TYPE_WATCHERS",
+             "offsetof(PyInterpreterState, type_watchers)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_RARE_SET_CLASS",
+             "offsetof(PyInterpreterState, rare_events.set_class)",
+             "i64"
+         ),
+         (
+             "PyInterpreterState_RARE_SET_BASES",
+             "offsetof(PyInterpreterState, rare_events.set_bases)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_TYPES_NEXT_VERSION_TAG",
+             "offsetof(_PyRuntimeState, types.next_version_tag)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_TYPES_MANAGED_STATIC",
+             "offsetof(_PyRuntimeState, types.managed_static.types)",
+             "i64"
+         ),
+         (
+             "_PyRuntimeState_GLOBAL_STRINGS",
+             "offsetof(_PyRuntimeState, static_objects.singletons.strings)",
+             "i64"
+         ),
+         (
              "_PyRuntimeState_REF_TRACER_FUNC",
              "offsetof(_PyRuntimeState, ref_tracer.tracer_func)",
              "i64"
@@ -2224,7 +3301,7 @@ glob OUTPUT: Path = RUNTIME / "layouts.jac",
      # Jac keywords a C member name may collide with.
      JAC_KEYWORDS: set[str] = set(
          (
-             "obj node edge walker has can def glob impl sem test entry exit spawn "
+             "obj node edge walker has can def glob impl sem test entry exit spawn init "
              + "visit disengage report ignore by to with in is not and or if else elif "
              + "for while return yield break continue try except finally raise assert "
              + "del import from as lambda async await class enum include skip match "
