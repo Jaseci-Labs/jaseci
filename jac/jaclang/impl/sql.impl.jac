@@ -1777,7 +1777,7 @@ impl _aggregate_type(ast: AggregateNode) -> DataType {
                 True
             );
         }
-        if ast.op == 'BOOL_AND'
+        if ast.op in ('BOOL_AND', 'BOOL_OR')
             and name == 'boolean'
             and not ast.distinct
             and ast.delimiter is None {
@@ -2664,4 +2664,15 @@ impl sub_int32(
     left: ScalarExpr[SqlInt32], right: ScalarExpr[SqlInt32]
 ) -> ScalarExpr[SqlInt32] {
     return ScalarExpr(_call('INT32_SUB', (left.ast, right.ast)));
+}
+
+impl bool_or(
+    term: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]
+) -> ScalarExpr[Nullable[SqlBool]] {
+    if term.ast.dtype.name != 'boolean' {
+        raise SqlError('BOOL_OR requires a boolean');
+    }
+    return ScalarExpr(
+        AggregateNode(dtype=DataType('boolean', True), op='BOOL_OR', term=term.ast)
+    );
 }

@@ -856,3 +856,7 @@ def add_int32(
 def sub_int32(
     left: ScalarExpr[SqlInt32], right: ScalarExpr[SqlInt32]
 ) -> ScalarExpr[SqlInt32];
+
+def bool_or(
+    term: ScalarExpr[SqlBool] | ScalarExpr[Nullable[SqlBool]]
+) -> ScalarExpr[Nullable[SqlBool]];

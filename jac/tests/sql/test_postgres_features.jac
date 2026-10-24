@@ -1002,6 +1002,19 @@ class FeatureTests(PostgresTests) {
             s.compile_sql(s.select(s.project_all(walk), source=walk));
         }
     }
+
+    def test_boolean_or_aggregate(self: FeatureTests) -> object {
+        query = s.aggregate(
+            [s.named('any', s.bool_or(s.gt(self.people.col(self.id), s.int64(2))))],
+            source=self.people
+        );
+        self.assertEqual(self.execute(query), [(True, )]);
+        self.db.execute('DELETE FROM people');
+        self.assertEqual(self.execute(query), [(None, )]);
+        with self.assertRaises(s.SqlError) {
+            s.bool_or(s.int64(1));
+        }
+    }
 }
 
 test "PostgreSQL features: boolean comparison and case" {
@@ -1150,4 +1163,8 @@ test "PostgreSQL features: values retains outer group dependencies" {
 
 test "PostgreSQL features: recursive window group aggregate rejected" {
     run_case(FeatureTests("test_recursive_window_group_aggregate_rejected"));
+}
+
+test "PostgreSQL features: boolean or aggregate" {
+    run_case(FeatureTests("test_boolean_or_aggregate"));
 }

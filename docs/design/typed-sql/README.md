@@ -80,7 +80,7 @@ Runnable examples:
 | Joins | INNER, LEFT, CROSS; LATERAL derived sources and implicitly lateral table functions |
 | Selection | Projection, column GROUP BY, HAVING, ordering, NULLS FIRST/LAST and limits |
 | Sets | DISTINCT, DISTINCT ON, UNION/UNION ALL, EXCEPT/EXCEPT ALL, INTERSECT/INTERSECT ALL |
-| Aggregates | COUNT(*), SUM for supported numeric types, BOOL_AND and distinct/non-distinct STRING_AGG |
+| Aggregates | COUNT(*), SUM for supported numeric types, BOOL_AND, BOOL_OR and distinct/non-distinct STRING_AGG |
 | Windows | ROW_NUMBER, DENSE_RANK, aggregate OVER, PARTITION BY, ORDER BY and ROWS BETWEEN frames |
 | CTEs | Automatic dependency collection, explicit lexical scopes, MATERIALIZED/NOT MATERIALIZED and recursion |
 
@@ -185,8 +185,8 @@ Low-level AST construction receives the same semantic analysis as public builder
 
 ## Verification
 
-The suite contains 139 native Jac test entries: 49 SQLite base cases, the same
-49 PostgreSQL cases, 37 PostgreSQL feature cases and four static-check tests.
+The suite contains 140 native Jac test entries: 49 SQLite base cases, the same
+49 PostgreSQL cases, 38 PostgreSQL feature cases and four static-check tests.
 The static fixtures verify all 29 invalid calls at their expected source lines;
 positive checking covers the module and both construction examples.
 
