@@ -31438,6 +31438,7 @@ graph import scale {
             _owns_group,
             _signal_group
         },
+        tests.support.stop_server { _signal_group },
     ]
     runtime.planner.planner ++> tests.microservices.test_planner { plan_realization }
     runtime.provider ++> [
@@ -32306,6 +32307,7 @@ graph import scale.tests {
         microservices.test_gateway
             | microservices.test_k8s_health_probe
             | server.test_examples { get_free_port },
+        microservices.test_stop_signal_scope { stop_server },
         microservices.test_typed_boundary { get_free_port, start_server, stop_server },
         server.test_metrics_workers | server.test_serve {
             cleanup_db_files,
