@@ -2389,7 +2389,7 @@ graph import {
             | compiler.frontend.kernel_inputs { AppSpec, WorkspaceSpec },
     ]
     runtime.archetype ++> [
-        byllm.llm._mock_jsonable { Archetype },
+        byllm.llm._mock_jsonable | data.query_planner._rechecks_edge { Archetype },
         byllm.visit_routing { Anchor, Archetype, ObjectSpatialFunction },
         byllm.visit_routing._candidate_for { EdgeAnchor, EdgeArchetype, NodeAnchor },
         byllm.visit_routing._route_context {
@@ -2399,9 +2399,12 @@ graph import {
             NodeArchetype,
             WalkerAnchor
         },
-        compiler.native_compiler.NativeCompiler._register { NodeArchetype },
+        compiler.native_compiler.NativeCompiler._register
+            | data.query_planner._acl_residual { NodeArchetype },
         data.query_planner { Anchor, anchor_key },
-        data.query_planner._acl_pushdown_root { Archetype, Root },
+        data.query_planner._edge_residual { EdgeArchetype },
+        data.query_planner._rechecks { Archetype, Root },
+        data.query_planner._residual_classes { Archetype, Root },
         data.serializer {
             Access,
             AccessLevel,
@@ -2518,8 +2521,7 @@ graph import {
         server.session { ReadOnlyRetry, TransactionLost, WriteConflict },
     ]
     runtime.graph_query ++> [
-        data.query_planner { GraphQuery, QPred },
-        data.sqlcompile { GraphQuery, QHop, QPred },
+        data.query_planner | data.sqlcompile { GraphQuery, QHop, QPred },
         lib.jaclib { GraphQuery, QHop, QOrder, QPred },
     ]
     runtime.graph_utils ++> [
@@ -14631,7 +14633,7 @@ graph import data {
         serializer.Serializer._serialize_attrs { merged_rules_for, repair_mode },
         serializer.Serializer.serialize_fields { merged_rules_for, repair_mode },
     ]
-    sqlcompile ++> query_planner { compile_query }
+    sqlcompile ++> query_planner { CompiledQuery, compile_query }
     storage.local_storage ++> storage { LocalStorage }
     storage.storage ++> storage { Storage }
     store ++> [
@@ -14640,6 +14642,8 @@ graph import data {
         sqlcompile { Store },
     ]
     type_identity ++> [
+        query_planner._residual_names { storage_type },
+        query_planner.resolve_query_type_counts { storage_type },
         serializer {
             TypeResolutionError,
             UnavailableType,
