@@ -760,6 +760,132 @@ class SQLTests(unittest.TestCase) {
             }
         }
     }
+
+    def test_empty_membership_preserves_aggregate_rows(self: SQLTests) -> object {
+        for empty in [False, True] {
+            if empty {
+                self.db.execute('DELETE FROM people');
+            }
+            with self.subTest(empty=empty) {
+                query = s.aggregate(
+                    [s.named('empty', s.in_(s.count(), []))], source=self.people
+                );
+                self.assertEqual(self.execute(query), [(False, )]);
+                scalar = s.scalar_one(query, s.field('empty', s.bool_type()));
+                self.assertEqual(
+                    self.execute(s.select([s.named('empty', scalar)])), [(False, )]
+                );
+                grouped = s.select(
+                    [
+                        s.named('age', self.people.col(self.age)),
+                        s.named('empty', s.in_(s.count(), []))
+                    ],
+                    source=self.people,
+                    group_by=[self.people.col(self.age).ast],
+                    order_by=[s.asc(self.people.col(self.age))]
+                );
+                self.assertEqual(
+                    self.execute(grouped), [] if empty else [(20, False), (40, False)]
+                );
+            }
+        }
+    }
+
+    def test_windows_over_grouped_counts(self: SQLTests) -> object {
+        total = s.over(s.sum_int64(s.count()));
+        rank = s.row_number(order_by=[s.desc(s.count())]);
+        query = s.select(
+            [
+                s.named('age', self.people.col(self.age)),
+                s.named('rank', rank),
+                s.named('total', total)
+            ],
+            source=self.people,
+            group_by=[self.people.col(self.age).ast],
+            order_by=[s.asc(self.people.col(self.age))]
+        );
+        self.assertEqual(
+            [(r[0], r[1], int(r[2])) for r in self.execute(query)],
+            [(20, 2, 3), (40, 1, 3)]
+        );
+        partitioned = s.row_number(
+            partition_by=[s.count().ast], order_by=[s.asc(self.people.col(self.age))]
+        );
+        partitioned_query = s.select(
+            [s.named('age', self.people.col(self.age)), s.named('rank', partitioned)],
+            source=self.people,
+            group_by=[self.people.col(self.age).ast],
+            order_by=[s.asc(self.people.col(self.age))]
+        );
+        self.assertEqual(self.execute(partitioned_query), [(20, 1), (40, 1)]);
+        self.db.execute('DELETE FROM people');
+        self.assertEqual(self.execute(query), []);
+    }
+
+    def test_windows_preserve_implicit_group_proof(self: SQLTests) -> object {
+        for empty in [False, True] {
+            if empty {
+                self.db.execute('DELETE FROM people');
+            }
+            with self.subTest(empty=empty) {
+                total = s.over(s.sum_int64(s.count()));
+                query = s.aggregate([s.named('n', total)], source=self.people);
+                self.assertEqual(
+                    [int(r[0]) for r in self.execute(query)], [0 if empty else 3]
+                );
+                value = s.scalar_one(query, s.field('n', s.nullable(s.numeric_type())));
+                self.assertEqual(
+                    [int(r[0]) for r in self.execute(s.select([s.named('n', value)]))],
+                    [0 if empty else 3]
+                );
+                ranked = s.aggregate(
+                    [s.named('n', s.row_number(order_by=[s.desc(s.count())]))],
+                    source=self.people
+                );
+                self.assertEqual(self.execute(ranked), [(1, )]);
+            }
+        }
+    }
+
+    def test_grouped_windows_keep_stage_checks(self: SQLTests) -> object {
+        bad_key = s.row_number(
+            order_by=[s.desc(s.add(s.count(), self.people.col(self.id)))]
+        );
+        invalid = s.select(
+            [s.named('n', bad_key)],
+            source=self.people,
+            group_by=[self.people.col(self.age).ast]
+        );
+        with self.assertRaisesRegex(s.SqlError, 'GROUP BY') {
+            s.compile_sql(invalid);
+        }
+        bad_arg = s.over(
+            s.sum_int64(self.people.col(self.id)), order_by=[s.desc(s.count())]
+        );
+        with self.assertRaisesRegex(s.SqlError, 'GROUP BY') {
+            s.compile_sql(s.select([s.named('n', bad_arg)], source=self.people));
+        }
+        valid_key = s.row_number(
+            order_by=[s.desc(s.add(s.count(), self.people.col(self.age)))]
+        );
+        valid = s.select(
+            [s.named('n', valid_key)],
+            source=self.people,
+            group_by=[self.people.col(self.age).ast],
+            order_by=[s.asc(self.people.col(self.age))]
+        );
+        self.assertEqual(self.execute(valid), [(2, ), (1, )]);
+        nested = s.row_number(
+            order_by=[s.asc(s.row_number(order_by=[s.desc(s.count())]))]
+        );
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(s.select([s.named('n', nested)], source=self.people));
+        }
+        argument = s.over(s.sum_int64(s.row_number()));
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(s.select([s.named('n', argument)], source=self.people));
+        }
+    }
 }
 
 

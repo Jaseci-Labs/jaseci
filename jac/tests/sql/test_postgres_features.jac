@@ -922,6 +922,86 @@ class FeatureTests(PostgresTests) {
             );
         }
     }
+
+    def test_lateral_values_reads_preceding_columns(self: FeatureTests) -> object {
+        key = s.field('n', s.int64_type());
+        relation = s.values(
+            [key],
+            [[self.people.col(self.id)], [s.add(self.people.col(self.id), s.int64(10))]]
+        );
+        src = relation.as_source(lateral=True);
+        query = s.select(
+            [s.named('id', self.people.col(self.id)), s.named('n', src.col(key))],
+            source=self.people,
+            joins=[s.cross_join(src)],
+            order_by=[s.asc(self.people.col(self.id)), s.asc(src.col(key))]
+        );
+        self.assertEqual(
+            self.execute(query), [(1, 1), (1, 11), (2, 2), (2, 12), (3, 3), (3, 13)]
+        );
+        ordinary = relation.as_source();
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(
+                s.select(
+                    [s.named('n', ordinary.col(key))],
+                    source=self.people,
+                    joins=[s.cross_join(ordinary)]
+                )
+            );
+        }
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(s.select(s.project_all(src), source=src));
+        }
+    }
+
+    def test_values_retains_outer_group_dependencies(self: FeatureTests) -> object {
+        key = s.field('n', s.int64_type());
+        source = s.values([key], [[self.people.col(self.id)]]).as_source(lateral=True);
+        inner = s.limit_one(s.select([s.named('n', source.col(key))], source=source));
+        result = s.scalar(inner, key);
+        grouped = s.select(
+            [
+                s.named('id', self.people.col(self.id)),
+                s.named('n', result),
+                s.named('count', s.count())
+            ],
+            source=self.people,
+            group_by=[self.people.col(self.id).ast],
+            order_by=[s.asc(self.people.col(self.id))]
+        );
+        self.assertEqual(self.execute(grouped), [(1, 1, 1), (2, 2, 1), (3, 3, 1)]);
+        invalid = s.aggregate(
+            [s.named('n', result), s.named('count', s.count())], source=self.people
+        );
+        with self.assertRaisesRegex(s.SqlError, 'GROUP BY') {
+            s.compile_sql(invalid);
+        }
+        nested_source = s.values([key], [[self.people.col(self.id)]]).as_source();
+        nested = s.limit_one(
+            s.select([s.named('n', nested_source.col(key))], source=nested_source)
+        );
+        outer = s.select(
+            [s.named('n', s.scalar(nested, key))],
+            source=self.people,
+            order_by=[s.asc(self.people.col(self.id))]
+        );
+        self.assertEqual(self.execute(outer), [(1, ), (2, ), (3, )]);
+    }
+
+    def test_recursive_window_group_aggregate_rejected(self: FeatureTests) -> object {
+        key = s.field('n', s.int64_type());
+        walk = s.cte_ref([key]);
+        rank = s.row_number(order_by=[s.desc(s.count())]);
+        step = s.select([s.named('n', rank)], source=walk);
+        s.define_cte(
+            walk,
+            s.union_all(s.select([s.named('n', s.int64(1))]), step),
+            recursive=True
+        );
+        with self.assertRaises(s.SqlError) {
+            s.compile_sql(s.select(s.project_all(walk), source=walk));
+        }
+    }
 }
 
 test "PostgreSQL features: boolean comparison and case" {
@@ -1058,4 +1138,16 @@ test "PostgreSQL features: distinct order variants and empty frames" {
 
 test "PostgreSQL features: typed ast rejections" {
     run_case(FeatureTests("test_typed_ast_rejections"));
+}
+
+test "PostgreSQL features: lateral values reads preceding columns" {
+    run_case(FeatureTests("test_lateral_values_reads_preceding_columns"));
+}
+
+test "PostgreSQL features: values retains outer group dependencies" {
+    run_case(FeatureTests("test_values_retains_outer_group_dependencies"));
+}
+
+test "PostgreSQL features: recursive window group aggregate rejected" {
+    run_case(FeatureTests("test_recursive_window_group_aggregate_rejected"));
 }

@@ -1054,6 +1054,7 @@ impl QueryValidator.query_body(
         if not ast.rows {
             raise SqlError('VALUES requires at least one row');
         }
+        external: set[str] = set();
         for row in ast.rows {
             if len(row) != len(ast.schema.fields)
                 or not all(
@@ -1066,13 +1067,14 @@ impl QueryValidator.query_body(
                 raise SqlError('VALUES row schema mismatch');
             }
             for e in row {
-                fact = self.expr(e, [], [], ctes);
+                fact = self.expr(e, outer, [], ctes);
+                external |= fact.free;
                 if fact.aggregate or fact.window {
                     raise SqlError('VALUES cannot contain an aggregate/window');
                 }
             }
         }
-        return QueryFacts(external=set());
+        return QueryFacts(external=external);
     }
     if isinstance(ast, WithNode) {
         if ast.cardinality != ast.body.cardinality {
@@ -2173,8 +2175,8 @@ impl QueryValidator.extended_expr(
             self.expr(e, scope, local, ctes)
             for e in ast.partition + tuple(o.expr for o in ast.ordering)
         ];
-        if `any([c.window or c.aggregate for c in children]) {
-            raise SqlError('Window keys cannot contain windows or aggregates');
+        if `any([c.window for c in children]) {
+            raise SqlError('Window keys cannot contain nested windows');
         }
         for order in ast.ordering {
             _validate_order(order);
@@ -2182,7 +2184,9 @@ impl QueryValidator.extended_expr(
         if ast.frame is not None {
             _validate_frame(ast.frame);
         }
-        free = _merge_checked(children).free;
+        group_facts = _merge_checked(children);
+        free = group_facts.free;
+        aggregate = group_facts.aggregate;
         if ast.op == 'AGGREGATE' {
             term = ast.term;
             if not isinstance(term, AggregateNode) or term.distinct {
@@ -2192,14 +2196,16 @@ impl QueryValidator.extended_expr(
                 raise SqlError('Window aggregate result type mismatch');
             }
             args = [self.expr(e, scope, local, ctes) for e in _children(term)];
-            if `any([a.window or a.aggregate for a in args]) {
-                raise SqlError('Nested window/aggregate requires another query region');
+            if `any([a.window for a in args]) {
+                raise SqlError('Nested windows require another query region');
             }
-            free |= _merge_checked(args).free;
+            argument_facts = _merge_checked(args);
+            free |= argument_facts.free;
+            aggregate = aggregate or argument_facts.aggregate;
         } elif ast.term is not None or not same_type(ast.dtype, DataType('bigint')) {
             raise SqlError('Invalid ranking window signature');
         }
-        return Checked(free=free, window=True);
+        return Checked(free=free, aggregate=aggregate, window=True);
     }
     children = [self.expr(e, scope, local, ctes) for e in _children(ast)];
     if isinstance(ast, CallNode) {
@@ -2366,13 +2372,10 @@ impl PostgresRenderer.extended_expr(ast: ExprNode) -> str {
             + ')';
     }
     if isinstance(ast, MembershipNode) {
-        return '('
-            + self.expr(ast.term)
-            + ' IN ('
-            + ', '.join([self.expr(e) for e in ast.items])
-            + '))'
+        values = ', '.join([self.expr(e) for e in ast.items])
             if ast.items
-            else 'FALSE';
+            else 'SELECT CAST(NULL AS ' + ast.term.dtype.name + ') WHERE FALSE';
+        return '(' + self.expr(ast.term) + ' IN (' + values + '))';
     }
     if isinstance(ast, AnyNode) {
         return '(' + self.expr(ast.term) + ' = ANY(' + self.expr(ast.array) + '))';
@@ -2446,7 +2449,13 @@ impl _scan_recursive_expr(expr: ExprNode, ref: Cte) {
 
 impl _contains_aggregate(expr: ExprNode) -> bool {
     if isinstance(expr, WindowNode) {
-        return False;
+        expressions = list(expr.partition) + [order.expr for order in expr.ordering];
+        if isinstance(expr.term, AggregateNode) {
+            expressions.extend(_children(expr.term));
+        } elif expr.term is not None {
+            expressions.append(expr.term);
+        }
+        return `any([_contains_aggregate(e) for e in expressions]);
     }
     return isinstance(expr, AggregateNode)
         or `any([_contains_aggregate(c) for c in _children(expr)]);

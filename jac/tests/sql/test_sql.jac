@@ -179,3 +179,19 @@ test "SQLite: validation precedes rendering" {
 test "SQLite: invalid raw nodes are rejected" {
     run_case(SQLTests("test_invalid_raw_nodes_are_rejected"));
 }
+
+test "SQLite: empty membership preserves aggregate rows" {
+    run_case(SQLTests("test_empty_membership_preserves_aggregate_rows"));
+}
+
+test "SQLite: windows over grouped counts" {
+    run_case(SQLTests("test_windows_over_grouped_counts"));
+}
+
+test "SQLite: windows preserve implicit group proof" {
+    run_case(SQLTests("test_windows_preserve_implicit_group_proof"));
+}
+
+test "SQLite: grouped windows keep stage checks" {
+    run_case(SQLTests("test_grouped_windows_keep_stage_checks"));
+}

@@ -124,6 +124,11 @@ references for the enclosing query's checks.
 `ordered(query, [asc(output(key))])` orders a set result by its typed output columns.
 DISTINCT ON checks leading ORDER BY keys, including permitted permutations.
 
+An empty `in_(term, [])` renders membership in a typed empty subquery, retaining
+`term` in the SQL. Aggregates and windows inside that term preserve the SELECT's
+row-count and grouping semantics. Correlated VALUES rows use their supplied outer
+scope and propagate dependencies for enclosing GROUP BY checks.
+
 ## CTE scopes and recursion
 
 `cte(query)` creates a reusable reference. Compilation collects reachable definitions,
@@ -157,6 +162,8 @@ Recursive definitions use UNION or UNION ALL. The analyzer checks the anchor,
 compatible output schemas and exactly one structural self-reference in the step.
 That reference can occur through derived queries or a local CTE definition.
 Windows and local deduplication/budget stages retain their own query regions.
+Ordinary grouping aggregates may feed window arguments, partition keys and order
+keys; their grouping and row-count facts propagate to the enclosing SELECT.
 Direct recursive aggregation, scalar-subquery self-reference and references on
 an outer join's nullable side are rejected. Recursive termination follows the
 query predicate. Parenthesized wrappers preserve arm-local ordering and limits.
@@ -178,8 +185,8 @@ Low-level AST construction receives the same semantic analysis as public builder
 
 ## Verification
 
-The suite contains 128 native Jac test entries: 45 SQLite base cases, the same
-45 PostgreSQL cases, 34 PostgreSQL feature cases and four static-check tests.
+The suite contains 139 native Jac test entries: 49 SQLite base cases, the same
+49 PostgreSQL cases, 37 PostgreSQL feature cases and four static-check tests.
 The static fixtures verify all 29 invalid calls at their expected source lines;
 positive checking covers the module and both construction examples.
 

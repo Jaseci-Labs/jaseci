@@ -180,3 +180,19 @@ test "PostgreSQL: validation precedes rendering" {
 test "PostgreSQL: invalid raw nodes are rejected" {
     run_case(PostgresTests("test_invalid_raw_nodes_are_rejected"));
 }
+
+test "PostgreSQL: empty membership preserves aggregate rows" {
+    run_case(PostgresTests("test_empty_membership_preserves_aggregate_rows"));
+}
+
+test "PostgreSQL: windows over grouped counts" {
+    run_case(PostgresTests("test_windows_over_grouped_counts"));
+}
+
+test "PostgreSQL: windows preserve implicit group proof" {
+    run_case(PostgresTests("test_windows_preserve_implicit_group_proof"));
+}
+
+test "PostgreSQL: grouped windows keep stage checks" {
+    run_case(PostgresTests("test_grouped_windows_keep_stage_checks"));
+}
