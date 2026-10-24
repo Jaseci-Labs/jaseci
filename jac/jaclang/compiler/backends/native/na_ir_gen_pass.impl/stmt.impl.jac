@@ -4029,6 +4029,20 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
         }
         return;
     }
+    # (a loop variable the ownership pass proved a borrow names the element
+    # the list keeps alive: no retain and release per element)
+    _loop_borrow = (
+        id(nd) in self.module.managed_borrow_binds
+        and self._gc_mode() != "none"
+        and not self._nogc_headerless()
+        and _unpack_target is None
+        and isinstance(actual_elem_type, ir.PointerType)
+        and self._gen_ctx is None
+    );
+    if _loop_borrow {
+        self.borrowed_vars.add(loop_var_name);
+        self.rc_ops_elided += 2;
+    }
     self._codegen_for_indexed(
         nd,
         kind="list",
@@ -4036,7 +4050,7 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
         helpers=helpers,
         var_names=[loop_var_name],
         var_types=[actual_elem_type],
-        rc_vars=True,
+        rc_vars=not _loop_borrow,
         coll_release_op="forl_coll",
         elem_cast=inner_type,
         unpack_target=_unpack_target

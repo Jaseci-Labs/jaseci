@@ -105,6 +105,20 @@ impl OwnershipCheckPass._run_impl(ir_in: Module) -> Module {
     self._stamp_write_effects();
     self._stamp_ownership();
     self._stamp_managed_borrows();
+    # (borrow inference only removes refcount work; if it cannot finish on a
+    # module, that module keeps every local counted)
+    _inferred_before = set(ir_in.managed_borrow_binds);
+    try {
+        self._stamp_inferred_borrows();
+    } except Exception as exc {
+        import os;
+        import traceback;
+        ir_in.managed_borrow_binds = _inferred_before;
+        if os.environ.get("JAC_BORROW_INFER_DEBUG") {
+            print(f"borrow inference failed in {ir_in.loc.mod_path}: {exc}");
+            traceback.print_exc();
+        }
+    }
     self._stamp_loop_borrows();
     self._stamp_region_borrows();
     self._stamp_arch_view_bindings();
